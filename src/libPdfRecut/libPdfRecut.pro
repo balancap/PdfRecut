@@ -11,27 +11,7 @@ CONFIG += staticlib
 
 DEFINES += LIBPDFRECUT_LIBRARY
 
-INCLUDEPATH += $$PWD/../3rdparty
-win32 {
-    INCLUDEPATH += ../PoDoFo/win32/include
-    # INCLUDEPATH += "C:/Program Files/GnuWin32/include"
-    LIBS += -L../PoDoFo/win32/lib
-    LIBS += -L"C:/Program Files/GnuWin32/lib"
-    LIBS += -lpodofo -lfreetype -ljpeg -lz
-    LIBS += -lpthread -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -lWS2_32
-    LIBS +=  -lpoppler-qt4
-}
-unix {
-    # INCLUDEPATH += ../PoDoFo/linux32/include
-    # LIBS += -L../PoDoFo/linux32/lib
-    # INCLUDEPATH += /usr/include/c++/4.6
-    INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
-    LIBS += -L$$PWD/../../../PoDoFo/linux64/lib64
-    LIBS +=  -lpodofod -lfreetype -lfontconfig -ljpeg -lz
-    LIBS +=  -lpoppler-qt4
-}
-
-SOURCES += LibPdfRecut.cpp \
+SOURCES += \
     PdfStreamTokenizer.cpp \
     PdfStreamLayoutZone.cpp \
     PdfStreamAnalysis.cpp \
@@ -49,8 +29,7 @@ SOURCES += LibPdfRecut.cpp \
     PDSTwoColumns.cpp \
     PDSBook.cpp
 
-HEADERS += LibPdfRecut.h\
-        libPdfRecut_global.h \
+HEADERS +=\
     PdfTypes.h \
     PdfStreamTokenizer.h \
     PdfStreamLayoutZone.h \
@@ -72,23 +51,17 @@ HEADERS += LibPdfRecut.h\
     PDSTwoColumns.h \
     PDSBook.h
 
-symbian {
-    MMP_RULES += EXPORTUNFROZEN
-    TARGET.UID3 = 0xE8A37148
-    TARGET.CAPABILITY = 
-    TARGET.EPOCALLOWDLLDATA = 1
-    addFiles.sources = libPdfRecut.dll
-    addFiles.path = !:/sys/bin
-    DEPLOYMENT += addFiles
+INCLUDEPATH += $$PWD/../3rdparty
+win32 {
+    INCLUDEPATH += ../PoDoFo/win32/include
+    # INCLUDEPATH += "C:/Program Files/GnuWin32/include"
+}
+unix {
+    INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
 }
 
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
+unix {
+    target.path = /usr/lib
     INSTALLS += target
 }
-
 
