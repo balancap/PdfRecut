@@ -18,42 +18,39 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFRENDERPAGE_H
-#define PDFRENDERPAGE_H
+#ifndef PDFSTREAMLAYOUTZONE_H
+#define PDFSTREAMLAYOUTZONE_H
 
-#include "PdfStreamAnalysis.h"
-#include "PdfFontMetricsCache.h"
-#include <QtGui/QImage>
+#include "PRStreamAnalysis.h"
+#include "PRDocumentLayout.h"
+#include "PdfMisc.h"
 
 namespace PoDoFo {
     class PdfPage;
-    class PdfRect;
-    class PdfMemDocument;
-    class PdfFontMetrics;
-    class PdfString;
+    class PdfMemStream;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-/** Class used to obtain a basic render a Pdf page.
+/** Class used to generate a Pdf stream which corresponds to a given
+ * document layout zone from a Pdf page.
  */
-class PdfRenderPage : public PdfStreamAnalysis
+class PRStreamLayoutZone : public PRStreamAnalysis
 {
 public:
     /** Default constructor.
-     * \param pageIn Input page to draw.
+     * \param pageIn Input page to analyse.
+     * \param streamOut Output stream to generate.
+     * \param zone Pdf zone corresponding to the output stream.
+     * \param Resource prefix to be used in the output stream.
      */
-    PdfRenderPage( PoDoFo::PdfPage* pageIn,
-                   PdfFontMetricsCache* fontMetricsCache );
+    PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
+                        PoDoFo::PdfStream* streamOut,
+                        const PRPageZone& zone,
+                        const PRLayoutParameters& parameters,
+                        const std::string& resPrefix );
 
-    /** Render the page, using given parameters.
-     */
-    void renderPage( double resolution );
-
-    /** Save page into a file.
-     * \param filename File where to save the page.
-     */
-    void saveToFile( const QString& filename );
+    void generateStream();
 
     void fGeneralGState( const PdfGraphicOperator& gOperator,
                          const std::vector<std::string>& vecVariables,
@@ -122,46 +119,50 @@ public:
                          const std::vector<std::string>& vecVariables,
                          const std::vector<PdfGraphicsState>& vecGStates );
 
-public:
-    /** Compute a string width given a PdfFontMetrics object.
-     * Enhance and correct the version given in PoDoFo.
+protected:
+    /** Copy variables to a buffer.
      */
-    static double getStringWidth( const PoDoFo::PdfString& str,
-                                  PoDoFo::PdfFontMetrics* fontMetrics,
-                                  double wordSpace );
+    void copyVariables( const std::vector<std::string>& vecVariables, std::string& buffer );
 
-private:
-    /** Document object.
+protected:
+    /** Output stream.
      */
-    PoDoFo::PdfMemDocument* m_document;
+    PoDoFo::PdfMemStream* m_streamOut;
+    /** Pdf page zone.
+     */
+    PRPageZone m_zone;
+    /** Resource prefix.
+     */
+    std::string m_resPrefix;
+    /** Layout parameters.
+     */
+    PRLayoutParameters m_parameters;
 
-    /** Font metrics cache.
+    /** Pdf stream buffer.
      */
-    PdfFontMetricsCache* m_fontMetricsCache;
+    PdfOStringStream m_bufStream;
+    /** String buffer.
+     */
+    std::string m_bufString;
 
-    /** QImage used to draw the page.
+    // Temp variables used during analysis.
+    /** Key/values of an inline image.
      */
-    QImage* m_pageImage;
-
-    /** QPainter used to draw the page.
-     */
-    QPainter* m_pagePainter;
-
-    /** PdfRect corresponding to the rectangle of the page drawn.
-     * Usually page crop box.
-     */
-    PoDoFo::PdfRect m_pageRect;
-
-    /** Transform from page space to image space.
-     * In particular, invert y-axis coordinate.
-     */
-    PdfMatrix m_pageImgTrans;
-
-    /** Text transform.
-     */
-    PdfMatrix m_textMatrix;
+    std::vector<std::string> m_keyValuesII;
 };
+
+//**********************************************************//
+//                      Inline methods                      //
+//**********************************************************//
+inline void PRStreamLayoutZone::copyVariables( const std::vector<std::string>& vecVariables,
+                                               std::string& buffer )
+{
+    for( size_t i = 0 ; i < vecVariables.size() ; i++ ) {
+        buffer += vecVariables[i];
+        buffer += " ";
+    }
+}
 
 }
 
-#endif // PDFRENDERPAGE_H
+#endif // PDFSTREAMLAYOUTZONE_H

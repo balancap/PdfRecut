@@ -18,10 +18,10 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfDocumentHandle.h"
-#include "PdfDocumentLayout.h"
-#include "PdfDocumentTools.h"
-#include "PdfRenderPage.h"
+#include "PRDocument.h"
+#include "PRDocumentLayout.h"
+#include "PRDocumentTools.h"
+#include "PRRenderPage.h"
 #include "PdfFontMetricsCache.h"
 
 #include <podofo/podofo.h>
@@ -30,7 +30,7 @@
 #include <iostream>
 #include <string>
 
-using namespace PdfeBooker;
+using namespace PdfRecut;
 using namespace PoDoFo;
 using namespace std;
 
@@ -58,11 +58,11 @@ void pageExtract( PdfDocument& doc, int page )
         doc.GetPagesTree()->DeletePage(1);
 }
 
-void splitPagesLayout( PdfDocument& doc, PdfDocumentLayout& docLayout )
+void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
 {
     PdfPage* page;
     PdfRect pageBox, mediaBox, bleedBox, artBox;
-    PdfPageZone pageZone;
+    PRPageZone pageZone;
     double delta = 20;
 
     for( int i = 0 ; i < doc.GetPageCount() ; i++ )
@@ -117,8 +117,8 @@ void splitPagesLayout( PdfDocument& doc, PdfDocumentLayout& docLayout )
 void proceedFile( QString filePath )
 {
     // Document objects.
-    PdfDocumentHandle document( 0, filePath );
-    PdfDocumentLayout docLayout;
+    PRDocument document( 0, filePath );
+    PRDocumentLayout docLayout;
 
     QTime timeTask;
     timeTask.start();
@@ -162,13 +162,14 @@ void proceedFile( QString filePath )
     //document.writePoDoFoDocument( filePath );
 
     // Render page and save.
+    PRRenderParameters renderParams;
+    renderParams.resolution = 2.0;
     QString filename;
     for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
 
-
-        PdfRenderPage renderPage( document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
-        renderPage.renderPage( 1.5 );
+        PRRenderPage renderPage( document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
+        renderPage.renderPage( renderParams );
         renderPage.saveToFile( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;

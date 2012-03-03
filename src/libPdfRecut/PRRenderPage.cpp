@@ -18,36 +18,75 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfRenderPage.h"
+#include "PRRenderPage.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>
 #include <QtGui>
 
-//#include <iostream>
-//#include <ostream>
-//#include <stack>
-//#include <algorithm>
-
-//#include <climits>
-//#include <cmath>
-
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-PdfRenderPage::PdfRenderPage( PoDoFo::PdfPage* pageIn,
+//**********************************************************//
+//                    PRRenderParameters                    //
+//**********************************************************//
+PRRenderParameters::PRRenderParameters()
+{
+    this->resolution = 1.0;
+    this->initPenBrush();
+}
+void PRRenderParameters::initPenBrush()
+{
+    // Path (normal & clipping) pens.
+    pathPB.drawPen = new QPen( Qt::magenta );
+    clippingPathPB.drawPen = new QPen( Qt::darkMagenta );
+
+    // Text filling gradient.
+    QLinearGradient textGradient( 0.0, 0.0, 0.0, 1.0 );
+    textGradient.setColorAt( 0.0, Qt::blue );
+    textGradient.setColorAt( 1.0, Qt::white );
+    textPB.fillBrush = new QBrush( textGradient );
+
+    // Space filling color.
+    textSpacePB.fillBrush = new QBrush( Qt::lightGray );
+
+    // Inline image pen color.
+    inlineImagePB.drawPen = new QPen( Qt::darkCyan );
+    inlineImagePB.fillBrush = new QBrush( Qt::cyan );
+
+    // Image pen color.
+    imagePB.drawPen = new QPen( Qt::darkRed );
+    imagePB.fillBrush = new QBrush( Qt::red );
+
+    // Form pen color.
+    formPB.drawPen = new QPen( Qt::darkGreen );
+    formPB.fillBrush = new QBrush( Qt::green );
+}
+
+//**********************************************************//
+//                       PRRenderPage                       //
+//**********************************************************//
+PRRenderPage::PRRenderPage( PoDoFo::PdfPage* pageIn,
                               PdfFontMetricsCache* fontMetricsCache ) :
-    PdfStreamAnalysis( pageIn ), m_fontMetricsCache( fontMetricsCache )
+    PRStreamAnalysis( pageIn ), m_fontMetricsCache( fontMetricsCache )
 {
     m_pageImage = NULL;
     m_pagePainter = NULL;
 
     m_document = dynamic_cast<PdfMemDocument*> ( m_page->GetObject()->GetOwner()->GetParentDocument() );
 }
-
-void PdfRenderPage::renderPage( double resolution )
+PRRenderPage::~PRRenderPage()
 {
+    delete m_pagePainter;
+    delete m_pageImage;
+}
+
+void PRRenderPage::renderPage( const PRRenderParameters & parameters )
+{
+    // Render parameters.
+    m_renderParameters = parameters;
+
     // Get crop and media boxes and set painted box.
     PdfRect mediaBox = m_page->GetMediaBox();
     PdfRect cropBox = m_page->GetCropBox();
@@ -58,8 +97,8 @@ void PdfRenderPage::renderPage( double resolution )
 
     // Create associated image.
     delete m_pageImage;
-    m_pageImage = new QImage( int( m_pageRect.GetWidth() * resolution ),
-                              int( m_pageRect.GetHeight() * resolution ),
+    m_pageImage = new QImage( int( m_pageRect.GetWidth() * parameters.resolution ),
+                              int( m_pageRect.GetHeight() * parameters.resolution ),
                               QImage::Format_RGB32 );
     m_pageImage->fill( QColor( Qt::white ).rgb() );
 
@@ -70,13 +109,10 @@ void PdfRenderPage::renderPage( double resolution )
 
     // Transform from page space to image space.
     m_pageImgTrans.init();
-    m_pageImgTrans(0,0) = resolution;
-    m_pageImgTrans(1,1) = -resolution;
-    m_pageImgTrans(2,0) = -cropBox.GetLeft() * resolution;
-    m_pageImgTrans(2,1) = (cropBox.GetBottom() + cropBox.GetHeight()) * resolution;
-
-    //m_pagePainter->setPen( Qt::blue );
-    //m_pagePainter->drawRect( -100, -100, 100, 100 );
+    m_pageImgTrans(0,0) = parameters.resolution;
+    m_pageImgTrans(1,1) = -parameters.resolution;
+    m_pageImgTrans(2,0) = -cropBox.GetLeft() * parameters.resolution;
+    m_pageImgTrans(2,1) = (cropBox.GetBottom() + cropBox.GetHeight()) * parameters.resolution;
 
     // Perform the analysis and draw.
     this->analyse();
@@ -84,29 +120,34 @@ void PdfRenderPage::renderPage( double resolution )
     m_pagePainter->end();
 }
 
-void PdfRenderPage::saveToFile( const QString& filename )
+void PRRenderPage::saveToFile( const QString& filename )
 {
     m_pageImage->save( filename );
 }
 
-void PdfRenderPage::fGeneralGState( const PdfGraphicOperator& gOperator,
-                                    const std::vector<std::string>& vecVariables,
-                                    const std::vector<PdfGraphicsState>& vecGStates ) { }
-
-void PdfRenderPage::fSpecialGState( const PdfGraphicOperator& gOperator,
-                                    const std::vector<std::string>& vecVariables,
-                                    const std::vector<PdfGraphicsState>& vecGStates ) { }
-
-void PdfRenderPage::fPathConstruction( const PdfGraphicOperator& gOperator,
-                                       const std::vector<std::string>& vecVariables,
-                                       const std::vector<PdfGraphicsState>& vecGStates,
-                                       const PdfPath& currentPath ) { }
-
-void PdfRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fGeneralGState( const PdfGraphicOperator& gOperator,
                                    const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates,
-                                   const PdfPath& currentPath )
+                                   const std::vector<PdfGraphicsState>& vecGStates ) { }
+
+void PRRenderPage::fSpecialGState( const PdfGraphicOperator& gOperator,
+                                   const std::vector<std::string>& vecVariables,
+                                   const std::vector<PdfGraphicsState>& vecGStates ) { }
+
+void PRRenderPage::fPathConstruction( const PdfGraphicOperator& gOperator,
+                                      const std::vector<std::string>& vecVariables,
+                                      const std::vector<PdfGraphicsState>& vecGStates,
+                                      const PdfPath& currentPath ) { }
+
+void PRRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
+                                  const std::vector<std::string>& vecVariables,
+                                  const std::vector<PdfGraphicsState>& vecGStates,
+                                  const PdfPath& currentPath )
 {
+    // No painting require.
+    if( !m_renderParameters.pathPB.isPainting() ) {
+        return;
+    }
+
     // Subpaths from the current path.
     std::vector<PdfSubPath> subpaths = currentPath.getSubpaths();
     bool closeSubpaths = gOperator.isClosePainting();
@@ -176,28 +217,29 @@ void PdfRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
     // Draw path.
-    if( currentPath.getClippingPathOp().length() )
-        m_pagePainter->setPen( Qt::darkMagenta );
-    else
-        m_pagePainter->setPen( Qt::magenta );
-
+    if( currentPath.getClippingPathOp().length() ) {
+        m_renderParameters.clippingPathPB.setPenBrush( m_pagePainter );
+    }
+    else {
+        m_renderParameters.pathPB.setPenBrush( m_pagePainter );
+    }
     m_pagePainter->drawPath( qCurrentPath );
 }
 
-void PdfRenderPage::fClippingPath( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fClippingPath( const PdfGraphicOperator& gOperator,
                                    const std::vector<std::string>& vecVariables,
                                    const std::vector<PdfGraphicsState>& vecGStates,
                                    const PdfPath& currentPath ) { }
 
-void PdfRenderPage::fTextObjects( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fTextObjects( const PdfGraphicOperator& gOperator,
                                   const std::vector<std::string>& vecVariables,
                                   const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fTextState( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fTextState( const PdfGraphicOperator& gOperator,
                                 const std::vector<std::string>& vecVariables,
                                 const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fTextPositioning( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fTextPositioning( const PdfGraphicOperator& gOperator,
                                       const std::vector<std::string>& vecVariables,
                                       const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -205,7 +247,7 @@ void PdfRenderPage::fTextPositioning( const PdfGraphicOperator& gOperator,
     m_textMatrix = vecGStates.back().textState.transMat;
 }
 
-void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
                                   const std::vector<std::string>& vecVariables,
                                   const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -215,6 +257,7 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
     tokenizer.GetNextVariant( variant, NULL );
 
     // Compute string width using font metrics.
+    std::vector<WordWidth> wordWidths;
     double widthStr = 0;
     PdfArray boundingBox;
     PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( vecGStates.back().textState.fontRef );
@@ -232,8 +275,7 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
         // Compute string width.
         if( variant.IsString() || variant.IsHexString() )
         {
-            //variant.GetString().GetLength()
-            widthStr = this->getStringWidth( variant.GetString(), fontMetrics,
+            this->getStringWidth( wordWidths, variant.GetString(), fontMetrics,
                                              vecGStates.back().textState.wordSpace );
         }
         else if( variant.IsArray() )
@@ -241,15 +283,14 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
             PdfArray& array = variant.GetArray();
             for( size_t i = 0 ; i < array.size() ; i++ ) {
                 if( array[i].IsString() || array[i].IsHexString() ) {
-                    widthStr += this->getStringWidth( array[i].GetString(), fontMetrics,
+                    this->getStringWidth( wordWidths, array[i].GetString(), fontMetrics,
                                                       vecGStates.back().textState.wordSpace );
-                    //widthStr -= vecGStates.back().textState.charSpace / vecGStates.back().textState.fontSize;
                 }
                 else if( array[i].IsNumber() ) {
-                    widthStr -= array[i].GetNumber() / 1000.0;
+                    wordWidths.push_back( WordWidth( -array[i].GetNumber() / 1000.0, true ) );
                 }
                 else if( array[i].IsReal() ) {
-                    widthStr -= array[i].GetReal() / 1000.0;
+                    wordWidths.push_back( WordWidth( -array[i].GetReal() / 1000.0, true ) );
                 }
             }
         }
@@ -258,7 +299,7 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
     else
     {
         // Default width: font size.
-        widthStr = 1.0;
+        wordWidths.push_back( WordWidth( 1.0, false ) );
         boundingBox.push_back( 0.0 );
         boundingBox.push_back( 0.0 );
         boundingBox.push_back( 1.0 );
@@ -266,27 +307,33 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
     }
     double heightStr = boundingBox[3].GetReal() / 1000.;
 
-//    std::cout << "CS: " << vecGStates.back().textState.charSpace << std::endl;
-//    std::cout << "WS: " << vecGStates.back().textState.wordSpace << std::endl;
-//    std::cout << "HS: " << vecGStates.back().textState.hScale << std::endl;
-//    std::cout << "FS: " << vecGStates.back().textState.fontSize << std::endl;
+    // std::cout << "CS: " << vecGStates.back().textState.charSpace << std::endl;
+    // std::cout << "WS: " << vecGStates.back().textState.wordSpace << std::endl;
+    // std::cout << "HS: " << vecGStates.back().textState.hScale << std::endl;
+    // std::cout << "FS: " << vecGStates.back().textState.fontSize << std::endl;
 
     // Compute text rendering matrix.
     PdfMatrix tmpMat, textMat;
     tmpMat(0,0) = vecGStates.back().textState.fontSize * vecGStates.back().textState.hScale / 100;
-    tmpMat(1,1) = vecGStates.back().textState.fontSize;
+    tmpMat(1,1) = vecGStates.back().textState.fontSize * heightStr;
     tmpMat(2,1) = vecGStates.back().textState.rise;
     textMat = tmpMat * m_textMatrix * vecGStates.back().transMat * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 
-    // Gradient used to draw text rectangles.
-    //m_pagePainter->setPen( Qt::blue );
-    QLinearGradient linGradient( 0.0, 0.0, 0.0, heightStr );
-    linGradient.setColorAt( 0.0, Qt::blue );
-    linGradient.setColorAt( 1.0, Qt::white );
+    // Paint words.
+    for( size_t i = 0 ; i < wordWidths.size() ; i++ )
+    {
+        // Set pen & brush
+        if( wordWidths[i].isSpace ) {
+            m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
+        } else {
+            m_renderParameters.textPB.setPenBrush( m_pagePainter );
+        }
 
-    m_pagePainter->fillRect( QRectF( 0.0, 0.0, widthStr, heightStr ), linGradient );
-    //m_pagePainter->drawRect( QRectF( 0.0, 0.0, widthStr, heightStr ) );
+        // Paint word.
+        m_pagePainter->drawRect( QRectF( widthStr, 0.0, wordWidths[i].width, 1.0 ) );
+        widthStr += wordWidths[i].width;
+    }
 
     // Update text transform matrix.
     tmpMat.init();
@@ -294,19 +341,19 @@ void PdfRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
     m_textMatrix = tmpMat * m_textMatrix;
 }
 
-void PdfRenderPage::fType3Fonts( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fType3Fonts( const PdfGraphicOperator& gOperator,
                                  const std::vector<std::string>& vecVariables,
                                  const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fColor( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fColor( const PdfGraphicOperator& gOperator,
                             const std::vector<std::string>& vecVariables,
                             const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fShadingPatterns( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fShadingPatterns( const PdfGraphicOperator& gOperator,
                                       const std::vector<std::string>& vecVariables,
                                       const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
                                    const std::vector<std::string>& vecVariables,
                                    const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -318,12 +365,12 @@ void PdfRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the inline image: corresponds to a rectangle (0,0,1,1).
-        m_pagePainter->setPen( Qt::darkCyan );
+        m_renderParameters.inlineImagePB.setPenBrush( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
 }
 
-void PdfRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
                                const std::vector<std::string>& vecVariables,
                                const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -342,7 +389,7 @@ void PdfRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
-        m_pagePainter->setPen( Qt::red );
+        m_renderParameters.imagePB.setPenBrush( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
     else if( !xobjSubtype.compare( "Form" ) )
@@ -367,7 +414,7 @@ void PdfRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
-        m_pagePainter->setPen( Qt::green );
+        m_renderParameters.formPB.setPenBrush( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( bbox[0].GetReal(),
                                           bbox[1].GetReal(),
                                           bbox[2].GetReal()-bbox[0].GetReal(),
@@ -375,38 +422,62 @@ void PdfRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PdfRenderPage::fMarkedContents( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fMarkedContents( const PdfGraphicOperator& gOperator,
                                      const std::vector<std::string>& vecVariables,
                                      const std::vector<PdfGraphicsState>& vecGStates ) { }
 
-void PdfRenderPage::fCompatibility( const PdfGraphicOperator& gOperator,
+void PRRenderPage::fCompatibility( const PdfGraphicOperator& gOperator,
                                     const std::vector<std::string>& vecVariables,
                                     const std::vector<PdfGraphicsState>& vecGStates ) { }
 
 
-double PdfRenderPage::getStringWidth( const PoDoFo::PdfString& str, PoDoFo::PdfFontMetrics* fontMetrics, double wordSpace )
+void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
+                                    const PoDoFo::PdfString& str,
+                                    PoDoFo::PdfFontMetrics* fontMetrics,
+                                    double wordSpace )
 {
     // Unicode string. Euhhhh, don't care...
     if( str.IsUnicode() ) {
-        return 0.0;
+        return;
     }
 
     double hScale = fontMetrics->GetFontScale() / 100.;
-    double width = 0;
     const char* strData = str.GetString();
+    size_t strLength = str.GetLength();
+    double charWidth;
+
+    // Init first word.
+    wordWidths.push_back( WordWidth( 0, false ) );
 
     // Compute width for each char.
-    for( size_t i = 0 ; i < str.GetLength() ; ++i) {
-        width += fontMetrics->CharWidth( strData[i] );
+    for( size_t i = 0 ; i < strLength ; ++i)
+    {
+        // Get char width.
+        charWidth = fontMetrics->CharWidth( strData[i] );
 
-        // Add wordspace if necessary.
+        // If space: create a specific word corresponding to it.
         if( strData[i] == ' ' ) {
-            width += wordSpace * hScale;
+            wordWidths.push_back( WordWidth( 0, true ) );
+            wordWidths.back().width = charWidth + wordSpace * hScale;
+            wordWidths.push_back( WordWidth( 0, false ) );
+        }
+        else {
+            // Add char length to current word.
+            wordWidths.back().width += charWidth;
         }
     }
-    return width;
+
+    // Remove empty entries.
+    std::vector<WordWidth>::iterator it;
+    for( it = wordWidths.begin() ; it != wordWidths.end() ; ) {
+        if( it->width == 0 ) {
+            it = wordWidths.erase( it );
+        }
+        else {
+            ++it;
+        }
+    }
 }
 
 }
-
 

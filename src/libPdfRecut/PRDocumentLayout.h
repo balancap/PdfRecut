@@ -27,7 +27,7 @@
 
 #include "PdfTypes.h"
 #include "PdfSemaphore.h"
-#include "PdfDocumentHandle.h"
+#include "PRDocument.h"
 #include "PdfMisc.h"
 
 namespace PoDoFo {
@@ -41,13 +41,13 @@ namespace PoDoFo {
     class PdfRect;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-class PdfPageLayout;
+class PRPageLayout;
 
 /** Pdf zone in the input document to be inserted in an output page.
  */
-struct PdfPageZone
+struct PRPageZone
 {
     /** Index of the page in which the zone is located.
      */
@@ -64,17 +64,17 @@ struct PdfPageZone
 
     /** PdfPageLayout parent pointer.
      */
-    PdfPageLayout* parent;
+    PRPageLayout* parent;
 
     /** Default constructor.
      */
-    PdfPageZone() : indexIn(0), zoneIn(),
+    PRPageZone() : indexIn(0), zoneIn(),
         leftZoneOut(0), bottomZoneOut(0), parent(NULL) {}
 };
 
 /** Layout of an output page in the redesigned document.
  */
-struct PdfPageLayout
+struct PRPageLayout
 {
     /** Index of the new page.
      */
@@ -90,15 +90,15 @@ struct PdfPageLayout
 
     /** Vector of page zones to incorporated in the new page.
      */
-    std::vector<PdfPageZone> zonesIn;
+    std::vector<PRPageZone> zonesIn;
 
     /** Default constructor.
      */
-    PdfPageLayout() : indexOut(-1), mediaBox(), cropBox(), zonesIn() {}
+    PRPageLayout() : indexOut(-1), mediaBox(), cropBox(), zonesIn() {}
 
     /** Copy constructor (change parent value in zones).
      */
-    PdfPageLayout(const PdfPageLayout& layout)
+    PRPageLayout(const PRPageLayout& layout)
     {
         this->indexOut = layout.indexOut;
         this->mediaBox = layout.mediaBox;
@@ -114,7 +114,7 @@ struct PdfPageLayout
 /** Structure containing the different parameters of a document layout
  * used when a Pdf is generated.
  */
-struct PdfLayoutParameters
+struct PRLayoutParameters
 {
     /** Rotate pages in the output document (0, 90, 180 or 270).
      */
@@ -161,7 +161,7 @@ struct PdfLayoutParameters
 
     /** Default constructor, initializing values to false.
      */
-    PdfLayoutParameters()
+    PRLayoutParameters()
     {
         pagesRotation = 0;
         zoneClippingPath = false;
@@ -176,14 +176,14 @@ struct PdfLayoutParameters
 /** A class which describes a new layout for a PdfMemDocument.
  * This class is thread-safe ( Hope so ! ).
  */
-class PdfDocumentLayout : public QObject
+class PRDocumentLayout : public QObject
 {
     Q_OBJECT
 
 public:
     /** Default constructor.
      */
-    PdfDocumentLayout( QObject* parent = 0 );
+    PRDocumentLayout( QObject* parent = 0 );
 
     /** Initialize layout to a default empty template
      */
@@ -200,7 +200,7 @@ public:
      * \param pageIndexOut Index of the page into the zone is inserted.
      * \param zoneIn Zone to insert in the new document.
      */
-    void addPageZone( int pageIndexOut, const PdfPageZone& zoneIn );
+    void addPageZone( int pageIndexOut, const PRPageZone& zoneIn );
 
     /** Set page mediaBox and cropBox.
      * Need write access on the class.
@@ -230,13 +230,13 @@ public:
      * Need write access on the class.
      * \param params Layout parameters.
      */
-    void setLayoutParameters( const PdfLayoutParameters& params );
+    void setLayoutParameters( const PRLayoutParameters& params );
 
     /** transformDocumenters used when a document is reorganized
      * Need read access on the class.
      * \return Layout parameters.
      */
-    PdfLayoutParameters getLayoutParameters() const;
+    PRLayoutParameters getLayoutParameters() const;
 
 signals:
     /** Progress signal sent by methods.
@@ -263,7 +263,7 @@ public slots:
      * \param documentHandle Document on which to apply the layout.
      * \param filename File where to save the resulting Pdf.
      */
-    void writeLayoutToPdf( PdfDocumentHandle* documentHandle,
+    void writeLayoutToPdf( PRDocument* documentHandle,
                            const QString& filename );
 
     /** Write a Pdf document with an overlay of the layout corresponding to the
@@ -273,7 +273,7 @@ public slots:
      * \param documentHandle Input document on which to print the layout.
      * \param filename File where to save the resulting Pdf.
      */
-    void writeOverlayInToPdf( PdfDocumentHandle* documentHandle,
+    void writeOverlayInToPdf( PRDocument* documentHandle,
                               const QString& filename );
 
     /** Write a Pdf document with an overlay of the layout corresponding to the
@@ -283,7 +283,7 @@ public slots:
      * \param documentHandle Output document on which to print the layout.
      * \param filename File where to save the resulting Pdf.
      */
-    void writeOverlayOutToPdf( PdfDocumentHandle* documentHandle,
+    void writeOverlayOutToPdf( PRDocument* documentHandle,
                                const QString& filename );
 public:
     /** Abort current operation. Used in a context of multithread program where
@@ -301,21 +301,21 @@ protected:
      * Need the PoDoFo mutex on the PdfDocumentHandle object.
      * \param documentHandle Object containing the PoDoFo document to modify.
      */
-    void transformDocument( PdfDocumentHandle* documentHandle ) const;
+    void transformDocument( PRDocument* documentHandle ) const;
 
     /** Print the layout on the input document.
      * Need read access on the class.
      * Need the PoDoFo mutex on the PdfDocumentHandle object.
      * \param documentHandle Document on which to print the layout.
      */
-    void printLayoutIn( PdfDocumentHandle* documentHandle ) const;
+    void printLayoutIn( PRDocument* documentHandle ) const;
 
     /** Print the layout of the output document.
      * Need read access on the class.
      * Need the PoDoFo mutex on the PdfDocumentHandle object.
      * \param documentHandle Document on which to print the layout.
      */
-    void printLayoutOut( PdfDocumentHandle* documentHandle ) const;
+    void printLayoutOut( PRDocument* documentHandle ) const;
 
     /** Copy ressources from a page and add a prefix based on zone index.
      * \param pageOut Output page where resources are copied.
@@ -334,7 +334,7 @@ protected:
      */
     void copyZoneStream( PoDoFo::PdfStream* streamOut,
                          PoDoFo::PdfPage* pageIn,
-                         const PdfPageZone& zone,
+                         const PRPageZone& zone,
                          int zoneIdx ) const;
 
     /** Remove pages and PdfObjects corresponding to contents.
@@ -351,7 +351,7 @@ protected:
      * \param origPagesNb Number of pages in the original document.
      */
     void copyOutlines( PoDoFo::PdfMemDocument* document,
-                       std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                       std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                        int origPagesNb ) const;
 
     /** Copy and modify and outline item in a document to fit the new layout.
@@ -362,7 +362,7 @@ protected:
      */
     void copyOutlineItem( PoDoFo::PdfMemDocument* document,
                           PoDoFo::PdfOutlineItem* item,
-                          std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                          std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                           int origPagesNb ) const;
 
     /** Copy and modify an action in a document to fit the new layout.
@@ -373,7 +373,7 @@ protected:
      */
     void copyAction( PoDoFo::PdfMemDocument* document,
                      PoDoFo::PdfObject* action,
-                     std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                     std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                      int origPagesNb ) const;
 
     /** Copy and modify an action in a document to fit the new layout.
@@ -384,7 +384,7 @@ protected:
      */
     void copyDestination( PoDoFo::PdfMemDocument* document,
                           PoDoFo::PdfObject* destination,
-                          std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                          std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                           int origPagesNb ) const;
 
     /** Copy and modify annotations in a document to fit the new layout.
@@ -393,7 +393,7 @@ protected:
      * \param origPagesNb Number of pages in the original document.
      */
     void copyAnnotations( PoDoFo::PdfMemDocument* document,
-                          std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                          std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                           int origPagesNb ) const;
 
     /** Copy and modify annotations in a page to fit the new layout.
@@ -404,7 +404,7 @@ protected:
      */
     void copyPageAnnotations( PoDoFo::PdfMemDocument* document,
                               int idxPageIn,
-                              std::map< PoDoFo::PdfReference, std::vector<const PdfPageZone*> >& mapPageInZones,
+                              std::map< PoDoFo::PdfReference, std::vector<const PRPageZone*> >& mapPageInZones,
                               int origPagesNb ) const;
 
     /** Copy and modify page labels in a document to fit the new layout.
@@ -412,7 +412,7 @@ protected:
      * \param vecPageInZones Pages / Zones correspondance.
      */
     void copyPageLabels( PoDoFo::PdfMemDocument* document,
-                         std::vector< std::vector<const PdfPageZone*> >& vecPageInZones ) const;
+                         std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const;
 
     /** Copy and modify a page label node in a document to fit the new layout.
      * \param document Document to modify.
@@ -422,7 +422,7 @@ protected:
      */
     std::vector<int> copyPageLabelsNode( PoDoFo::PdfMemDocument* document,
                              PoDoFo::PdfObject* node,
-                             std::vector< std::vector<const PdfPageZone*> >& vecPageInZones ) const;
+                             std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const;
 
 protected:
     /** Evaluate if a path intersects a zone.
@@ -468,11 +468,11 @@ protected:
 
     /** Vector of page layouts for the redesigned document.
      */
-    std::vector<PdfPageLayout> m_pageLayouts;
+    std::vector<PRPageLayout> m_pageLayouts;
 
     /** Parameters used when a document is reorganized.
      */
-    PdfLayoutParameters m_parameters;
+    PRLayoutParameters m_parameters;
 
     /** Prefix used when import zones.
      */
@@ -482,7 +482,7 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfDocumentLayout::setAbortOperation( bool abort )
+inline void PRDocumentLayout::setAbortOperation( bool abort )
 {
     this->m_abortOperation = abort;
 }

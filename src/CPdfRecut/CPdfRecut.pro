@@ -44,6 +44,6 @@ unix {
     INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
 
     LIBS += -L$$PWD/../../../PoDoFo/linux64/lib64
-    LIBS +=  -lpodofo -lfreetype -lfontconfig -ljpeg -lz
+    LIBS +=  -lpodofod -lfreetype -lfontconfig -ljpeg -lz
     LIBS +=  -lpoppler-qt4
 }

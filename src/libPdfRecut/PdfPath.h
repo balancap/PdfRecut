@@ -26,7 +26,7 @@
 
 #include "podofo/base/PdfRect.h"
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 struct PdfSubPath
 {

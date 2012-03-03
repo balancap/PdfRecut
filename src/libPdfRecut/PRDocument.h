@@ -32,12 +32,12 @@ namespace Poppler {
     class Document;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Class that handles Pdf document objects from PoDoFo and Poppler libraries.
  * Also has two mutex for these objects.
  */
-class PdfDocumentHandle : public QObject
+class PRDocument : public QObject
 {
     Q_OBJECT
 
@@ -45,11 +45,11 @@ public:
     /** Default constructor: initialize pointers and filename.
      * \param filename Filename of the Pdf document.
      */
-    PdfDocumentHandle( QObject* parent = 0, const QString& filename = "" );
+    PRDocument( QObject* parent = 0, const QString& filename = "" );
 
     /** Destructor: delete PoDoFo and Poppler document objects.
      */
-    ~PdfDocumentHandle();
+    ~PRDocument();
 
 signals:
     /** Progress signal sent by methods.
@@ -137,8 +137,8 @@ public:
 
 private:
     // No copy constructor and operator= allowed.
-    PdfDocumentHandle( const PdfDocumentHandle& );
-    PdfDocumentHandle& operator=( const PdfDocumentHandle& );
+    PRDocument( const PRDocument& );
+    PRDocument& operator=( const PRDocument& );
 
 private:
     /** Document filename.
@@ -165,34 +165,34 @@ private:
 //************************************************************//
 //                      Inline functions                      //
 //************************************************************//
-inline bool PdfDocumentHandle::isPoDoFoDocumentLoaded() const
+inline bool PRDocument::isPoDoFoDocumentLoaded() const
 {
     return ( m_podofoDocument != NULL );
 }
-inline bool PdfDocumentHandle::isPopplerDocumentLoaded() const
+inline bool PRDocument::isPopplerDocumentLoaded() const
 {
     return ( m_popplerDocument != NULL );
 }
 
-inline PoDoFo::PdfMemDocument* PdfDocumentHandle::getPoDoFoDocument() const
+inline PoDoFo::PdfMemDocument* PRDocument::getPoDoFoDocument() const
 {
     return m_podofoDocument;
 }
-inline Poppler::Document* PdfDocumentHandle::getPopplerDocument() const
+inline Poppler::Document* PRDocument::getPopplerDocument() const
 {
     return m_popplerDocument;
 }
 
-inline QMutex* PdfDocumentHandle::getPoDoFoMutex()
+inline QMutex* PRDocument::getPoDoFoMutex()
 {
     return &m_podofoMutex;
 }
-inline QMutex* PdfDocumentHandle::getPopplerMutex()
+inline QMutex* PRDocument::getPopplerMutex()
 {
     return &m_popplerMutex;
 }
 
-inline QString PdfDocumentHandle::getFilename() const
+inline QString PRDocument::getFilename() const
 {
     return m_filename;
 }

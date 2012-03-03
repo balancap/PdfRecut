@@ -23,7 +23,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 //**********************************************************//
 //                   PdfSubPath functions                   //

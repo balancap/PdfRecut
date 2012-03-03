@@ -18,29 +18,29 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfDocumentHandle.h"
-#include "PdfDocException.h"
+#include "PRDocument.h"
+#include "PRException.h"
 
 #include <QtCore>
 #include <poppler/qt4/poppler-qt4.h>
 #include <podofo/podofo.h>
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-PdfDocumentHandle::PdfDocumentHandle( QObject* parent, const QString& filename ) :
+PRDocument::PRDocument( QObject* parent, const QString& filename ) :
     QObject( parent )
 {
     m_filename = filename;
     m_podofoDocument = NULL;
     m_popplerDocument = NULL;
 }
-PdfDocumentHandle::~PdfDocumentHandle()
+PRDocument::~PRDocument()
 {
     delete m_podofoDocument;
     delete m_popplerDocument;
 }
 
-void PdfDocumentHandle::loadDocuments( bool loadPoDoFo, bool loadPoppler )
+void PRDocument::loadDocuments( bool loadPoDoFo, bool loadPoppler )
 {
     QString methodTitle = tr( "Load Pdf Document." );
 
@@ -51,7 +51,7 @@ void PdfDocumentHandle::loadDocuments( bool loadPoDoFo, bool loadPoppler )
         try {
             this->loadPoDoFoDocument();
         }
-        catch( const PdfDocException& error ) {
+        catch( const PRException& error ) {
             emit methodError( "PoDoFo document load error.",
                               error.getDescription() );
             return;
@@ -68,7 +68,7 @@ void PdfDocumentHandle::loadDocuments( bool loadPoDoFo, bool loadPoppler )
         try {
             this->loadPopplerDocument();
         }
-        catch( const PdfDocException& error ) {
+        catch( const PRException& error ) {
             emit methodError( "Poppler document load error.",
                               error.getDescription() );
             return;
@@ -76,7 +76,7 @@ void PdfDocumentHandle::loadDocuments( bool loadPoDoFo, bool loadPoppler )
     }
     emit methodProgress( methodTitle, 1.0 );
 }
-PoDoFo::PdfMemDocument* PdfDocumentHandle::loadPoDoFoDocument()
+PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
 {
     // Not null pointer: free current document before loading.
     if( m_podofoDocument ) {
@@ -97,11 +97,11 @@ PoDoFo::PdfMemDocument* PdfDocumentHandle::loadPoDoFoDocument()
         m_podofoDocument = NULL;
 
         // Throw exception...
-        throw PdfDocException( error );
+        throw PRException( error );
     }
     return m_podofoDocument;
 }
-Poppler::Document* PdfDocumentHandle::loadPopplerDocument()
+Poppler::Document* PRDocument::loadPopplerDocument()
 {
     // Not null pointer: free current document before loading.
     if( m_popplerDocument ) {
@@ -118,17 +118,17 @@ Poppler::Document* PdfDocumentHandle::loadPopplerDocument()
         m_popplerDocument = NULL;
 
         // Throw exception...
-        throw PdfDocException( ePdfDocE_Poppler,
+        throw PRException( ePdfDocE_Poppler,
               tr( "Poppler library can not load file" ) );
     }
     return m_popplerDocument;
 }
 
-void PdfDocumentHandle::writePoDoFoDocument( const QString& filename )
+void PRDocument::writePoDoFoDocument( const QString& filename )
 {
     // No document loaded.
     if( !m_podofoDocument ) {
-        throw PdfDocException( ePdfDocE_PoDoFo,
+        throw PRException( ePdfDocE_PoDoFo,
               tr( "Can not write PoDoFo document: no file loaded." ) );
         return;
     }
@@ -152,11 +152,11 @@ void PdfDocumentHandle::writePoDoFoDocument( const QString& filename )
     catch( const PoDoFo::PdfError& error )
     {
         // Throw exception...
-        throw PdfDocException( error );
+        throw PRException( error );
     }
 }
 
-void PdfDocumentHandle::freePoDoFoDocument()
+void PRDocument::freePoDoFoDocument()
 {
     // Get mutex and then free.
     QMutexLocker locker( &m_podofoMutex );
@@ -164,7 +164,7 @@ void PdfDocumentHandle::freePoDoFoDocument()
     delete m_podofoDocument;
     m_podofoDocument = NULL;
 }
-void PdfDocumentHandle::freePopplerDocument()
+void PRDocument::freePopplerDocument()
 {
     // Get mutex and then free.
     QMutexLocker locker( &m_popplerMutex );
@@ -173,7 +173,7 @@ void PdfDocumentHandle::freePopplerDocument()
     m_popplerDocument = NULL;
 }
 
-void PdfDocumentHandle::setFilename( const QString& filename )
+void PRDocument::setFilename( const QString& filename )
 {
     // Free PoDoFo and Poppler documents.
     this->freePoDoFoDocument();

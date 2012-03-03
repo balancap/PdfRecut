@@ -18,37 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCUMENTTOOLS_H
-#define PDFDOCUMENTTOOLS_H
+#include "PRDocumentStructure.h"
 
-#include "PdfDocumentHandle.h"
+namespace PdfRecut {
 
-namespace PdfeBooker {
-
-/** A class which contains static functions operating on PdfDocument.
- */
-class PdfDocumentTools
+PRDocumentStructure::PRDocumentStructure( QObject* parent ) :
+    QObject( parent )
 {
-public:
-    /** Add a graphic state stack on every page in order to
-     * have the initial graphic state when operators are appended.
-     * Need the PoDoFo mutex on the PdfDocumentHandle object.
-     * \param document Document to modify.
-     */
-    static void addGraphicStateStack( PdfDocumentHandle* documentHandle );
-
-    /** Uncompress streams in a PdfMemDocument.
-     * Need the PoDoFo mutex on the PdfDocumentHandle object.
-     * \param document Document to uncompress.
-     */
-    static void uncompressStreams( PdfDocumentHandle* documentHandle );
-
-private:
-    /** Default constructor, private.
-     */
-    PdfDocumentTools() { }
-};
-
 }
 
-#endif // PDFDOCUMENTTOOLS_H
+}

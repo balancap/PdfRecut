@@ -24,23 +24,23 @@
 #include <QtCore/QObject>
 #include <poppler/qt4/poppler-qt4.h>
 
-#include "PdfDocumentLayout.h"
+#include "PRDocumentLayout.h"
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Class which represents the structure of a Pdf document:
  * body, headers, footers, margins, ...
  * This class is virtual and has to be implemented to support a particular
  * document structure (two sided book, two columns article, ...).
  */
-class PdfDocumentStructure : public QObject
+class PRDocumentStructure : public QObject
 {
     Q_OBJECT
 
 public:
     /** Default constructor... Not a big deal.
      */
-    PdfDocumentStructure( QObject* parent = 0 );
+    PRDocumentStructure( QObject* parent = 0 );
 
     /** Abort current operation. Used in a context of multithread program where
      * slots are executed on another thread.
@@ -52,12 +52,12 @@ public slots:
     /** Analyse structure of a Pdf document.
      * \param documentHandle Document to analyse.
      */
-    virtual void analyseDocument( PdfDocumentHandle* documentHandle ) = 0;
+    virtual void analyseDocument( PRDocument* documentHandle ) = 0;
 
     /** Generate a document layout based on the document structure.
      * \param layout Layout to overwrite.
      */
-    virtual void generateLayout( PdfDocumentLayout* layout ) = 0;
+    virtual void generateLayout( PRDocumentLayout* layout ) = 0;
 
 protected:
     /** Boolean used to indicate if a current operation should be aborted.
@@ -68,7 +68,7 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfDocumentStructure::setAbortOperation( bool abort )
+inline void PRDocumentStructure::setAbortOperation( bool abort )
 {
     this->m_abortOperation = abort;
 }

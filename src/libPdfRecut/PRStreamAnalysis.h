@@ -28,17 +28,17 @@ namespace PoDoFo {
     class PdfPage;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Basic class used to analysis the contents of a page's streams.
  */
-class PdfStreamAnalysis
+class PRStreamAnalysis
 {
 public:
     /** Default constructor, with a page assigned.
      * \param page  PoDoFo page to be analysed.
      */
-    PdfStreamAnalysis( PoDoFo::PdfPage* page );
+    PRStreamAnalysis( PoDoFo::PdfPage* page );
 
     /** Analysing the content streams of the page.
      */
@@ -137,7 +137,7 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfStreamAnalysis::readValue( const std::string& str, int& value )
+inline void PRStreamAnalysis::readValue( const std::string& str, int& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();
@@ -149,7 +149,7 @@ inline void PdfStreamAnalysis::readValue( const std::string& str, int& value )
         PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, str.c_str() );
     }
 }
-inline void PdfStreamAnalysis::readValue( const std::string& str, double& value )
+inline void PRStreamAnalysis::readValue( const std::string& str, double& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();

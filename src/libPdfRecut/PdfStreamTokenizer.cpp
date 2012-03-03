@@ -39,7 +39,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 PdfStreamTokenizer::PdfStreamTokenizer( PdfCanvas* pCanvas )
     : PdfTokenizer(), m_readingInlineImgData(false)

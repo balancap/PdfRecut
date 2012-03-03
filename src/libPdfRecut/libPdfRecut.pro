@@ -13,29 +13,24 @@ DEFINES += LIBPDFRECUT_LIBRARY
 
 SOURCES += \
     PdfStreamTokenizer.cpp \
-    PdfStreamLayoutZone.cpp \
-    PdfStreamAnalysis.cpp \
-    PdfRenderPage.cpp \
     PdfPath.cpp \
     PdfGraphicsState.cpp \
     PdfFontMetricsType3.cpp \
     PdfFontMetricsCache.cpp \
     PdfFontMetrics14.cpp \
-    PdfDocumentTools.cpp \
-    PdfDocumentStructure.cpp \
-    PdfDocumentLayout.cpp \
-    PdfDocumentHandle.cpp \
-    PdfDocException.cpp \
-    PDSTwoColumns.cpp \
-    PDSBook.cpp
+    PRDocument.cpp \
+    PRException.cpp \
+    PRDocumentLayout.cpp \
+    PRDocumentStructure.cpp \
+    PRDocumentTools.cpp \
+    PRStreamAnalysis.cpp \
+    PRStreamLayoutZone.cpp \
+    PRRenderPage.cpp
 
 HEADERS +=\
     PdfTypes.h \
     PdfStreamTokenizer.h \
-    PdfStreamLayoutZone.h \
-    PdfStreamAnalysis.h \
     PdfSemaphore.h \
-    PdfRenderPage.h \
     PdfPath.h \
     PdfMisc.h \
     PdfGraphicsState.h \
@@ -43,13 +38,14 @@ HEADERS +=\
     PdfFontMetricsType3.h \
     PdfFontMetricsCache.h \
     PdfFontMetrics14.h \
-    PdfDocumentTools.h \
-    PdfDocumentStructure.h \
-    PdfDocumentLayout.h \
-    PdfDocumentHandle.h \
-    PdfDocException.h \
-    PDSTwoColumns.h \
-    PDSBook.h
+    PRDocument.h \
+    PRException.h \
+    PRDocumentLayout.h \
+    PRDocumentStructure.h \
+    PRDocumentTools.h \
+    PRRenderPage.h \
+    PRStreamAnalysis.h \
+    PRStreamLayoutZone.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

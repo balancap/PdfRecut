@@ -18,16 +18,16 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfStreamAnalysis.h"
+#include "PRStreamAnalysis.h"
 #include "PdfStreamTokenizer.h"
 
 #include "podofo/podofo.h"
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-PdfStreamAnalysis::PdfStreamAnalysis( PoDoFo::PdfPage* page )
+PRStreamAnalysis::PRStreamAnalysis( PoDoFo::PdfPage* page )
 {
     // Set page analysed.
     m_page = page;
@@ -36,7 +36,7 @@ PdfStreamAnalysis::PdfStreamAnalysis( PoDoFo::PdfPage* page )
     PdfLocaleImbue( m_iStrStream );
 }
 
-void PdfStreamAnalysis::analyse()
+void PRStreamAnalysis::analyse()
 {
     //Stream tokenizer and associated variables.
     PdfStreamTokenizer tokenizer( m_page );

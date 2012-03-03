@@ -27,7 +27,7 @@
 #include <string>
 #include <exception>
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Error Code defines which are used in PdfDocException to describe
  * the exception type.
@@ -42,34 +42,34 @@ enum EPdfDocException {
 /** Class that handle errors during threatment on Pdf document.
  * Error code and description can be provided to an exception.
  */
-class PdfDocException : public std::exception
+class PRException : public std::exception
 {
 public:
     /** Default constructor
      * \param code Error code.
      * \param description String describing the error.
      */
-    PdfDocException( const EPdfDocException& code = ePdfDocE_ErrOK,
+    PRException( const EPdfDocException& code = ePdfDocE_ErrOK,
                      const QString& description = "" ) throw();
 
     /** Constructor based on a PoDoFo error.
      * \param error PoDoFo exception error.
      */
-    PdfDocException( const PoDoFo::PdfError& error ) throw();
+    PRException( const PoDoFo::PdfError& error ) throw();
 
     /** Copy constructor.
      * \param exception Exception object to copy.
      */
-    PdfDocException( const PdfDocException& exception ) throw();
+    PRException( const PRException& exception ) throw();
 
     /** Operator=.
      * \param exception Exception object to copy.
      */
-    PdfDocException& operator=( const PdfDocException& exception ) throw();
+    PRException& operator=( const PRException& exception ) throw();
 
     /** Destructor.
      */
-    virtual ~PdfDocException() throw();
+    virtual ~PRException() throw();
 
     /** Obtain exception code.
      * \return Error code.

@@ -25,7 +25,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 //**********************************************************//
 //                      Pdf Text State                      //

@@ -23,7 +23,7 @@
 
 #include <cstring>
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Pdf graphic operators categories, as defined in Pdf reference 1.7.
  */

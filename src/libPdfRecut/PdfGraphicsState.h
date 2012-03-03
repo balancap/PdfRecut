@@ -29,7 +29,7 @@ namespace PoDoFo {
     class PdfPage;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Structure describing a text state in a Pdf stream.
  */

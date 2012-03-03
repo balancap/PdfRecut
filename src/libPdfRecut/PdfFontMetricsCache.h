@@ -29,7 +29,7 @@ namespace PoDoFo {
     class PdfFontMetrics;
 }
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 /** Simple structure which represents a pointer to
  * a PdfFontMetrics object.

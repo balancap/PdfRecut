@@ -19,20 +19,20 @@
  ***************************************************************************/
 
 #include <podofo/podofo.h>
-#include "PdfStreamLayoutZone.h"
+#include "PRStreamLayoutZone.h"
 
 #define BUFFER_SIZE 4096
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-PdfStreamLayoutZone::PdfStreamLayoutZone( PoDoFo::PdfPage* pageIn,
+PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                                           PoDoFo::PdfStream* streamOut,
-                                          const PdfPageZone& zone,
-                                          const PdfLayoutParameters& parameters,
+                                          const PRPageZone& zone,
+                                          const PRLayoutParameters& parameters,
                                           const std::string& resPrefix ) :
-    PdfStreamAnalysis( pageIn ), m_zone ( zone ),
+    PRStreamAnalysis( pageIn ), m_zone ( zone ),
     m_resPrefix ( resPrefix ), m_parameters( parameters )
 {
     // Downcasting to PdfMemStream pointer.resource
@@ -41,7 +41,7 @@ PdfStreamLayoutZone::PdfStreamLayoutZone( PoDoFo::PdfPage* pageIn,
     m_bufString.reserve( BUFFER_SIZE );
 }
 
-void PdfStreamLayoutZone::generateStream()
+void PRStreamLayoutZone::generateStream()
 {
     // Zone Out coordinates and transformation.
     PdfMatrix zoneOutTrMatrix;
@@ -86,7 +86,7 @@ void PdfStreamLayoutZone::generateStream()
     //std::cout << bufs.str() << std::endl;
 }
 
-void PdfStreamLayoutZone::fGeneralGState( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fGeneralGState( const PdfGraphicOperator& gOperator,
                                           const std::vector<std::string>& vecVariables,
                                           const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -109,7 +109,7 @@ void PdfStreamLayoutZone::fGeneralGState( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fSpecialGState( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fSpecialGState( const PdfGraphicOperator& gOperator,
                                           const std::vector<std::string>& vecVariables,
                                           const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -122,7 +122,7 @@ void PdfStreamLayoutZone::fSpecialGState( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fPathConstruction( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fPathConstruction( const PdfGraphicOperator& gOperator,
                                              const std::vector<std::string>& vecVariables,
                                              const std::vector<PdfGraphicsState>& vecGStates,
                                              const PdfPath& currentPath )
@@ -130,7 +130,7 @@ void PdfStreamLayoutZone::fPathConstruction( const PdfGraphicOperator& gOperator
     // Everything is done in painting function !
 }
 
-void PdfStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
                                          const std::vector<std::string>& vecVariables,
                                          const std::vector<PdfGraphicsState>& vecGStates,
                                          const PdfPath& currentPath )
@@ -244,14 +244,14 @@ void PdfStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PdfStreamLayoutZone::fClippingPath( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fClippingPath( const PdfGraphicOperator& gOperator,
                                          const std::vector<std::string>& vecVariables,
                                          const std::vector<PdfGraphicsState>& vecGStates,
                                          const PdfPath& currentPath )
 {
 }
 
-void PdfStreamLayoutZone::fTextObjects( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fTextObjects( const PdfGraphicOperator& gOperator,
                                         const std::vector<std::string>& vecVariables,
                                         const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -261,7 +261,7 @@ void PdfStreamLayoutZone::fTextObjects( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fTextState( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fTextState( const PdfGraphicOperator& gOperator,
                                       const std::vector<std::string>& vecVariables,
                                       const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -284,7 +284,7 @@ void PdfStreamLayoutZone::fTextState( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fTextPositioning( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fTextPositioning( const PdfGraphicOperator& gOperator,
                                             const std::vector<std::string>& vecVariables,
                                             const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -296,7 +296,7 @@ void PdfStreamLayoutZone::fTextPositioning( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fTextShowing( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fTextShowing( const PdfGraphicOperator& gOperator,
                                         const std::vector<std::string>& vecVariables,
                                         const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -327,7 +327,7 @@ void PdfStreamLayoutZone::fTextShowing( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PdfStreamLayoutZone::fType3Fonts( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fType3Fonts( const PdfGraphicOperator& gOperator,
                                        const std::vector<std::string>& vecVariables,
                                        const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -340,7 +340,7 @@ void PdfStreamLayoutZone::fType3Fonts( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fColor( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fColor( const PdfGraphicOperator& gOperator,
                                   const std::vector<std::string>& vecVariables,
                                   const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -382,7 +382,7 @@ void PdfStreamLayoutZone::fColor( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufString );
 }
 
-void PdfStreamLayoutZone::fShadingPatterns( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fShadingPatterns( const PdfGraphicOperator& gOperator,
                                             const std::vector<std::string>& vecVariables,
                                             const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -398,7 +398,7 @@ void PdfStreamLayoutZone::fShadingPatterns( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PdfStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
                                          const std::vector<std::string>& vecVariables,
                                          const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -432,7 +432,7 @@ void PdfStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PdfStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
                                      const std::vector<std::string>& vecVariables,
                                      const std::vector<PdfGraphicsState>& vecGStates )
 {
@@ -506,14 +506,14 @@ void PdfStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PdfStreamLayoutZone::fMarkedContents( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fMarkedContents( const PdfGraphicOperator& gOperator,
                                            const std::vector<std::string>& vecVariables,
                                            const std::vector<PdfGraphicsState>& vecGStates )
 {
     // Vous dîtes ?
 }
 
-void PdfStreamLayoutZone::fCompatibility( const PdfGraphicOperator& gOperator,
+void PRStreamLayoutZone::fCompatibility( const PdfGraphicOperator& gOperator,
                                           const std::vector<std::string>& vecVariables,
                                           const std::vector<PdfGraphicsState>& vecGStates )
 {

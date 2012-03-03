@@ -25,7 +25,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
 PdfFontMetricsCache::PdfFontMetricsCache( PoDoFo::PdfMemDocument* document ):
     m_document( document )

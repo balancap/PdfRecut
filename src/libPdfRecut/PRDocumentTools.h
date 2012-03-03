@@ -18,21 +18,37 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PDSTwoColumns.h"
+#ifndef PDFDOCUMENTTOOLS_H
+#define PDFDOCUMENTTOOLS_H
 
-namespace PdfeBooker {
+#include "PRDocument.h"
 
-PDSTwoColumns::PDSTwoColumns( QObject* parent ) :
-    PdfDocumentStructure( parent )
+namespace PdfRecut {
+
+/** A class which contains static functions operating on PdfDocument.
+ */
+class PRDocumentTools
 {
+public:
+    /** Add a graphic state stack on every page in order to
+     * have the initial graphic state when operators are appended.
+     * Need the PoDoFo mutex on the PdfDocumentHandle object.
+     * \param document Document to modify.
+     */
+    static void addGraphicStateStack( PRDocument* documentHandle );
+
+    /** Uncompress streams in a PdfMemDocument.
+     * Need the PoDoFo mutex on the PdfDocumentHandle object.
+     * \param document Document to uncompress.
+     */
+    static void uncompressStreams( PRDocument* documentHandle );
+
+private:
+    /** Default constructor, private.
+     */
+    PRDocumentTools() { }
+};
+
 }
 
-void PDSTwoColumns::analyseDocument( PdfDocumentHandle* documentHandle )
-{
-}
-
-void PDSTwoColumns::generateLayout( PdfDocumentLayout* layout )
-{
-}
-
-}
+#endif // PDFDOCUMENTTOOLS_H

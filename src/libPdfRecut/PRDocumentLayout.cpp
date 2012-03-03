@@ -18,9 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfDocumentLayout.h"
-#include "PdfDocException.h"
-#include "PdfStreamLayoutZone.h"
+#include "PRDocumentLayout.h"
+#include "PRException.h"
+#include "PRStreamLayoutZone.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>
@@ -35,25 +35,25 @@
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-std::string PdfDocumentLayout::zonePrefix( "ZP" );
+std::string PRDocumentLayout::zonePrefix( "ZP" );
 
 //**********************************************************//
 //                      Public methods                      //
 //**********************************************************//
-PdfDocumentLayout::PdfDocumentLayout( QObject* parent ) :
+PRDocumentLayout::PRDocumentLayout( QObject* parent ) :
     QObject( parent ), m_abortOperation( false ), m_pageLayouts()
 {
 }
 
-void PdfDocumentLayout::init()
+void PRDocumentLayout::init()
 {
     m_pageLayouts.clear();
     m_abortOperation = false;
 }
 
-void PdfDocumentLayout::addPages( int nbPages )
+void PRDocumentLayout::addPages( int nbPages )
 {
     if( nbPages > 0 )
     {
@@ -68,7 +68,7 @@ void PdfDocumentLayout::addPages( int nbPages )
     }
 }
 
-void PdfDocumentLayout::addPageZone( int pageIndexOut, const PdfPageZone& zoneIn )
+void PRDocumentLayout::addPageZone( int pageIndexOut, const PRPageZone& zoneIn )
 {
     // Resize the vector of pages (if necessary).
     this->addPages( pageIndexOut+1 - m_pageLayouts.size() );
@@ -81,7 +81,7 @@ void PdfDocumentLayout::addPageZone( int pageIndexOut, const PdfPageZone& zoneIn
     m_pageLayouts[pageIndexOut].zonesIn.back().parent = & (m_pageLayouts[pageIndexOut] );
 }
 
-void PdfDocumentLayout::setPageBoxes( int pageIndexOut,
+void PRDocumentLayout::setPageBoxes( int pageIndexOut,
                                       const PoDoFo::PdfRect& mediaBox,
                                       const PoDoFo::PdfRect& cropBox )
 {
@@ -103,21 +103,21 @@ void PdfDocumentLayout::setPageBoxes( int pageIndexOut,
     }
 }
 
-PoDoFo::PdfRect PdfDocumentLayout::getPageMediaBox( int pageIndexOut ) const
+PoDoFo::PdfRect PRDocumentLayout::getPageMediaBox( int pageIndexOut ) const
 {
     if( pageIndexOut >= int(m_pageLayouts.size()) )
         PODOFO_RAISE_ERROR( ePdfError_ValueOutOfRange );
     return m_pageLayouts[pageIndexOut].mediaBox;
 }
 
-PoDoFo::PdfRect PdfDocumentLayout::getPageCropBox( int pageIndexOut ) const
+PoDoFo::PdfRect PRDocumentLayout::getPageCropBox( int pageIndexOut ) const
 {
     if( pageIndexOut >= int(m_pageLayouts.size()) )
         PODOFO_RAISE_ERROR( ePdfError_ValueOutOfRange );
     return m_pageLayouts[pageIndexOut].cropBox;
 }
 
-void PdfDocumentLayout::setLayoutParameters( const PdfLayoutParameters& params )
+void PRDocumentLayout::setLayoutParameters( const PRLayoutParameters& params )
 {
     // Write Locker semaphore needed.
     PdfSemaphoreWriteLocker writeLocker( &m_semaphore );
@@ -125,7 +125,7 @@ void PdfDocumentLayout::setLayoutParameters( const PdfLayoutParameters& params )
     m_parameters = params;
 }
 
-PdfLayoutParameters PdfDocumentLayout::getLayoutParameters() const
+PRLayoutParameters PRDocumentLayout::getLayoutParameters() const
 {
     // Read Locker semaphore needed.
     PdfSemaphoreReadLocker readLocker( const_cast<PdfClassSemaphore*> (&m_semaphore) );
@@ -136,7 +136,7 @@ PdfLayoutParameters PdfDocumentLayout::getLayoutParameters() const
 //************************************************************//
 //                        Public slots                        //
 //************************************************************//
-void PdfDocumentLayout::writeLayoutToPdf( PdfDocumentHandle* documentHandle,
+void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
                                           const QString& filename )
 {
     // Read Locker semaphore needed.
@@ -166,7 +166,7 @@ void PdfDocumentLayout::writeLayoutToPdf( PdfDocumentHandle* documentHandle,
         // Export done.
         emit methodProgress( "", 2.0 );
     }
-    catch( const PdfDocException& error )
+    catch( const PRException& error )
     {
         // Restore original document.
         documentHandle->loadPoDoFoDocument();
@@ -176,7 +176,7 @@ void PdfDocumentLayout::writeLayoutToPdf( PdfDocumentHandle* documentHandle,
     }
 }
 
-void PdfDocumentLayout::writeOverlayInToPdf( PdfDocumentHandle* documentHandle,
+void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
                                              const QString& filename )
 {
     // Read Locker semaphore needed.
@@ -206,7 +206,7 @@ void PdfDocumentLayout::writeOverlayInToPdf( PdfDocumentHandle* documentHandle,
         // Export done.
         emit methodProgress( "", 2.0 );
     }
-    catch( const PdfDocException& error )
+    catch( const PRException& error )
     {
         // Restore original document.
         documentHandle->loadPoDoFoDocument();
@@ -216,7 +216,7 @@ void PdfDocumentLayout::writeOverlayInToPdf( PdfDocumentHandle* documentHandle,
     }
 }
 
-void PdfDocumentLayout::writeOverlayOutToPdf( PdfDocumentHandle* documentHandle,
+void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
                                               const QString& filename )
 {
     // Read Locker semaphore needed.
@@ -246,7 +246,7 @@ void PdfDocumentLayout::writeOverlayOutToPdf( PdfDocumentHandle* documentHandle,
         // Export done.
         emit methodProgress( "", 2.0 );
     }
-    catch( const PdfDocException& error )
+    catch( const PRException& error )
     {
         // Restore original document.
         documentHandle->loadPoDoFoDocument();
@@ -259,15 +259,15 @@ void PdfDocumentLayout::writeOverlayOutToPdf( PdfDocumentHandle* documentHandle,
 //*************************************************************//
 //                      Protected methods                      //
 //*************************************************************//
-void PdfDocumentLayout::transformDocument( PdfDocumentHandle* documentHandle ) const
+void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
     PdfMemDocument* document = documentHandle->getPoDoFoDocument();
     QString methodTitle = tr( "Reorganize Pdf document." );
 
     // Construct vector and map which reference zones for each page in the input document.
-    std::vector< std::vector<const PdfPageZone*> > vecPageInZones( document->GetPageCount() );
-    std::map<PdfReference, std::vector<const PdfPageZone*> > mapPageInZones;
+    std::vector< std::vector<const PRPageZone*> > vecPageInZones( document->GetPageCount() );
+    std::map<PdfReference, std::vector<const PRPageZone*> > mapPageInZones;
     for(size_t idx = 0 ; idx < m_pageLayouts.size() ; idx++)
     {
         for(size_t i = 0 ; i < m_pageLayouts[idx].zonesIn.size() ; i++)
@@ -310,7 +310,7 @@ void PdfDocumentLayout::transformDocument( PdfDocumentHandle* documentHandle ) c
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PdfDocException( ePdfDocE_Abort, methodTitle );
+                throw PRException( ePdfDocE_Abort, methodTitle );
             }
 
             // Create a stream which corresponds to the current zone.
@@ -336,7 +336,7 @@ void PdfDocumentLayout::transformDocument( PdfDocumentHandle* documentHandle ) c
                 std::string prefixStr = prefix.str();
 
                 // Obtain stream which corresponds to zone.
-                PdfStreamLayoutZone streamLayout( pageIn,
+                PRStreamLayoutZone streamLayout( pageIn,
                                                   streamObj->GetStream(),
                                                   m_pageLayouts[idx].zonesIn[i],
                                                   m_parameters,
@@ -378,7 +378,7 @@ void PdfDocumentLayout::transformDocument( PdfDocumentHandle* documentHandle ) c
     }
 }
 
-void PdfDocumentLayout::printLayoutIn( PdfDocumentHandle* documentHandle ) const
+void PRDocumentLayout::printLayoutIn( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
     PdfMemDocument* document = documentHandle->getPoDoFoDocument();
@@ -418,10 +418,10 @@ void PdfDocumentLayout::printLayoutIn( PdfDocumentHandle* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PdfDocException( ePdfDocE_Abort, methodTitle );
+                throw PRException( ePdfDocE_Abort, methodTitle );
             }
 
-            const PdfPageZone& zone = m_pageLayouts[idx].zonesIn[i];
+            const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
             pPage = document->GetPage( zone.indexIn );
 
             // Set painter
@@ -450,7 +450,7 @@ void PdfDocumentLayout::printLayoutIn( PdfDocumentHandle* documentHandle ) const
     emit methodProgress( methodTitle, 1.0 );
 }
 
-void PdfDocumentLayout::printLayoutOut( PdfDocumentHandle* documentHandle ) const
+void PRDocumentLayout::printLayoutOut( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
     PdfMemDocument* document = documentHandle->getPoDoFoDocument();
@@ -510,10 +510,10 @@ void PdfDocumentLayout::printLayoutOut( PdfDocumentHandle* documentHandle ) cons
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PdfDocException( ePdfDocE_Abort, methodTitle );
+                throw PRException( ePdfDocE_Abort, methodTitle );
             }
 
-            const PdfPageZone& zone = m_pageLayouts[idx].zonesIn[i];
+            const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
             streamIdx.str("");
             streamIdx << (zone.indexIn + 1);
 
@@ -536,7 +536,7 @@ void PdfDocumentLayout::printLayoutOut( PdfDocumentHandle* documentHandle ) cons
     emit methodProgress( methodTitle, 1.0 );
 }
 
-void PdfDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
+void PRDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
                                             PoDoFo::PdfPage* pageIn,
                                             int zoneIdx ) const
 {
@@ -586,7 +586,7 @@ void PdfDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
     }
 }
 
-void PdfDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
+void PRDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
                                                 int firstPage, int nbPages ) const
 {
     QString methodTitle = tr( "Delete old pages and content." );
@@ -638,7 +638,7 @@ void PdfDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PdfDocException( ePdfDocE_Abort, methodTitle );
+            throw PRException( ePdfDocE_Abort, methodTitle );
         }
 
         document->GetObjects().RemoveObject( vecObjects[i]->Reference() );
@@ -649,8 +649,8 @@ void PdfDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document
     emit methodProgress( methodTitle, 1.0 );
 }
 
-void PdfDocumentLayout::copyOutlines( PoDoFo::PdfMemDocument* document,
-                                      std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+void PRDocumentLayout::copyOutlines( PoDoFo::PdfMemDocument* document,
+                                      std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                       int origPagesNb ) const
 {
     // Recursively modify outlines.
@@ -663,14 +663,14 @@ void PdfDocumentLayout::copyOutlines( PoDoFo::PdfMemDocument* document,
     }
 }
 
-void PdfDocumentLayout::copyOutlineItem( PoDoFo::PdfMemDocument* document,
+void PRDocumentLayout::copyOutlineItem( PoDoFo::PdfMemDocument* document,
                                     PoDoFo::PdfOutlineItem* item,
-                                    std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+                                    std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                     int origPagesNb ) const
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PdfDocException( ePdfDocE_Abort, "Abort outlines copy." );
+        throw PRException( ePdfDocE_Abort, "Abort outlines copy." );
     }
 
     // Get destination and action of the outline item.
@@ -700,9 +700,9 @@ void PdfDocumentLayout::copyOutlineItem( PoDoFo::PdfMemDocument* document,
         this->copyOutlineItem( document, item->Next(), mapPageInZones, origPagesNb );
 }
 
-void PdfDocumentLayout::copyAction( PoDoFo::PdfMemDocument* document,
+void PRDocumentLayout::copyAction( PoDoFo::PdfMemDocument* document,
                                     PoDoFo::PdfObject* action,
-                                    std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+                                    std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                     int origPagesNb ) const
 {
     // Get action type
@@ -735,9 +735,9 @@ void PdfDocumentLayout::copyAction( PoDoFo::PdfMemDocument* document,
     }
 }
 
-void PdfDocumentLayout::copyDestination( PoDoFo::PdfMemDocument* document,
+void PRDocumentLayout::copyDestination( PoDoFo::PdfMemDocument* document,
                                     PoDoFo::PdfObject* destination,
-                                    std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+                                    std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                     int origPagesNb ) const
 {
     // Get destination array.
@@ -771,7 +771,7 @@ void PdfDocumentLayout::copyDestination( PoDoFo::PdfMemDocument* document,
     std::string destType = (*destArray)[1].GetName().GetName();
 
     // Tmp variables.
-    std::vector<const PdfPageZone*>& pageInZones = mapPageInZones[ destPage ];
+    std::vector<const PRPageZone*>& pageInZones = mapPageInZones[ destPage ];
     int idxZone = 0;
     double deltaTop = 10;
 
@@ -864,8 +864,8 @@ void PdfDocumentLayout::copyDestination( PoDoFo::PdfMemDocument* document,
     }
 }
 
-void PdfDocumentLayout::copyAnnotations( PdfMemDocument* document,
-                                    std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+void PRDocumentLayout::copyAnnotations( PdfMemDocument* document,
+                                    std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                     int origPagesNb ) const
 {
     QString methodTitle = tr( "Copy page annotations." );
@@ -880,14 +880,14 @@ void PdfDocumentLayout::copyAnnotations( PdfMemDocument* document,
     emit methodProgress( methodTitle, 1.0 );
 }
 
-void PdfDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
+void PRDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
                                     int idxPageIn,
-                                    std::map<PdfReference, std::vector<const PdfPageZone*> > &mapPageInZones,
+                                    std::map<PdfReference, std::vector<const PRPageZone*> > &mapPageInZones,
                                     int origPagesNb ) const
 {
     // Page pointer and page zones
     PdfPage* pageIn = document->GetPage( idxPageIn );
-    std::vector<const PdfPageZone*>& pageInZones = mapPageInZones[ pageIn->GetObject()->Reference() ];
+    std::vector<const PRPageZone*>& pageInZones = mapPageInZones[ pageIn->GetObject()->Reference() ];
     std::vector<PdfVector> vecAnnPoints;
     int idxZone;
 
@@ -895,7 +895,7 @@ void PdfDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PdfDocException( ePdfDocE_Abort, "Abort annotations copy." );
+            throw PRException( ePdfDocE_Abort, "Abort annotations copy." );
         }
 
         PdfAnnotation* pageAnn = pageIn->GetAnnotation( i );
@@ -970,8 +970,8 @@ void PdfDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
     }
 }
 
-void PdfDocumentLayout::copyPageLabels( PdfMemDocument* document,
-                                        std::vector< std::vector<const PdfPageZone*> >& vecPageInZones ) const
+void PRDocumentLayout::copyPageLabels( PdfMemDocument* document,
+                                        std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const
 {
     // Get PageLabels in document catalog
     PdfObject* pageLabels = document->GetCatalog()->GetIndirectKey( "PageLabels" );
@@ -990,13 +990,13 @@ void PdfDocumentLayout::copyPageLabels( PdfMemDocument* document,
     }
 }
 
-std::vector<int> PdfDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* document,
+std::vector<int> PRDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* document,
                                             PdfObject* node,
-                                            std::vector< std::vector<const PdfPageZone*> >& vecPageInZones ) const
+                                            std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PdfDocException( ePdfDocE_Abort, "Abort labels copy." );
+        throw PRException( ePdfDocE_Abort, "Abort labels copy." );
     }
 
     PdfObject* nodeKids = node->GetIndirectKey( "Kids" );
@@ -1063,7 +1063,7 @@ std::vector<int> PdfDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* 
     return tmpVec;
 }
 
-bool PdfDocumentLayout::intersectZone( const std::vector<PdfVector>& points,
+bool PRDocumentLayout::intersectZone( const std::vector<PdfVector>& points,
                                        const PoDoFo::PdfRect& zone,
                                        bool strictInclusion )
 {
@@ -1131,7 +1131,7 @@ bool PdfDocumentLayout::intersectZone( const std::vector<PdfVector>& points,
 
     return intersect;
 }
-bool PdfDocumentLayout::intersectZone( const PoDoFo::PdfRect& path,
+bool PRDocumentLayout::intersectZone( const PoDoFo::PdfRect& path,
                                        const PoDoFo::PdfRect& zone,
                                        bool strictInclusion )
 {
@@ -1180,7 +1180,7 @@ bool PdfDocumentLayout::intersectZone( const PoDoFo::PdfRect& path,
     }
 }
 
-void PdfDocumentLayout::reduceToZone( PdfVector& point,
+void PRDocumentLayout::reduceToZone( PdfVector& point,
                                       const PoDoFo::PdfRect& zone )
 {
     point(0) = std::min( std::max( point(0), zone.GetLeft() ),
@@ -1188,7 +1188,7 @@ void PdfDocumentLayout::reduceToZone( PdfVector& point,
     point(1) = std::min( std::max( point(1), zone.GetBottom() ),
                              zone.GetBottom() + zone.GetHeight() );
 }
-void PdfDocumentLayout::reduceToZone( PoDoFo::PdfRect& path,
+void PRDocumentLayout::reduceToZone( PoDoFo::PdfRect& path,
                                       const PoDoFo::PdfRect& zone )
 {
     path.SetLeft( std::min( std::max( path.GetLeft(), zone.GetLeft() ),

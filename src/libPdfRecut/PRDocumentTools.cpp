@@ -18,15 +18,15 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfDocumentTools.h"
+#include "PRDocumentTools.h"
 
 #include <podofo/podofo.h>
 
 using namespace PoDoFo;
 
-namespace PdfeBooker {
+namespace PdfRecut {
 
-void PdfDocumentTools::addGraphicStateStack( PdfDocumentHandle* documentHandle )
+void PRDocumentTools::addGraphicStateStack( PRDocument* documentHandle )
 {
     // Get PoDoFo document and mutex on it.
     PdfMemDocument* document = documentHandle->getPoDoFoDocument();
@@ -81,7 +81,7 @@ void PdfDocumentTools::addGraphicStateStack( PdfDocumentHandle* documentHandle )
     document->GetPagesTree()->ClearCache();
 }
 
-void PdfDocumentTools::uncompressStreams( PdfDocumentHandle* documentHandle )
+void PRDocumentTools::uncompressStreams( PRDocument* documentHandle )
 {
     // Get PoDoFo document and mutex on it.
     PdfMemDocument* document = documentHandle->getPoDoFoDocument();
