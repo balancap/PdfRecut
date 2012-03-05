@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCUMENTTOOLS_H
-#define PDFDOCUMENTTOOLS_H
+#ifndef PRDOCUMENTTOOLS_H
+#define PRDOCUMENTTOOLS_H
 
 #include "PRDocument.h"
 
@@ -51,4 +51,4 @@ private:
 
 }
 
-#endif // PDFDOCUMENTTOOLS_H
+#endif // PRDOCUMENTTOOLS_H

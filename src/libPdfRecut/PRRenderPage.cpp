@@ -24,9 +24,13 @@
 #include <QtCore>
 #include <QtGui>
 
+#include <fstream>
+
 using namespace PoDoFo;
 
 namespace PdfRecut {
+
+int PRRenderPage::imgNbs = 0;
 
 //**********************************************************//
 //                    PRRenderParameters                    //
@@ -371,8 +375,8 @@ void PRRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
 }
 
 void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
-                               const std::vector<std::string>& vecVariables,
-                               const std::vector<PdfGraphicsState>& vecGStates )
+                              const std::vector<std::string>& vecVariables,
+                              const std::vector<PdfGraphicsState>& vecGStates )
 {
     // Name of the XObject and dictionary entry.
     std::string xobjName = vecVariables.back().substr( 1 );
@@ -384,6 +388,8 @@ void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
     // Distinction between different type of XObjects
     if( !xobjSubtype.compare( "Image" ) )
     {
+        testPdfImage( xobjPtr );
+
         // Compute path rendering matrix.
         pathMat = vecGStates.back().transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
@@ -478,6 +484,61 @@ void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
         }
     }
 }
+
+void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
+{
+    // Get image properties.
+    std::string xobjSubtype = xobj->GetIndirectKey( "Subtype" )->GetName().GetName();
+    long width = xobj->GetIndirectKey( "Width" )->GetNumber();
+    long height = xobj->GetIndirectKey( "Height" )->GetNumber();
+
+    std::string filter;
+    if( xobj->GetIndirectKey( "Filter" )->IsName() )
+        filter = xobj->GetIndirectKey( "Filter" )->GetName().GetName();
+    else
+        xobj->GetIndirectKey( "Filter" )->ToString( filter );
+
+
+    std::cout << xobjSubtype << " : "
+              << width << "x" << height << " // "
+              << filter;
+
+    if( filter == "DCTDecode" )
+    {
+        imgNbs++;
+        PdfMemStream* imgStream = dynamic_cast<PdfMemStream*> ( xobj->GetStream() );
+
+        QImage imgTest;
+        bool success = imgTest.loadFromData( (const uchar*) imgStream->Get(), imgStream->GetLength(), "JPG");
+
+        std::cout << " // " << success << "(" << imgNbs << ")";
+
+        if(success) {
+            QString filename = QString("./img/imgTest%1.jpg").arg( imgNbs, 3, 10, QLatin1Char('0') );
+            imgTest.save( filename );
+        }
+    }
+    if( filter == "CCITTFaxDecode" )
+    {
+        PdfMemStream* imgStream = dynamic_cast<PdfMemStream*> ( xobj->GetStream() );
+
+        QImage imgTest;
+        bool success = imgTest.loadFromData( (const uchar*) imgStream->Get(), imgStream->GetLength(), "PPM");
+        std::cout << " // " << success << "(" << imgNbs << ")";
+
+        std::string dparams;
+        xobj->GetIndirectKey( "DecodeParms" )->ToString( dparams );
+        std::cout << " // " << imgStream->GetLength();
+
+        std::ofstream outData( "./img.raw", std::ios_base::trunc );
+        outData.write( imgStream->Get(), imgStream->GetLength() );
+        outData.close();
+
+    }
+
+    std::cout << std::endl;
+}
+
 
 }
 

@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCUMENTSTRUCTURE_H
-#define PDFDOCUMENTSTRUCTURE_H
+#ifndef PRDOCUMENTSTRUCTURE_H
+#define PRDOCUMENTSTRUCTURE_H
 
 #include <QtCore/QObject>
 #include <poppler/qt4/poppler-qt4.h>
@@ -75,4 +75,4 @@ inline void PRDocumentStructure::setAbortOperation( bool abort )
 
 }
 
-#endif // PDFDOCUMENTSTRUCTURE_H
+#endif // PRDOCUMENTSTRUCTURE_H

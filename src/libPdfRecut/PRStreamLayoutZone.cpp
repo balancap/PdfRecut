@@ -28,10 +28,10 @@ using namespace PoDoFo;
 namespace PdfRecut {
 
 PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
-                                          PoDoFo::PdfStream* streamOut,
-                                          const PRPageZone& zone,
-                                          const PRLayoutParameters& parameters,
-                                          const std::string& resPrefix ) :
+                                        PoDoFo::PdfStream* streamOut,
+                                        const PRPageZone& zone,
+                                        const PRLayoutParameters& parameters,
+                                        const std::string& resPrefix ) :
     PRStreamAnalysis( pageIn ), m_zone ( zone ),
     m_resPrefix ( resPrefix ), m_parameters( parameters )
 {

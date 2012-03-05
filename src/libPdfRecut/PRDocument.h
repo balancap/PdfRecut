@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCUMENTHANDLE_H
-#define PDFDOCUMENTHANDLE_H
+#ifndef PRDOCUMENT_H
+#define PRDOCUMENT_H
 
 #include <QString>
 #include <QMutex>
@@ -199,4 +199,4 @@ inline QString PRDocument::getFilename() const
 
 }
 
-#endif // PDFDOCUMENTHANDLE_H
+#endif // PRDOCUMENT_H

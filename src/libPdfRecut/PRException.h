@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCEXCEPTION_H
-#define PDFDOCEXCEPTION_H
+#ifndef PREXCEPTION_H
+#define PREXCEPTION_H
 
 #include <podofo/podofo.h>
 #include <QtCore/QString>
@@ -98,4 +98,4 @@ protected:
 
 }
 
-#endif // PDFDOCEXCEPTION_H
+#endif // PREXCEPTION_H

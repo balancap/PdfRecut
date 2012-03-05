@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFRENDERPAGE_H
-#define PDFRENDERPAGE_H
+#ifndef PRRENDERPAGE_H
+#define PRRENDERPAGE_H
 
 #include "PRStreamAnalysis.h"
 #include "PdfFontMetricsCache.h"
@@ -251,7 +251,7 @@ public:
                          const std::vector<std::string>& vecVariables,
                          const std::vector<PdfGraphicsState>& vecGStates );
 
-public:
+private:
 
     /** Structure representing the length of a word.
      */
@@ -276,6 +276,9 @@ public:
                                 const PoDoFo::PdfString& str,
                                 PoDoFo::PdfFontMetrics* fontMetrics,
                                 double wordSpace );
+
+    static int imgNbs;
+    void testPdfImage( PoDoFo::PdfObject* xobj );
 
 
 private:
@@ -316,4 +319,4 @@ private:
 
 }
 
-#endif // PDFRENDERPAGE_H
+#endif // PRRENDERPAGE_H

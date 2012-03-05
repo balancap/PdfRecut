@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFSTREAMANALYSIS_H
-#define PDFSTREAMANALYSIS_H
+#ifndef PRSTREAMANALYSIS_H
+#define PRSTREAMANALYSIS_H
 
 #include "PdfGraphicsState.h"
 #include "podofo/podofo.h"
@@ -164,4 +164,4 @@ inline void PRStreamAnalysis::readValue( const std::string& str, double& value )
 
 }
 
-#endif // PDFSTREAMANALYSIS_H
+#endif // PRSTREAMANALYSIS_H

@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFDOCUMENTLAYOUT_H
-#define PDFDOCUMENTLAYOUT_H
+#ifndef PRDOCUMENTLAYOUT_H
+#define PRDOCUMENTLAYOUT_H
 
 #include <QtCore/QObject>
 
@@ -421,8 +421,8 @@ protected:
      * \return Min/Max values in this node and its children.
      */
     std::vector<int> copyPageLabelsNode( PoDoFo::PdfMemDocument* document,
-                             PoDoFo::PdfObject* node,
-                             std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const;
+                                         PoDoFo::PdfObject* node,
+                                         std::vector< std::vector<const PRPageZone*> >& vecPageInZones ) const;
 
 protected:
     /** Evaluate if a path intersects a zone.
@@ -489,4 +489,4 @@ inline void PRDocumentLayout::setAbortOperation( bool abort )
 
 }
 
-#endif // PDFDOCUMENTLAYOUT_H
+#endif // PRDOCUMENTLAYOUT_H

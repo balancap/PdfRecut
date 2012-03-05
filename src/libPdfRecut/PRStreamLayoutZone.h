@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFSTREAMLAYOUTZONE_H
-#define PDFSTREAMLAYOUTZONE_H
+#ifndef PRSTREAMLAYOUTZONE_H
+#define PRSTREAMLAYOUTZONE_H
 
 #include "PRStreamAnalysis.h"
 #include "PRDocumentLayout.h"
@@ -165,4 +165,4 @@ inline void PRStreamLayoutZone::copyVariables( const std::vector<std::string>& v
 
 }
 
-#endif // PDFSTREAMLAYOUTZONE_H
+#endif // PRSTREAMLAYOUTZONE_H
