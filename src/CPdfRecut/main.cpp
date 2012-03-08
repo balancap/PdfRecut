@@ -136,25 +136,25 @@ void proceedFile( QString filePath )
     PdfFontMetricsCache fontMetricsCache( document.getPoDoFoDocument() );
 
 
-    // Generate a PdfDocumentLayout
-    /*cout << " >>> Generating a Pdf Document Layout..." << endl;
-    splitPagesLayout( *document.getPoDoFoDocument(), docLayout );
+//    // Generate a PdfDocumentLayout
+//    cout << " >>> Generating a Pdf Document Layout..." << endl;
+//    splitPagesLayout( *document.getPoDoFoDocument(), docLayout );
 
-    // Layout parameters.
-    PdfLayoutParameters params;
-    params.zoneClippingPath = false;
-    params.pathReduce = true;
-    params.pathStrictlyInside = false;
-    params.overlayLayoutZones = true;
-    docLayout.setLayoutParameters( params );
+//    // Layout parameters.
+//    PRLayoutParameters params;
+//    params.zoneClippingPath = false;
+//    params.pathReduce = true;
+//    params.pathStrictlyInside = false;
+//    params.overlayLayoutZones = true;
+//    docLayout.setLayoutParameters( params );
 
-    filePath = infoFile.canonicalPath() + "/xpdfOut_"
-             + infoFile.fileName();
+//    filePath = infoFile.canonicalPath() + "/xpdfOut_"
+//             + infoFile.fileName();
 
 
-    // Transform document and export to Pdf file.
-    cout << " >>> Transform Pdf Document..." << endl;
-    docLayout.writeLayoutToPdf( &document, filePath );*/
+//    // Transform document and export to Pdf file.
+//    cout << " >>> Transform Pdf Document..." << endl;
+//    docLayout.writeLayoutToPdf( &document, filePath );
 
     //PdfDocumentTools::uncompressStreams( &document );
     //docLayout.printLayoutOut( &document );

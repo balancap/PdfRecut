@@ -72,7 +72,7 @@ void PRRenderParameters::initPenBrush()
 //                       PRRenderPage                       //
 //**********************************************************//
 PRRenderPage::PRRenderPage( PoDoFo::PdfPage* pageIn,
-                              PdfFontMetricsCache* fontMetricsCache ) :
+                            PdfFontMetricsCache* fontMetricsCache ) :
     PRStreamAnalysis( pageIn ), m_fontMetricsCache( fontMetricsCache )
 {
     m_pageImage = NULL;
@@ -129,24 +129,21 @@ void PRRenderPage::saveToFile( const QString& filename )
     m_pageImage->save( filename );
 }
 
-void PRRenderPage::fGeneralGState( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fGeneralGState( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fSpecialGState( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fSpecialGState( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fPathConstruction( const PdfGraphicOperator& gOperator,
-                                      const std::vector<std::string>& vecVariables,
-                                      const std::vector<PdfGraphicsState>& vecGStates,
+void PRRenderPage::fPathConstruction( const PdfStreamState& streamState,
                                       const PdfPath& currentPath ) { }
 
-void PRRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
-                                  const std::vector<std::string>& vecVariables,
-                                  const std::vector<PdfGraphicsState>& vecGStates,
+void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
                                   const PdfPath& currentPath )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    //const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // No painting require.
     if( !m_renderParameters.pathPB.isPainting() ) {
         return;
@@ -217,7 +214,7 @@ void PRRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
     }
     // Compute path rendering matrix.
     PdfMatrix pathMat;
-    pathMat = vecGStates.back().transMat * m_pageImgTrans;
+    pathMat = gState.transMat * m_pageImgTrans;
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
     // Draw path.
@@ -230,41 +227,35 @@ void PRRenderPage::fPathPainting( const PdfGraphicOperator& gOperator,
     m_pagePainter->drawPath( qCurrentPath );
 }
 
-void PRRenderPage::fClippingPath( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates,
-                                   const PdfPath& currentPath ) { }
+void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
+                                  const PdfPath& currentPath ) { }
 
-void PRRenderPage::fTextObjects( const PdfGraphicOperator& gOperator,
-                                  const std::vector<std::string>& vecVariables,
-                                  const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fTextObjects( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fTextState( const PdfGraphicOperator& gOperator,
-                                const std::vector<std::string>& vecVariables,
-                                const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fTextState( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fTextPositioning( const PdfGraphicOperator& gOperator,
-                                      const std::vector<std::string>& vecVariables,
-                                      const std::vector<PdfGraphicsState>& vecGStates )
+void PRRenderPage::fTextPositioning( const PdfStreamState& streamState )
 {
     // Reset text transform matrix.
-    m_textMatrix = vecGStates.back().textState.transMat;
+    m_textMatrix = streamState.gStates.back().textState.transMat;
 }
 
-void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
-                                  const std::vector<std::string>& vecVariables,
-                                  const std::vector<PdfGraphicsState>& vecGStates )
+void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // Get variant from string.
     PdfVariant variant;
-    PdfTokenizer tokenizer( vecVariables.back().c_str(), vecVariables.back().length() );
+    PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
     tokenizer.GetNextVariant( variant, NULL );
 
     // Compute string width using font metrics.
     std::vector<WordWidth> wordWidths;
     double widthStr = 0;
     PdfArray boundingBox;
-    PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( vecGStates.back().textState.fontRef );
+    PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
     if( fontMetrics )
     {
         // Font metrics parameters.
@@ -274,13 +265,13 @@ void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
         //fontMetrics->SetFontScale( vecGStates.back().textState.hScale );
 
         // Strange implementation of char space in CharWidth functions from metrics classes: must multiply by 100.
-        fontMetrics->SetFontCharSpace( vecGStates.back().textState.charSpace / vecGStates.back().textState.fontSize * 100 );
+        fontMetrics->SetFontCharSpace( gState.textState.charSpace / gState.textState.fontSize * 100 );
 
         // Compute string width.
         if( variant.IsString() || variant.IsHexString() )
         {
             this->getStringWidth( wordWidths, variant.GetString(), fontMetrics,
-                                             vecGStates.back().textState.wordSpace );
+                                  gState.textState.wordSpace );
         }
         else if( variant.IsArray() )
         {
@@ -288,7 +279,7 @@ void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
             for( size_t i = 0 ; i < array.size() ; i++ ) {
                 if( array[i].IsString() || array[i].IsHexString() ) {
                     this->getStringWidth( wordWidths, array[i].GetString(), fontMetrics,
-                                                      vecGStates.back().textState.wordSpace );
+                                          gState.textState.wordSpace );
                 }
                 else if( array[i].IsNumber() ) {
                     wordWidths.push_back( WordWidth( -array[i].GetNumber() / 1000.0, true ) );
@@ -318,10 +309,10 @@ void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
 
     // Compute text rendering matrix.
     PdfMatrix tmpMat, textMat;
-    tmpMat(0,0) = vecGStates.back().textState.fontSize * vecGStates.back().textState.hScale / 100;
-    tmpMat(1,1) = vecGStates.back().textState.fontSize * heightStr;
-    tmpMat(2,1) = vecGStates.back().textState.rise;
-    textMat = tmpMat * m_textMatrix * vecGStates.back().transMat * m_pageImgTrans;
+    tmpMat(0,0) = gState.textState.fontSize * gState.textState.hScale / 100;
+    tmpMat(1,1) = gState.textState.fontSize * heightStr;
+    tmpMat(2,1) = gState.textState.rise;
+    textMat = tmpMat * m_textMatrix * gState.transMat * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 
     // Paint words.
@@ -341,31 +332,27 @@ void PRRenderPage::fTextShowing( const PdfGraphicOperator& gOperator,
 
     // Update text transform matrix.
     tmpMat.init();
-    tmpMat(2,0) = widthStr * vecGStates.back().textState.fontSize * vecGStates.back().textState.hScale / 100;
+    tmpMat(2,0) = widthStr * gState.textState.fontSize * gState.textState.hScale / 100;
     m_textMatrix = tmpMat * m_textMatrix;
 }
 
-void PRRenderPage::fType3Fonts( const PdfGraphicOperator& gOperator,
-                                 const std::vector<std::string>& vecVariables,
-                                 const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fType3Fonts( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fColor( const PdfGraphicOperator& gOperator,
-                            const std::vector<std::string>& vecVariables,
-                            const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fColor( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fShadingPatterns( const PdfGraphicOperator& gOperator,
-                                      const std::vector<std::string>& vecVariables,
-                                      const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fShadingPatterns( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates )
+void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     if( gOperator.code == ePdfGOperator_EI )
     {
         // Compute path rendering matrix.
         PdfMatrix pathMat;
-        pathMat = vecGStates.back().transMat * m_pageImgTrans;
+        pathMat = gState.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the inline image: corresponds to a rectangle (0,0,1,1).
@@ -374,12 +361,15 @@ void PRRenderPage::fInlineImages( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
-                              const std::vector<std::string>& vecVariables,
-                              const std::vector<PdfGraphicsState>& vecGStates )
+void PRRenderPage::fXObjects( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    //const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // Name of the XObject and dictionary entry.
-    std::string xobjName = vecVariables.back().substr( 1 );
+    std::string xobjName = gOperands.back().substr( 1 );
     PdfObject* xobjDict = m_page->GetResources()->GetIndirectKey( "XObject" );
     PdfObject* xobjPtr = xobjDict->GetIndirectKey( xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
@@ -391,7 +381,7 @@ void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
         testPdfImage( xobjPtr );
 
         // Compute path rendering matrix.
-        pathMat = vecGStates.back().transMat * m_pageImgTrans;
+        pathMat = gState.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
@@ -416,7 +406,7 @@ void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
         PdfArray& bbox = xobjPtr->GetIndirectKey( "BBox" )->GetArray();
 
         // Draw form according to its properties.
-        pathMat = formMat * vecGStates.back().transMat * m_pageImgTrans;
+        pathMat = formMat * gState.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
@@ -428,19 +418,15 @@ void PRRenderPage::fXObjects( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PRRenderPage::fMarkedContents( const PdfGraphicOperator& gOperator,
-                                     const std::vector<std::string>& vecVariables,
-                                     const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fMarkedContents( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fCompatibility( const PdfGraphicOperator& gOperator,
-                                    const std::vector<std::string>& vecVariables,
-                                    const std::vector<PdfGraphicsState>& vecGStates ) { }
+void PRRenderPage::fCompatibility( const PdfStreamState& streamState ) { }
 
 
 void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
-                                    const PoDoFo::PdfString& str,
-                                    PoDoFo::PdfFontMetrics* fontMetrics,
-                                    double wordSpace )
+                                   const PoDoFo::PdfString& str,
+                                   PoDoFo::PdfFontMetrics* fontMetrics,
+                                   double wordSpace )
 {
     // Unicode string. Euhhhh, don't care...
     if( str.IsUnicode() ) {

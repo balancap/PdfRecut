@@ -52,72 +52,42 @@ public:
 
     void generateStream();
 
-    void fGeneralGState( const PdfGraphicOperator& gOperator,
-                         const std::vector<std::string>& vecVariables,
-                         const std::vector<PdfGraphicsState>& vecGStates );
+    void fGeneralGState( const PdfStreamState& streamState );
 
-    void fSpecialGState( const PdfGraphicOperator& gOperator,
-                         const std::vector<std::string>& vecVariables,
-                         const std::vector<PdfGraphicsState>& vecGStates );
+    void fSpecialGState( const PdfStreamState& streamState );
 
-    void fPathConstruction( const PdfGraphicOperator& gOperator,
-                            const std::vector<std::string>& vecVariables,
-                            const std::vector<PdfGraphicsState>& vecGStates,
+    void fPathConstruction( const PdfStreamState& streamState,
                             const PdfPath& currentPath );
 
-    void fPathPainting( const PdfGraphicOperator& gOperator,
-                        const std::vector<std::string>& vecVariables,
-                        const std::vector<PdfGraphicsState>& vecGStates,
+    void fPathPainting( const PdfStreamState& streamState,
                         const PdfPath& currentPath );
 
-    void fClippingPath( const PdfGraphicOperator& gOperator,
-                        const std::vector<std::string>& vecVariables,
-                        const std::vector<PdfGraphicsState>& vecGStates,
+    void fClippingPath( const PdfStreamState& streamState,
                         const PdfPath& currentPath );
 
-    void fTextObjects( const PdfGraphicOperator& gOperator,
-                       const std::vector<std::string>& vecVariables,
-                       const std::vector<PdfGraphicsState>& vecGStates );
+    void fTextObjects( const PdfStreamState& streamState );
 
-    void fTextState( const PdfGraphicOperator& gOperator,
-                     const std::vector<std::string>& vecVariables,
-                     const std::vector<PdfGraphicsState>& vecGStates );
+    void fTextState( const PdfStreamState& streamState );
 
-    void fTextPositioning( const PdfGraphicOperator& gOperator,
-                           const std::vector<std::string>& vecVariables,
-                           const std::vector<PdfGraphicsState>& vecGStates );
+    void fTextPositioning( const PdfStreamState& streamState );
 
-    void fTextShowing( const PdfGraphicOperator& gOperator,
-                       const std::vector<std::string>& vecVariables,
-                       const std::vector<PdfGraphicsState>& vecGStates );
+    void fTextShowing( const PdfStreamState& streamState );
 
-    void fType3Fonts( const PdfGraphicOperator& gOperator,
-                      const std::vector<std::string>& vecVariables,
-                      const std::vector<PdfGraphicsState>& vecGStates );
+    void fType3Fonts( const PdfStreamState& streamState );
 
-    void fColor( const PdfGraphicOperator& gOperator,
-                 const std::vector<std::string>& vecVariables,
-                 const std::vector<PdfGraphicsState>& vecGStates );
+    void fColor( const PdfStreamState& streamState );
 
-    void fShadingPatterns( const PdfGraphicOperator& gOperator,
-                           const std::vector<std::string>& vecVariables,
-                           const std::vector<PdfGraphicsState>& vecGStates );
+    void fShadingPatterns( const PdfStreamState& streamState );
 
-    void fInlineImages( const PdfGraphicOperator& gOperator,
-                        const std::vector<std::string>& vecVariables,
-                        const std::vector<PdfGraphicsState>& vecGStates );
+    void fInlineImages( const PdfStreamState& streamState );
 
-    void fXObjects( const PdfGraphicOperator& gOperator,
-                    const std::vector<std::string>& vecVariables,
-                    const std::vector<PdfGraphicsState>& vecGStates );
+    void fXObjects( const PdfStreamState& streamState );
 
-    void fMarkedContents( const PdfGraphicOperator& gOperator,
-                          const std::vector<std::string>& vecVariables,
-                          const std::vector<PdfGraphicsState>& vecGStates );
+    void fMarkedContents( const PdfStreamState& streamState );
 
-    void fCompatibility( const PdfGraphicOperator& gOperator,
-                         const std::vector<std::string>& vecVariables,
-                         const std::vector<PdfGraphicsState>& vecGStates );
+    void fCompatibility( const PdfStreamState& streamState );
+
+
 
 protected:
     /** Copy variables to a buffer.

@@ -66,8 +66,8 @@ void PRStreamLayoutZone::generateStream()
     }
     // First transformation matrix, related to zone coordinates.
     m_bufStream << zoneOutTrMatrix(0,0) << " " << zoneOutTrMatrix(0,1) << " "
-              << zoneOutTrMatrix(1,0) << " " << zoneOutTrMatrix(1,1) << " "
-              << zoneOutTrMatrix(2,0) << " " << zoneOutTrMatrix(2,1) << " cm\n";
+                << zoneOutTrMatrix(1,0) << " " << zoneOutTrMatrix(1,1) << " "
+                << zoneOutTrMatrix(2,0) << " " << zoneOutTrMatrix(2,1) << " cm\n";
     m_streamOut->Append( m_bufStream.str() );
     m_bufStream.str( "" );
 
@@ -79,17 +79,19 @@ void PRStreamLayoutZone::generateStream()
     m_streamOut->EndAppend();
 
 
-    std::ostringstream bufs;
-    PdfOutputDevice out(&bufs);
+    //    std::ostringstream bufs;
+    //    PdfOutputDevice out(&bufs);
 
-    m_streamOut->Write( &out );
-    //std::cout << bufs.str() << std::endl;
+    //    m_streamOut->Write( &out );
+    //    std::cout << bufs.str() << std::endl;
 }
 
-void PRStreamLayoutZone::fGeneralGState( const PdfGraphicOperator& gOperator,
-                                          const std::vector<std::string>& vecVariables,
-                                          const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     m_bufStream.str("");
     m_bufString.clear();
 
@@ -97,44 +99,46 @@ void PRStreamLayoutZone::fGeneralGState( const PdfGraphicOperator& gOperator,
         // Specific case of command "gs": add resource prefix.
         m_bufString += "/";
         m_bufString += m_resPrefix;
-        m_bufString += vecVariables.back().substr( 1 );
+        m_bufString += gOperands.back().substr( 1 );
         m_bufString += " gs\n";
     }
     else {
         // Copy variables and operator.
-        this->copyVariables( vecVariables, m_bufString );
+        this->copyVariables( gOperands, m_bufString );
         m_bufString += gOperator.name;
         m_bufString += "\n";
     }
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fSpecialGState( const PdfGraphicOperator& gOperator,
-                                          const std::vector<std::string>& vecVariables,
-                                          const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fSpecialGState( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     m_bufString.clear();
 
     // Copy variables and operator.
-    this->copyVariables( vecVariables, m_bufString );
+    this->copyVariables( gOperands, m_bufString );
     m_bufString += gOperator.name;
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fPathConstruction( const PdfGraphicOperator& gOperator,
-                                             const std::vector<std::string>& vecVariables,
-                                             const std::vector<PdfGraphicsState>& vecGStates,
-                                             const PdfPath& currentPath )
+void PRStreamLayoutZone::fPathConstruction( const PdfStreamState& streamState,
+                                            const PdfPath& currentPath )
 {
     // Everything is done in painting function !
 }
 
-void PRStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
-                                         const std::vector<std::string>& vecVariables,
-                                         const std::vector<PdfGraphicsState>& vecGStates,
-                                         const PdfPath& currentPath )
+void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
+                                        const PdfPath& currentPath )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // Subpaths from the current path.
     std::vector<PdfSubPath> subpaths = currentPath.getSubpaths();
     std::vector<PdfSubPath> subpathsBack( subpaths );
@@ -143,14 +147,14 @@ void PRStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
     bool inZone;
     size_t idx = 0;
     PdfMatrix invTransMat;
-    vecGStates.back().transMat.inverse( invTransMat );
+    gState.transMat.inverse( invTransMat );
 
     // Keep subpaths which intersect the zone, and reduce them if necessary.
     std::vector<PdfSubPath>::iterator it;
     for( it = subpaths.begin() ; it != subpaths.end() ; )
     {
         // Apply transformation matrix.
-        it->applyTransfMatrix( vecGStates.back().transMat );
+        it->applyTransfMatrix( gState.transMat );
 
         // Does the subpath intersect the zone.
         inZone = it->intersectZone( m_zone.zoneIn, m_parameters.pathStrictlyInside );
@@ -244,70 +248,76 @@ void PRStreamLayoutZone::fPathPainting( const PdfGraphicOperator& gOperator,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PRStreamLayoutZone::fClippingPath( const PdfGraphicOperator& gOperator,
-                                         const std::vector<std::string>& vecVariables,
-                                         const std::vector<PdfGraphicsState>& vecGStates,
-                                         const PdfPath& currentPath )
+void PRStreamLayoutZone::fClippingPath( const PdfStreamState& streamState,
+                                        const PdfPath& currentPath  )
 {
 }
 
-void PRStreamLayoutZone::fTextObjects( const PdfGraphicOperator& gOperator,
-                                        const std::vector<std::string>& vecVariables,
-                                        const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fTextObjects( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+
     // Copy operator.
     m_bufString = gOperator.name;
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextState( const PdfGraphicOperator& gOperator,
-                                      const std::vector<std::string>& vecVariables,
-                                      const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     if( gOperator.code == ePdfGOperator_Tf ) {
         // Font: add resource prefix to name.
         m_bufString = "/";
         m_bufString += m_resPrefix;
-        m_bufString += vecVariables[0].substr( 1 );
+        m_bufString += gOperands[0].substr( 1 );
         m_bufString += " ";
-        m_bufString += vecVariables[1];
+        m_bufString += gOperands[1];
         m_bufString += " Tf\n";
     }
     else {
         // Copy variables and operator.
         m_bufString.clear();
-        this->copyVariables( vecVariables, m_bufString );
+        this->copyVariables( gOperands, m_bufString );
         m_bufString += gOperator.name;
         m_bufString += "\n";
     }
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextPositioning( const PdfGraphicOperator& gOperator,
-                                            const std::vector<std::string>& vecVariables,
-                                            const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fTextPositioning( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     // Copy variables and operator.
     m_bufString.clear();
-    this->copyVariables( vecVariables, m_bufString );
+    this->copyVariables( gOperands, m_bufString );
     m_bufString += gOperator.name;
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextShowing( const PdfGraphicOperator& gOperator,
-                                        const std::vector<std::string>& vecVariables,
-                                        const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // Show text if inside page zone.
-    PdfMatrix tmpMat = vecGStates.back().textState.transMat * vecGStates.back().transMat;
+    PdfMatrix tmpMat = gState.textState.transMat * gState.transMat;
     if( tmpMat(2,1) <= m_zone.zoneIn.GetBottom() + m_zone.zoneIn.GetHeight() &&
-        tmpMat(2,1) >= m_zone.zoneIn.GetBottom() )
+            tmpMat(2,1) >= m_zone.zoneIn.GetBottom() )
     {
         // Copy variables and operator.
         m_bufString.clear();
-        this->copyVariables( vecVariables, m_bufString );
+        this->copyVariables( gOperands, m_bufString );
         m_bufString += gOperator.name;
         m_bufString += "\n";
         m_streamOut->Append( m_bufString );
@@ -320,39 +330,43 @@ void PRStreamLayoutZone::fTextShowing( const PdfGraphicOperator& gOperator,
             m_bufStream << "T*\n";
         }
         else if( gOperator.code == ePdfGOperator_DoubleQuote ) {
-            m_bufStream << vecGStates.back().textState.wordSpace << "Tw\n"
-                        << vecGStates.back().textState.charSpace << "Tc\n";
+            m_bufStream << gState.textState.wordSpace << "Tw\n"
+                        << gState.textState.charSpace << "Tc\n";
         }
         m_streamOut->Append( m_bufStream.str() );
     }
 }
 
-void PRStreamLayoutZone::fType3Fonts( const PdfGraphicOperator& gOperator,
-                                       const std::vector<std::string>& vecVariables,
-                                       const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fType3Fonts( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     m_bufString.clear();
 
     // Copy variables and operator...
-    this->copyVariables( vecVariables, m_bufString );
+    this->copyVariables( gOperands, m_bufString );
     m_bufString += gOperator.name;
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fColor( const PdfGraphicOperator& gOperator,
-                                  const std::vector<std::string>& vecVariables,
-                                  const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     m_bufString.clear();
 
     // Color space used.
     if( gOperator.code == ePdfGOperator_CS || gOperator.code == ePdfGOperator_cs ) {
 
         // Modify if not default color space.
-        std::string tmpStr = vecVariables.back();
+        std::string tmpStr = gOperands.back();
         if( tmpStr.compare( "DeviceGray" ) && tmpStr.compare( "DeviceRGB" ) &&
-            tmpStr.compare( "DeviceCMYK" ) && tmpStr.compare( "Pattern" ) ) {
+                tmpStr.compare( "DeviceCMYK" ) && tmpStr.compare( "Pattern" ) ) {
 
             m_bufString = "/";
             m_bufString += m_resPrefix;
@@ -362,49 +376,53 @@ void PRStreamLayoutZone::fColor( const PdfGraphicOperator& gOperator,
     }
     else if( gOperator.code == ePdfGOperator_SCN || gOperator.code == ePdfGOperator_scn ) {
         // Color space is pattern.
-        if( vecVariables.back()[0] == '/' ) {
-            for( size_t i = 0 ; i < vecVariables.size()-1 ; i++ ) {
-                m_bufString += vecVariables[i];
+        if( gOperands.back()[0] == '/' ) {
+            for( size_t i = 0 ; i < gOperands.size()-1 ; i++ ) {
+                m_bufString += gOperands[i];
                 m_bufString += " ";
             }
             m_bufString += "/";
             m_bufString += m_resPrefix;
-            m_bufString += vecVariables.back().substr( 1 );
+            m_bufString += gOperands.back().substr( 1 );
             m_bufString += " ";
         }
     }
     else {
         // Copy variables.
-        this->copyVariables( vecVariables, m_bufString );
+        this->copyVariables( gOperands, m_bufString );
     }
     m_bufString += gOperator.name;
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fShadingPatterns( const PdfGraphicOperator& gOperator,
-                                            const std::vector<std::string>& vecVariables,
-                                            const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+
     // Paint a shading pattern in the current clipping path. TBI: check if inside zone.
     if( true )
     {
         // Command sh: add resource prefix.
         m_bufString = "/";
         m_bufString += m_resPrefix;
-        m_bufString += vecVariables.back().substr( 1 );
+        m_bufString += gOperands.back().substr( 1 );
         m_bufString += " sh\n";
         m_streamOut->Append( m_bufString );
     }
 }
 
-void PRStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
-                                         const std::vector<std::string>& vecVariables,
-                                         const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     if( gOperator.code == ePdfGOperator_ID ) {
         // Save variables.
-        m_keyValuesII = vecVariables;
+        m_keyValuesII = gOperands;
     }
     else if( gOperator.code == ePdfGOperator_EI ) {
         // Check if the inline image is inside the zone.
@@ -412,7 +430,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
         pathII.appendRectangle( PdfVector(0,0), PdfVector(1,1) );
 
         PdfSubPath& subpathII = pathII.getSubpaths().back();
-        subpathII.applyTransfMatrix( vecGStates.back().transMat );
+        subpathII.applyTransfMatrix( gState.transMat );
 
         bool inZone = subpathII.intersectZone( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
         if( !inZone ) {
@@ -425,19 +443,21 @@ void PRStreamLayoutZone::fInlineImages( const PdfGraphicOperator& gOperator,
 
         // Image data.
         m_bufString += "ID ";
-        m_bufString += vecVariables.back();
+        m_bufString += gOperands.back();
         m_bufString += " EI\n";
 
         m_streamOut->Append( m_bufString );
     }
 }
 
-void PRStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
-                                     const std::vector<std::string>& vecVariables,
-                                     const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
     // Name of the XObject and dictionary entry.
-    std::string xobjName = vecVariables.back().substr( 1 );
+    std::string xobjName = gOperands.back().substr( 1 );
     PdfObject* xobjDict = m_page->GetResources()->GetIndirectKey( "XObject" );
     PdfObject* xobjPtr = xobjDict->GetIndirectKey( xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
@@ -449,7 +469,7 @@ void PRStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
         pathImg.appendRectangle( PdfVector(0,0), PdfVector(1,1) );
 
         PdfSubPath& subpathImg = pathImg.getSubpaths().back();
-        subpathImg.applyTransfMatrix( vecGStates.back().transMat );
+        subpathImg.applyTransfMatrix( gState.transMat );
 
         bool inZone = subpathImg.intersectZone( m_zone.zoneIn, m_parameters.imageStrictlyInside );
         if( inZone )
@@ -474,7 +494,7 @@ void PRStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
             formMat(2,0) = mat[4].GetReal();
             formMat(2,1) = mat[5].GetReal();
         }
-        formMat = formMat * vecGStates.back().transMat;
+        formMat = formMat * gState.transMat;
 
         // Position of form's BBox
         PdfArray& bbox = xobjPtr->GetIndirectKey( "BBox" )->GetArray();
@@ -506,17 +526,16 @@ void PRStreamLayoutZone::fXObjects( const PdfGraphicOperator& gOperator,
     }
 }
 
-void PRStreamLayoutZone::fMarkedContents( const PdfGraphicOperator& gOperator,
-                                           const std::vector<std::string>& vecVariables,
-                                           const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fMarkedContents( const PdfStreamState& streamState )
 {
     // Vous dîtes ?
 }
 
-void PRStreamLayoutZone::fCompatibility( const PdfGraphicOperator& gOperator,
-                                          const std::vector<std::string>& vecVariables,
-                                          const std::vector<PdfGraphicsState>& vecGStates )
+void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+
     // Graphic compatibility mode.
     m_bufString = gOperator.name;
     m_bufString += "\n";

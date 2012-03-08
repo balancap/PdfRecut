@@ -22,13 +22,40 @@
 #define PRSTREAMANALYSIS_H
 
 #include "PdfGraphicsState.h"
+#include "PdfResources.h"
 #include "podofo/podofo.h"
 
 namespace PoDoFo {
     class PdfPage;
+    class PdfCanvas;
 }
 
 namespace PdfRecut {
+
+/** Simple structure that gathers information related to the current state of a stream.
+ */
+struct PdfStreamState
+{
+    /** Canvas analysed.
+     */
+    PoDoFo::PdfCanvas* canvas;
+
+    /** PdfResources associated.
+     */
+    PdfResources resources;
+
+    /** Graphics operator read.
+     */
+    PdfGraphicOperator gOperator;
+
+    /** Graphics operands associated to the operator.
+     */
+    std::vector<std::string> gOperands;
+
+    /** Graphics state stack.
+     */
+    std::vector<PdfGraphicsState> gStates;
+};
 
 /** Basic class used to analysis the contents of a page's streams.
  */
@@ -40,76 +67,53 @@ public:
      */
     PRStreamAnalysis( PoDoFo::PdfPage* page );
 
-    /** Analysing the content streams of the page.
+    /** Analysing the page.
      */
     void analyse();
 
-    virtual void fGeneralGState( const PdfGraphicOperator& gOperator,
-                                 const std::vector<std::string>& vecVariables,
-                                 const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    /** Analyse the content stream of a canvas.
+     * \param canvas Canvas to analyse.
+     * \param initialGState Initial graphics state to use.
+     * \param initialResources Initial resources to use.
+     */
+    void analyseCanvas( PoDoFo::PdfCanvas* canvas,
+                        const PdfGraphicsState& initialGState,
+                        const PdfResources& initialResources );
 
-    virtual void fSpecialGState( const PdfGraphicOperator& gOperator,
-                                 const std::vector<std::string>& vecVariables,
-                                 const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fGeneralGState( const PdfStreamState& streamState ) = 0;
 
-    virtual void fPathConstruction( const PdfGraphicOperator& gOperator,
-                                    const std::vector<std::string>& vecVariables,
-                                    const std::vector<PdfGraphicsState>& vecGStates,
+    virtual void fSpecialGState( const PdfStreamState& streamState ) = 0;
+
+    virtual void fPathConstruction( const PdfStreamState& streamState,
                                     const PdfPath& currentPath ) = 0;
 
-    virtual void fPathPainting( const PdfGraphicOperator& gOperator,
-                                const std::vector<std::string>& vecVariables,
-                                const std::vector<PdfGraphicsState>& vecGStates,
+    virtual void fPathPainting( const PdfStreamState& streamState,
                                 const PdfPath& currentPath ) = 0;
 
-    virtual void fClippingPath( const PdfGraphicOperator& gOperator,
-                                const std::vector<std::string>& vecVariables,
-                                const std::vector<PdfGraphicsState>& vecGStates,
+    virtual void fClippingPath( const PdfStreamState& streamState,
                                 const PdfPath& currentPath ) = 0;
 
-    virtual void fTextObjects( const PdfGraphicOperator& gOperator,
-                               const std::vector<std::string>& vecVariables,
-                               const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fTextObjects( const PdfStreamState& streamState ) = 0;
 
-    virtual void fTextState( const PdfGraphicOperator& gOperator,
-                             const std::vector<std::string>& vecVariables,
-                             const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fTextState( const PdfStreamState& streamState ) = 0;
 
-    virtual void fTextPositioning( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fTextPositioning( const PdfStreamState& streamState ) = 0;
 
-    virtual void fTextShowing( const PdfGraphicOperator& gOperator,
-                               const std::vector<std::string>& vecVariables,
-                               const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fTextShowing( const PdfStreamState& streamState ) = 0;
 
-    virtual void fType3Fonts( const PdfGraphicOperator& gOperator,
-                              const std::vector<std::string>& vecVariables,
-                              const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fType3Fonts( const PdfStreamState& streamState ) = 0;
 
-    virtual void fColor( const PdfGraphicOperator& gOperator,
-                         const std::vector<std::string>& vecVariables,
-                         const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fColor( const PdfStreamState& streamState ) = 0;
 
-    virtual void fShadingPatterns( const PdfGraphicOperator& gOperator,
-                                   const std::vector<std::string>& vecVariables,
-                                   const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fShadingPatterns( const PdfStreamState& streamState ) = 0;
 
-    virtual void fInlineImages( const PdfGraphicOperator& gOperator,
-                                const std::vector<std::string>& vecVariables,
-                                const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fInlineImages( const PdfStreamState& streamState ) = 0;
 
-    virtual void fXObjects( const PdfGraphicOperator& gOperator,
-                            const std::vector<std::string>& vecVariables,
-                            const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fXObjects( const PdfStreamState& streamState ) = 0;
 
-    virtual void fMarkedContents( const PdfGraphicOperator& gOperator,
-                                  const std::vector<std::string>& vecVariables,
-                                  const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fMarkedContents( const PdfStreamState& streamState ) = 0;
 
-    virtual void fCompatibility( const PdfGraphicOperator& gOperator,
-                                 const std::vector<std::string>& vecVariables,
-                                 const std::vector<PdfGraphicsState>& vecGStates ) = 0;
+    virtual void fCompatibility( const PdfStreamState& streamState ) = 0;
 
 protected:
     /** Read an integer from a string.
