@@ -279,6 +279,9 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
     }
     int origPagesNb = document->GetPageCount();
 
+    // Form objects.
+    std::vector<PoDoFo::PdfObject*> formObjects;
+
     // Local variables.
     int indexIn;
     PdfPage* pageIn;
@@ -347,6 +350,10 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
                                                  m_parameters,
                                                  suffixeStr );
                 streamLayout.generateStream();
+
+                // Get form objects.
+                std::vector<PoDoFo::PdfObject*> formObjectsPage = streamLayout.getFormObjects();
+                formObjects.insert( formObjects.end(), formObjectsPage.begin(), formObjectsPage.end() );
             }
             catch( const PdfError& error )
             {
@@ -373,6 +380,9 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
 
     // Delete old pages and attached contents & resources.
     this->deletePagesAndContents( document, 0, origPagesNb );
+
+    // Delete unused forms.
+    //this->deleteFormObjects( document, formObjects );
 
     // Clear pages tree cache.
     document->GetPagesTree()->ClearCache();
@@ -552,7 +562,8 @@ void PRDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
     // Key Prefix.
     std::ostringstream suffixe;
     suffixe << zoneSuffixe << zoneIdx;
-    std::string suffixeStr = suffixe.str();
+//    std::string suffixeStr = suffixe.str();
+    std::string suffixeStr = "_ZS0F0";
 
     // List of resources to copy.
     std::string resName;
@@ -592,7 +603,7 @@ void PRDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
 }
 
 void PRDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
-                                                int firstPage, int nbPages ) const
+                                               int firstPage, int nbPages ) const
 {
     QString methodTitle = tr( "Delete old pages and content." );
 
@@ -652,6 +663,27 @@ void PRDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
         emit methodProgress( methodTitle, double(i+1)/double(vecObjects.size()) );
     }
     emit methodProgress( methodTitle, 1.0 );
+}
+void PRDocumentLayout::deleteFormObjects( PoDoFo::PdfMemDocument* document,
+                                          const std::vector<PoDoFo::PdfObject*>& formObjects ) const
+{
+    // Keep unique values.
+    std::vector<PdfObject*> vecObjects;
+    std::vector<PdfObject*>::const_iterator it, it2;
+    for( it = formObjects.begin() ; it != formObjects.end() ; ++it )
+    {
+        it2 = std::find( it+1, formObjects.end(), *it );
+        if( it2 == formObjects.end() ) {
+            vecObjects.push_back( *it );
+        }
+    }
+
+    // Finally delete objects listed.
+    for( size_t i = 0 ; i < vecObjects.size() ; i++ )
+    {
+        document->GetObjects().RemoveObject( vecObjects[i]->Reference() );
+        delete vecObjects[i];
+    }
 }
 
 void PRDocumentLayout::copyOutlines( PoDoFo::PdfMemDocument* document,

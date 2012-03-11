@@ -50,6 +50,7 @@ void PRStreamLayoutZone::generateStream()
 
     // Form initialization.
     m_formsNb = 0;
+    m_formObjects.clear();
     this->pushForm();
 
     // Initialize output stream
@@ -373,50 +374,32 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     m_bufString.clear();
+    // Test if the last operand is a PdfName.
+    if( gOperands.back()[0] == '/' ) {
+        // Copy the sub-vector.
+        std::vector<std::string> tmpGOperands( gOperands );
+        tmpGOperands.pop_back();
+        this->copyVariables( tmpGOperands, m_bufString );
 
-    // Color space used.
-    if( gOperator.code == ePdfGOperator_CS || gOperator.code == ePdfGOperator_cs ) {
+        // Color space resource.
+        m_bufString +=  gOperands.back();
+        m_bufString += this->getSuffixe();
+        m_bufString += " ";
+        m_bufString += gOperator.name;
+        m_bufString += "\n";
 
-        // Modify if not default color space.
-        std::string tmpStr = gOperands.back();
-        if( tmpStr.compare( "DeviceGray" ) && tmpStr.compare( "DeviceRGB" ) &&
-                tmpStr.compare( "DeviceCMYK" ) && tmpStr.compare( "Pattern" ) ) {
-
-            m_bufString = "/";
-            m_bufString += tmpStr.substr( 1 );
-            m_bufString += this->getSuffixe();
-            m_bufString += " ";
-
-            // Add key to out resources.
-            this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
-                                      tmpStr.substr( 1 ),
-                                      streamState.resources );
-        }
-    }
-    else if( gOperator.code == ePdfGOperator_SCN || gOperator.code == ePdfGOperator_scn ) {
-        // Color space is pattern.
-        if( gOperands.back()[0] == '/' ) {
-            for( size_t i = 0 ; i < gOperands.size()-1 ; i++ ) {
-                m_bufString += gOperands[i];
-                m_bufString += " ";
-            }
-            m_bufString += "/";
-            m_bufString += gOperands.back().substr( 1 );
-            m_bufString += this->getSuffixe();
-            m_bufString += " ";
-
-            // Add key to out resources.
-            this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
-                                      gOperands.back().substr( 1 ),
-                                      streamState.resources );
-        }
+        // Add key to out resources.
+        this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
+                                  gOperands.back().substr( 1 ),
+                                  streamState.resources );
     }
     else {
-        // Copy variables.
+        // Else, simply copy variables.
         this->copyVariables( gOperands, m_bufString );
+
+        m_bufString += gOperator.name;
+        m_bufString += "\n";
     }
-    m_bufString += gOperator.name;
-    m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
 
@@ -515,43 +498,8 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
         }
     }
     else if( !xobjSubtype.compare( "Form" ) ) {
-        // Get parameters in form's dictionary
-        PdfMatrix formMat;
-        if( xobjPtr->GetDictionary().HasKey( "Matrix" ) ) {
-            PdfArray& mat = xobjPtr->GetIndirectKey( "Matrix" )->GetArray();
-
-            formMat(0,0) = mat[0].GetReal();
-            formMat(0,1) = mat[1].GetReal();
-            formMat(1,0) = mat[2].GetReal();
-            formMat(1,1) = mat[3].GetReal();
-            formMat(2,0) = mat[4].GetReal();
-            formMat(2,1) = mat[5].GetReal();
-        }
-        formMat = formMat * gState.transMat;
-
-        // Position of form's BBox
-        PdfArray& bbox = xobjPtr->GetIndirectKey( "BBox" )->GetArray();
-
-        PdfPath pathBBox;
-        pathBBox.beginSubpath( PdfVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
-        pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
-        pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
-        pathBBox.appendLine( PdfVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
-        pathBBox.closeSubpath();
-
-        PdfSubPath& subpathBBox= pathBBox.getSubpaths().back();
-        subpathBBox.applyTransfMatrix( formMat );
-
-        // Add form if inside zone
-        bool inZone = subpathBBox.intersectZone( m_zone.zoneIn, m_parameters.formStrictlyInside );
-        if( inZone )
-        {
-            m_bufString = "/";
-            m_bufString += xobjName;
-            m_bufString += m_resSuffixe;
-            m_bufString += " Do\n";
-            //m_streamOut->Append( m_bufString );
-        }
+        // Nothing to do.
+        // See fFormBegin and fFormEnd.
     }
     else if( !xobjSubtype.compare( "PS" ) ) {
         // Depreciated according to Pdf reference.
@@ -565,11 +513,14 @@ void PRStreamLayoutZone::fFormBegin( const PdfStreamState& streamState,
     // Push form.
     this->pushForm();
 
+    // Add form to the list.
+    m_formObjects.push_back( form->GetObject() );
+
     // Follows implementation from Pdf Reference: q / cm / re W n.
     m_bufStream.str("");
     m_bufStream << "q\n";
 
-    // If transformation matrix.
+    // If transformation matrix, add it.
     PdfObject* xObjPtr = form->GetObject();
     if( xObjPtr->GetDictionary().HasKey( "Matrix" ) ) {
         PdfArray& mat = xObjPtr->GetIndirectKey( "Matrix" )->GetArray();
@@ -583,7 +534,7 @@ void PRStreamLayoutZone::fFormBegin( const PdfStreamState& streamState,
         m_bufStream << "cm\n";
     }
 
-    // Form's BBox.
+    // Form's BBox: add corresponding clipping path.
     PdfRect formBBox = form->GetPageSize();
     m_bufStream << formBBox.GetLeft() << " ";
     m_bufStream << formBBox.GetBottom() << " ";

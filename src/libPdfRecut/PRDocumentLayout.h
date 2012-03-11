@@ -345,6 +345,13 @@ protected:
     void deletePagesAndContents( PoDoFo::PdfMemDocument* document,
                                  int firstPage, int nbPages ) const;
 
+    /** Delete form objects that became unnecessary.
+     * \param document Document where to remove forms.
+     * \param formObjects Form objects to remove.
+     */
+    void deleteFormObjects( PoDoFo::PdfMemDocument* document,
+                            const std::vector<PoDoFo::PdfObject*>& formObjects ) const;
+
     /** Copy and modify outlines in a document to fit the new layout.
      * \param document Document to modify.
      * \param mapPageInZones Pages / Zones map.

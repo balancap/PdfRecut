@@ -135,8 +135,6 @@ void proceedFile( QString filePath )
     // Font metrics cache associated to the document.
     PdfFontMetricsCache fontMetricsCache( document.getPoDoFoDocument() );
 
-    cout << PdfRect(0,0,1,2).ToString() << endl;
-
     // Generate a PdfDocumentLayout
     cout << " >>> Generating a Pdf Document Layout..." << endl;
     splitPagesLayout( *document.getPoDoFoDocument(), docLayout );

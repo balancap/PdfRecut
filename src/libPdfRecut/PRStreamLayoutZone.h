@@ -94,6 +94,10 @@ public:
     void fFormEnd( const PdfStreamState& streamState,
                    PoDoFo::PdfXObject* form );
 
+    /** Get the list of form objects from the page.
+     */
+    std::vector<PoDoFo::PdfObject*> getFormObjects();
+
 protected:
     /** Copy variables to a buffer.
      */
@@ -141,6 +145,9 @@ protected:
     /** Number of forms.
      */
     int m_formsNb;
+    /** Forms objects seen in the page.
+     */
+    std::vector<PoDoFo::PdfObject*> m_formObjects;
 
     /** Layout parameters.
      */
@@ -162,6 +169,10 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
+inline std::vector<PoDoFo::PdfObject*> PRStreamLayoutZone::getFormObjects()
+{
+    return m_formObjects;
+}
 inline void PRStreamLayoutZone::copyVariables( const std::vector<std::string>& vecVariables,
                                                std::string& buffer )
 {
@@ -170,7 +181,6 @@ inline void PRStreamLayoutZone::copyVariables( const std::vector<std::string>& v
         buffer += " ";
     }
 }
-
 inline std::string PRStreamLayoutZone::getSuffixe()
 {
     return m_resSuffixe + m_formSuffixe;
