@@ -24,6 +24,7 @@
 #include "podofo/base/PdfDefines.h"
 #include "podofo/base/PdfReference.h"
 #include "PdfPath.h"
+#include "PdfResources.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -134,17 +135,16 @@ struct PdfGraphicsState
     void init();
 
     /** Import parameters from ExtGState.
-     * \param page Page where to find to ExtGState resources.
+     * \param resources Resources where to find to the GState.
      * \param gsName Name of the graphics state to import.
      * \return True if the extGState was found and loaded. False else.
      */
-    bool importExtGState( PoDoFo::PdfPage* page, const std::string& gsName );
+    bool importExtGState( const PdfResources& resources, const std::string& gsName );
 
-    /** Import the Pdf reference corresponding to the font object (with name fontName)
-     * in page resources.
-     * \param page Page where to obtain the reference.
+    /** Import the Pdf reference corresponding to the font object (with name fontName).
+     * \param resources Resources where to find the font reference.
      */
-    bool importFontReference( PoDoFo::PdfPage* page );
+    bool importFontReference( const PdfResources& resources );
 };
 
 }

@@ -81,6 +81,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
         PdfGraphicOperator& gOperator = streamState.gOperator;
         std::vector<std::string>& gOperands = streamState.gOperands;
         PdfGraphicsState& gState = streamState.gStates.back();
+        PdfResources& resources = streamState.resources;
 
         if ( eType == ePdfContentsType_Variant )
         {
@@ -109,7 +110,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code ==ePdfGOperator_gs ) {
                     // Get parameters from an ExtGState dictionary.
                     tmpString = gOperands.back().substr( 1 );
-                    gState.importExtGState( m_page, tmpString );
+                    gState.importExtGState( resources, tmpString );
                 }
                 // Call category function.
                 this->fGeneralGState( streamState );
@@ -182,7 +183,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                     // Remove leading '/' and get font reference.
                     tmpString = gOperands[nbvars-2];
                     gState.textState.fontName = tmpString.substr( 1 );
-                    gState.importFontReference( m_page );
+                    gState.importFontReference( resources );
                 }
                 else if( gOperator.code == ePdfGOperator_Tr ) {
                     // Read render.
@@ -407,6 +408,57 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
             else if( gOperator.cat == ePdfGCategory_XObjects )
             {
                 // Commands in this category: Do.
+
+                // Get XObject and subtype.
+                std::string xObjName = gOperands.back().substr( 1 );
+                PdfObject* xObjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xObjName );
+                std::string xObjSubtype = xObjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
+
+                // Form object.
+                if( !xObjSubtype.compare( "Form" ) )
+                {
+                    // PdfXObject corresponding.
+                    PdfXObject xObject( xObjPtr );
+
+                    // Push on the graphics state stack.
+                    streamState.gStates.push_back( streamState.gStates.back() );
+
+                    // Get transformation matrix of the form.
+                    PdfMatrix formMat;
+                    if( xObjPtr->GetDictionary().HasKey( "Matrix" ) ) {
+                        PdfArray& mat = xObjPtr->GetIndirectKey( "Matrix" )->GetArray();
+
+                        formMat(0,0) = mat[0].GetReal();
+                        formMat(0,1) = mat[1].GetReal();
+                        formMat(1,0) = mat[2].GetReal();
+                        formMat(1,1) = mat[3].GetReal();
+                        formMat(2,0) = mat[4].GetReal();
+                        formMat(2,1) = mat[5].GetReal();
+                    }
+                    streamState.gStates.back().transMat = formMat * streamState.gStates.back().transMat;
+
+                    // Get form's BBox and append it to clipping path.
+                    PdfArray& bbox = xObjPtr->GetIndirectKey( "BBox" )->GetArray();
+
+                    PdfPath pathBBox;
+                    pathBBox.beginSubpath( PdfVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
+                    pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
+                    pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
+                    pathBBox.appendLine( PdfVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
+                    pathBBox.closeSubpath();
+
+                    streamState.gStates.back().clippingPath.appendPath( pathBBox );
+
+                    // Analayse Form.
+                    this->fFormBegin( streamState, &xObject );
+                    this->analyseCanvas( &xObject,
+                                         streamState.gStates.back(),
+                                         streamState.resources );
+                    this->fFormEnd( streamState, &xObject );
+
+                    // Pop on the graphics state stack.
+                    streamState.gStates.pop_back();
+                }
 
                 // Call category function.
                 this->fXObjects( streamState );

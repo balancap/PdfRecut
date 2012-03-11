@@ -29,14 +29,14 @@ namespace PdfRecut {
 
 PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                                         PoDoFo::PdfStream* streamOut,
-                                        const PRPageZone& zone,
-                                        const PRLayoutParameters& parameters,
-                                        const std::string& resPrefix ) :
-    PRStreamAnalysis( pageIn ), m_zone ( zone ),
-    m_resPrefix ( resPrefix ), m_parameters( parameters )
+                                        PdfResources* resourcesOut,
+                                        const PRPageZone &zone,
+                                        const PRLayoutParameters &parameters, const std::string &resSuffixe ) :
+    PRStreamAnalysis( pageIn ), m_zone ( zone ), m_resSuffixe ( resSuffixe ), m_parameters( parameters )
 {
     // Downcasting to PdfMemStream pointer.resource
     m_streamOut = dynamic_cast<PdfMemStream*>( streamOut );
+    m_resourcesOut = resourcesOut;
 
     m_bufString.reserve( BUFFER_SIZE );
 }
@@ -47,6 +47,10 @@ void PRStreamLayoutZone::generateStream()
     PdfMatrix zoneOutTrMatrix;
     zoneOutTrMatrix(2,0) = m_zone.leftZoneOut - m_zone.zoneIn.GetLeft();
     zoneOutTrMatrix(2,1) = m_zone.bottomZoneOut - m_zone.zoneIn.GetBottom();
+
+    // Form initialization.
+    m_formsNb = 0;
+    this->pushForm();
 
     // Initialize output stream
     TVecFilters vecFilters;
@@ -96,11 +100,16 @@ void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
     m_bufString.clear();
 
     if( gOperator.code == ePdfGOperator_gs ) {
-        // Specific case of command "gs": add resource prefix.
+        // Specific case of command "gs": add resource suffixe.
         m_bufString += "/";
-        m_bufString += m_resPrefix;
         m_bufString += gOperands.back().substr( 1 );
+        m_bufString += this->getSuffixe();
         m_bufString += " gs\n";
+
+        // Add key to out resources.
+        this->addResourcesOutKey( ePdfResourcesType_ExtGState,
+                                  gOperands.back().substr( 1 ),
+                                  streamState.resources );
     }
     else {
         // Copy variables and operator.
@@ -273,11 +282,16 @@ void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
     if( gOperator.code == ePdfGOperator_Tf ) {
         // Font: add resource prefix to name.
         m_bufString = "/";
-        m_bufString += m_resPrefix;
         m_bufString += gOperands[0].substr( 1 );
+        m_bufString += this->getSuffixe();
         m_bufString += " ";
         m_bufString += gOperands[1];
         m_bufString += " Tf\n";
+
+        // Add key to out resources.
+        this->addResourcesOutKey( ePdfResourcesType_Font,
+                                  gOperands[0].substr( 1 ),
+                                  streamState.resources );
     }
     else {
         // Copy variables and operator.
@@ -369,9 +383,14 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
                 tmpStr.compare( "DeviceCMYK" ) && tmpStr.compare( "Pattern" ) ) {
 
             m_bufString = "/";
-            m_bufString += m_resPrefix;
             m_bufString += tmpStr.substr( 1 );
+            m_bufString += this->getSuffixe();
             m_bufString += " ";
+
+            // Add key to out resources.
+            this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
+                                      tmpStr.substr( 1 ),
+                                      streamState.resources );
         }
     }
     else if( gOperator.code == ePdfGOperator_SCN || gOperator.code == ePdfGOperator_scn ) {
@@ -382,9 +401,14 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
                 m_bufString += " ";
             }
             m_bufString += "/";
-            m_bufString += m_resPrefix;
             m_bufString += gOperands.back().substr( 1 );
+            m_bufString += this->getSuffixe();
             m_bufString += " ";
+
+            // Add key to out resources.
+            this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
+                                      gOperands.back().substr( 1 ),
+                                      streamState.resources );
         }
     }
     else {
@@ -406,10 +430,15 @@ void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
     {
         // Command sh: add resource prefix.
         m_bufString = "/";
-        m_bufString += m_resPrefix;
         m_bufString += gOperands.back().substr( 1 );
+        m_bufString += this->getSuffixe();
         m_bufString += " sh\n";
         m_streamOut->Append( m_bufString );
+
+        // Add key to out resources.
+        this->addResourcesOutKey( ePdfResourcesType_Shading,
+                                  gOperands.back().substr( 1 ),
+                                  streamState.resources );
     }
 }
 
@@ -456,10 +485,9 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfGraphicsState& gState = streamState.gStates.back();
 
-    // Name of the XObject and dictionary entry.
+    // Get XObject and subtype.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjDict = m_page->GetResources()->GetIndirectKey( "XObject" );
-    PdfObject* xobjPtr = xobjDict->GetIndirectKey( xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
 
     // Distinction between different type of XObjects
@@ -475,10 +503,15 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
         if( inZone )
         {
             m_bufString = "/";
-            m_bufString += m_resPrefix;
             m_bufString += xobjName;
+            m_bufString += this->getSuffixe();
             m_bufString += " Do\n";
             m_streamOut->Append( m_bufString );
+
+            // Add key to out resources.
+            this->addResourcesOutKey( ePdfResourcesType_XObject,
+                                      xobjName,
+                                      streamState.resources );
         }
     }
     else if( !xobjSubtype.compare( "Form" ) ) {
@@ -514,16 +547,62 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
         if( inZone )
         {
             m_bufString = "/";
-            m_bufString += m_resPrefix;
             m_bufString += xobjName;
+            m_bufString += m_resSuffixe;
             m_bufString += " Do\n";
-            m_streamOut->Append( m_bufString );
+            //m_streamOut->Append( m_bufString );
         }
     }
     else if( !xobjSubtype.compare( "PS" ) ) {
         // Depreciated according to Pdf reference.
         // Therefore, don't care about the implementation...
     }
+}
+
+void PRStreamLayoutZone::fFormBegin( const PdfStreamState& streamState,
+                                     PoDoFo::PdfXObject* form )
+{
+    // Push form.
+    this->pushForm();
+
+    // Follows implementation from Pdf Reference: q / cm / re W n.
+    m_bufStream.str("");
+    m_bufStream << "q\n";
+
+    // If transformation matrix.
+    PdfObject* xObjPtr = form->GetObject();
+    if( xObjPtr->GetDictionary().HasKey( "Matrix" ) ) {
+        PdfArray& mat = xObjPtr->GetIndirectKey( "Matrix" )->GetArray();
+
+        m_bufStream << mat[0].GetReal() << " ";
+        m_bufStream << mat[1].GetReal() << " ";
+        m_bufStream << mat[2].GetReal() << " ";
+        m_bufStream << mat[3].GetReal() << " ";
+        m_bufStream << mat[4].GetReal() << " ";
+        m_bufStream << mat[5].GetReal() << " ";
+        m_bufStream << "cm\n";
+    }
+
+    // Form's BBox.
+    PdfRect formBBox = form->GetPageSize();
+    m_bufStream << formBBox.GetLeft() << " ";
+    m_bufStream << formBBox.GetBottom() << " ";
+    m_bufStream << formBBox.GetWidth() << " ";
+    m_bufStream << formBBox.GetHeight() << " ";
+    m_bufStream << " re W n\n";
+
+    // Append to stream.
+    m_streamOut->Append( m_bufStream.str() );
+}
+
+void PRStreamLayoutZone::fFormEnd( const PdfStreamState& streamState,
+                                   PoDoFo::PdfXObject* form )
+{
+    // Pop form.
+    this->popForm();
+
+    // Pop graphics stack.
+    m_streamOut->Append( "Q\n" );
 }
 
 void PRStreamLayoutZone::fMarkedContents( const PdfStreamState& streamState )
@@ -541,5 +620,38 @@ void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
+
+void PRStreamLayoutZone::addResourcesOutKey( EPdfResourcesType resourceType,
+                                             const std::string& key,
+                                             const PdfResources& resourcesIn )
+{
+    // Get and add key.
+    PdfObject* objPtr = resourcesIn.getKey( resourceType, key );
+    if( objPtr ) {
+        m_resourcesOut->addKey( resourceType, key+getSuffixe(), objPtr );
+    }
+}
+void PRStreamLayoutZone::pushForm()
+{
+    // Add form on the stack.
+    m_formsStack.push_back( m_formsNb );
+    m_formsNb++;
+
+    // Update form suffixe.
+    std::ostringstream suffixe;
+    suffixe << "F" << m_formsStack.back();
+    m_formSuffixe = suffixe.str();
+}
+void PRStreamLayoutZone::popForm()
+{
+    // Pop form on the stack.
+    m_formsStack.pop_back();
+
+    // Update form suffixe.
+    std::ostringstream suffixe;
+    suffixe << "F" << m_formsStack.back();
+    m_formSuffixe = suffixe.str();
+}
+
 
 }

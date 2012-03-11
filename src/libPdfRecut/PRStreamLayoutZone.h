@@ -46,9 +46,10 @@ public:
      */
     PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                         PoDoFo::PdfStream* streamOut,
+                        PdfResources* resourcesOut,
                         const PRPageZone& zone,
                         const PRLayoutParameters& parameters,
-                        const std::string& resPrefix );
+                        const std::string& resSuffixe );
 
     void generateStream();
 
@@ -87,23 +88,60 @@ public:
 
     void fCompatibility( const PdfStreamState& streamState );
 
+    void fFormBegin( const PdfStreamState& streamState,
+                     PoDoFo::PdfXObject* form );
 
+    void fFormEnd( const PdfStreamState& streamState,
+                   PoDoFo::PdfXObject* form );
 
 protected:
     /** Copy variables to a buffer.
      */
     void copyVariables( const std::vector<std::string>& vecVariables, std::string& buffer );
 
+    /** Add out resources key.
+     */
+    void addResourcesOutKey( EPdfResourcesType resourceType,
+                             const std::string& key,
+                             const PdfResources& resourcesIn );
+
+    /** Push form.
+     */
+    void pushForm();
+    /** Pop form.
+     */
+    void popForm();
+
+    /** Get suffixe.
+     */
+    std::string getSuffixe();
+
 protected:
     /** Output stream.
      */
     PoDoFo::PdfMemStream* m_streamOut;
+    /** Output resources.
+     */
+    PdfResources* m_resourcesOut;
+
     /** Pdf page zone.
      */
     PRPageZone m_zone;
-    /** Resource prefix.
+
+    /** Resource suffixe.
      */
-    std::string m_resPrefix;
+    std::string m_resSuffixe;
+    /** Form suffixe.
+     */
+    std::string m_formSuffixe;
+
+    /** Form stack of indexes.
+     */
+    std::vector<int> m_formsStack;
+    /** Number of forms.
+     */
+    int m_formsNb;
+
     /** Layout parameters.
      */
     PRLayoutParameters m_parameters;
@@ -131,6 +169,11 @@ inline void PRStreamLayoutZone::copyVariables( const std::vector<std::string>& v
         buffer += vecVariables[i];
         buffer += " ";
     }
+}
+
+inline std::string PRStreamLayoutZone::getSuffixe()
+{
+    return m_resSuffixe + m_formSuffixe;
 }
 
 }

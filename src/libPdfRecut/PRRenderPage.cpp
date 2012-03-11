@@ -64,8 +64,8 @@ void PRRenderParameters::initPenBrush()
     imagePB.fillBrush = new QBrush( Qt::red );
 
     // Form pen color.
-    formPB.drawPen = new QPen( Qt::darkGreen );
-    formPB.fillBrush = new QBrush( Qt::green );
+    formPB.drawPen = new QPen( Qt::green );
+    //formPB.fillBrush = new QBrush( Qt::green );
 }
 
 //**********************************************************//
@@ -370,8 +370,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
 
     // Name of the XObject and dictionary entry.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjDict = m_page->GetResources()->GetIndirectKey( "XObject" );
-    PdfObject* xobjPtr = xobjDict->GetIndirectKey( xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
     PdfMatrix pathMat;
 
@@ -489,7 +488,7 @@ void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
               << width << "x" << height << " // "
               << filter;
 
-    if( filter == "DCTDecode" )
+    if( filter == "DCTDecode" || filter == "JBIG2Decode" )
     {
         imgNbs++;
         PdfMemStream* imgStream = dynamic_cast<PdfMemStream*> ( xobj->GetStream() );

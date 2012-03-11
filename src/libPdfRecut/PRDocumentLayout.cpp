@@ -37,7 +37,7 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-std::string PRDocumentLayout::zonePrefix( "ZP" );
+std::string PRDocumentLayout::zoneSuffixe( "_ZS" );
 
 //**********************************************************//
 //                      Public methods                      //
@@ -293,6 +293,10 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
         // Create an empty page in the document.
         pageOut = document->CreatePage( m_pageLayouts[idx].mediaBox );
 
+        // Resources associated to the page.
+        PdfResources resourcesOut;
+        resourcesOut.pushBack( pageOut->GetResources() );
+
         // Set cropbox.
         m_pageLayouts[idx].cropBox.ToVariant( pagebox );
         pageOut->GetObject()->GetDictionary().AddKey( "CropBox", pagebox );
@@ -328,19 +332,20 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
             try
             {
                 // Copy ressources in the output page.
-                this->copyPageRessources( pageOut, pageIn, i );
+                //this->copyPageRessources( pageOut, pageIn, i );
 
                 // Compute prefix string.
-                std::ostringstream prefix;
-                prefix << zonePrefix << i;
-                std::string prefixStr = prefix.str();
+                std::ostringstream suffixe;
+                suffixe << zoneSuffixe << i;
+                std::string suffixeStr = suffixe.str();
 
                 // Obtain stream which corresponds to zone.
                 PRStreamLayoutZone streamLayout( pageIn,
-                                                  streamObj->GetStream(),
-                                                  m_pageLayouts[idx].zonesIn[i],
-                                                  m_parameters,
-                                                  prefixStr );
+                                                 streamObj->GetStream(),
+                                                 &resourcesOut,
+                                                 m_pageLayouts[idx].zonesIn[i],
+                                                 m_parameters,
+                                                 suffixeStr );
                 streamLayout.generateStream();
             }
             catch( const PdfError& error )
@@ -545,9 +550,9 @@ void PRDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
     PdfDictionary& resDictOut = pageOut->GetResources()->GetDictionary();
 
     // Key Prefix.
-    std::ostringstream prefix;
-    prefix << zonePrefix << zoneIdx;
-    std::string prefixStr = prefix.str();
+    std::ostringstream suffixe;
+    suffixe << zoneSuffixe << zoneIdx;
+    std::string suffixeStr = suffixe.str();
 
     // List of resources to copy.
     std::string resName;
@@ -580,7 +585,7 @@ void PRDocumentLayout::copyPageRessources( PoDoFo::PdfPage* pageOut,
             TCIKeyMap it;
 
             for( it = mapIn.begin() ; it != mapIn.end() ; ++it ) {
-                resOut.AddKey( prefixStr + (*it).first.GetName(), (*it).second );
+                resOut.AddKey( (*it).first.GetName() + suffixeStr, (*it).second );
             }
         }
     }

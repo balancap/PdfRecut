@@ -476,7 +476,7 @@ protected:
 
     /** Prefix used when import zones.
      */
-    static std::string zonePrefix;
+    static std::string zoneSuffixe;
 };
 
 //**********************************************************//

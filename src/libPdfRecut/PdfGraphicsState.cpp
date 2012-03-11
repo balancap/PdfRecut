@@ -70,20 +70,16 @@ void PdfGraphicsState::init()
     compatibilityMode = false;
 }
 
-bool PdfGraphicsState::importExtGState( PoDoFo::PdfPage* page, const std::string& gsName )
+bool PdfGraphicsState::importExtGState( const PdfResources& resources, const std::string& gsName )
 {
-    // Pdf resources of the page and ExtGState dictionary.
-    PdfObject* pageRes = page->GetResources();
-    PdfObject* extGStates = pageRes->GetIndirectKey( "ExtGState" );
-    PdfObject* param;
-
-    // Obtain the wanted graphics state.
-    PdfObject* eGState = extGStates->GetIndirectKey( gsName );
+    // Obtain the expected graphics state.
+    PdfObject* eGState = resources.getIndirectKey( ePdfResourcesType_ExtGState, gsName );
     if( !eGState ) {
         return false;
     }
 
     // Line width.
+    PdfObject* param;
     param = eGState->GetIndirectKey( "LW" );
     if( param ) {
         lineWidth = param->GetReal();
@@ -108,15 +104,11 @@ bool PdfGraphicsState::importExtGState( PoDoFo::PdfPage* page, const std::string
     }
     return true;
 }
-bool PdfGraphicsState::importFontReference( PoDoFo::PdfPage* page )
+bool PdfGraphicsState::importFontReference( const PdfResources& resources )
 {
-    // Pdf resources of the page and Font dictionary.
-    PdfObject* pageRes = page->GetResources();
-    PdfObject* fontRes = pageRes->GetIndirectKey( "Font" );
-
     // Obtain the expected font reference.
-    PdfObject* font = fontRes->GetDictionary().GetKey( textState.fontName );
-    //PdfObject* font = fontRes->GetIndirectKey(  );
+    PdfObject* font = resources.getKey( ePdfResourcesType_Font, textState.fontName );
+
     if( font && font->IsReference() ) {
         textState.fontRef = font->GetReference();
         return true;

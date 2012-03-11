@@ -28,6 +28,7 @@
 namespace PoDoFo {
     class PdfPage;
     class PdfCanvas;
+    class PdfXObject;
 }
 
 namespace PdfRecut {
@@ -114,6 +115,12 @@ public:
     virtual void fMarkedContents( const PdfStreamState& streamState ) = 0;
 
     virtual void fCompatibility( const PdfStreamState& streamState ) = 0;
+
+    virtual void fFormBegin( const PdfStreamState& streamState,
+                             PoDoFo::PdfXObject* form ) = 0;
+
+    virtual void fFormEnd( const PdfStreamState& streamState,
+                           PoDoFo::PdfXObject* form ) = 0;
 
 protected:
     /** Read an integer from a string.

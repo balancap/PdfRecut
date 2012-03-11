@@ -113,7 +113,8 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics( const PoDoFo::PdfRe
                fontMetricsPtr.owned = true;
 
                if( pEncoding ) {
-                   delete pPdfEncoding;
+                   // TODO: segfault ?
+                   // delete pPdfEncoding;
                }
                // fontMetricsPtr.ptr = pMetrics;
                // fontMetricsPtr.owned = false;

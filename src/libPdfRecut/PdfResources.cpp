@@ -21,46 +21,99 @@
 #include "PdfResources.h"
 #include <podofo/podofo.h>
 
+using namespace PoDoFo;
+
 namespace PdfRecut {
+
+const char* PdfResources::CTypes[] = { "ExtGState",
+                                       "ColorSpace",
+                                       "Pattern",
+                                       "Shading",
+                                       "XObject",
+                                       "Font",
+                                       "ProcSet",
+                                       "Properties" };
 
 PdfResources::PdfResources()
 {
-    // Initialize resources types.
-    m_resourcesTypes.push_back( "ExtGState" );
-    m_resourcesTypes.push_back( "ColorSpace" );
-    m_resourcesTypes.push_back( "Pattern" );
-    m_resourcesTypes.push_back( "Shading" );
-    m_resourcesTypes.push_back( "XObject" );
-    m_resourcesTypes.push_back( "Font" );
-    m_resourcesTypes.push_back( "ProcSet" );
-    m_resourcesTypes.push_back( "Properties" );
 }
 PdfResources::PdfResources( const PdfResources& resources )
 {
-    m_resources = resources.m_resources;
-    m_resourcesTypes = resources.m_resourcesTypes;
+    *this = resources;
 }
 PdfResources& PdfResources::operator=( const PdfResources& resources )
 {
     m_resources = resources.m_resources;
-    m_resourcesTypes = resources.m_resourcesTypes;
     return *this;
 }
 
-void PdfResources::pushBack( PoDoFo::PdfObject* resourcesDict )
+void PdfResources::pushBack( PoDoFo::PdfObject* resourcesObj )
 {
     // Check it is a dictionary.
-    if( resourcesDict->IsDictionary() ) {
-        m_resources.push_back( resourcesDict );
+    if( resourcesObj->IsDictionary() ) {
+        m_resources.push_back( resourcesObj );
     }
     else {
         // TODO: raise exception...
     }
 }
-
 std::vector<PoDoFo::PdfObject*> PdfResources::getResources()
 {
     return m_resources;
 }
+
+void PdfResources::addKey( EPdfResourcesType resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
+{
+    // Get resources dict. Create it, if necessary.
+    if( !m_resources.back()->GetDictionary().HasKey( CTypes[resource] ) ) {
+        m_resources.back()->GetDictionary().AddKey( CTypes[resource], PdfDictionary() );
+    }
+    PdfObject* resDict = m_resources.back()->GetIndirectKey( CTypes[resource] );
+
+    // Add key.
+    resDict->GetDictionary().AddKey( key, object );
+}
+
+PoDoFo::PdfObject* PdfResources::getKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const
+{
+    PdfObject* keyObj = NULL;
+
+    // Look in every resources object.
+    for( int i = m_resources.size()-1 ; i >= 0 ; --i )
+    {
+        // Get resources dict.
+        PdfObject* resDict = m_resources[i]->GetIndirectKey( CTypes[resource] );
+
+        if( resDict ) {
+            // Find the key (can be a PdfReference).
+            keyObj = resDict->GetDictionary().GetKey( key );
+            if( keyObj ) {
+                return keyObj;
+            }
+        }
+    }
+    return keyObj;
+}
+PoDoFo::PdfObject* PdfResources::getIndirectKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const
+{
+    PdfObject* keyObj = NULL;
+
+    // Look in every resources object.
+    for( int i = m_resources.size()-1 ; i >= 0 ; --i )
+    {
+        // Get resources dict.
+        PdfObject* resDict = m_resources[i]->GetIndirectKey( CTypes[resource] );
+
+        if( resDict ) {
+            // Find the key.
+            keyObj = resDict->GetIndirectKey( key );
+            if( keyObj ) {
+                return keyObj;
+            }
+        }
+    }
+    return keyObj;
+}
+
 
 }
