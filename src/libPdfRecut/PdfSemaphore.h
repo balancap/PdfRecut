@@ -24,7 +24,7 @@
 #include <QSemaphore>
 
 /** A semaphore class used in different Pdf class to protect members
-  in a multithread program and make the class thread-safe.
+ * in a multithread program and make the class thread-safe.
  */
 class PdfClassSemaphore : public QSemaphore
 {

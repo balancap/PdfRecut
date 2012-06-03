@@ -115,5 +115,4 @@ PoDoFo::PdfObject* PdfResources::getIndirectKey( EPdfResourcesType resource, con
     return keyObj;
 }
 
-
 }

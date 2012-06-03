@@ -191,6 +191,12 @@ public:
      */
     void setClippingPathOp( const std::string& op );
 
+    /** Convert the path to a Qt Painter Path object.
+     * \param closeSubpaths Force (or not) to close subpaths.
+     * \return QPainterPath object.
+     */
+    QPainterPath toQPainterPath( bool closeSubpaths ) const;
+
 protected:
     /** Get current subpath. Append a new one if the last in the list
      * is closed.

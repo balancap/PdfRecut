@@ -166,6 +166,7 @@ class PRRenderPage : public PRStreamAnalysis
 public:
     /** Default constructor.
      * \param pageIn Input page to draw.
+     * \param fontMetricsCache Cache object for font metrics.
      */
     PRRenderPage( PoDoFo::PdfPage* pageIn,
                   PdfFontMetricsCache* fontMetricsCache );
@@ -179,11 +180,19 @@ public:
      */
     void renderPage( const PRRenderParameters& parameters );
 
-    /** Save page into a file.
+    /** Get rendering image.
+     * \return Image pointer.
+     */
+    QImage* getRenderImage();
+
+    /** Clear image and painter.
+     */
+    void clearPageImage();
+
+    /** Save page image into a file.
      * \param filename File where to save the page.
      */
     void saveToFile( const QString& filename );
-
 
     void fGeneralGState( const PdfStreamState& streamState );
 
@@ -226,6 +235,30 @@ public:
     virtual void fFormEnd( const PdfStreamState& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
+    /** Convert Image coordinates to Page coordinates.
+     * \param imgCoord Coordinates of a pixel in the image.
+     * \return Coordinates in the page of the pixel center.
+     */
+    PdfVector fromImagetoPageCoord( const QPoint& imgCoord );
+
+    /** Convert Page coordinates to Image coordinates.
+     * \param pageCoord Coordinates in the page of a point.
+     * return Coordinates of the pixel which contains the point in the image.
+     */
+    QPoint fromPagetoImageCoord( const PdfVector& pageCoord );
+
+    /** Convert Image rectangle to page coordinates.
+     * \param imgRect Rectangle in image coordinates.
+     * \return Rectangle in page coordinates.
+     */
+    PoDoFo::PdfRect fromImagetoPageCoord( const QRect& imgRect );
+
+    /** Convert Page rectangle to image coordinates.
+     * \param pageRect Rectangle in page coordinates.
+     * \return Rectangle in image coordinates.
+     */
+    QRect fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect );
+
 private:
 
     /** Structure representing the length of a word.
@@ -252,9 +285,10 @@ private:
                                 PoDoFo::PdfFontMetrics* fontMetrics,
                                 double wordSpace );
 
+    /** Test function on images.
+     */
     static int imgNbs;
     void testPdfImage( PoDoFo::PdfObject* xobj );
-
 
 private:
     /** Document object.
@@ -291,6 +325,46 @@ private:
      */
     PdfMatrix m_textMatrix;
 };
+
+//**********************************************************//
+//                      Inline methods                      //
+//**********************************************************//
+inline PdfVector PRRenderPage::fromImagetoPageCoord( const QPoint& imgCoord )
+{
+    PdfVector pageCoord;
+    pageCoord(0) = ( imgCoord.x() + 0.5 ) / m_renderParameters.resolution + m_pageRect.GetLeft();
+    pageCoord(1) = ( m_pageImage->height() - 0.5 - imgCoord.y() ) / m_renderParameters.resolution + m_pageRect.GetBottom();
+
+    return pageCoord;
+}
+inline QPoint PRRenderPage::fromPagetoImageCoord( const PdfVector& pageCoord )
+{
+    QPoint imgCoord;
+    imgCoord.rx() = floor( ( pageCoord(0) - m_pageRect.GetLeft() ) * m_renderParameters.resolution );
+    imgCoord.ry() = floor( ( m_pageRect.GetHeight() - pageCoord(1) + m_pageRect.GetLeft() ) * m_renderParameters.resolution );
+
+    return imgCoord;
+}
+inline PoDoFo::PdfRect PRRenderPage::fromImagetoPageCoord( const QRect& imgRect )
+{
+    PoDoFo::PdfRect pageRect;
+    pageRect.SetLeft( ( imgRect.x() + 0.5 ) / m_renderParameters.resolution + m_pageRect.GetLeft() );
+    pageRect.SetBottom( ( m_pageImage->height() - 0.5 - imgRect.y() ) / m_renderParameters.resolution + m_pageRect.GetBottom() );
+    pageRect.SetWidth( imgRect.width() / m_renderParameters.resolution );
+    pageRect.SetHeight( imgRect.height() / m_renderParameters.resolution );
+
+    return pageRect;
+}
+inline QRect PRRenderPage::fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect )
+{
+    QRect imgRect;
+    imgRect.setLeft( floor( ( pageRect.GetLeft() - m_pageRect.GetLeft() ) * m_renderParameters.resolution ) );
+    imgRect.setTop( floor( ( m_pageRect.GetHeight() - pageRect.GetBottom() + m_pageRect.GetLeft() ) * m_renderParameters.resolution ) );
+    imgRect.setWidth( pageRect.GetWidth() * m_renderParameters.resolution );
+    imgRect.setHeight( pageRect.GetHeight() * m_renderParameters.resolution );
+
+    return imgRect;
+}
 
 }
 

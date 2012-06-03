@@ -361,4 +361,68 @@ PdfSubPath& PdfPath::getCurrentSubPath()
     return m_subpaths.back();
 }
 
+QPainterPath PdfPath::toQPainterPath( bool closeSubpaths ) const
+{
+    // Qt painter path to create from Pdf path.
+    QPainterPath qPath;
+
+    // Add every subpath to the qt painter path.
+    for( size_t i = 0 ; i < m_subpaths.size() ; ++i )
+    {
+        // Points from the subpath.
+        for( size_t j = 0 ; j < m_subpaths[i].points.size() ; ++j )
+        {
+            const PdfVector& point = m_subpaths[i].points[j];
+            const std::string& opPoint = m_subpaths[i].opPoints[j];
+
+            // Distinction between different painting operators.
+            if( opPoint == "m" ) {
+                qPath.moveTo( point(0), point(1) );
+            }
+            else if( opPoint == "l" ) {
+                qPath.lineTo( point(0), point(1) );
+            }
+            else if( opPoint == "c" ) {
+                QPointF c1Pt( m_subpaths[i].points[j](0), m_subpaths[i].points[j](1) );
+                QPointF c2Pt( m_subpaths[i].points[j+1](0), m_subpaths[i].points[j+1](1) );
+                QPointF endPt( m_subpaths[i].points[j+2](0), m_subpaths[i].points[j+2](1) );
+
+                qPath.cubicTo( c1Pt, c2Pt, endPt );
+                j+=2;
+            }
+            else if( opPoint == "v" ) {
+                QPointF c1Pt( qPath.currentPosition() );
+                QPointF c2Pt( m_subpaths[i].points[j](0), m_subpaths[i].points[j](1) );
+                QPointF endPt( m_subpaths[i].points[j+1](0), m_subpaths[i].points[j+1](1) );
+
+                qPath.cubicTo( c1Pt, c2Pt, endPt );
+                j+=1;
+            }
+            else if( opPoint == "y" ) {
+                QPointF c1Pt( m_subpaths[i].points[j](0), m_subpaths[i].points[j](1) );
+                QPointF c2Pt( m_subpaths[i].points[j+1](0), m_subpaths[i].points[j+1](1) );
+                QPointF endPt( c2Pt );
+
+                qPath.cubicTo( c1Pt, c2Pt, endPt );
+                j+=1;
+            }
+            else if( opPoint == "h" ) {
+                qPath.closeSubpath();
+            }
+            else if( opPoint == "re" ) {
+                // Rectangle:  "re" corresponds to "m l l l h"
+                const PdfVector& pointUR = m_subpaths[i].points[j+2];
+
+                qPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
+                j+=4;
+            }
+        }
+        // Force the subpaths to be closed according, based on the painting operator.
+        if( closeSubpaths ) {
+            qPath.closeSubpath();
+        }
+    }
+    return qPath;
+}
+
 }

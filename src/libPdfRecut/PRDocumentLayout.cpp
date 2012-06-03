@@ -382,7 +382,7 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
     this->deletePagesAndContents( document, 0, origPagesNb );
 
     // Delete unused forms.
-    //this->deleteFormObjects( document, formObjects );
+    this->deleteFormObjects( document, formObjects );
 
     // Clear pages tree cache.
     document->GetPagesTree()->ClearCache();

@@ -115,13 +115,23 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
     m_pageImgTrans.init();
     m_pageImgTrans(0,0) = parameters.resolution;
     m_pageImgTrans(1,1) = -parameters.resolution;
-    m_pageImgTrans(2,0) = -cropBox.GetLeft() * parameters.resolution;
-    m_pageImgTrans(2,1) = (cropBox.GetBottom() + cropBox.GetHeight()) * parameters.resolution;
+    m_pageImgTrans(2,0) = -m_pageRect.GetLeft() * parameters.resolution;
+    m_pageImgTrans(2,1) = (m_pageRect.GetBottom() + m_pageRect.GetHeight()) * parameters.resolution;
 
     // Perform the analysis and draw.
     this->analyse();
 
     m_pagePainter->end();
+}
+
+QImage *PRRenderPage::getRenderImage()
+{
+    return m_pageImage;
+}
+void PRRenderPage::clearPageImage()
+{
+    delete m_pageImage;
+    delete m_pagePainter;
 }
 
 void PRRenderPage::saveToFile( const QString& filename )
@@ -154,10 +164,10 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
     bool closeSubpaths = gOperator.isClosePainting();
 
     // Qt painter path to create from Pdf path.
-    QPainterPath qCurrentPath;
+    QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths );
 
     // Add every subpath to the qt painter path.
-    for( size_t i = 0 ; i < subpaths.size() ; ++i )
+    /*for( size_t i = 0 ; i < subpaths.size() ; ++i )
     {
         // Points from the subpath.
         for( size_t j = 0 ; j < subpaths[i].points.size() ; ++j )
@@ -211,7 +221,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
         if( closeSubpaths ) {
             qCurrentPath.closeSubpath();
         }
-    }
+    }*/
     // Compute path rendering matrix.
     PdfMatrix pathMat;
     pathMat = gState.transMat * m_pageImgTrans;
@@ -219,6 +229,8 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 
     // Draw path.
     if( currentPath.getClippingPathOp().length() ) {
+        std::cout << "Clipping path" << endl;
+
         m_renderParameters.clippingPathPB.setPenBrush( m_pagePainter );
     }
     else {
@@ -377,7 +389,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
     // Distinction between different type of XObjects
     if( !xobjSubtype.compare( "Image" ) )
     {
-        testPdfImage( xobjPtr );
+        //testPdfImage( xobjPtr );
 
         // Compute path rendering matrix.
         pathMat = gState.transMat * m_pageImgTrans;
@@ -483,7 +495,6 @@ void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
     else
         xobj->GetIndirectKey( "Filter" )->ToString( filter );
 
-
     std::cout << xobjSubtype << " : "
               << width << "x" << height << " // "
               << filter;
@@ -518,9 +529,7 @@ void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
         std::ofstream outData( "./img.raw", std::ios_base::trunc );
         outData.write( imgStream->Get(), imgStream->GetLength() );
         outData.close();
-
     }
-
     std::cout << std::endl;
 }
 

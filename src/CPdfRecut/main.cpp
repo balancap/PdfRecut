@@ -136,40 +136,40 @@ void proceedFile( QString filePath )
     PdfFontMetricsCache fontMetricsCache( document.getPoDoFoDocument() );
 
     // Generate a PdfDocumentLayout
-    cout << " >>> Generating a Pdf Document Layout..." << endl;
-    splitPagesLayout( *document.getPoDoFoDocument(), docLayout );
+//    cout << " >>> Generating a Pdf Document Layout..." << endl;
+//    splitPagesLayout( *document.getPoDoFoDocument(), docLayout );
 
-    // Layout parameters.
-    PRLayoutParameters params;
-    params.zoneClippingPath = false;
-    params.pathReduce = true;
-    params.pathStrictlyInside = false;
-    params.overlayLayoutZones = true;
-    docLayout.setLayoutParameters( params );
+//    // Layout parameters.
+//    PRLayoutParameters params;
+//    params.zoneClippingPath = false;
+//    params.pathReduce = true;
+//    params.pathStrictlyInside = false;
+//    params.overlayLayoutZones = true;
+//    docLayout.setLayoutParameters( params );
 
-    filePath = infoFile.canonicalPath() + "/xpdfOut_"
-             + infoFile.fileName();
+//    filePath = infoFile.canonicalPath() + "/xpdfOut_"
+//             + infoFile.fileName();
 
-    // Transform document and export to Pdf file.
-    cout << " >>> Transform Pdf Document..." << endl;
-    docLayout.writeLayoutToPdf( &document, filePath );
+//    // Transform document and export to Pdf file.
+//    cout << " >>> Transform Pdf Document..." << endl;
+//    docLayout.writeLayoutToPdf( &document, filePath );
 
     //PdfDocumentTools::uncompressStreams( &document );
     //docLayout.printLayoutOut( &document );
     //docLayout.printLayoutIn( &document );
     //document.writePoDoFoDocument( filePath );
 
-//    // Render page and save.
-//    PRRenderParameters renderParams;
-//    renderParams.resolution = 2.0;
-//    QString filename;
-//    for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
-//        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
+    // Render page and save.
+    PRRenderParameters renderParams;
+    renderParams.resolution = 2.0;
+    QString filename;
+    for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
+        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
 
-//        PRRenderPage renderPage( document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
-//        renderPage.renderPage( renderParams );
-//        renderPage.saveToFile( filename );
-//    }
+        PRRenderPage renderPage( document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
+        renderPage.renderPage( renderParams );
+        renderPage.saveToFile( filename );
+    }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 }
 
