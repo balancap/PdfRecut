@@ -361,7 +361,7 @@ PdfSubPath& PdfPath::getCurrentSubPath()
     return m_subpaths.back();
 }
 
-QPainterPath PdfPath::toQPainterPath( bool closeSubpaths ) const
+QPainterPath PdfPath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) const
 {
     // Qt painter path to create from Pdf path.
     QPainterPath qPath;
@@ -422,6 +422,14 @@ QPainterPath PdfPath::toQPainterPath( bool closeSubpaths ) const
             qPath.closeSubpath();
         }
     }
+    // Filling rule.
+    if( evenOddRule ) {
+        qPath.setFillRule( Qt::OddEvenFill );
+    }
+    else {
+        qPath.setFillRule( Qt::WindingFill );
+    }
+
     return qPath;
 }
 

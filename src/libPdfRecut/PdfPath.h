@@ -193,9 +193,11 @@ public:
 
     /** Convert the path to a Qt Painter Path object.
      * \param closeSubpaths Force (or not) to close subpaths.
+     * \param evenOddRule Use the even-odd rule for painting.
      * \return QPainterPath object.
      */
-    QPainterPath toQPainterPath( bool closeSubpaths ) const;
+    QPainterPath toQPainterPath( bool closeSubpaths = true,
+                                 bool evenOddRule = false ) const;
 
 protected:
     /** Get current subpath. Append a new one if the last in the list

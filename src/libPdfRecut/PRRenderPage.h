@@ -24,10 +24,7 @@
 #include "PRStreamAnalysis.h"
 #include "PdfFontMetricsCache.h"
 
-#include <QtGui/QImage>
 #include <QtGui/QPainter>
-#include <QtGui/QPen>
-#include <QtGui/QBrush>
 
 namespace PoDoFo {
     class PdfPage;
@@ -120,11 +117,13 @@ struct PRRenderParameters
     /** Resolution used to render a page (default = 1.0).
      */
     double resolution;
+    /** Initial clipping path used to render the page.
+     */
+    QPainterPath clippingPath;
 
     /** Pen and brush used to draw and fill text objects.
      */
     PRPenBrush textPB;
-
     /** Pen and brush used to draw and fill text spaces.
      */
     PRPenBrush textSpacePB;
@@ -132,7 +131,6 @@ struct PRRenderParameters
     /** Pen and brush used to draw and fill path objects.
      */
     PRPenBrush pathPB;
-
     /** Pen and brush used to draw and fill clipping path objects.
      */
     PRPenBrush clippingPathPB;
@@ -140,11 +138,9 @@ struct PRRenderParameters
     /** Pen and brush used to draw and fill inline images.
      */
     PRPenBrush inlineImagePB;
-
     /** Pen and brush used to draw and fill images (xobjects).
      */
     PRPenBrush imagePB;
-
     /** Pen and brush used to draw and fill forms (xobjects).
      */
     PRPenBrush formPB;
@@ -315,6 +311,10 @@ private:
      * Usually page crop box.
      */
     PoDoFo::PdfRect m_pageRect;
+
+    /** Clipping paths stack. Used to store the clipping path in page coordinates.
+     */
+    std::vector<QPainterPath> m_clippingPathStack;
 
     /** Transform from page space to image space.
      * In particular, invert y-axis coordinate.

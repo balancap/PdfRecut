@@ -565,6 +565,16 @@ struct PdfGraphicOperator
                   code == ePdfGOperator_b ||
                   code == ePdfGOperator_bstar );
     }
+    /** Is the painting operator using the even-odd rule (otherwise, non zero winding rule).
+     * \return True if even-odd rule.
+     */
+    bool isEvenOddRule() const
+    {
+        return  code == ePdfGOperator_fstar ||
+                code == ePdfGOperator_Bstar ||
+                code == ePdfGOperator_bstar ||
+                code == ePdfGOperator_Wstar;
+    }
 };
 
 }

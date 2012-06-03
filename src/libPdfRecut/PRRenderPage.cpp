@@ -42,6 +42,9 @@ PRRenderParameters::PRRenderParameters()
 }
 void PRRenderParameters::initPenBrush()
 {
+    // Clipping path set to empty.
+    clippingPath = QPainterPath();
+
     // Path (normal & clipping) pens.
     pathPB.drawPen = new QPen( Qt::magenta );
     clippingPathPB.drawPen = new QPen( Qt::darkMagenta );
@@ -118,6 +121,16 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
     m_pageImgTrans(2,0) = -m_pageRect.GetLeft() * parameters.resolution;
     m_pageImgTrans(2,1) = (m_pageRect.GetBottom() + m_pageRect.GetHeight()) * parameters.resolution;
 
+    // Initial clipping path.
+    m_clippingPathStack.push_back( QPainterPath() );
+    if( !parameters.clippingPath.isEmpty() ) {
+        // Save and set clipping path.
+        m_clippingPathStack.back() = parameters.clippingPath;
+
+        m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
+        m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
+    }
+
     // Perform the analysis and draw.
     this->analyse();
 
@@ -141,8 +154,27 @@ void PRRenderPage::saveToFile( const QString& filename )
 
 void PRRenderPage::fGeneralGState( const PdfStreamState& streamState ) { }
 
-void PRRenderPage::fSpecialGState( const PdfStreamState& streamState ) { }
+void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
+{
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    if( gOperator.code == ePdfGOperator_q ) {
+        // Push on the clipping paths stack.
+        m_clippingPathStack.push_back( m_clippingPathStack.back() );
+    }
+    else if( gOperator.code == ePdfGOperator_Q ) {
+        // Pop on the graphics state stack.
+        m_clippingPathStack.pop_back();
 
+        // Restore previous clipping path.
+        if( m_clippingPathStack.back().isEmpty() ) {
+            m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::NoClip );
+        }
+        else {
+            m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
+            m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
+        }
+    }
+}
 void PRRenderPage::fPathConstruction( const PdfStreamState& streamState,
                                       const PdfPath& currentPath ) { }
 
@@ -151,7 +183,6 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 {
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
-    //const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
@@ -159,69 +190,11 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
         return;
     }
 
-    // Subpaths from the current path.
-    std::vector<PdfSubPath> subpaths = currentPath.getSubpaths();
-    bool closeSubpaths = gOperator.isClosePainting();
-
     // Qt painter path to create from Pdf path.
-    QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths );
+    bool closeSubpaths = gOperator.isClosePainting();
+    bool evenOddRule = gOperator.isEvenOddRule();
+    QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths, evenOddRule );
 
-    // Add every subpath to the qt painter path.
-    /*for( size_t i = 0 ; i < subpaths.size() ; ++i )
-    {
-        // Points from the subpath.
-        for( size_t j = 0 ; j < subpaths[i].points.size() ; ++j )
-        {
-            PdfVector& point = subpaths[i].points[j];
-            std::string& opPoint = subpaths[i].opPoints[j];
-
-            // Distinction between different painting operators.
-            if( opPoint == "m" ) {
-                qCurrentPath.moveTo( point(0), point(1) );
-            }
-            else if( opPoint == "l" ) {
-                qCurrentPath.lineTo( point(0), point(1) );
-            }
-            else if( opPoint == "c" ) {
-                QPointF c1Pt( subpaths[i].points[j](0), subpaths[i].points[j](1) );
-                QPointF c2Pt( subpaths[i].points[j+1](0), subpaths[i].points[j+1](1) );
-                QPointF endPt( subpaths[i].points[j+2](0), subpaths[i].points[j+2](1) );
-
-                qCurrentPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=2;
-            }
-            else if( opPoint == "v" ) {
-                QPointF c1Pt( qCurrentPath.currentPosition() );
-                QPointF c2Pt( subpaths[i].points[j](0), subpaths[i].points[j](1) );
-                QPointF endPt( subpaths[i].points[j+1](0), subpaths[i].points[j+1](1) );
-
-                qCurrentPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=1;
-            }
-            else if( opPoint == "y" ) {
-                QPointF c1Pt( subpaths[i].points[j](0), subpaths[i].points[j](1) );
-                QPointF c2Pt( subpaths[i].points[j+1](0), subpaths[i].points[j+1](1) );
-                QPointF endPt( c2Pt );
-
-                qCurrentPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=1;
-            }
-            else if( opPoint == "h" ) {
-                qCurrentPath.closeSubpath();
-            }
-            else if( opPoint == "re" ) {
-                // Rectangle:  "re" corresponds to "m l l l h"
-                PdfVector& pointUR = subpaths[i].points[j+2];
-
-                qCurrentPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
-                j+=4;
-            }
-        }
-        // Force the subpaths to be closed according, based on the painting operator.
-        if( closeSubpaths ) {
-            qCurrentPath.closeSubpath();
-        }
-    }*/
     // Compute path rendering matrix.
     PdfMatrix pathMat;
     pathMat = gState.transMat * m_pageImgTrans;
@@ -240,7 +213,32 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 }
 
 void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
-                                  const PdfPath& currentPath ) { }
+                                  const PdfPath& currentPath )
+{
+    // Simpler references.
+    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfGraphicsState& gState = streamState.gStates.back();
+
+    // Get Qt painter path which represents the clipping path.
+    bool evenOddRule = gOperator.isEvenOddRule();
+    QPainterPath qClippingPath = currentPath.toQPainterPath( true, evenOddRule );
+
+    // Apply transformation, to have a common coordinates system.
+    QTransform qTrans = gState.transMat.toQTransform();
+    qClippingPath = qTrans.map( qClippingPath );
+
+    // Intersect the clipping path with the current one.
+    if( m_clippingPathStack.back().isEmpty() ) {
+        m_clippingPathStack.back() = qClippingPath;
+    }
+    else {
+        m_clippingPathStack.back() = m_clippingPathStack.back().intersected( qClippingPath );
+    }
+
+    // Finally, set clipping path.
+    m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
+    m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
+}
 
 void PRRenderPage::fTextObjects( const PdfStreamState& streamState ) { }
 
