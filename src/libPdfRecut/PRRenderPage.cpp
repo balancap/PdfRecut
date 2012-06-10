@@ -130,6 +130,7 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
         m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
         m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
     }
+    m_nbTextGroups = 0;
 
     // Perform the analysis and draw.
     this->analyse();
@@ -202,8 +203,6 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 
     // Draw path.
     if( currentPath.getClippingPathOp().length() ) {
-        std::cout << "Clipping path" << endl;
-
         m_renderParameters.clippingPathPB.setPenBrush( m_pagePainter );
     }
     else {
@@ -256,94 +255,11 @@ void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfGraphicsState& gState = streamState.gStates.back();
 
-    // Get variant from string.
-    PdfVariant variant;
-    PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
-    tokenizer.GetNextVariant( variant, NULL );
+    // Read the group of words.
+    PRTextGroupWords groupWords = this->textReadGroupWords( streamState );
 
-    // Compute string width using font metrics.
-    std::vector<WordWidth> wordWidths;
-    double widthStr = 0;
-    PdfArray boundingBox;
-    PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
-    if( fontMetrics )
-    {
-        // Font metrics parameters.
-        fontMetrics->SetFontSize( 1.0 );
-        fontMetrics->SetFontScale( 100. );
-        //fontMetrics->SetFontSize( vecGStates.back().textState.fontSize );
-        //fontMetrics->SetFontScale( vecGStates.back().textState.hScale );
-
-        // Strange implementation of char space in CharWidth functions from metrics classes: must multiply by 100.
-        fontMetrics->SetFontCharSpace( gState.textState.charSpace / gState.textState.fontSize * 100 );
-
-        // Compute string width.
-        if( variant.IsString() || variant.IsHexString() )
-        {
-            this->getStringWidth( wordWidths, variant.GetString(), fontMetrics,
-                                  gState.textState.wordSpace );
-        }
-        else if( variant.IsArray() )
-        {
-            PdfArray& array = variant.GetArray();
-            for( size_t i = 0 ; i < array.size() ; i++ ) {
-                if( array[i].IsString() || array[i].IsHexString() ) {
-                    this->getStringWidth( wordWidths, array[i].GetString(), fontMetrics,
-                                          gState.textState.wordSpace );
-                }
-                else if( array[i].IsNumber() ) {
-                    wordWidths.push_back( WordWidth( -array[i].GetNumber() / 1000.0, true ) );
-                }
-                else if( array[i].IsReal() ) {
-                    wordWidths.push_back( WordWidth( -array[i].GetReal() / 1000.0, true ) );
-                }
-            }
-        }
-        fontMetrics->GetBoundingBox( boundingBox );
-    }
-    else
-    {
-        // Default width: font size.
-        wordWidths.push_back( WordWidth( 1.0, false ) );
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 1.0 );
-        boundingBox.push_back( 1.0 );
-    }
-    double heightStr = boundingBox[3].GetReal() / 1000.;
-
-    // std::cout << "CS: " << vecGStates.back().textState.charSpace << std::endl;
-    // std::cout << "WS: " << vecGStates.back().textState.wordSpace << std::endl;
-    // std::cout << "HS: " << vecGStates.back().textState.hScale << std::endl;
-    // std::cout << "FS: " << vecGStates.back().textState.fontSize << std::endl;
-
-    // Compute text rendering matrix.
-    PdfMatrix tmpMat, textMat;
-    tmpMat(0,0) = gState.textState.fontSize * gState.textState.hScale / 100;
-    tmpMat(1,1) = gState.textState.fontSize * heightStr;
-    tmpMat(2,1) = gState.textState.rise;
-    textMat = tmpMat * m_textMatrix * gState.transMat * m_pageImgTrans;
-    m_pagePainter->setTransform( textMat.toQTransform() );
-
-    // Paint words.
-    for( size_t i = 0 ; i < wordWidths.size() ; i++ )
-    {
-        // Set pen & brush
-        if( wordWidths[i].isSpace ) {
-            m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
-        } else {
-            m_renderParameters.textPB.setPenBrush( m_pagePainter );
-        }
-
-        // Paint word.
-        m_pagePainter->drawRect( QRectF( widthStr, 0.0, wordWidths[i].width, 1.0 ) );
-        widthStr += wordWidths[i].width;
-    }
-
-    // Update text transform matrix.
-    tmpMat.init();
-    tmpMat(2,0) = widthStr * gState.textState.fontSize * gState.textState.hScale / 100;
-    m_textMatrix = tmpMat * m_textMatrix;
+    // Draw the group of words.
+    this->textDrawGroupWords( groupWords );
 }
 
 void PRRenderPage::fType3Fonts( const PdfStreamState& streamState ) { }
@@ -432,67 +348,86 @@ void PRRenderPage::fMarkedContents( const PdfStreamState& streamState ) { }
 void PRRenderPage::fCompatibility( const PdfStreamState& streamState ) { }
 
 
-PdfGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamState )
+PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamState )
 {
+    // Simpler references.
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfGraphicsState& gState = streamState.gStates.back();
 
+    PdfTextState textState = streamState.gStates.back().textState;
+    textState.transMat = m_textMatrix;
+
+    // Get variant from string.
+    PdfVariant variant;
+    PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
+    tokenizer.GetNextVariant( variant, NULL );
+
+    // Get font metrics.
+    PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
+
+    // Read group of words.
+    PRTextGroupWords groupWords;
+    groupWords.setTextState( textState );
+    groupWords.setTransMatrix( streamState.gStates.back().transMat );
+    groupWords.setGroupIndex( m_nbTextGroups );
+
+    groupWords.readPdfVariant( variant, fontMetrics );
+
+
+    // Increment the number of group of words.
+    ++m_nbTextGroups;
+
+    return groupWords;
 }
 
 
-void PRRenderPage::textDrawGroupWords( const PdfGroupWords& groupWords )
+void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
-
-}
-
-void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
-                                   const PoDoFo::PdfString& str,
-                                   PoDoFo::PdfFontMetrics* fontMetrics,
-                                   double wordSpace )
-{
-    // Unicode string. Euhhhh, don't care...
-    if( str.IsUnicode() ) {
+    // Nothing to draw...
+    if( !groupWords.getWords().size() ) {
         return;
     }
+    // Default height.
+    PdfTextState textState = groupWords.getTextState();
+    double heightStr = groupWords.getWords().back().height;
+    double widthStr = 0;
 
-    double hScale = fontMetrics->GetFontScale() / 100.;
-    const char* strData = str.GetString();
-    size_t strLength = str.GetLength();
-    double charWidth;
+    // Compute text rendering matrix.
+    PdfMatrix tmpMat, textMat;
+    tmpMat(0,0) = textState.fontSize * textState.hScale / 100;
+    tmpMat(1,1) = textState.fontSize * heightStr;
+    tmpMat(2,1) = textState.rise;
+    textMat = tmpMat * m_textMatrix * groupWords.getTransMatrix() * m_pageImgTrans;
+    m_pagePainter->setTransform( textMat.toQTransform() );
 
-    // Init first word.
-    wordWidths.push_back( WordWidth( 0, false ) );
-
-    // Compute width for each char.
-    for( size_t i = 0 ; i < strLength ; ++i)
+    // Paint words.
+    const std::vector<PRTextGroupWords::Word>& words = groupWords.getWords();
+    for( size_t i = 0 ; i < words.size() ; i++ )
     {
-        // Get char width.
-        charWidth = fontMetrics->CharWidth( strData[i] );
+        const PRTextGroupWords::Word& word = words[i];
 
-        // If space: create a specific word corresponding to it.
-        if( strData[i] == ' ' ) {
-            wordWidths.push_back( WordWidth( 0, true ) );
-            wordWidths.back().width = charWidth + wordSpace * hScale;
-            wordWidths.push_back( WordWidth( 0, false ) );
+        // Set pen & brush
+        if( word.type == 0 ) {
+            m_renderParameters.textPB.setPenBrush( m_pagePainter );
+        } else {
+            m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
         }
-        else {
-            // Add char length to current word.
-            wordWidths.back().width += charWidth;
-        }
+
+        // Paint word.
+        m_pagePainter->drawRect( QRectF( widthStr, 0.0, word.width, 1.0 ) );
+        widthStr += word.width;
     }
 
-    // Remove empty entries.
-    std::vector<WordWidth>::iterator it;
-    for( it = wordWidths.begin() ; it != wordWidths.end() ; ) {
-        if( it->width == 0 ) {
-            it = wordWidths.erase( it );
-        }
-        else {
-            ++it;
-        }
-    }
+    // Update text transform matrix.
+    tmpMat.init();
+    tmpMat(2,0) = widthStr * textState.fontSize * textState.hScale / 100;
+    m_textMatrix = tmpMat * m_textMatrix;
+
 }
 
-
-
+//**********************************************************//
+//                      Image testing                       //
+//**********************************************************//
 void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
 {
     // Get image properties.
