@@ -429,7 +429,6 @@ QPainterPath PdfPath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) con
     else {
         qPath.setFillRule( Qt::WindingFill );
     }
-
     return qPath;
 }
 

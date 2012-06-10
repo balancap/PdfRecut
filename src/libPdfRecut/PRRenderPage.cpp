@@ -432,6 +432,17 @@ void PRRenderPage::fMarkedContents( const PdfStreamState& streamState ) { }
 void PRRenderPage::fCompatibility( const PdfStreamState& streamState ) { }
 
 
+PdfGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamState )
+{
+
+}
+
+
+void PRRenderPage::textDrawGroupWords( const PdfGroupWords& groupWords )
+{
+
+}
+
 void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
                                    const PoDoFo::PdfString& str,
                                    PoDoFo::PdfFontMetrics* fontMetrics,
@@ -479,6 +490,8 @@ void PRRenderPage::getStringWidth( std::vector<WordWidth>& wordWidths,
         }
     }
 }
+
+
 
 void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
 {

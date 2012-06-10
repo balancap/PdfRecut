@@ -36,6 +36,43 @@ namespace PoDoFo {
 
 namespace PdfRecut {
 
+
+struct PdfGroupWords
+{
+    struct Word
+    {
+        int length;
+
+        double width;
+
+        double height;
+
+        unsigned char type;
+    };
+
+    unsigned long index;
+
+    PdfMatrix transMatrix;
+
+    PdfTextState textState;
+
+};
+
+
+struct WordWidth
+{
+    /** Width...
+     */
+    double width;
+
+    /** Is it an empty space ?
+     */
+    bool isSpace;
+
+    WordWidth( double _width, bool _isSpace ) :
+        width(_width), isSpace(_isSpace) { }
+};
+
 /** Parameters used to render a Pdf page.
  */
 struct PRRenderParameters
@@ -255,7 +292,19 @@ public:
      */
     QRect fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect );
 
-private:
+protected:
+
+    /** Read a group of words from a pdf stream state.
+     * \param streamState Stream state to consider.
+     * \return Group of words read.
+     */
+    PdfGroupWords textReadGroupWords( const PdfStreamState& streamState );
+
+    /** Draw a group of words on the pdf image painter.
+     * \param groupWords Words to draw.
+     */
+    void textDrawGroupWords( const PdfGroupWords& groupWords );
+
 
     /** Structure representing the length of a word.
      */
@@ -273,6 +322,9 @@ private:
             width(_width), isSpace(_isSpace) { }
     };
 
+
+
+
     /** Compute a string width given a PdfFontMetrics object.
      * Enhance and correct the version given in PoDoFo.
      */
@@ -281,12 +333,13 @@ private:
                                 PoDoFo::PdfFontMetrics* fontMetrics,
                                 double wordSpace );
 
+protected:
     /** Test function on images.
      */
     static int imgNbs;
     void testPdfImage( PoDoFo::PdfObject* xobj );
 
-private:
+protected:
     /** Document object.
      */
     PoDoFo::PdfMemDocument* m_document;
