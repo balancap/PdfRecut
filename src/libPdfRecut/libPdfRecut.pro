@@ -28,7 +28,9 @@ SOURCES += \
     PRRenderPage.cpp \
     PdfResources.cpp \
     PRPageStatistics.cpp \
-    PRTextStructure.cpp
+    PRTextStructure.cpp \
+    PdfCMap.cpp \
+    PdfFontMetricsType0.cpp
 
 HEADERS +=\
     PdfTypes.h \
@@ -51,7 +53,9 @@ HEADERS +=\
     PRStreamLayoutZone.h \
     PdfResources.h \
     PRPageStatistics.h \
-    PRTextStructure.h
+    PRTextStructure.h \
+    PdfCMap.h \
+    PdfFontMetricsType0.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

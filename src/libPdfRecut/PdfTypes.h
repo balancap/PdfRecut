@@ -112,6 +112,12 @@ public:
         this->at(0,1) = y;
         this->at(0,2) = 1;
     }
+
+    /** L^2 norm of the vector.
+     */
+    double norm2() {
+        return sqrt( this->at(0,0)*this->at(0,0) + this->at(0,1)*this->at(0,1) );
+    }
 };
 
 #endif // PDFTYPES_H

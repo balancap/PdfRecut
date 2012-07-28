@@ -77,7 +77,7 @@ struct PRRenderParameters
             } else {
                 drawPen = NULL;
             }
-            if( fillBrush ) {
+            if( penBrush.fillBrush ) {
                 fillBrush = new QBrush( *penBrush.fillBrush );
             } else {
                 fillBrush = NULL;
@@ -191,40 +191,40 @@ public:
      */
     void saveToFile( const QString& filename );
 
-    void fGeneralGState( const PdfStreamState& streamState );
+    virtual void fGeneralGState( const PdfStreamState& streamState );
 
-    void fSpecialGState( const PdfStreamState& streamState );
+    virtual void fSpecialGState( const PdfStreamState& streamState );
 
-    void fPathConstruction( const PdfStreamState& streamState,
+    virtual void fPathConstruction( const PdfStreamState& streamState,
                             const PdfPath& currentPath );
 
-    void fPathPainting( const PdfStreamState& streamState,
+    virtual void fPathPainting( const PdfStreamState& streamState,
                         const PdfPath& currentPath );
 
-    void fClippingPath( const PdfStreamState& streamState,
+    virtual void fClippingPath( const PdfStreamState& streamState,
                         const PdfPath& currentPath );
 
-    void fTextObjects( const PdfStreamState& streamState );
+    virtual void fTextObjects( const PdfStreamState& streamState );
 
-    void fTextState( const PdfStreamState& streamState );
+    virtual void fTextState( const PdfStreamState& streamState );
 
-    void fTextPositioning( const PdfStreamState& streamState );
+    virtual void fTextPositioning( const PdfStreamState& streamState );
 
-    void fTextShowing( const PdfStreamState& streamState );
+    virtual void fTextShowing( const PdfStreamState& streamState );
 
-    void fType3Fonts( const PdfStreamState& streamState );
+    virtual void fType3Fonts( const PdfStreamState& streamState );
 
-    void fColor( const PdfStreamState& streamState );
+    virtual void fColor( const PdfStreamState& streamState );
 
-    void fShadingPatterns( const PdfStreamState& streamState );
+    virtual void fShadingPatterns( const PdfStreamState& streamState );
 
-    void fInlineImages( const PdfStreamState& streamState );
+    virtual void fInlineImages( const PdfStreamState& streamState );
 
-    void fXObjects( const PdfStreamState& streamState );
+    virtual void fXObjects( const PdfStreamState& streamState );
 
-    void fMarkedContents( const PdfStreamState& streamState );
+    virtual void fMarkedContents( const PdfStreamState& streamState );
 
-    void fCompatibility( const PdfStreamState& streamState );
+    virtual void fCompatibility( const PdfStreamState& streamState );
 
     virtual void fFormBegin( const PdfStreamState& streamState,
                              PoDoFo::PdfXObject* form ) {}

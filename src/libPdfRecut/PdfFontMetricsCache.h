@@ -84,7 +84,7 @@ private:
     PoDoFo::PdfMemDocument* m_document;
 
     /** Map containing font metrics cache.
-     The key corresponds to the reference of the font object.
+     * The key corresponds to the reference of the font object.
      */
     std::map< PoDoFo::PdfReference, PdfFontMetricsPointer > m_fontMetricsCache;
 };

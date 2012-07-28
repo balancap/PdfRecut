@@ -21,6 +21,7 @@
 #ifndef PRPAGESTATISTICS_H
 #define PRPAGESTATISTICS_H
 
+#include "PRTextStructure.h"
 #include "PRRenderPage.h"
 
 namespace PoDoFo {
@@ -60,7 +61,7 @@ struct PRPageStatisticsData
 
 /** Class which estimates different statistics in a page: text/path/image positions...
  */
-class PRPageStatistics
+class PRPageStatistics : public PRRenderPage
 {
 public:
     /** Default constructor
@@ -68,40 +69,42 @@ public:
      * \param pageIn Input page to analyse.
      * \param fontMetricsCache Cache object for font metrics.
      */
-    PRPageStatistics( int noPage,
+    PRPageStatistics( long pageIndex,
                       PoDoFo::PdfPage* pageIn,
                       PdfFontMetricsCache* fontMetricsCache );
 
-    /** Compute page statistics.
-     */
-    void computeStatistics();
-
-protected:
     /** Compute page text statistics.
      */
     void computeTextStatistics();
-    /** Compute page path statistics.
+
+    /** Compute the information relative text lines in the page.
      */
-    void computePathStatistics();
-    /** Compute page image statistics.
+    void computeTextLines();
+
+    /** Reimplementation of text showing from PRRenderPage.
      */
-    void computeImageStatistics();
+    virtual void fTextShowing( const PdfStreamState& streamState );
+
 
 protected:
-    /** Page number.
+    /** Page index.
      */
-    int m_noPage;
+    long m_pageIndex;
     /** Page object.
      */
     PoDoFo::PdfPage* m_page;
 
-    /** Rendering object for the page.
+    /** Lines that belongs to the page.
      */
-    PRRenderPage m_renderPage;
+    std::vector<PRTextLine> m_lines;
+
+    /** Group of words that belongs to the page.
+     */
+    std::vector<PRTextGroupWords> m_groupsWords;
 
     /** Page statistics data.
      */
-    PRPageStatisticsData m_data;
+    //PRPageStatisticsData m_data;
 
 };
 

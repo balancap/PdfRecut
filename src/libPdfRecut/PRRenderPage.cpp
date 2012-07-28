@@ -251,10 +251,6 @@ void PRRenderPage::fTextPositioning( const PdfStreamState& streamState )
 
 void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
 {
-    // Simpler references.
-    const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
-
     // Read the group of words.
     PRTextGroupWords groupWords = this->textReadGroupWords( streamState );
 
@@ -373,13 +369,11 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     groupWords.readPdfVariant( variant, fontMetrics );
 
-
     // Increment the number of group of words.
     ++m_nbTextGroups;
 
     return groupWords;
 }
-
 
 void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
@@ -389,6 +383,8 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
     }
     // Default height.
     PdfTextState textState = groupWords.getTextState();
+    //const double* boundingBox = groupWords.getBoundingBox();
+    //double heightStr = boundingBox[3] - boundingBox[1];
     double heightStr = groupWords.getWords().back().height;
     double widthStr = 0;
 
@@ -396,7 +392,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
     PdfMatrix tmpMat, textMat;
     tmpMat(0,0) = textState.fontSize * textState.hScale / 100;
     tmpMat(1,1) = textState.fontSize * heightStr;
-    tmpMat(2,1) = textState.rise;
+    tmpMat(2,1) = textState.rise; //+ textState.fontSize * boundingBox[1];
     textMat = tmpMat * m_textMatrix * groupWords.getTransMatrix() * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 
@@ -422,7 +418,6 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
     tmpMat.init();
     tmpMat(2,0) = widthStr * textState.fontSize * textState.hScale / 100;
     m_textMatrix = tmpMat * m_textMatrix;
-
 }
 
 //**********************************************************//

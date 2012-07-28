@@ -20,6 +20,7 @@
 
 #include <podofo/podofo.h>
 #include "PdfFontMetricsCache.h"
+#include "PdfFontMetricsType0.h"
 #include "PdfFontMetricsType3.h"
 #include "PdfFontMetrics14.h"
 
@@ -74,7 +75,7 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics( const PoDoFo::PdfRe
     if( fontSubType == PdfName("Type0") )
     {
         // The PDF reference states that DescendantFonts must be an array,
-        const PdfArray & descendant  = fontObj->GetIndirectKey( "DescendantFonts" )->GetArray();
+        /*const PdfArray & descendant  = fontObj->GetIndirectKey( "DescendantFonts" )->GetArray();
         PdfObject* pFontObject = fontObj->GetOwner()->GetObject( descendant[0].GetReference() );
 
         // Don't care about the encoding property, not used by metrics object.
@@ -82,7 +83,9 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics( const PoDoFo::PdfRe
         if ( pDescriptor ) {
            fontMetricsPtr.ptr = new PdfFontMetricsObject( pFontObject, pDescriptor, NULL );
            fontMetricsPtr.owned = true;
-        }
+        }*/
+        fontMetricsPtr.ptr = new PdfFontMetricsType0( fontObj );
+        fontMetricsPtr.owned = true;
     }
     else if( fontSubType == PdfName("Type1") )
     {

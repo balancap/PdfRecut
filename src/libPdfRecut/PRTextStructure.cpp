@@ -21,6 +21,7 @@
 #include "PRTextStructure.h"
 
 #include <podofo/podofo.h>
+#include "PdfFontMetricsType0.h"
 
 using namespace PoDoFo;
 
@@ -69,6 +70,20 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     }
     double charWidth = 1.0;
 
+    // Particular case of a Type 0 font.
+    if( EPdfFontTypeMetrics(fontMetrics->GetFontType()) ==  ePdfFontTypeMetrics_Type0 ) {
+        PdfFontMetricsType0* fontMetricsT0 = dynamic_cast<PdfFontMetricsType0*>( fontMetrics );
+
+        // Consider the string as a single word.
+        Word textWord( 0, 0.0, charHeight, 0 );
+        textWord.length = strLength;  // TODO.
+        textWord.width = fontMetricsT0->StringWidthCID( strData, strLength );
+
+        m_words.push_back( textWord );
+        //std::cout << strLength << " // " << textWord.width << std::endl;
+        return;
+    }
+
     // Read characters from the string.
     size_t i = 0;
     while( i < strLength )
@@ -106,7 +121,6 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         }
     }
 }
-
 void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
                                        PoDoFo::PdfFontMetrics* fontMetrics )
 {
@@ -122,7 +136,17 @@ void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
         boundingBox.push_back( 1000.0 );
         boundingBox.push_back( 1000.0 );
     }
+    m_boundingBox[0] = boundingBox[0].GetReal() / 1000.;
+    m_boundingBox[1] = boundingBox[1].GetReal() / 1000.;
+    m_boundingBox[2] = boundingBox[2].GetReal() / 1000.;
+    m_boundingBox[3] = boundingBox[3].GetReal() / 1000.;
+
     double charHeight = boundingBox[3].GetReal() / 1000.;
+
+//    std::cout << boundingBox[0].GetReal() / 1000. << " / "
+//              << boundingBox[1].GetReal() / 1000. << " / "
+//              << boundingBox[2].GetReal() / 1000. << " / "
+//              << boundingBox[3].GetReal() / 1000. << " / " << std::endl;
 
     // Variant is a string.
     if( variant.IsString() || variant.IsHexString() )
@@ -149,11 +173,44 @@ void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
         }
     }
 }
-
 void PRTextGroupWords::appendWord( const Word& word )
 {
     // Append the word to the vector.
     m_words.push_back( word );
+}
+
+double PRTextGroupWords::getWidth()
+{
+    double width = 0;
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        width += m_words[i].width;
+    }
+    return width;
+}
+PdfMatrix PRTextGroupWords::getGlobalTransMatrix()
+{
+    // Compute text rendering matrix.
+    PdfMatrix tmpMat, textMat;
+    tmpMat(0,0) = m_textState.fontSize * m_textState.hScale / 100;
+    tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
+    tmpMat(2,1) = m_textState.rise;
+    textMat = tmpMat * m_textState.transMat * m_transMatrix;
+
+    return textMat;
+}
+
+//**********************************************************//
+//                        PRTextLine                        //
+//**********************************************************//
+PRTextLine::PRTextLine()
+{
+    this->init();
+}
+void PRTextLine::init()
+{
+    m_pageIndex = -1;
+    m_lineIndex = -1;
+    m_groupsWords.clear();
 }
 
 //**********************************************************//

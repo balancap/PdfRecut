@@ -93,6 +93,14 @@ public:
      */
     void appendWord( const Word& word );
 
+    /** Compute the width of the group of words.
+     */
+    double getWidth();
+
+    /** Get global transformation matrix (font+text+gState).
+     */
+    PdfMatrix getGlobalTransMatrix();
+
 protected:
     /** Read a group of words from a PdfString (appended to the group).
      * \param str Pdf string to read.
@@ -118,6 +126,8 @@ public:
     PdfTextState getTextState() const;
     void setTextState( const PdfTextState& textState );
 
+    const double *getBoundingBox() const;
+
     const std::vector<PRTextGroupWords::Word>& getWords() const;
 
 protected:
@@ -138,6 +148,36 @@ protected:
     /** Text state for this group of words.
      */
     PdfTextState m_textState;
+
+    /** Font bounding box.
+     */
+    double m_boundingBox[4];
+};
+
+/** Class that represent a line of text in a pdf page.
+ */
+class PRTextLine
+{
+    /** Default constructor.
+     */
+    PRTextLine();
+
+    /** Initialize to an empty line.
+     */
+    void init();
+
+protected:
+    /** Index of the page to which belongs the line.
+     */
+    long m_pageIndex;
+    /** Index of the line in the page.
+     */
+    long m_lineIndex;
+
+    /** Vector of groups of words which constitute the line.
+     */
+    std::vector<PRTextGroupWords> m_groupsWords;
+
 };
 
 //**********************************************************//
@@ -174,6 +214,10 @@ inline PdfTextState PRTextGroupWords::getTextState() const
 inline void PRTextGroupWords::setTextState( const PdfTextState& textState )
 {
     m_textState = textState;
+}
+inline const double* PRTextGroupWords::getBoundingBox() const
+{
+    return m_boundingBox;
 }
 inline const std::vector<PRTextGroupWords::Word>& PRTextGroupWords::getWords() const
 {
