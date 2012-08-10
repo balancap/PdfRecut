@@ -34,6 +34,9 @@ namespace PoDoFo {
 
 namespace PdfRecut {
 
+//**********************************************************//
+//                      PRTextGroupWords                    //
+//**********************************************************//
 /** Class that represents a group of words read from a pdf stream.
  */
 class PRTextGroupWords
@@ -86,7 +89,7 @@ public:
      * \param fontMetrics Font metrics object used to compute width of words.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
-                        PoDoFo::PdfFontMetrics* fontMetrics );
+                         PoDoFo::PdfFontMetrics* fontMetrics );
 
     /** Append a word to the group.
      * \param word Word to append.
@@ -94,12 +97,22 @@ public:
     void appendWord( const Word& word );
 
     /** Compute the width of the group of words.
+     * \return Width of the group of words.
      */
-    double getWidth();
+    double getWidth() const;
+    /** Compute the height of the group of words.
+     * \return Height of the group of words.
+     */
+    double getHeight() const;
 
     /** Get global transformation matrix (font+text+gState).
      */
-    PdfMatrix getGlobalTransMatrix();
+    PdfMatrix getGlobalTransMatrix() const;
+
+    /** Get the oriented rectangle (in page coordinates) which represents the group of words.
+     * \return PdfORect object.
+     */
+    PdfORect getOrientedRect() const;
 
 protected:
     /** Read a group of words from a PdfString (appended to the group).
@@ -126,8 +139,10 @@ public:
     PdfTextState getTextState() const;
     void setTextState( const PdfTextState& textState );
 
-    const double *getBoundingBox() const;
+    const double* getBoundingBox() const;
 
+    /** Get a constant reference to the vector of group of words.
+     */
     const std::vector<PRTextGroupWords::Word>& getWords() const;
 
 protected:
@@ -154,10 +169,14 @@ protected:
     double m_boundingBox[4];
 };
 
+//**********************************************************//
+//                        PRTextLine                        //
+//**********************************************************//
 /** Class that represent a line of text in a pdf page.
  */
 class PRTextLine
 {
+public:
     /** Default constructor.
      */
     PRTextLine();
@@ -165,6 +184,15 @@ class PRTextLine
     /** Initialize to an empty line.
      */
     void init();
+
+    /** Add a group of words to the line.
+     * \param groupWords Group of words to add.
+     */
+    void addGroupWords( const PRTextGroupWords& groupWords );
+
+    /** Get a constant reference to the vector of group of words.
+     */
+    const std::vector<PRTextGroupWords>& getGroupsWords() const;
 
 protected:
     /** Index of the page to which belongs the line.
@@ -177,11 +205,10 @@ protected:
     /** Vector of groups of words which constitute the line.
      */
     std::vector<PRTextGroupWords> m_groupsWords;
-
 };
 
 //**********************************************************//
-//                Inline getters and setters                //
+//                 Inline PRTextGroupWords                  //
 //**********************************************************//
 inline long PRTextGroupWords::getPageIndex() const
 {
@@ -222,6 +249,14 @@ inline const double* PRTextGroupWords::getBoundingBox() const
 inline const std::vector<PRTextGroupWords::Word>& PRTextGroupWords::getWords() const
 {
     return m_words;
+}
+
+//**********************************************************//
+//                     Inline PRTextLine                    //
+//**********************************************************//
+inline const std::vector<PRTextGroupWords>& PRTextLine::getGroupsWords() const
+{
+    return m_groupsWords;
 }
 
 /** Text structure... Still empty !

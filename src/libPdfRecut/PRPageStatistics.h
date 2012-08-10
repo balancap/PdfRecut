@@ -85,6 +85,20 @@ public:
      */
     virtual void fTextShowing( const PdfStreamState& streamState );
 
+    void textDrawPdfORect( const PdfORect& orect );
+
+    void textDrawLine( const PRTextLine& line );
+
+protected:
+    /** Find a line for a group of words. Line created if necessary.
+     * \param idxGroupWords Index of the group of words.
+     * \return Index of the line.
+     */
+    size_t findTextLine( size_t idxGroupWords );
+
+public:
+    /** Max of group of words used for a search of line.
+     */
 
 protected:
     /** Page index.
@@ -94,13 +108,16 @@ protected:
      */
     PoDoFo::PdfPage* m_page;
 
-    /** Lines that belongs to the page.
+    /** Text lines that belongs to the page.
      */
-    std::vector<PRTextLine> m_lines;
+    std::vector<PRTextLine> m_textLines;
 
     /** Group of words that belongs to the page.
      */
     std::vector<PRTextGroupWords> m_groupsWords;
+    /** Lines assigned to group of words that belongs to the page.
+     */
+    std::vector<long>   m_groupsWordsLines;
 
     /** Page statistics data.
      */

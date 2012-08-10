@@ -135,7 +135,7 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
     // Perform the analysis and draw.
     this->analyse();
 
-    m_pagePainter->end();
+    //m_pagePainter->end();
 }
 
 QImage *PRRenderPage::getRenderImage()
@@ -372,6 +372,11 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     // Increment the number of group of words.
     ++m_nbTextGroups;
 
+    // Update text transform matrix.
+    PdfMatrix tmpMat;
+    tmpMat(2,0) = groupWords.getWidth() * textState.fontSize * textState.hScale / 100;
+    m_textMatrix = tmpMat * m_textMatrix;
+
     return groupWords;
 }
 
@@ -381,22 +386,14 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
     if( !groupWords.getWords().size() ) {
         return;
     }
-    // Default height.
-    PdfTextState textState = groupWords.getTextState();
-    //const double* boundingBox = groupWords.getBoundingBox();
-    //double heightStr = boundingBox[3] - boundingBox[1];
-    double heightStr = groupWords.getWords().back().height;
-    double widthStr = 0;
 
     // Compute text rendering matrix.
-    PdfMatrix tmpMat, textMat;
-    tmpMat(0,0) = textState.fontSize * textState.hScale / 100;
-    tmpMat(1,1) = textState.fontSize * heightStr;
-    tmpMat(2,1) = textState.rise; //+ textState.fontSize * boundingBox[1];
-    textMat = tmpMat * m_textMatrix * groupWords.getTransMatrix() * m_pageImgTrans;
+    PdfMatrix textMat;
+    textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 
     // Paint words.
+    double widthStr = 0;
     const std::vector<PRTextGroupWords::Word>& words = groupWords.getWords();
     for( size_t i = 0 ; i < words.size() ; i++ )
     {
@@ -408,16 +405,10 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
         } else {
             m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
         }
-
         // Paint word.
         m_pagePainter->drawRect( QRectF( widthStr, 0.0, word.width, 1.0 ) );
         widthStr += word.width;
     }
-
-    // Update text transform matrix.
-    tmpMat.init();
-    tmpMat(2,0) = widthStr * textState.fontSize * textState.hScale / 100;
-    m_textMatrix = tmpMat * m_textMatrix;
 }
 
 //**********************************************************//

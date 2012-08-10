@@ -179,7 +179,7 @@ void PRTextGroupWords::appendWord( const Word& word )
     m_words.push_back( word );
 }
 
-double PRTextGroupWords::getWidth()
+double PRTextGroupWords::getWidth() const
 {
     double width = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
@@ -187,7 +187,16 @@ double PRTextGroupWords::getWidth()
     }
     return width;
 }
-PdfMatrix PRTextGroupWords::getGlobalTransMatrix()
+double PRTextGroupWords::getHeight() const
+{
+    double height = 0;
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        height = std::max( m_words[i].height, height );
+    }
+    return height;
+}
+
+PdfMatrix PRTextGroupWords::getGlobalTransMatrix() const
 {
     // Compute text rendering matrix.
     PdfMatrix tmpMat, textMat;
@@ -198,6 +207,26 @@ PdfMatrix PRTextGroupWords::getGlobalTransMatrix()
 
     return textMat;
 }
+PdfORect PRTextGroupWords::getOrientedRect() const
+{
+    PdfORect groupORect( 0.0, 1.0 );
+
+    // Compute width and height.
+    double width = 0;
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        width += m_words[i].width;
+        //groupORect.setWidth( groupORect.getWidth() + );
+        //groupORect.setHeight( std::max( groupORect.getHeight(), m_words[i].height ) );
+    }
+    groupORect.setWidth( width );
+
+    // Apply global transform.
+    PdfMatrix textMat = this->getGlobalTransMatrix();
+    groupORect = textMat.map( groupORect );
+
+    return groupORect;
+}
+
 
 //**********************************************************//
 //                        PRTextLine                        //
@@ -211,6 +240,10 @@ void PRTextLine::init()
     m_pageIndex = -1;
     m_lineIndex = -1;
     m_groupsWords.clear();
+}
+void PRTextLine::addGroupWords( const PRTextGroupWords& groupWords )
+{
+    m_groupsWords.push_back( groupWords );
 }
 
 //**********************************************************//

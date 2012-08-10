@@ -61,19 +61,45 @@ void PRPageStatistics::computeTextLines()
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
 
+    // Clear vectors content.
+    m_textLines.clear();
+    m_groupsWords.clear();
+    m_groupsWordsLines.clear();
+
     // Render the page.
     this->renderPage( renderParameters );
+
+    // Draw lines
+    QColor txtColor;
+    for( size_t idx = 0 ; idx < m_textLines.size() ; ++idx ) {
+        txtColor.setHsv( idx*24 % 360, 255, 255 );
+        m_renderParameters.textPB.fillBrush->setColor( txtColor );
+        m_renderParameters.textSpacePB.fillBrush->setColor( txtColor );
+        this->textDrawLine( m_textLines[idx] );
+    }
+
 }
 void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
 {
+    // Read the group of words.
+    m_groupsWords.push_back( this->textReadGroupWords( streamState ) );
+    m_groupsWordsLines.push_back( -1 );
+
+//    std::cout << streamState.gOperands.back()
+//              << " // " << streamState.gStates.back().textState.fontName << std::endl;
+
+    // Try to find a line for the group of words.
+    this->findTextLine( m_groupsWords.size()-1 );
+
+
+
+
     // Change the color used to fill text.
     //QRgb rgbColor = qRgb( 0, 255, 0);
 
-    std::cout << streamState.gOperands.back()
-              << " // " << streamState.gStates.back().textState.fontName << std::endl;
     QRgb rgbColor = RGB_MASK- RGB_MASK & (m_nbTextGroups + 1);
     QColor txtColor;
-    txtColor.setHsv( m_nbTextGroups % 360, 255, 255 );
+    txtColor.setHsv( m_nbTextGroups*6 % 360, 255, 255 );
 
     m_renderParameters.textPB.fillBrush->setColor( txtColor );
     //m_renderParameters.textSpacePB.fillBrush->setColor( txtColor );
@@ -82,10 +108,114 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     //std::cout << std::hex << (0xff000000|QRgb(m_nbTextGroups)) << std::endl;
 
     // Render the group of words.
-    m_groupsWords.push_back( this->textReadGroupWords( streamState ) );
-    this->textDrawGroupWords( m_groupsWords.back() );
+    //this->textDrawGroupWords( m_groupsWords.back() );
+
+    //this->drawPdfORect( m_groupsWords.back().getOrientedRect() );
 
     //PRRenderPage::fTextShowing( streamState );
+}
+
+
+
+void PRPageStatistics::textDrawPdfORect( const PdfORect& orect )
+{
+    // Compute text rendering matrix.
+    m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
+
+    // Create polygon.
+    QPolygonF polygon;
+    PdfVector point = orect.getLeftBottom();
+    polygon << point.toQPoint();
+
+    point = point + orect.getDirection() * orect.getWidth();
+    polygon << point.toQPoint();
+
+    point = point + orect.getDirection().rotate90() * orect.getHeight();
+    polygon << point.toQPoint();
+
+    point = orect.getLeftBottom() + orect.getDirection().rotate90() * orect.getHeight();
+    polygon << point.toQPoint();
+
+    m_renderParameters.textPB.setPenBrush( m_pagePainter );
+    m_pagePainter->drawPolygon( polygon );
+}
+
+void PRPageStatistics::textDrawLine( const PRTextLine& line )
+{
+    const std::vector<PRTextGroupWords>& groupsWords = line.getGroupsWords();
+    for( size_t idx = 0 ; idx < groupsWords.size() ; ++idx ) {
+        this->textDrawGroupWords( groupsWords[idx] );
+    }
+}
+
+size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
+{
+    long MaxSearchGroupWords = 3;
+
+    // Get the group of words.
+    PRTextGroupWords& groupWords = m_groupsWords[idxGroupWords];
+    PdfORect orectGroup = groupWords.getOrientedRect();
+
+    // Transformation matrix related to the group of words.
+    PdfVector lbGroup = orectGroup.getLeftBottom();
+    PdfVector direcGroup = orectGroup.getDirection();
+
+    PdfMatrix transMat, tmpMat;
+    tmpMat(0,0) = direcGroup(0);      tmpMat(0,1) = -direcGroup(1);
+    tmpMat(1,0) = direcGroup(1);      tmpMat(1,1) = direcGroup(0);
+    tmpMat(2,0) = lbGroup(0);         tmpMat(2,1) = lbGroup(1);
+    tmpMat.inverse( transMat );
+
+    // Try to find a group of words that could belong to a same line.
+    size_t idxGroupLimit = std::max( long(0), long(idxGroupWords) - MaxSearchGroupWords );
+
+    for( size_t idx = idxGroupLimit ; idx < idxGroupWords ; ++idx ) {
+        PdfORect tmpORect = m_groupsWords[idx].getOrientedRect();
+        double angle = PdfVector::angle( orectGroup.getDirection(), tmpORect.getDirection() );
+
+        // Get the angle between the two groups: should be less than ~5°.
+        if( PdfVector::angle( orectGroup.getDirection(), tmpORect.getDirection() ) <= 0.1  )
+        {
+            // Compute the two points that interest us (rb and rt).
+            PdfVector rbPoint, rtPoint;
+            rbPoint = tmpORect.getLeftBottom() + tmpORect.getDirection() * tmpORect.getWidth();
+            rtPoint = rbPoint + tmpORect.getDirection().rotate90() * tmpORect.getHeight();
+
+            rbPoint = transMat.map( rbPoint );
+            rtPoint = transMat.map( rtPoint );
+
+            // Compute horizontal distance and vertical overlap (in % of height).
+            double hDistance = ( rbPoint(0) ) / orectGroup.getHeight();
+            double vOverlap = std::max( 0.0, std::min( orectGroup.getHeight(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / orectGroup.getHeight();
+
+            // Conditions to satisfy...
+            if( hDistance >= -4.0 && hDistance <= 4.0 && vOverlap >= 0.25 ) {
+                // The current group already belongs to a line.
+                if( m_groupsWordsLines[idx] >= 0 ) {
+                    m_textLines[ m_groupsWordsLines[idx] ].addGroupWords( groupWords );
+                    m_groupsWordsLines[idxGroupWords] = m_groupsWordsLines[idx];
+
+                    return m_groupsWordsLines[idx];
+                }
+                // Create a line for both.
+                else {
+                    m_textLines.push_back( PRTextLine() );
+                    m_textLines.back().addGroupWords( m_groupsWords[idx] );
+                    m_textLines.back().addGroupWords( groupWords );
+
+                    m_groupsWordsLines[idx] = m_textLines.size()-1;
+                    m_groupsWordsLines[idxGroupWords] = m_textLines.size()-1;
+
+                    return m_textLines.size()-1;
+                }
+            }
+        }
+    }
+
+    // Arrived there : no line found ! Create a new one...
+    m_textLines.push_back( PRTextLine() );
+    m_textLines.back().addGroupWords( groupWords );
+    return m_textLines.size()-1;
 }
 
 }
