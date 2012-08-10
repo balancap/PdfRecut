@@ -1,10 +1,8 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2012-08-10T17:01:32
-#
-#-------------------------------------------------
+##################################################################
+##                       libPoDoFoExtended                      ##
+##################################################################
 
-QT       -= gui
+QT       += gui
 
 TARGET = libPoDoFoExtended
 TEMPLATE = lib
@@ -12,9 +10,31 @@ CONFIG += staticlib
 
 DEFINES += LIBPODOFOEXTENDED_LIBRARY
 
-SOURCES +=
+SOURCES += \
+    PdfCMap.cpp \
+    PdfStreamTokenizer.cpp \
+    PdfResources.cpp \
+    PdfPath.cpp \
+    PdfGraphicsState.cpp \
+    PdfFontMetricsType3.cpp \
+    PdfFontMetricsType0.cpp \
+    PdfFontMetricsCache.cpp \
+    PdfFontMetrics14.cpp
 
-HEADERS +=
+HEADERS += \
+    PdfTypes.h \
+    PdfStreamTokenizer.h \
+    PdfSemaphore.h \
+    PdfResources.h \
+    PdfPath.h \
+    PdfMisc.h \
+    PdfGraphicsState.h \
+    PdfGraphicsOperators.h \
+    PdfFontMetricsType3.h \
+    PdfFontMetricsType0.h \
+    PdfFontMetricsCache.h \
+    PdfFontMetrics14.h \
+    PdfCMap.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

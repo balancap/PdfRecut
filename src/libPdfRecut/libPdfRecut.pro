@@ -1,9 +1,6 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2012-01-29T17:30:02
-#
-#-------------------------------------------------
-
+##################################################################
+##                           libPdfRecut                        ##
+##################################################################
 
 TARGET = libPdfRecut
 TEMPLATE = lib
@@ -12,12 +9,6 @@ CONFIG += staticlib
 DEFINES += LIBPDFRECUT_LIBRARY
 
 SOURCES += \
-    PdfStreamTokenizer.cpp \
-    PdfPath.cpp \
-    PdfGraphicsState.cpp \
-    PdfFontMetricsType3.cpp \
-    PdfFontMetricsCache.cpp \
-    PdfFontMetrics14.cpp \
     PRDocument.cpp \
     PRException.cpp \
     PRDocumentLayout.cpp \
@@ -26,23 +17,10 @@ SOURCES += \
     PRStreamAnalysis.cpp \
     PRStreamLayoutZone.cpp \
     PRRenderPage.cpp \
-    PdfResources.cpp \
     PRPageStatistics.cpp \
-    PRTextStructure.cpp \
-    PdfCMap.cpp \
-    PdfFontMetricsType0.cpp
+    PRTextStructure.cpp
 
 HEADERS +=\
-    PdfTypes.h \
-    PdfStreamTokenizer.h \
-    PdfSemaphore.h \
-    PdfPath.h \
-    PdfMisc.h \
-    PdfGraphicsState.h \
-    PdfGraphicsOperators.h \
-    PdfFontMetricsType3.h \
-    PdfFontMetricsCache.h \
-    PdfFontMetrics14.h \
     PRDocument.h \
     PRException.h \
     PRDocumentLayout.h \
@@ -51,11 +29,8 @@ HEADERS +=\
     PRRenderPage.h \
     PRStreamAnalysis.h \
     PRStreamLayoutZone.h \
-    PdfResources.h \
     PRPageStatistics.h \
-    PRTextStructure.h \
-    PdfCMap.h \
-    PdfFontMetricsType0.h
+    PRTextStructure.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {
@@ -71,3 +46,16 @@ unix {
     INSTALLS += target
 }
 
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libPoDoFoExtended/release/ -llibPoDoFoExtended
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libPoDoFoExtended/debug/ -llibPoDoFoExtended
+else:unix:!symbian: LIBS += -L$$OUT_PWD/../libPoDoFoExtended/ -llibPoDoFoExtended
+
+INCLUDEPATH += $$PWD/../libPoDoFoExtended
+INCLUDEPATH += $$PWD/../3rdparty
+
+DEPENDPATH += $$PWD/../libPoDoFoExtended
+
+win32:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libPoDoFoExtended/release/libPoDoFoExtended.lib
+else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../libPoDoFoExtended/debug/libPoDoFoExtended.lib
+else:unix:!symbian: PRE_TARGETDEPS += $$OUT_PWD/../libPoDoFoExtended/liblibPoDoFoExtended.a

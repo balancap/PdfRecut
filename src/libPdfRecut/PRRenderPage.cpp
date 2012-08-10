@@ -418,8 +418,8 @@ void PRRenderPage::textUpdateTransMatrix( const PdfStreamState& streamState )
 {
     // Text positioning operator or showing operator (quote or double quote).
     if( streamState.gOperator.cat == ePdfGCategory_TextPositioning ||
-        streamState.gOperator.cat == ePdfGCategory_TextShowing &&
-        ( streamState.gOperator.code == ePdfGOperator_DoubleQuote || streamState.gOperator.code == ePdfGOperator_Quote ) )
+        ( streamState.gOperator.cat == ePdfGCategory_TextShowing &&
+          ( streamState.gOperator.code == ePdfGOperator_DoubleQuote || streamState.gOperator.code == ePdfGOperator_Quote ) ) )
     {
         // Reset text transform matrix.
         m_textMatrix = streamState.gStates.back().textState.transMat;

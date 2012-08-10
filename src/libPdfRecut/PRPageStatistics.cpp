@@ -100,7 +100,7 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     // Change the color used to fill text.
     //QRgb rgbColor = qRgb( 0, 255, 0);
 
-    QRgb rgbColor = RGB_MASK- RGB_MASK & (m_nbTextGroups + 1);
+    //QRgb rgbColor = RGB_MASK- RGB_MASK & (m_nbTextGroups + 1);
     QColor txtColor;
     txtColor.setHsv( m_nbTextGroups*6 % 360, 255, 255 );
 
