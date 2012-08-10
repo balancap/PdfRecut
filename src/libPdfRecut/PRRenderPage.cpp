@@ -245,12 +245,15 @@ void PRRenderPage::fTextState( const PdfStreamState& streamState ) { }
 
 void PRRenderPage::fTextPositioning( const PdfStreamState& streamState )
 {
-    // Reset text transform matrix.
-    m_textMatrix = streamState.gStates.back().textState.transMat;
+    // Update text transformation matrix.
+    this->textUpdateTransMatrix( streamState );
 }
 
 void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
 {
+    // Update text transformation matrix.
+    this->textUpdateTransMatrix( streamState );
+
     // Read the group of words.
     PRTextGroupWords groupWords = this->textReadGroupWords( streamState );
 
@@ -408,6 +411,18 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
         // Paint word.
         m_pagePainter->drawRect( QRectF( widthStr, 0.0, word.width, 1.0 ) );
         widthStr += word.width;
+    }
+}
+
+void PRRenderPage::textUpdateTransMatrix( const PdfStreamState& streamState )
+{
+    // Text positioning operator or showing operator (quote or double quote).
+    if( streamState.gOperator.cat == ePdfGCategory_TextPositioning ||
+        streamState.gOperator.cat == ePdfGCategory_TextShowing &&
+        ( streamState.gOperator.code == ePdfGOperator_DoubleQuote || streamState.gOperator.code == ePdfGOperator_Quote ) )
+    {
+        // Reset text transform matrix.
+        m_textMatrix = streamState.gStates.back().textState.transMat;
     }
 }
 

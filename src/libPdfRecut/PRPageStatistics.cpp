@@ -81,6 +81,9 @@ void PRPageStatistics::computeTextLines()
 }
 void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
 {
+    // Update text transformation matrix.
+    this->textUpdateTransMatrix( streamState );
+
     // Read the group of words.
     m_groupsWords.push_back( this->textReadGroupWords( streamState ) );
     m_groupsWordsLines.push_back( -1 );

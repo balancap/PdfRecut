@@ -105,48 +105,42 @@ public:
     }
     /** +Operator overloaded
      */
-    PdfVector operator*( const PdfVector& vect ) const {
-        PdfVector vect2;
-        vect2.at(0,0) = vect2.at(0,0) + this->at(0,0);
-        vect2.at(0,1) = vect2.at(0,1) + this->at(0,1);
-        vect2.at(0,2) = 1.0;
-
-        return vect2;
+    PdfVector operator+( const PdfVector& vect ) const {
+        PdfVector rvect;
+        rvect.at(0,0) = vect.at(0,0) + this->at(0,0);
+        rvect.at(0,1) = vect.at(0,1) + this->at(0,1);
+        rvect.at(0,2) = 1.0;
+        return rvect;
     }
     /** *Operator overloaded
      */
     PdfVector operator*( const PdfMatrix& mat ) const {
-        PdfVector vect;
-        vect.at(0,0) = mat(0,0) * this->at(0,0) + mat(1,0) * this->at(0,1) + mat(2,0);
-        vect.at(0,1) = mat(0,1) * this->at(0,0) + mat(1,1) * this->at(0,1) + mat(2,1);
-        vect.at(0,2) = 1.0;
-        // mapVect(0) = mat(0,0) * this->at(0,0) + mat(1,0) * this->at(0,1) + mat(2,0) * this->at(0,2);
-        // mapVect(1) = mat(0,1) * this->at(0,0) + mat(1,1) * this->at(0,1) + mat(2,1) * this->at(0,2);
-        // mapVect(2) = mat(0,2) * this->at(0,0) + mat(1,2) * this->at(0,1) + mat(2,2) * this->at(0,2);
-
-        return vect;
+        PdfVector rvect;
+        rvect.at(0,0) = mat(0,0) * this->at(0,0) + mat(1,0) * this->at(0,1) + mat(2,0);
+        rvect.at(0,1) = mat(0,1) * this->at(0,0) + mat(1,1) * this->at(0,1) + mat(2,1);
+        rvect.at(0,2) = 1.0;
+        return rvect;
     }
     /** *Operator overloaded
      */
     PdfVector operator*( double coef ) const {
-        PdfVector vect;
-        vect.at(0,0) = this->at(0,0) * coef;
-        vect.at(0,1) = this->at(0,1) * coef;
-        vect.at(0,2) = 1.0;
+        PdfVector rvect;
+        rvect.at(0,0) = this->at(0,0) * coef;
+        rvect.at(0,1) = this->at(0,1) * coef;
+        rvect.at(0,2) = 1.0;
 
-        return vect;
+        return rvect;
     }
-
     /** Rotate a vector of 90°.
      * \return Copy of the vector rotated.
      */
     PdfVector rotate90() const {
-        PdfVector vect;
-        vect.at(0,0) = -this->at(0,1);
-        vect.at(0,1) = this->at(0,0);
-        vect.at(0,2) = 1.0;
+        PdfVector rvect;
+        rvect.at(0,0) = -this->at(0,1);
+        rvect.at(0,1) = this->at(0,0);
+        rvect.at(0,2) = 1.0;
 
-        return vect;
+        return rvect;
     }
 
     /** (idx) Operator overload

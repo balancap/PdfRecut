@@ -269,6 +269,11 @@ protected:
      */
     void textDrawGroupWords( const PRTextGroupWords& groupWords );
 
+    /** Update text transformation matrix. if necessary.
+     * \param streamState Current tream state to consider.
+     */
+    void textUpdateTransMatrix( const PdfStreamState& streamState );
+
 protected:
     /** Test function on images.
      */
