@@ -26,29 +26,31 @@
 #include <QTransform>
 #include <vector>
 
-class PdfVector;
-class PdfORect;
+//namespace PoDoFoExtended {
+
+class PdfeVector;
+class PdfeORect;
 
 /** Transformation matrix used in graphics state.
  */
-class PdfMatrix : public vmml::mat3d
+class PdfeMatrix : public vmml::mat3d
 {
 public:
     /** Default constructor, matrix initialized to unit.
      */
-    PdfMatrix() {
+    PdfeMatrix() {
         this->init();
     }
     /** Copy constructor for vmml::mat3d.
      */
-    PdfMatrix( const vmml::mat3d& source  ) :
+    PdfeMatrix( const vmml::mat3d& source  ) :
         vmml::mat3d( source )
     {
     }
 
     /** =Operator overload
      */
-    const PdfMatrix& operator=( const vmml::mat3d& source ) {
+    const PdfeMatrix& operator=( const vmml::mat3d& source ) {
         *( (vmml::mat3d*) this ) = source;
         return *this;
     }
@@ -62,7 +64,7 @@ public:
 
     /** Compute inverse matrix
      */
-    bool inverse( PdfMatrix& invMat ) const {
+    bool inverse( PdfeMatrix& invMat ) const {
         return vmml::compute_inverse( *this, invMat );
     }
 
@@ -74,39 +76,39 @@ public:
 
     /** Map a vector in the new coordinate system defined by the matrix.
      */
-    PdfVector map( const PdfVector& vect ) const;
+    PdfeVector map( const PdfeVector& vect ) const;
 
     /** Map a rectangle in the new coordinate system defined by the matrix.
      */
-    PdfORect map( const PdfORect& rect ) const;
+    PdfeORect map( const PdfeORect& rect ) const;
 };
 
 /** Position vector 1x3 representing a position in a page,
  * in a given coordinate system.
  */
-class PdfVector : public vmml::matrix<1,3,double>
+class PdfeVector : public vmml::matrix<1,3,double>
 {
 public:
     /** Default constructor, vector initialize to (0,0,1)
      */
-    PdfVector() {
+    PdfeVector() {
         this->init();
     }
 
-    PdfVector( double x, double y ) {
+    PdfeVector( double x, double y ) {
         this->init( x, y );
     }
 
     /** =Operator overloaded
      */
-    const PdfVector& operator=( const vmml::matrix<1,3,double>& source ) {
+    const PdfeVector& operator=( const vmml::matrix<1,3,double>& source ) {
         *( (vmml::matrix<1,3,double>*) this ) = source;
         return *this;
     }
     /** +Operator overloaded
      */
-    PdfVector operator+( const PdfVector& vect ) const {
-        PdfVector rvect;
+    PdfeVector operator+( const PdfeVector& vect ) const {
+        PdfeVector rvect;
         rvect.at(0,0) = vect.at(0,0) + this->at(0,0);
         rvect.at(0,1) = vect.at(0,1) + this->at(0,1);
         rvect.at(0,2) = 1.0;
@@ -114,8 +116,8 @@ public:
     }
     /** *Operator overloaded
      */
-    PdfVector operator*( const PdfMatrix& mat ) const {
-        PdfVector rvect;
+    PdfeVector operator*( const PdfeMatrix& mat ) const {
+        PdfeVector rvect;
         rvect.at(0,0) = mat(0,0) * this->at(0,0) + mat(1,0) * this->at(0,1) + mat(2,0);
         rvect.at(0,1) = mat(0,1) * this->at(0,0) + mat(1,1) * this->at(0,1) + mat(2,1);
         rvect.at(0,2) = 1.0;
@@ -123,8 +125,8 @@ public:
     }
     /** *Operator overloaded
      */
-    PdfVector operator*( double coef ) const {
-        PdfVector rvect;
+    PdfeVector operator*( double coef ) const {
+        PdfeVector rvect;
         rvect.at(0,0) = this->at(0,0) * coef;
         rvect.at(0,1) = this->at(0,1) * coef;
         rvect.at(0,2) = 1.0;
@@ -134,8 +136,8 @@ public:
     /** Rotate a vector of 90°.
      * \return Copy of the vector rotated.
      */
-    PdfVector rotate90() const {
-        PdfVector rvect;
+    PdfeVector rotate90() const {
+        PdfeVector rvect;
         rvect.at(0,0) = -this->at(0,1);
         rvect.at(0,1) = this->at(0,0);
         rvect.at(0,2) = 1.0;
@@ -179,24 +181,24 @@ public:
     }
     /** Dot product between two vectors.
      */
-    static double dotProduct( const PdfVector& vect1, const PdfVector& vect2 ) {
+    static double dotProduct( const PdfeVector& vect1, const PdfeVector& vect2 ) {
         return vect1.at(0,0) * vect2.at(0,0) + vect1.at(0,1) * vect2.at(0,1);
     }
     /** Angle made between two vectors (inside the interval [0,pi]).
      */
-    static double angle( const PdfVector& vect1, const PdfVector& vect2 ) {
-        return acos( PdfVector::dotProduct( vect1, vect2 ) / vect1.norm2() / vect2.norm2() );
+    static double angle( const PdfeVector& vect1, const PdfeVector& vect2 ) {
+        return acos( PdfeVector::dotProduct( vect1, vect2 ) / vect1.norm2() / vect2.norm2() );
     }
 };
 
 /** Orienlengthted rectangle: characterize by bottom-left coordinates, direction, width and height.
  */
-class PdfORect
+class PdfeORect
 {
 public:
     /** Default constructor of the oriented rectangle: initialize to (0,0,w,h).
      */
-    PdfORect( double width = 1.0, double height = 1.0 ) {
+    PdfeORect( double width = 1.0, double height = 1.0 ) {
         this->init( width, height );
     }
     /** Initialize to oriented rectangle (0,0,w,h).
@@ -211,22 +213,22 @@ public:
 
     /** Get Left Bottom point.
      */
-    PdfVector getLeftBottom() const {
+    PdfeVector getLeftBottom() const {
         return m_leftBottom;
     }
     /** Set Left Bottom point.
      */
-    void setLeftBottom( const PdfVector& leftBottom ) {
+    void setLeftBottom( const PdfeVector& leftBottom ) {
         m_leftBottom = leftBottom;
     }
     /** Get direction (unit vector).
      */
-    PdfVector getDirection() const {
+    PdfeVector getDirection() const {
         return m_direction;
     }
     /** Set direction vector.
      */
-    void setDirection( const PdfVector& direction ) {
+    void setDirection( const PdfeVector& direction ) {
         // Transform into unit vector.
         double norm = direction.norm2();
         m_direction(0) = direction(0) / norm;
@@ -257,10 +259,10 @@ public:
 private:
     /** Left bottom point.
      */
-    PdfVector m_leftBottom;
+    PdfeVector m_leftBottom;
     /** Direction (unit vector).
      */
-    PdfVector m_direction;
+    PdfeVector m_direction;
 
     /** Width of the rectangle.
      */
@@ -271,15 +273,15 @@ private:
 };
 
 //**********************************************************//
-//                         PdfVector                        //
+//                         PdfeVector                       //
 //**********************************************************//
 
 //**********************************************************//
-//                         PdfMatrix                        //
+//                         PdfeMatrix                       //
 //**********************************************************//
-inline PdfVector PdfMatrix::map( const PdfVector& vect ) const
+inline PdfeVector PdfeMatrix::map( const PdfeVector& vect ) const
 {
-    PdfVector mapVect;
+    PdfeVector mapVect;
 //    mapVect(0) = this->at(0,0) * vect(0) + this->at(1,0) * vect(1) + this->at(2,0) * vect(2);
 //    mapVect(1) = this->at(0,1) * vect(0) + this->at(1,1) * vect(1) + this->at(2,1) * vect(2);
 //    mapVect(2) = this->at(0,2) * vect(0) + this->at(1,2) * vect(1) + this->at(2,2) * vect(2);
@@ -288,10 +290,10 @@ inline PdfVector PdfMatrix::map( const PdfVector& vect ) const
     mapVect(2) = 1.0;
     return mapVect;
 }
-inline PdfORect PdfMatrix::map( const PdfORect& rect ) const
+inline PdfeORect PdfeMatrix::map( const PdfeORect& rect ) const
 {
-    PdfORect mapRect;
-    PdfVector tmpVect1, tmpVect2;
+    PdfeORect mapRect;
+    PdfeVector tmpVect1, tmpVect2;
     double tmpVal;
 
     // Set left bottom point.
@@ -319,8 +321,10 @@ inline PdfORect PdfMatrix::map( const PdfORect& rect ) const
     return mapRect;
 }
 //**********************************************************//
-//                         PdfORect                         //
+//                         PdfeORect                        //
 //**********************************************************//
+
+//}
 
 #endif // PDFTYPES_H
 

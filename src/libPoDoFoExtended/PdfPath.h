@@ -21,7 +21,7 @@
 #ifndef PDFPATH_H
 #define PDFPATH_H
 
-#include "PdfTypes.h"
+#include "PdfeTypes.h"
 #include "PdfGraphicsOperators.h"
 
 #include "podofo/base/PdfRect.h"
@@ -32,7 +32,7 @@ struct PdfSubPath
 {
     /** Points which composed the path.
      */
-    std::vector<PdfVector> points;
+    std::vector<PdfeVector> points;
 
     /** Vector which identifies the constructor operator
      * used for each point in the path.
@@ -60,7 +60,7 @@ struct PdfSubPath
      * \param point Point to append.
      * \param op Construction operator corresponding.
      */
-    void appendPoint( const PdfVector& point, const std::string& op ) {
+    void appendPoint( const PdfeVector& point, const std::string& op ) {
         points.push_back( point );
         opPoints.push_back( op );
     }
@@ -90,7 +90,7 @@ struct PdfSubPath
      * \param point Point which is modified.
      * \param zone Rectangle representing the zone to consider.
      */
-    static void reduceToZone( PdfVector& point,
+    static void reduceToZone( PdfeVector& point,
                               const PoDoFo::PdfRect& zone ) ;
 
     /** Reduce the subpath in order to be inside a given zone.
@@ -101,7 +101,7 @@ struct PdfSubPath
     /** Apply a transformation matrix to points of the subpath.
      * \param transMat Transformation matrix.
      */
-    void applyTransfMatrix( const PdfMatrix& transMat );
+    void applyTransfMatrix( const PdfeMatrix& transMat );
 };
 
 class PdfPath
@@ -134,13 +134,13 @@ public:
      * Corresponds to operator "x y m".
      * \param point Point where the current point.
      */
-    void beginSubpath( const PdfVector& point );
+    void beginSubpath( const PdfeVector& point );
 
     /** Append a straight line to the current subpath, begin at the current point.
      * Corresponds to operator "x y l".
      * \param point End point of the straight line.
      */
-    void appendLine( const PdfVector& point );
+    void appendLine( const PdfeVector& point );
 
     /** Append a Bézier curve, with 2 controlling points.
      * Corresponds to operator "x1 y1 x2 y2 x3 y3 c".
@@ -148,25 +148,25 @@ public:
      * \param point2 Control point 2.
      * \param point3 End point of the Bézier curve.
      */
-    void appendBezierC( const PdfVector& point1,
-                        const PdfVector& point2,
-                        const PdfVector& point3 );
+    void appendBezierC( const PdfeVector& point1,
+                        const PdfeVector& point2,
+                        const PdfeVector& point3 );
 
     /** Append a Bézier curve, with 1 controlling point.
      * Corresponds to operator "x2 y2 x3 y3 v".
      * \param point2 Control point 2.
      * \param point3 End point of the Bézier curve.
      */
-    void appendBezierV( const PdfVector& point2,
-                        const PdfVector& point3 );
+    void appendBezierV( const PdfeVector& point2,
+                        const PdfeVector& point3 );
 
     /** Append a Bézier curve, with 1 controlling point.
      * Corresponds to operator "x1 y1 x3 y3 y".
      * \param point1 Control point 1.
      * \param point3 End point of the Bézier curve.
      */
-    void appendBezierY( const PdfVector& point1,
-                        const PdfVector& point3 );
+    void appendBezierY( const PdfeVector& point1,
+                        const PdfeVector& point3 );
 
     /** Close current subpath with a straight line.
      * Corresponds to operator h.
@@ -178,8 +178,8 @@ public:
      * \param llPoint Left-low point of the rectangle.
      * \param size Width and height of the rectangle.
      */
-    void appendRectangle( const PdfVector& llPoint,
-                          const PdfVector& size );
+    void appendRectangle( const PdfeVector& llPoint,
+                          const PdfeVector& size );
 
     /** Get clipping path operator.
      * \return Clipping path operator. Empty if it is not a clipping path.
@@ -213,7 +213,7 @@ protected:
 
     /** Current point in the path.
      */
-    PdfVector m_currentPoint;
+    PdfeVector m_currentPoint;
 
     /** Is a clipping path ?
      */
@@ -223,14 +223,14 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfSubPath::reduceToZone( PdfVector& point, const PoDoFo::PdfRect& zone )
+inline void PdfSubPath::reduceToZone( PdfeVector& point, const PoDoFo::PdfRect& zone )
 {
     point(0) = std::min( std::max( point(0), zone.GetLeft() ),
                              zone.GetLeft() + zone.GetWidth() );
     point(1) = std::min( std::max( point(1), zone.GetBottom() ),
                              zone.GetBottom() + zone.GetHeight() );
 }
-inline void PdfSubPath::applyTransfMatrix( const PdfMatrix& transMat )
+inline void PdfSubPath::applyTransfMatrix( const PdfeMatrix& transMat )
 {
     // Modify points in the subpath.
     for( size_t j = 0 ; j < points.size() ; j++ ) {

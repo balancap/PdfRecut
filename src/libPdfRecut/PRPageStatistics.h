@@ -85,7 +85,7 @@ public:
      */
     virtual void fTextShowing( const PdfStreamState& streamState );
 
-    void textDrawPdfORect( const PdfORect& orect );
+    void textDrawPdfeORect( const PdfeORect& orect );
 
     void textDrawLine( const PRTextLine& line );
 

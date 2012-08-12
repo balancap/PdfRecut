@@ -220,7 +220,7 @@ void PdfPath::appendPath( const PdfPath& path )
     m_currentPoint = path.m_currentPoint;
 }
 
-void PdfPath::beginSubpath( const PdfVector& point )
+void PdfPath::beginSubpath( const PdfeVector& point )
 {
     // Get current subpath.
     PdfSubPath& curSubpath = this->getCurrentSubPath();
@@ -238,7 +238,7 @@ void PdfPath::beginSubpath( const PdfVector& point )
     m_currentPoint = point;
 }
 
-void PdfPath::appendLine( const PdfVector& point )
+void PdfPath::appendLine( const PdfeVector& point )
 {
     // Get current subpath.
     PdfSubPath& curSubpath = this->getCurrentSubPath();
@@ -253,9 +253,9 @@ void PdfPath::appendLine( const PdfVector& point )
     m_currentPoint = point;
 }
 
-void PdfPath::appendBezierC( const PdfVector& point1,
-                             const PdfVector& point2,
-                             const PdfVector& point3 )
+void PdfPath::appendBezierC( const PdfeVector& point1,
+                             const PdfeVector& point2,
+                             const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfSubPath& curSubpath = this->getCurrentSubPath();
@@ -271,8 +271,8 @@ void PdfPath::appendBezierC( const PdfVector& point1,
     curSubpath.appendPoint( point3, "c" );
     m_currentPoint = point3;
 }
-void PdfPath::appendBezierV( const PdfVector& point2,
-                             const PdfVector& point3 )
+void PdfPath::appendBezierV( const PdfeVector& point2,
+                             const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfSubPath& curSubpath = this->getCurrentSubPath();
@@ -287,8 +287,8 @@ void PdfPath::appendBezierV( const PdfVector& point2,
     curSubpath.appendPoint( point3, "v" );
     m_currentPoint = point3;
 }
-void PdfPath::appendBezierY( const PdfVector& point1,
-                             const PdfVector& point3 )
+void PdfPath::appendBezierY( const PdfeVector& point1,
+                             const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfSubPath& curSubpath = this->getCurrentSubPath();
@@ -317,8 +317,8 @@ void PdfPath::closeSubpath()
     }
 }
 
-void PdfPath::appendRectangle( const PdfVector& llPoint,
-                               const PdfVector& size )
+void PdfPath::appendRectangle( const PdfeVector& llPoint,
+                               const PdfeVector& size )
 {
     /* Known to be equivalent to
       x y m
@@ -333,10 +333,10 @@ void PdfPath::appendRectangle( const PdfVector& llPoint,
 
     PdfSubPath& subpath = m_subpaths.back();
     subpath.opPoints[0] = "re";
-    subpath.appendPoint( PdfVector( llPoint(0)+size(0), llPoint(1) ), "re" );
-    subpath.appendPoint( PdfVector( llPoint(0)+size(0), llPoint(1)+size(1) ), "re" );
-    subpath.appendPoint( PdfVector( llPoint(0), llPoint(1)+size(1) ), "re" );
-    subpath.appendPoint( PdfVector( llPoint(0), llPoint(1) ), "re" );
+    subpath.appendPoint( PdfeVector( llPoint(0)+size(0), llPoint(1) ), "re" );
+    subpath.appendPoint( PdfeVector( llPoint(0)+size(0), llPoint(1)+size(1) ), "re" );
+    subpath.appendPoint( PdfeVector( llPoint(0), llPoint(1)+size(1) ), "re" );
+    subpath.appendPoint( PdfeVector( llPoint(0), llPoint(1) ), "re" );
 
     // Close rectangle subpath and set current point.
     subpath.closed = true;
@@ -372,7 +372,7 @@ QPainterPath PdfPath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) con
         // Points from the subpath.
         for( size_t j = 0 ; j < m_subpaths[i].points.size() ; ++j )
         {
-            const PdfVector& point = m_subpaths[i].points[j];
+            const PdfeVector& point = m_subpaths[i].points[j];
             const std::string& opPoint = m_subpaths[i].opPoints[j];
 
             // Distinction between different painting operators.
@@ -411,7 +411,7 @@ QPainterPath PdfPath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) con
             }
             else if( opPoint == "re" ) {
                 // Rectangle:  "re" corresponds to "m l l l h"
-                const PdfVector& pointUR = m_subpaths[i].points[j+2];
+                const PdfeVector& pointUR = m_subpaths[i].points[j+2];
 
                 qPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
                 j+=4;

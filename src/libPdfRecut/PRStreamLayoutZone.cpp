@@ -44,7 +44,7 @@ PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
 void PRStreamLayoutZone::generateStream()
 {
     // Zone Out coordinates and transformation.
-    PdfMatrix zoneOutTrMatrix;
+    PdfeMatrix zoneOutTrMatrix;
     zoneOutTrMatrix(2,0) = m_zone.leftZoneOut - m_zone.zoneIn.GetLeft();
     zoneOutTrMatrix(2,1) = m_zone.bottomZoneOut - m_zone.zoneIn.GetBottom();
 
@@ -156,7 +156,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
     // Temp variable, including inverse transformation matrix.
     bool inZone;
     size_t idx = 0;
-    PdfMatrix invTransMat;
+    PdfeMatrix invTransMat;
     gState.transMat.inverse( invTransMat );
 
     // Keep subpaths which intersect the zone, and reduce them if necessary.
@@ -326,7 +326,7 @@ void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
     const PdfGraphicsState& gState = streamState.gStates.back();
 
     // Show text if inside page zone.
-    PdfMatrix tmpMat = gState.textState.transMat * gState.transMat;
+    PdfeMatrix tmpMat = gState.textState.transMat * gState.transMat;
     if( tmpMat(2,1) <= m_zone.zoneIn.GetBottom() + m_zone.zoneIn.GetHeight() &&
             tmpMat(2,1) >= m_zone.zoneIn.GetBottom() )
     {
@@ -439,7 +439,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
     else if( gOperator.code == ePdfGOperator_EI ) {
         // Check if the inline image is inside the zone.
         PdfPath pathII;
-        pathII.appendRectangle( PdfVector(0,0), PdfVector(1,1) );
+        pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
         PdfSubPath& subpathII = pathII.getSubpaths().back();
         subpathII.applyTransfMatrix( gState.transMat );
@@ -477,7 +477,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
     if( !xobjSubtype.compare( "Image" ) ) {
         // Check if the image is inside the zone.
         PdfPath pathImg;
-        pathImg.appendRectangle( PdfVector(0,0), PdfVector(1,1) );
+        pathImg.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
         PdfSubPath& subpathImg = pathImg.getSubpaths().back();
         subpathImg.applyTransfMatrix( gState.transMat );

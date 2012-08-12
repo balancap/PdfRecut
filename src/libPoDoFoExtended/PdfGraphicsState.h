@@ -38,11 +38,11 @@ struct PdfTextState
 {
     /** Text transformation matrix.
      */
-    PdfMatrix transMat;
+    PdfeMatrix transMat;
 
     /** Line transformation matrix.
      */
-    PdfMatrix lineTransMat;
+    PdfeMatrix lineTransMat;
 
     /** Font name (as used in Font resources).
      */
@@ -100,7 +100,7 @@ struct PdfGraphicsState
 {
     /** Transformation matrix (set with cm).
      */
-    PdfMatrix transMat;
+    PdfeMatrix transMat;
 
     /** Clipping path rectangle.
      */

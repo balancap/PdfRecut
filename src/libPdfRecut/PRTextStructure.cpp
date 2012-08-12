@@ -196,10 +196,10 @@ double PRTextGroupWords::getHeight() const
     return height;
 }
 
-PdfMatrix PRTextGroupWords::getGlobalTransMatrix() const
+PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
 {
     // Compute text rendering matrix.
-    PdfMatrix tmpMat, textMat;
+    PdfeMatrix tmpMat, textMat;
     tmpMat(0,0) = m_textState.fontSize * m_textState.hScale / 100;
     tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
     tmpMat(2,1) = m_textState.rise;
@@ -207,9 +207,9 @@ PdfMatrix PRTextGroupWords::getGlobalTransMatrix() const
 
     return textMat;
 }
-PdfORect PRTextGroupWords::getOrientedRect() const
+PdfeORect PRTextGroupWords::getOrientedRect() const
 {
-    PdfORect groupORect( 0.0, 1.0 );
+    PdfeORect groupORect( 0.0, 1.0 );
 
     // Compute width and height.
     double width = 0;
@@ -221,7 +221,7 @@ PdfORect PRTextGroupWords::getOrientedRect() const
     groupORect.setWidth( width );
 
     // Apply global transform.
-    PdfMatrix textMat = this->getGlobalTransMatrix();
+    PdfeMatrix textMat = this->getGlobalTransMatrix();
     groupORect = textMat.map( groupORect );
 
     return groupORect;

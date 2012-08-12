@@ -107,12 +107,12 @@ public:
 
     /** Get global transformation matrix (font+text+gState).
      */
-    PdfMatrix getGlobalTransMatrix() const;
+    PdfeMatrix getGlobalTransMatrix() const;
 
     /** Get the oriented rectangle (in page coordinates) which represents the group of words.
-     * \return PdfORect object.
+     * \return PdfeORect object.
      */
-    PdfORect getOrientedRect() const;
+    PdfeORect getOrientedRect() const;
 
 protected:
     /** Read a group of words from a PdfString (appended to the group).
@@ -133,8 +133,8 @@ public:
     long getGroupIndex() const;
     void setGroupIndex( long groupIndex );
 
-    PdfMatrix getTransMatrix() const;
-    void setTransMatrix( const PdfMatrix& transMatrix );
+    PdfeMatrix getTransMatrix() const;
+    void setTransMatrix( const PdfeMatrix& transMatrix );
 
     PdfTextState getTextState() const;
     void setTextState( const PdfTextState& textState );
@@ -159,7 +159,7 @@ protected:
 
     /** Transformation matrix of the graphics state.
      */
-    PdfMatrix m_transMatrix;
+    PdfeMatrix m_transMatrix;
     /** Text state for this group of words.
      */
     PdfTextState m_textState;
@@ -226,11 +226,11 @@ inline void PRTextGroupWords::setGroupIndex( long groupIndex )
 {
     m_groupIndex = groupIndex;
 }
-inline PdfMatrix PRTextGroupWords::getTransMatrix() const
+inline PdfeMatrix PRTextGroupWords::getTransMatrix() const
 {
     return m_transMatrix;
 }
-inline void PRTextGroupWords::setTransMatrix( const PdfMatrix& transMatrix )
+inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix;
 }

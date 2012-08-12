@@ -25,7 +25,7 @@
 
 #include <podofo/base/PdfRect.h>
 
-#include "PdfTypes.h"
+#include "PdfeTypes.h"
 #include "PdfSemaphore.h"
 #include "PRDocument.h"
 #include "PdfMisc.h"
@@ -437,7 +437,7 @@ protected:
      * \param zone Rectangle representing the zone.
      * \param strictInclusion Evaluate if the path is stricly inside the zone.
      */
-    static bool intersectZone( const std::vector<PdfVector>& points,
+    static bool intersectZone( const std::vector<PdfeVector>& points,
                                const PoDoFo::PdfRect& zone,
                                bool strictInclusion = false );
 
@@ -454,7 +454,7 @@ protected:
      * \param point Point which is modified.
      * \param zone Rectangle representing the zone to consider.
      */
-    static void reduceToZone( PdfVector& point,
+    static void reduceToZone( PdfeVector& point,
                               const PoDoFo::PdfRect& zone );
 
     /** Reduce the size of rectangle path in order to be inside a given zone.

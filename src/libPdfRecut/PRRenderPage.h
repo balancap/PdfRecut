@@ -236,13 +236,13 @@ public:
      * \param imgCoord Coordinates of a pixel in the image.
      * \return Coordinates in the page of the pixel center.
      */
-    PdfVector fromImagetoPageCoord( const QPoint& imgCoord );
+    PdfeVector fromImagetoPageCoord( const QPoint& imgCoord );
 
     /** Convert Page coordinates to Image coordinates.
      * \param pageCoord Coordinates in the page of a point.
      * return Coordinates of the pixel which contains the point in the image.
      */
-    QPoint fromPagetoImageCoord( const PdfVector& pageCoord );
+    QPoint fromPagetoImageCoord( const PdfeVector& pageCoord );
 
     /** Convert Image rectangle to page coordinates.
      * \param imgRect Rectangle in image coordinates.
@@ -313,11 +313,11 @@ protected:
     /** Transform from page space to image space.
      * In particular, invert y-axis coordinate.
      */
-    PdfMatrix m_pageImgTrans;
+    PdfeMatrix m_pageImgTrans;
 
     /** Text transform.
      */
-    PdfMatrix m_textMatrix;
+    PdfeMatrix m_textMatrix;
     /** Number of text groups.
      */
     long m_nbTextGroups;
@@ -326,15 +326,15 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline PdfVector PRRenderPage::fromImagetoPageCoord( const QPoint& imgCoord )
+inline PdfeVector PRRenderPage::fromImagetoPageCoord( const QPoint& imgCoord )
 {
-    PdfVector pageCoord;
+    PdfeVector pageCoord;
     pageCoord(0) = ( imgCoord.x() + 0.5 ) / m_renderParameters.resolution + m_pageRect.GetLeft();
     pageCoord(1) = ( m_pageImage->height() - 0.5 - imgCoord.y() ) / m_renderParameters.resolution + m_pageRect.GetBottom();
 
     return pageCoord;
 }
-inline QPoint PRRenderPage::fromPagetoImageCoord( const PdfVector& pageCoord )
+inline QPoint PRRenderPage::fromPagetoImageCoord( const PdfeVector& pageCoord )
 {
     QPoint imgCoord;
     imgCoord.rx() = floor( ( pageCoord(0) - m_pageRect.GetLeft() ) * m_renderParameters.resolution );

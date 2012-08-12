@@ -20,18 +20,17 @@
 #ifndef PDFCMAP_H
 #define PDFCMAP_H
 
-#include <string>
+#include "PdfeFont.h"
 #include "podofo/base/PdfName.h"
+
+// TMP !!!
+using namespace PoDoFoExtended;
 
 namespace PoDoFo {
 
 class PdfArray;
 class PdfObject;
 class PdfVariant;
-
-/** Pdf CID type.
- */
-typedef pdf_uint16  pdf_cid;
 
 /** Structure that contains the different informations of CIDSystemInfo.
  */

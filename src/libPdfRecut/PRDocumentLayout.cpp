@@ -925,7 +925,7 @@ void PRDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
     // Page pointer and page zones
     PdfPage* pageIn = document->GetPage( idxPageIn );
     std::vector<const PRPageZone*>& pageInZones = mapPageInZones[ pageIn->GetObject()->Reference() ];
-    std::vector<PdfVector> vecAnnPoints;
+    std::vector<PdfeVector> vecAnnPoints;
     int idxZone;
 
     for( int i = 0 ; i < pageIn->GetNumAnnots() ; i++ )
@@ -939,13 +939,13 @@ void PRDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
 
         // Points corresponding to annotation rectangle
         PdfRect annRect = pageAnn->GetRect();
-        vecAnnPoints.push_back( PdfVector( annRect.GetLeft(),
+        vecAnnPoints.push_back( PdfeVector( annRect.GetLeft(),
                                            annRect.GetBottom() ) );
-        vecAnnPoints.push_back( PdfVector( annRect.GetLeft()+annRect.GetWidth(),
+        vecAnnPoints.push_back( PdfeVector( annRect.GetLeft()+annRect.GetWidth(),
                                            annRect.GetBottom() ) );
-        vecAnnPoints.push_back( PdfVector( annRect.GetLeft(),
+        vecAnnPoints.push_back( PdfeVector( annRect.GetLeft(),
                                            annRect.GetBottom()+annRect.GetHeight() ) );
-        vecAnnPoints.push_back( PdfVector( annRect.GetLeft()+annRect.GetWidth(),
+        vecAnnPoints.push_back( PdfeVector( annRect.GetLeft()+annRect.GetWidth(),
                                            annRect.GetBottom()+annRect.GetHeight() ) );
 
         // Find zone where the annotation rect is
@@ -1100,7 +1100,7 @@ std::vector<int> PRDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* d
     return tmpVec;
 }
 
-bool PRDocumentLayout::intersectZone( const std::vector<PdfVector>& points,
+bool PRDocumentLayout::intersectZone( const std::vector<PdfeVector>& points,
                                        const PoDoFo::PdfRect& zone,
                                        bool strictInclusion )
 {
@@ -1217,7 +1217,7 @@ bool PRDocumentLayout::intersectZone( const PoDoFo::PdfRect& path,
     }
 }
 
-void PRDocumentLayout::reduceToZone( PdfVector& point,
+void PRDocumentLayout::reduceToZone( PdfeVector& point,
                                       const PoDoFo::PdfRect& zone )
 {
     point(0) = std::min( std::max( point(0), zone.GetLeft() ),

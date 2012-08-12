@@ -197,7 +197,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
     QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths, evenOddRule );
 
     // Compute path rendering matrix.
-    PdfMatrix pathMat;
+    PdfeMatrix pathMat;
     pathMat = gState.transMat * m_pageImgTrans;
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
@@ -276,7 +276,7 @@ void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
     if( gOperator.code == ePdfGOperator_EI )
     {
         // Compute path rendering matrix.
-        PdfMatrix pathMat;
+        PdfeMatrix pathMat;
         pathMat = gState.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
@@ -297,7 +297,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
     std::string xobjName = gOperands.back().substr( 1 );
     PdfObject* xobjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
-    PdfMatrix pathMat;
+    PdfeMatrix pathMat;
 
     // Distinction between different type of XObjects
     if( !xobjSubtype.compare( "Image" ) )
@@ -315,7 +315,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
     else if( !xobjSubtype.compare( "Form" ) )
     {
         // Get transformation matrix in form's dictionary
-        PdfMatrix formMat;
+        PdfeMatrix formMat;
         if( xobjPtr->GetDictionary().HasKey( "Matrix" ) ) {
             PdfArray& mat = xobjPtr->GetIndirectKey( "Matrix" )->GetArray();
 
@@ -376,7 +376,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     ++m_nbTextGroups;
 
     // Update text transform matrix.
-    PdfMatrix tmpMat;
+    PdfeMatrix tmpMat;
     tmpMat(2,0) = groupWords.getWidth() * textState.fontSize * textState.hScale / 100;
     m_textMatrix = tmpMat * m_textMatrix;
 
@@ -391,7 +391,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
     }
 
     // Compute text rendering matrix.
-    PdfMatrix textMat;
+    PdfeMatrix textMat;
     textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 

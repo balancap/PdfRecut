@@ -113,21 +113,21 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     // Render the group of words.
     //this->textDrawGroupWords( m_groupsWords.back() );
 
-    //this->drawPdfORect( m_groupsWords.back().getOrientedRect() );
+    //this->drawPdfeORect( m_groupsWords.back().getOrientedRect() );
 
     //PRRenderPage::fTextShowing( streamState );
 }
 
 
 
-void PRPageStatistics::textDrawPdfORect( const PdfORect& orect )
+void PRPageStatistics::textDrawPdfeORect( const PdfeORect& orect )
 {
     // Compute text rendering matrix.
     m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
 
     // Create polygon.
     QPolygonF polygon;
-    PdfVector point = orect.getLeftBottom();
+    PdfeVector point = orect.getLeftBottom();
     polygon << point.toQPoint();
 
     point = point + orect.getDirection() * orect.getWidth();
@@ -157,13 +157,13 @@ size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
 
     // Get the group of words.
     PRTextGroupWords& groupWords = m_groupsWords[idxGroupWords];
-    PdfORect orectGroup = groupWords.getOrientedRect();
+    PdfeORect orectGroup = groupWords.getOrientedRect();
 
     // Transformation matrix related to the group of words.
-    PdfVector lbGroup = orectGroup.getLeftBottom();
-    PdfVector direcGroup = orectGroup.getDirection();
+    PdfeVector lbGroup = orectGroup.getLeftBottom();
+    PdfeVector direcGroup = orectGroup.getDirection();
 
-    PdfMatrix transMat, tmpMat;
+    PdfeMatrix transMat, tmpMat;
     tmpMat(0,0) = direcGroup(0);      tmpMat(0,1) = -direcGroup(1);
     tmpMat(1,0) = direcGroup(1);      tmpMat(1,1) = direcGroup(0);
     tmpMat(2,0) = lbGroup(0);         tmpMat(2,1) = lbGroup(1);
@@ -173,14 +173,14 @@ size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
     size_t idxGroupLimit = std::max( long(0), long(idxGroupWords) - MaxSearchGroupWords );
 
     for( size_t idx = idxGroupLimit ; idx < idxGroupWords ; ++idx ) {
-        PdfORect tmpORect = m_groupsWords[idx].getOrientedRect();
-        double angle = PdfVector::angle( orectGroup.getDirection(), tmpORect.getDirection() );
+        PdfeORect tmpORect = m_groupsWords[idx].getOrientedRect();
+        double angle = PdfeVector::angle( orectGroup.getDirection(), tmpORect.getDirection() );
 
         // Get the angle between the two groups: should be less than ~5°.
-        if( PdfVector::angle( orectGroup.getDirection(), tmpORect.getDirection() ) <= 0.1  )
+        if( PdfeVector::angle( orectGroup.getDirection(), tmpORect.getDirection() ) <= 0.1  )
         {
             // Compute the two points that interest us (rb and rt).
-            PdfVector rbPoint, rtPoint;
+            PdfeVector rbPoint, rtPoint;
             rbPoint = tmpORect.getLeftBottom() + tmpORect.getDirection() * tmpORect.getWidth();
             rtPoint = rbPoint + tmpORect.getDirection().rotate90() * tmpORect.getHeight();
 

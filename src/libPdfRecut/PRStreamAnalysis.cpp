@@ -58,7 +58,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
 
     // Temporary variables.
     std::string tmpString;
-    PdfMatrix tmpMat;
+    PdfeMatrix tmpMat;
     PdfRect tmpRect;
 
     EPdfContentsType eType;
@@ -67,8 +67,8 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
     // Initialize graphics state and resources.
     streamState.gStates.push_back( initialGState );
     tmpRect = canvas->GetPageSize();
-    streamState.gStates.back().clippingPath.appendRectangle( PdfVector( tmpRect.GetLeft(), tmpRect.GetBottom() ),
-                                                             PdfVector( tmpRect.GetWidth(), tmpRect.GetHeight() ) );
+    streamState.gStates.back().clippingPath.appendRectangle( PdfeVector( tmpRect.GetLeft(), tmpRect.GetBottom() ),
+                                                             PdfeVector( tmpRect.GetWidth(), tmpRect.GetHeight() ) );
 
     streamState.canvas = canvas;
     streamState.resources = initialResources;
@@ -287,7 +287,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 if( gOperator.code == ePdfGOperator_m ) {
                     // Begin a new subpath.
                     size_t nbvars = gOperands.size();
-                    PdfVector point;
+                    PdfeVector point;
 
                     this->readValue( gOperands[nbvars-1], point(1) );
                     this->readValue( gOperands[nbvars-2], point(0) );
@@ -297,7 +297,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code == ePdfGOperator_l ) {
                     // Append straight line.
                     size_t nbvars = gOperands.size();
-                    PdfVector point;
+                    PdfeVector point;
 
                     this->readValue( gOperands[nbvars-1], point(1) );
                     this->readValue( gOperands[nbvars-2], point(0) );
@@ -307,7 +307,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code == ePdfGOperator_c ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
-                    PdfVector point1, point2, point3;
+                    PdfeVector point1, point2, point3;
 
                     this->readValue( gOperands[nbvars-1], point3(1) );
                     this->readValue( gOperands[nbvars-2], point3(0) );
@@ -321,7 +321,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code == ePdfGOperator_v ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
-                    PdfVector point2, point3;
+                    PdfeVector point2, point3;
 
                     this->readValue( gOperands[nbvars-1], point3(1) );
                     this->readValue( gOperands[nbvars-2], point3(0) );
@@ -333,7 +333,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code == ePdfGOperator_y ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
-                    PdfVector point1, point3;
+                    PdfeVector point1, point3;
 
                     this->readValue( gOperands[nbvars-1], point3(1) );
                     this->readValue( gOperands[nbvars-2], point3(0) );
@@ -349,7 +349,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                 else if( gOperator.code == ePdfGOperator_re ) {
                     // Append a rectangle to the current path as a complete subpath.
                     size_t nbvars = gOperands.size();
-                    PdfVector llpoint, size;
+                    PdfeVector llpoint, size;
 
                     this->readValue( gOperands[nbvars-1], size(1) );
                     this->readValue( gOperands[nbvars-2], size(0) );
@@ -424,7 +424,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                     streamState.gStates.push_back( streamState.gStates.back() );
 
                     // Get transformation matrix of the form.
-                    PdfMatrix formMat;
+                    PdfeMatrix formMat;
                     if( xObjPtr->GetDictionary().HasKey( "Matrix" ) ) {
                         PdfArray& mat = xObjPtr->GetIndirectKey( "Matrix" )->GetArray();
 
@@ -441,10 +441,10 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                     PdfArray& bbox = xObjPtr->GetIndirectKey( "BBox" )->GetArray();
 
                     PdfPath pathBBox;
-                    pathBBox.beginSubpath( PdfVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
-                    pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
-                    pathBBox.appendLine( PdfVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
-                    pathBBox.appendLine( PdfVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
+                    pathBBox.beginSubpath( PdfeVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
+                    pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
+                    pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
+                    pathBBox.appendLine( PdfeVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
                     pathBBox.closeSubpath();
 
                     streamState.gStates.back().clippingPath.appendPath( pathBBox );
