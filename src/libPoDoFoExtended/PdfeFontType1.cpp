@@ -20,8 +20,6 @@
 #include "PdfeFontType1.h"
 #include "podofo/podofo.h"
 
-#include <iostream>
-
 using namespace PoDoFo;
 
 namespace PoDoFoExtended {
@@ -215,6 +213,5 @@ QChar PdfeFontType1::toUnicode( pdf_cid c ) const
         return QChar( c );
     }
 }
-
 
 }

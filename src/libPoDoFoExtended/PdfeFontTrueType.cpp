@@ -18,11 +18,129 @@
  ***************************************************************************/
 
 #include "PdfeFontTrueType.h"
+#include "podofo/podofo.h"
+
+using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontTrueType::PdfeFontTrueType()
+PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject *pFont ) :
+    PdfeFont( pFont )
 {
+    this->init();
+
+    // Subtype of the font.
+    const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
+    if( subtype == PdfName( "TrueType" ) ) {
+        m_type = PdfeFontType::TrueType;
+        m_subtype = PdfeFontSubType::TrueType;
+    }
+    else {
+        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+    }
+
+    // Base font (required).
+    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
+
+    // Need the following entries in the dictionary.
+    PdfObject* pFChar = pFont->GetIndirectKey( "FirstChar" );
+    PdfObject* pLChar = pFont->GetIndirectKey( "LastChar" );
+    PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
+    PdfObject* pDescriptor = pFont->GetIndirectKey( "FontDescriptor" );
+
+    // If does not exist: raise exception.
+    if( !( pFChar && pLChar && pWidths && pDescriptor ) ) {
+        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+    }
+
+    // Read char widths.
+    m_firstCID = static_cast<pdf_cid>( pFChar->GetNumber() );
+    m_lastCID = static_cast<pdf_cid>( pLChar->GetNumber() );
+
+    const PdfArray&  widthsA = pWidths->GetArray();
+    m_widthsCID.resize( widthsA.size() );
+    for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
+        m_widthsCID.push_back( widthsA[i].GetReal() );
+    }
+    // Check the size for coherence.
+    if( m_widthsCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
+        m_widthsCID.resize( m_lastCID - m_firstCID + 1, 1000. );
+    }
+
+    // Font descriptor.
+    m_fontDescriptor.init( pDescriptor );
+
+    // Font encoding.
+    PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
+    if( pEncoding ) {
+        m_encoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+
+        // According to PoDoFo implementation.
+        m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
+    }
+
+    // TODO: unicode CMap.
+
+}
+void PdfeFontTrueType::init()
+{
+    // Initialize members to default values.
+    m_baseFont = PdfName();
+    m_fontDescriptor.init();
+
+    // Last CID < First CID to avoid problems.
+    m_firstCID = 1;
+    m_lastCID = 0;
+    m_widthsCID.clear();
+
+    m_encoding = NULL;
+    m_encodingOwned = false;
+
+}
+
+PdfeFontTrueType::~PdfeFontTrueType()
+{
+    // Delete encoding object if necessary.
+    if( m_encodingOwned ) {
+        delete m_encoding;
+    }
+}
+
+const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
+{
+    return m_fontDescriptor;
+}
+PdfeCIDString PdfeFontTrueType::toCIDString( const std::string& str ) const
+{
+    // Perform a simple copy.
+    PdfeCIDString cidStr;
+    cidStr.reserve( str.length() );
+    for( size_t i = 0 ; i < str.length() ; ++i ) {
+        cidStr.push_back( static_cast<pdf_cid>( str[i] ) );
+    }
+    return cidStr;
+}
+double PdfeFontTrueType::width( pdf_cid c ) const
+{
+    if( c >= m_firstCID && c <= m_lastCID ) {
+        return m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ];
+    }
+    else {
+        return m_fontDescriptor.missingWidth();
+    }
+}
+QChar PdfeFontTrueType::toUnicode( pdf_cid c ) const
+{
+    // TODO: unicode map.
+
+    if( m_encoding ) {
+        // Get Utf16 code from PdfEncoding object.
+        return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
+    }
+    else {
+        // Assume some identity map...
+        return QChar( c );
+    }
 }
 
 }

@@ -30,7 +30,7 @@ namespace PoDoFoExtended {
 class PdfeFontType1 : public PdfeFont
 {
 public:
-    /** Create a PdfeFontTyep1 from a PdfObject.
+    /** Create a PdfeFontType1 from a PdfObject.
      * \param pFont Pointer to the object where is defined the type 1 font.
      */
     PdfeFontType1( PoDoFo::PdfObject* pFont );
