@@ -68,15 +68,15 @@ public:
     };
 
     // Font Descriptor flags.
-    static const PoDoFo::pdf_uint32  FlagPixedPitch = ( 0x0001 << 0 );
-    static const PoDoFo::pdf_uint32  FlagSerif = ( 0x0001 << 1 );
-    static const PoDoFo::pdf_uint32  FlagSymbolic = ( 0x0001 << 2 );
-    static const PoDoFo::pdf_uint32  FlagScript = ( 0x0001 << 3 );
-    static const PoDoFo::pdf_uint32  FlagNonsymbolic = ( 0x0001 << 5 );
-    static const PoDoFo::pdf_uint32  FlagItalic = ( 0x0001 << 6 );
-    static const PoDoFo::pdf_uint32  FlagAllCap = ( 0x0001 << 16 );
-    static const PoDoFo::pdf_uint32  FlagSmallCap = ( 0x0001 << 17 );
-    static const PoDoFo::pdf_uint32  FlagForceBold = ( 0x0001 << 18 );
+    static const PoDoFo::pdf_uint32  FlagPixedPitch = ( 1 << 0 );
+    static const PoDoFo::pdf_uint32  FlagSerif = ( 1 << 1 );
+    static const PoDoFo::pdf_uint32  FlagSymbolic = ( 1 << 2 );
+    static const PoDoFo::pdf_uint32  FlagScript = ( 1 << 3 );
+    static const PoDoFo::pdf_uint32  FlagNonsymbolic = ( 1 << 5 );
+    static const PoDoFo::pdf_uint32  FlagItalic = ( 1 << 6 );
+    static const PoDoFo::pdf_uint32  FlagAllCap = ( 1 << 16 );
+    static const PoDoFo::pdf_uint32  FlagSmallCap = ( 1 << 17 );
+    static const PoDoFo::pdf_uint32  FlagForceBold = ( 1 << 18 );
 public:
     /** Default constructor.
      */
@@ -105,7 +105,6 @@ public:
      * \param key Key of the font descriptor to reset.
      */
     void resetKey( PdfeFontDescriptor::Key key );
-
 
 protected:
     // Members corresponding to keys.
@@ -175,8 +174,6 @@ public:
     void setMaxWidth( double maxWidth ) {  m_maxWidth = maxWidth;  }
     double missingWidth() const                 {  return m_missingWidth;  }
     void setMissingWidth( double missingWidth ) {  m_missingWidth = missingWidth;  }
-
-
 };
 
 //**********************************************************//

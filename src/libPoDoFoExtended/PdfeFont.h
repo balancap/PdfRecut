@@ -23,8 +23,11 @@
 #include "podofo/base/PdfDefines.h"
 #include "PdfeFontDescriptor.h"
 
+#include <QString>
+
 namespace PoDoFo {
 class PdfObject;
+class PdfEncoding;
 }
 
 namespace PoDoFoExtended {
@@ -70,7 +73,6 @@ enum Enum {
 class PdfeFont
 {
 public:
-
     /** Create a PdfeFont from a PdfObject.
      * \param pFont Pointer to the object which is defined the font.
      */
@@ -84,28 +86,65 @@ public:
      */
     virtual ~PdfeFont();
 
+protected:
+    /** No default constructor.
+     */
+    PdfeFont() { }
+
 public:
+    /** Get the width of a CID string.
+     * \param str CID string to consider.
+     * \return Width of the string.
+     */
+    virtual double width( const PdfeCIDString& str ) const;
+    /** Get the width of a string (first converted to a CID string).
+     * \param str Std::string to consider.
+     * \return Width of the string.
+     */
+    virtual double width( const std::string& str ) const;
+
+    /** Convert a CID string to unicode.
+     * \param str CID string to convert.
+     * \return Unicode QString corresponding.
+     */
+    virtual QString toUnicode( const PdfeCIDString& str ) const;
+    /** Convert a simple string to unicode.
+     * \param str Std::string to convert.
+     * \return Unicode QString corresponding.
+     */
+    virtual QString toUnicode( const std::string& str ) const;
+
+public:
+    // Virtual functions to reimplement in derived classes.
     /** Get the descriptor object corresponding to the font.
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const = 0;
 
-    /** Convert a simple string to a CID string (only a copy for simple fonts).
-     *
+    /** Convert a simple string to a CID string (only perform a copy for simple fonts).
+     * \param str Std::string to convert.
+     * \return CID String corresponding.
      */
-    virtual PdfeCIDString toCIDString( const char* str );
+    virtual PdfeCIDString toCIDString( const std::string& str ) const = 0;
 
-private:
-    /** No default constructor.
+    /** Get the width of a character.
+     * \param c Character identifier (CID).
+     * \return Width of the character.
      */
-    PdfeFont() { }
+    virtual double width( pdf_cid c ) const = 0;
+
+    /** Convert a character to its unicode equivalent (QChar).
+     * \param  c Character identifier (CID).
+     * \return Unicode QChar corresponding.
+     */
+    virtual QChar toUnicode( pdf_cid c ) const = 0;
 
 protected:
     // Members
     /// Font type.
     PdfeFontType::Enum  m_type;
     /// Font subtype.
-    PdfeFontSubType::Enum   m_subtype;
+    PdfeFontSubType::Enum  m_subtype;
 
     /// Character spacing (default: 0).
     double  m_charSpace;

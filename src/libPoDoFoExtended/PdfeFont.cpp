@@ -55,4 +55,31 @@ PdfeFont::~PdfeFont()
 {
 }
 
+double PdfeFont::width( const PdfeCIDString& str ) const
+{
+    double width = 0;
+    for( size_t i = 0 ; i < str.length() ; ++i ) {
+        width += this->width( str[i] );
+    }
+    return width;
+}
+double PdfeFont::width( const std::string& str ) const
+{
+    return this->width( this->toCIDString( str ) );
+}
+
+QString PdfeFont::toUnicode( const PdfeCIDString& str ) const
+{
+    QString ustr;
+    ustr.reserve( str.length() );
+    for( size_t i = 0 ; i < str.length() ; ++i ) {
+        ustr.push_back( this->toUnicode( str[i] ) );
+    }
+    return ustr;
+}
+QString PdfeFont::toUnicode( const std::string& str ) const
+{
+    return this->toUnicode( this->toCIDString( str ) );
+}
+
 }

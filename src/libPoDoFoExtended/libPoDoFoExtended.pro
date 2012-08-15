@@ -21,7 +21,12 @@ SOURCES += \
     PdfFontMetricsCache.cpp \
     PdfFontMetrics14.cpp \
     PdfeFont.cpp \
-    PdfeFontDescriptor.cpp
+    PdfeFontDescriptor.cpp \
+    PdfeFontType0.cpp \
+    PdfeFontType1.cpp \
+    PdfeFontType3.cpp \
+    PdfeFontTrueType.cpp \
+    PdfeFontCID.cpp
 
 HEADERS += \
     PdfStreamTokenizer.h \
@@ -38,7 +43,12 @@ HEADERS += \
     PdfCMap.h \
     PdfeFont.h \
     PdfeTypes.h \
-    PdfeFontDescriptor.h
+    PdfeFontDescriptor.h \
+    PdfeFontType0.h \
+    PdfeFontType1.h \
+    PdfeFontType3.h \
+    PdfeFontTrueType.h \
+    PdfeFontCID.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

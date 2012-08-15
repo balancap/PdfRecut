@@ -24,6 +24,10 @@
 #include "PdfFontMetricsType3.h"
 #include "PdfFontMetrics14.h"
 
+#include "PdfeFont.h"
+#include "PdfeFontType1.h"
+using namespace PoDoFoExtended;
+
 using namespace PoDoFo;
 
 namespace PdfRecut {
@@ -52,6 +56,7 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::getFontMetrics( const PoDoFo::PdfRe
 
     // If not find, add to cache.
     if( it == m_fontMetricsCache.end() ) {
+        this->addFontMetrics2( fontRef );
         return this->addFontMetrics( fontRef );
     }
     else {
@@ -147,6 +152,31 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics( const PoDoFo::PdfRe
     m_fontMetricsCache.insert( std::make_pair( fontRef, fontMetricsPtr ) );
 
     return fontMetricsPtr.ptr;
+}
+
+PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics2( const PoDoFo::PdfReference& fontRef )
+{
+    // Get font object.
+    PdfObject* fontObj = m_document->GetObjects().GetObject( fontRef );
+    PdfeFont* pFont;
+
+    // Check it is a font object and get font subtype.
+    if( fontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
+        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+    }
+    const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
+
+    if( fontSubType == PdfName("Type0") ) {
+    }
+    else if( fontSubType == PdfName("Type1") ) {
+        pFont = new PdfeFontType1( fontObj );
+    }
+    else if( fontSubType == PdfName("TrueType") ) {
+    }
+    else if( fontSubType == PdfName("Type3") ) {
+    }
+
+    return NULL;
 }
 
 }

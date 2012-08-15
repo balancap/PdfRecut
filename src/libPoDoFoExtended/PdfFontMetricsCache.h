@@ -77,6 +77,7 @@ private:
      * \return PdfFontMetrics pointer, owned by the PdfFontMetricsCache object.
      */
     PoDoFo::PdfFontMetrics* addFontMetrics( const PoDoFo::PdfReference& fontRef );
+    PoDoFo::PdfFontMetrics* addFontMetrics2( const PoDoFo::PdfReference& fontRef );
 
 private:
     /** Pdf document.
