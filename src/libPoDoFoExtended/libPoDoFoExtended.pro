@@ -11,7 +11,6 @@ CONFIG += staticlib
 DEFINES += LIBPODOFOEXTENDED_LIBRARY
 
 SOURCES += \
-    PdfCMap.cpp \
     PdfStreamTokenizer.cpp \
     PdfResources.cpp \
     PdfPath.cpp \
@@ -26,7 +25,7 @@ SOURCES += \
     PdfeFontType1.cpp \
     PdfeFontType3.cpp \
     PdfeFontTrueType.cpp \
-    PdfeFontCID.cpp
+    PdfeCMap.cpp
 
 HEADERS += \
     PdfStreamTokenizer.h \
@@ -40,7 +39,6 @@ HEADERS += \
     PdfFontMetricsType0.h \
     PdfFontMetricsCache.h \
     PdfFontMetrics14.h \
-    PdfCMap.h \
     PdfeFont.h \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
@@ -48,7 +46,7 @@ HEADERS += \
     PdfeFontType1.h \
     PdfeFontType3.h \
     PdfeFontTrueType.h \
-    PdfeFontCID.h
+    PdfeCMap.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

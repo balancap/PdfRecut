@@ -21,21 +21,22 @@
 #ifndef PRDOCUMENT_H
 #define PRDOCUMENT_H
 
+#include <map>
+
 #include <QString>
 #include <QMutex>
 #include <QtCore/QObject>
 
+#include "PdfeFont.h"
+
 namespace PoDoFo {
     class PdfMemDocument;
-}
-namespace Poppler {
-    class Document;
 }
 
 namespace PdfRecut {
 
-/** Class that handles Pdf document objects from PoDoFo and Poppler libraries.
- * Also has two mutex for these objects.
+/** Class that handles a document object from PoDoFo library.
+ * It owns a mutex for the access to this object.
  */
 class PRDocument : public QObject
 {
@@ -65,22 +66,15 @@ signals:
     void methodError( const QString& title, const QString& description ) const;
 
 public slots:
-    /** Load PoDoFo and Poppler documents.
-     * \param loadPoDoFo Load PoDoFo document.
-     * \param loadPoppler Load Poppler document.
+    /** Load the PoDoFo document using the filename given.
      */
-    void loadDocuments( bool loadPoDoFo = true, bool loadPoppler = true );
+    void loadDocument();
 
 public:
     /** (Re)Load PoDoFo document from the defined filename. Need PoDoFo mutex.
      * \return Pointer to a PdfMemDocument object if loaded correctly.
      */
     PoDoFo::PdfMemDocument* loadPoDoFoDocument();
-
-    /** (Re)Load Poppler document from the defined filename.  Need Poppler mutex.
-     * \return Pointer to a Document object if loaded correctly.
-     */
-    Poppler::Document* loadPopplerDocument();
 
     /** Write PoDoFo document to a file.  Need PoDoFo mutex.
      * \param filename Filename of the output Pdf document. Modified if equal to
@@ -92,42 +86,44 @@ public:
      */
     bool isPoDoFoDocumentLoaded() const;
 
-    /** Is Poppler document loaded.
-     */
-    bool isPopplerDocumentLoaded() const;
-
     /** Free PoDoFo document. Need PoDoFo mutex to free memory.
      */
     void freePoDoFoDocument();
 
-    /** Free Poppler document. Need Poppler mutex to free memory.
+    /** Get the font object corresponding to a font reference.
+     * \param fontRef Reference to the PoDoFo font object.
+     * \return PdfeFont pointer, owned by the PRDocument object.
      */
-    void freePopplerDocument();
+    PoDoFoExtended::PdfeFont* fontCache( const PoDoFo::PdfReference& fontRef );
+
+    /** Free objects stored in font cache.
+     */
+    void freeFontCache();
+
+private:
+    /** Add a font object into the cache.
+     * \param fontRef Reference to the PoDoFo font object.
+     * \return PdfeFont pointer, owned by the PRDocument object.
+     */
+    PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
+
+public:
+    // Getters and setters.
 
     /** Get PoDoFo document pointer.
      * \return Pointer to a PdfMemDocument object (can be NULL if not loaded).
      */
     PoDoFo::PdfMemDocument* getPoDoFoDocument() const;
 
-    /** Get Poppler document pointer.
-     * \return Pointer to a Document object (can be NULL if not loaded).
-     */
-    Poppler::Document* getPopplerDocument() const;
-
     /** Get PoDoFo document mutex.
      * \return QMutex used for PoDoFo document object.
      */
     QMutex* getPoDoFoMutex();
 
-    /** Get Poppler document mutex.
-     * \return QMutex used for Poppler document object.
-     */
-    QMutex* getPopplerMutex();
-
     /** Get filename of the Pdf document.
      * \return Filename.
      */
-    QString getFilename() const;
+    QString filename() const;
 
     /** Set filename of the Pdf document. Document loaded  with the
      * previous filename are released. Need PoDoFo and Poppler mutex.
@@ -141,25 +137,17 @@ private:
     PRDocument& operator=( const PRDocument& );
 
 private:
-    /** Document filename.
-     */
-    QString m_filename;
+    /// Document filename.
+    QString  m_filename;
 
-    /** PoDoFo document.
-     */
-    PoDoFo::PdfMemDocument* m_podofoDocument;
+    /// PoDoFo document.
+    PoDoFo::PdfMemDocument*  m_podofoDocument;
 
-    /** PoDoFo document mutex.
-     */
-    QMutex m_podofoMutex;
+    /// PoDoFo document mutex.
+    QMutex  m_podofoMutex;
 
-    /** Poppler document.
-     */
-    Poppler::Document* m_popplerDocument;
-
-    /** Poppler document mutex.
-     */
-    QMutex m_popplerMutex;
+    /// Map containing font cache. Each key corresponds to the reference of the font object.
+    std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;
 };
 
 //************************************************************//
@@ -169,30 +157,15 @@ inline bool PRDocument::isPoDoFoDocumentLoaded() const
 {
     return ( m_podofoDocument != NULL );
 }
-inline bool PRDocument::isPopplerDocumentLoaded() const
-{
-    return ( m_popplerDocument != NULL );
-}
-
 inline PoDoFo::PdfMemDocument* PRDocument::getPoDoFoDocument() const
 {
     return m_podofoDocument;
 }
-inline Poppler::Document* PRDocument::getPopplerDocument() const
-{
-    return m_popplerDocument;
-}
-
 inline QMutex* PRDocument::getPoDoFoMutex()
 {
     return &m_podofoMutex;
 }
-inline QMutex* PRDocument::getPopplerMutex()
-{
-    return &m_popplerMutex;
-}
-
-inline QString PRDocument::getFilename() const
+inline QString PRDocument::filename() const
 {
     return m_filename;
 }

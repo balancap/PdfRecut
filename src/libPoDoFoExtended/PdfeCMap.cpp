@@ -17,15 +17,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfCMap.h"
+#include "PdfeCMap.h"
 #include "podofo/podofo.h"
 
-namespace PoDoFo {
+using namespace PoDoFo;
+
+namespace PoDoFoExtended {
 
 //**********************************************************//
 //                     PdfCIDSystemInfo                     //
 //**********************************************************//
-void PdfCIDSystemInfo::init( PdfObject* cidSysInfoObj )
+void PdfeCIDSystemInfo::init( PdfObject* cidSysInfoObj )
 {
     if( !cidSysInfoObj ) {
         return;
@@ -49,27 +51,27 @@ void PdfCIDSystemInfo::init( PdfObject* cidSysInfoObj )
 //**********************************************************//
 //                          PdfCMap                         //
 //**********************************************************//
-PdfCMap::PdfCMap()
+PdfeCMap::PdfeCMap()
     : m_baseCMap( NULL )
 {
     this->init();
 }
-PdfCMap::PdfCMap( const PdfName& cmapName )
+PdfeCMap::PdfeCMap( const PdfName& cmapName )
     : m_baseCMap( NULL )
 {
     this->init( cmapName );
 }
-PdfCMap::PdfCMap( PdfObject* cmapStream )
+PdfeCMap::PdfeCMap( PdfObject* cmapStream )
     : m_baseCMap( NULL )
 {
     this->init( cmapStream );
 }
-PdfCMap::~PdfCMap()
+PdfeCMap::~PdfeCMap()
 {
     delete m_baseCMap;
 }
 
-void PdfCMap::init()
+void PdfeCMap::init()
 {
     // Delete existing base CMap if necessary.
     if( m_baseCMap ) {
@@ -81,7 +83,7 @@ void PdfCMap::init()
     m_identity = 0;
     m_baseCMap = NULL;
 }
-void PdfCMap::init( const PdfName& cmapName )
+void PdfeCMap::init( const PdfName& cmapName )
 {
     // Init to default values.
     this->init();
@@ -101,7 +103,7 @@ void PdfCMap::init( const PdfName& cmapName )
 
     // TODO: implement other predefined CMaps that should be loaded from a file.
 }
-void PdfCMap::init( PdfObject* cmapStream )
+void PdfeCMap::init( PdfObject* cmapStream )
 {
     // Init to default values.
     this->init();
@@ -122,14 +124,14 @@ void PdfCMap::init( PdfObject* cmapStream )
     // CMap used as base for this one.
     tmpObj = cmapStream->GetIndirectKey( "UseCMap" );
     if( tmpObj && tmpObj->IsName() ) {
-        m_baseCMap = new PdfCMap( tmpObj->GetName() );
+        m_baseCMap = new PdfeCMap( tmpObj->GetName() );
     }
     else if( tmpObj ) {
-        m_baseCMap = new PdfCMap( tmpObj );
+        m_baseCMap = new PdfeCMap( tmpObj );
     }
 }
 
-std::vector<pdf_cid> PdfCMap::getCID( const char *ptext, size_t length ) const
+std::vector<pdf_cid> PdfeCMap::getCID( const char *ptext, size_t length ) const
 {
     std::vector<pdf_cid> cidVect;
 

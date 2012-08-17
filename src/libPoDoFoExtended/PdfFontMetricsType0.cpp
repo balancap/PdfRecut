@@ -20,6 +20,8 @@
 #include "PdfFontMetricsType0.h"
 #include "podofo/podofo.h"
 
+using namespace PoDoFoExtended;
+
 namespace PoDoFo {
 
 //**********************************************************//

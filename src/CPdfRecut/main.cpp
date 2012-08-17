@@ -131,7 +131,7 @@ void proceedFile( QString filePath )
     // Open file
     cout << " >>> Opening Pdf file..." << endl;
     document.loadPoDoFoDocument();
-    document.loadPopplerDocument();
+    //document.loadPopplerDocument();
 
     // Font metrics cache associated to the document.
     PdfFontMetricsCache fontMetricsCache( document.getPoDoFoDocument() );

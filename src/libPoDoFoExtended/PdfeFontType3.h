@@ -26,13 +26,13 @@
 
 namespace PoDoFoExtended {
 
-/** Class that represents a PDF Font of type 1 (c.f. PDF Reference).
+/** Class that represents a PDF Font of type 3 (c.f. PDF Reference).
  */
 class PdfeFontType3 : public PdfeFont
 {
 public:
     /** Create a PdfeFontType3 from a PdfObject.
-     * \param pFont Pointer to the object where is defined the type 1 font.
+     * \param pFont Pointer to the object where is defined the type 3 font.
      */
     PdfeFontType3( PoDoFo::PdfObject* pFont );
 

@@ -26,7 +26,7 @@
 #include "podofo/base/PdfString.h"
 #include "podofo/doc/PdfFontMetrics.h"
 
-#include "PdfCMap.h"
+#include "PdfeCMap.h"
 
 namespace PoDoFo {
 
@@ -85,7 +85,7 @@ public:
      *  \param c Character.
      *  \returns The width in PDF units
      */
-    double GetCIDWidth( pdf_cid c );
+    double GetCIDWidth( PoDoFoExtended::pdf_cid c );
 
     /** Retrieve the width of a given text string in PDF units when
      *  drawn with the current font (reimplementation).
@@ -250,15 +250,15 @@ private:
 
         /** Obtain the width of CID glyph.
          */
-        double getCIDWidth( pdf_cid cid ) const;
+        double getCIDWidth( PoDoFoExtended::pdf_cid cid ) const;
 
     private:
         /** Vector which contains first CID of groups.
          */
-        std::vector<pdf_cid> m_firstCID;
+        std::vector<PoDoFoExtended::pdf_cid> m_firstCID;
         /** Vector which contains last CID of groups.
          */
-        std::vector<pdf_cid> m_lastCID;
+        std::vector<PoDoFoExtended::pdf_cid> m_lastCID;
         /** Vector which contains widths of every group.
          */
         std::vector< std::vector<double> > m_widthsCID;
@@ -271,10 +271,10 @@ private:
 private:
     // Members related to the Type0 font.
     PdfName     m_baseFont;
-    PdfCMap     m_cmapEncoding;
+    PoDoFoExtended::PdfeCMap     m_cmapEncoding;
 
     // Members related to the CID font.
-    PdfCIDSystemInfo    m_cidSystemInfo;
+    PoDoFoExtended::PdfeCIDSystemInfo    m_cidSystemInfo;
 
     PdfName       m_sName;
     PdfArray      m_bbox;
@@ -302,7 +302,7 @@ private:
 //**********************************************************//
 //             PdfFontMetricsType0::HWidthsArray            //
 //**********************************************************//
-inline double PdfFontMetricsType0::HWidthsArray::getCIDWidth( pdf_cid cid ) const
+inline double PdfFontMetricsType0::HWidthsArray::getCIDWidth( PoDoFoExtended::pdf_cid cid ) const
 {
     // Find the group of CID it belongs to.
     for( size_t i = 0 ; i < m_widthsCID.size() ; ++i ) {

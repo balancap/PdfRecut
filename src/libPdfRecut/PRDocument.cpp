@@ -21,9 +21,16 @@
 #include "PRDocument.h"
 #include "PRException.h"
 
+#include "PdfeFontType0.h"
+#include "PdfeFontTrueType.h"
+#include "PdfeFontType1.h"
+#include "PdfeFontType3.h"
+
 #include <QtCore>
-#include <poppler/qt4/poppler-qt4.h>
 #include <podofo/podofo.h>
+
+using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
@@ -32,47 +39,26 @@ PRDocument::PRDocument( QObject* parent, const QString& filename ) :
 {
     m_filename = filename;
     m_podofoDocument = NULL;
-    m_popplerDocument = NULL;
 }
 PRDocument::~PRDocument()
 {
+    this->freeFontCache();
     delete m_podofoDocument;
-    delete m_popplerDocument;
 }
 
-void PRDocument::loadDocuments( bool loadPoDoFo, bool loadPoppler )
+void PRDocument::loadDocument()
 {
-    QString methodTitle = tr( "Load Pdf Document." );
+    QString methodTitle = tr( "Load PDF Document." );
 
     // Load PoDoFo document.
     emit methodProgress( methodTitle, 0.0 );
-    if( loadPoDoFo )
-    {
-        try {
-            this->loadPoDoFoDocument();
-        }
-        catch( const PRException& error ) {
-            emit methodError( "PoDoFo document load error.",
-                              error.getDescription() );
-            return;
-        }
+    try {
+        this->loadPoDoFoDocument();
     }
-
-    if( loadPoDoFo && loadPoppler ) {
-        emit methodProgress( methodTitle, 0.5 );
-    }
-
-    // Load Poppler document.
-    if( loadPoppler )
-    {
-        try {
-            this->loadPopplerDocument();
-        }
-        catch( const PRException& error ) {
-            emit methodError( "Poppler document load error.",
-                              error.getDescription() );
-            return;
-        }
+    catch( const PRException& error ) {
+        emit methodError( "PoDoFo document load error.",
+                          error.getDescription() );
+        return;
     }
     emit methodProgress( methodTitle, 1.0 );
 }
@@ -101,29 +87,6 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
     }
     return m_podofoDocument;
 }
-Poppler::Document* PRDocument::loadPopplerDocument()
-{
-    // Not null pointer: free current document before loading.
-    if( m_popplerDocument ) {
-        this->freePopplerDocument();
-    }
-
-    // Get mutex and then load file.
-    QMutexLocker locker( &m_popplerMutex );
-
-    m_popplerDocument = Poppler::Document::load( m_filename );
-    if( !m_popplerDocument || m_popplerDocument->isLocked() )
-    {
-        delete m_popplerDocument;
-        m_popplerDocument = NULL;
-
-        // Throw exception...
-        throw PRException( ePdfDocE_Poppler,
-              tr( "Poppler library can not load file" ) );
-    }
-    return m_popplerDocument;
-}
-
 void PRDocument::writePoDoFoDocument( const QString& filename )
 {
     // No document loaded.
@@ -155,31 +118,72 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
         throw PRException( error );
     }
 }
-
 void PRDocument::freePoDoFoDocument()
 {
     // Get mutex and then free.
     QMutexLocker locker( &m_podofoMutex );
 
+    this->freeFontCache();
     delete m_podofoDocument;
     m_podofoDocument = NULL;
 }
-void PRDocument::freePopplerDocument()
-{
-    // Get mutex and then free.
-    QMutexLocker locker( &m_popplerMutex );
 
-    delete m_popplerDocument;
-    m_popplerDocument = NULL;
+PoDoFoExtended::PdfeFont* PRDocument::fontCache( const PoDoFo::PdfReference& fontRef )
+{
+    // Find the reference in the cache.
+    std::map< PdfReference, PdfeFont* >::iterator it;
+    it = m_fontCache.find( fontRef );
+
+    // If not find, add to cache.
+    if( it == m_fontCache.end() ) {
+        return this->addFontToCache( fontRef );
+    }
+    else {
+        return it->second;
+    }
+}
+void PRDocument::freeFontCache()
+{
+    // Free Pdf font metrics object.
+    std::map< PdfReference, PdfeFont* >::iterator it;
+    for( it = m_fontCache.begin() ; it != m_fontCache.end() ; ++it ) {
+        delete it->second;
+        it->second = NULL;
+    }
+}
+PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference& fontRef )
+{
+    // Get PoDoFo font object.
+    PdfObject* fontObj = m_podofoDocument->GetObjects().GetObject( fontRef );
+    PdfeFont* pFont = NULL;
+
+    // Check it is a font object and get font subtype.
+    if( fontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
+        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+    }
+    const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
+
+    if( fontSubType == PdfName("Type0") ) {
+        pFont = NULL;
+    }
+    else if( fontSubType == PdfName("Type1") ) {
+        pFont = new PdfeFontType1( fontObj );
+    }
+    else if( fontSubType == PdfName("TrueType") ) {
+        pFont = new PdfeFontTrueType( fontObj );
+    }
+    else if( fontSubType == PdfName("Type3") ) {
+        pFont = new PdfeFontType3( fontObj );
+    }
+    return pFont;
 }
 
 void PRDocument::setFilename( const QString& filename )
 {
-    // Free PoDoFo and Poppler documents.
+    // Free PoDoFo document.
     this->freePoDoFoDocument();
-    this->freePopplerDocument();
-
     m_filename = filename;
 }
+
 
 }

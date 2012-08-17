@@ -23,68 +23,62 @@
 #include "PdfeFont.h"
 #include "podofo/base/PdfName.h"
 
-// TMP !!!
-using namespace PoDoFoExtended;
-
 namespace PoDoFo {
-
 class PdfArray;
 class PdfObject;
 class PdfVariant;
+}
+
+namespace PoDoFoExtended {
 
 /** Structure that contains the different informations of CIDSystemInfo.
  */
-struct PdfCIDSystemInfo
+struct PdfeCIDSystemInfo
 {
-    /** Issuer of the character collection (i.e. Adobe).
-     */
+    /// Issuer of the character collection (i.e. Adobe).
     std::string registery;
-
-    /** Name of the character collection within the specified registry (i.e. Japan1).
-     */
+    /// Name of the character collection within the specified registry (i.e. Japan1).
     std::string ordering;
-
-    /** Supplement number of the character collection.
-     */
+    /// Supplement number of the character collection.
     int supplement;
 
     /** Default constructor.
      */
-    PdfCIDSystemInfo() : supplement(0) {}
+    PdfeCIDSystemInfo() : supplement(0) {}
 
     /** Initialize structure parameters from a PdfObject.
      */
-    void init( PdfObject* cidSysInfoObj );
+    void init( PoDoFo::PdfObject* cidSysInfoObj );
 };
 
 /** Class used to represent and handle a CMap as described in the Pdf reference.
  */
-class PdfCMap
+class PdfeCMap
 {
 public:
     /** Empty constructor.
      */
-    PdfCMap( );
+    PdfeCMap();
     /** Construction from using predefined CMap.
      */
-    PdfCMap( const PdfName& cmapName );
+    PdfeCMap( const PoDoFo::PdfName& cmapName );
     /** Construction from an embedded CMap (represented in a PdfStream).
      */
-    PdfCMap( PdfObject* cmapStream );
+    PdfeCMap( PoDoFo::PdfObject* cmapStream );
 
     /** Init members to default values.
      */
     void init();
     /** Initialize from a predefined CMap.
      */
-    void init( const PdfName& cmapName );
+    void init( const PoDoFo::PdfName& cmapName );
     /** Initialize from an embedded CMap (represented in a PdfStream).
      */
-    void init( PdfObject* cmapStream );
+    void init( PoDoFo::PdfObject* cmapStream );
 
     /** Destructor.
      */
-    ~PdfCMap();
+    ~PdfeCMap();
 
     /** Convert character codes in a string into a CID vector.
      * \param ptext Pointer to a string of characters code.
@@ -94,25 +88,18 @@ public:
     std::vector<pdf_cid> getCID( const char* ptext, size_t length ) const;
 
 protected:
-    /** CMap name.
-     */
-    PdfName m_name;
+    /// CMap name.
+    PoDoFo::PdfName  m_name;
+    /// CMap CIDSystemInfo.
+    PdfeCIDSystemInfo  m_CIDSystemInfo;
 
-    /** CMap CIDSystemInfo.
-     */
-    PdfCIDSystemInfo m_CIDSystemInfo;
+    /// Writting mode: 0 (horizontal), 1 (vertical).
+    bool  m_wmode;
+    /// Is the CMap simply the identity.
+    bool  m_identity;
 
-    /** Writting mode: 0 (horizontal), 1(vertical).
-     */
-    bool m_wmode;
-
-    /** Is the CMap simply the identity.
-     */
-    bool m_identity;
-
-    /** CMap used in addition to defined this one (owned).
-     */
-    PdfCMap* m_baseCMap;
+    /// CMap used in addition to defined this one (owned).
+    PdfeCMap*  m_baseCMap;
 };
 
 }
