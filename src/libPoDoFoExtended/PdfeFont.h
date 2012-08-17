@@ -54,7 +54,7 @@ enum Enum {
 };
 }
 namespace PdfeFontSubType {
-/** Enumeration of the different sub-types of font allowed in the PDF Reference.
+/** Enumeration of the different subtypes of font allowed in the PDF Reference.
  */
 enum Enum {
     Type0,
@@ -65,6 +65,15 @@ enum Enum {
     CIDFontType0,
     CIDFontType2,
     Unknown
+};
+}
+namespace PdfeFontSpace {
+/** Enumeration of the different of white space characters that can appear.
+ */
+enum Enum {
+    None = 0,   // Not a space character.
+    Code32,     // Single byte 32 space.
+    Other       // Other kind (not single byte, tabular, ...).B
 };
 }
 
@@ -138,6 +147,12 @@ public:
      * \return Unicode QChar corresponding.
      */
     virtual QChar toUnicode( pdf_cid c ) const = 0;
+
+    /** Is a CID character a white space character.
+     * \param  c Character identifier (CID).
+     * \return Classification of the character.
+     */
+    virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const = 0;
 
 protected:
     // Members

@@ -78,6 +78,12 @@ public:
      */
     virtual QChar toUnicode( pdf_cid c ) const;
 
+    /** Is a CID character a white space character.
+     * \param  c Character identifier (CID).
+     * \return Classification of the character.
+     */
+    virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const;
+
 protected:
     // Members.
     /// The PostScript name of the font.

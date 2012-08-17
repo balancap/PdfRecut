@@ -40,7 +40,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject *pFont ) :
         m_subtype = PdfeFontSubType::MMType1;
     }
     else {
-        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 1 font." );
     }
 
     // Base font (required).
@@ -194,10 +194,10 @@ PdfeCIDString PdfeFontType1::toCIDString( const std::string& str ) const
 double PdfeFontType1::width( pdf_cid c ) const
 {
     if( c >= m_firstCID && c <= m_lastCID ) {
-        return m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ];
+        return m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ] / 1000.;
     }
     else {
-        return m_fontDescriptor.missingWidth();
+        return m_fontDescriptor.missingWidth() / 1000.;
     }
 }
 QChar PdfeFontType1::toUnicode( pdf_cid c ) const
@@ -205,13 +205,17 @@ QChar PdfeFontType1::toUnicode( pdf_cid c ) const
     // TODO: unicode map.
 
     if( m_encoding ) {
-        // Get Utf16 code from PdfEncoding object.
+        // Get utf16 code from PdfEncoding object.
         return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
     }
     else {
-        // Assume some identity map...
+        // Assume some kind of identity map...
         return QChar( c );
     }
+}
+PdfeFontSpace::Enum PdfeFontType1::isSpace( pdf_cid c ) const
+{
+    return PdfeFontSpace::None;
 }
 
 }

@@ -59,8 +59,18 @@ double PdfeFont::width( const PdfeCIDString& str ) const
 {
     double width = 0;
     for( size_t i = 0 ; i < str.length() ; ++i ) {
-        width += this->width( str[i] );
+        pdf_cid c = str[i];
+        width += this->width( c );
+
+        // Space character 32: add word spacing.
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            width += m_wordSpace;
+        }
     }
+    // Adjust using font parameters.
+    width += m_charSpace * str.length();
+    width = width * m_fontSize * ( m_hScale / 100. );
+
     return width;
 }
 double PdfeFont::width( const std::string& str ) const
