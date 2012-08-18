@@ -27,6 +27,16 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                     PdfCIDSystemInfo                     //
 //**********************************************************//
+PdfeCIDSystemInfo::PdfeCIDSystemInfo()
+{
+    this->init();
+}
+void PdfeCIDSystemInfo::init()
+{
+    registery.clear();
+    ordering.clear();
+    supplement = 0;
+}
 void PdfeCIDSystemInfo::init( PdfObject* cidSysInfoObj )
 {
     if( !cidSysInfoObj ) {
@@ -154,6 +164,34 @@ std::vector<pdf_cid> PdfeCMap::getCID( const char *ptext, size_t length ) const
 
     // Otherwise: TODO !
     return cidVect;
+}
+
+PdfeCIDString PdfeCMap::toCIDString( const std::string& str ) const
+{
+    PdfeCIDString cidStr;
+
+    // Identity CMap
+    if( m_identity ) {
+        pdf_cid c;
+        const pdf_cid* pValue = reinterpret_cast<const pdf_cid*>( str.c_str() );
+
+        cidStr.reserve( str.length() / 2 );
+        for( size_t i = 0 ; i < str.length()-1 ; i += 2 ) {
+
+            // Read character (Litte endian: need to invert bytes).
+            c = *pValue;
+#ifdef PODOFO_IS_LITTLE_ENDIAN
+            c = ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 );
+#endif
+            cidStr.push_back( c );
+
+            ++pValue;
+        }
+        return cidStr;
+    }
+
+    // Otherwise: TODO !
+    return cidStr;
 }
 
 }

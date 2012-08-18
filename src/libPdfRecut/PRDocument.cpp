@@ -164,7 +164,7 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
 
     if( fontSubType == PdfName("Type0") ) {
-        pFont = NULL;
+        pFont = new PdfeFontType0( fontObj );;
     }
     else if( fontSubType == PdfName("Type1") ) {
         pFont = new PdfeFontType1( fontObj );

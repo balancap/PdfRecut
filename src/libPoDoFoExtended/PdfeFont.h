@@ -36,6 +36,10 @@ namespace PoDoFoExtended {
  */
 typedef PoDoFo::pdf_uint16  pdf_cid;
 
+/** Macro that convert pdf_cid Big Endian to Little Endian.
+ */
+#define PDF_CID_BE_TO_LE(c) ( ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 ) )
+
 /** Pdf CID String. To be improve ?
  */
 typedef std::basic_string<pdf_cid>  PdfeCIDString;

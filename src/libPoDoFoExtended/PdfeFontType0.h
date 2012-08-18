@@ -29,29 +29,6 @@ namespace PoDoFoExtended {
 class PdfeFontCID;
 
 //**********************************************************//
-//                        PdfeFontCID                       //
-//**********************************************************//
-/** Class that represents a PDF CID Font (c.f. PDF Reference).
- */
-class PdfeFontCID
-{
-public:
-    /** Default constructor.
-     */
-    PdfeFontCID();
-
-    /** Initialize the object to default parameters.
-     */
-    void init();
-
-    /** Initialize a PdfeFontCID from a PdfObject.
-     * \param pFont Pointer to the object where is defined the CID font.
-     */
-    void init( PoDoFo::PdfObject* pFont );
-};
-
-
-//**********************************************************//
 //                          PdfeFont0                       //
 //**********************************************************//
 /** Class that represents a PDF Font of type 0 (c.f. PDF Reference).
@@ -112,15 +89,149 @@ protected:
     // Members.
     /// The PostScript name of the font.
     PoDoFo::PdfName  m_baseFont;
-
     /// CMap encoding of the font.
     PdfeCMap  m_encodingCMap;
 
     /// Descendant CID font.
-    PdfeFontCID  m_fontCID;
-
-
+    PdfeFontCID*  m_fontCID;
 };
+
+//**********************************************************//
+//                        PdfeFontCID                       //
+//**********************************************************//
+/** Class that represents a PDF CID Font (c.f. PDF Reference).
+ */
+class PdfeFontCID
+{
+public:
+    /** Default constructor.
+     */
+    PdfeFontCID();
+
+    /** Initialize the object to default parameters.
+     */
+    void init();
+
+    /** Initialize a PdfeFontCID from a PdfObject.
+     * \param pFont Pointer to the object where is defined the CID font.
+     */
+    void init( PoDoFo::PdfObject* pFont );
+
+public:
+    /** Get the descriptor object corresponding to the font.
+     * \return Constant reference to a PdfeFontDescriptor object.
+     */
+    const PdfeFontDescriptor& fontDescriptor() const;
+
+    /** Get the width of a character.
+     * \param c Character identifier (CID).
+     * \return Width of the character.
+     */
+    double width( pdf_cid c ) const;
+
+protected:
+    /** Private class that represents an array of glyph's horizontal width.
+     */
+    class HWidthsArray
+    {
+    public:
+        /** Default constructor.
+         */
+        HWidthsArray();
+
+        /** Initialize to a default object, with DW=1000.
+         */
+        void init();
+        /** Initialize given a PdfArray from a PdfFont object.
+         */
+        void init( const PoDoFo::PdfArray& widths );
+
+        /** Set Default width.
+         * \param defWidth Default width of CID glyphs.
+         */
+        void setDefaultWidth( double defWidth );
+        /** Get default width.
+         * \return Default width of CID glyphs.
+         */
+        double defaultWidth() const;
+
+        /** Get the width of a character.
+         * \param c Character identifier (CID).
+         * \return Width of the character.
+         */
+        double width( pdf_cid c ) const;
+
+    private:
+        /// Vector containing first CID of each group.
+        std::vector<pdf_cid>  m_firstCID;
+        /// Vector containing last CID of each group.
+        std::vector<pdf_cid>  m_lastCID;
+        /// Vector containing widths of each group.
+        std::vector< std::vector<double> >  m_widthsCID;
+
+        /// Default horizontal width.
+        double  m_defaultWidth;
+    };
+
+protected:
+    // Members for a CID font.
+    /// Font type.
+    PdfeFontType::Enum  m_type;
+    /// Font subtype.
+    PdfeFontSubType::Enum  m_subtype;
+    /// The PostScript name of the font.
+    PoDoFo::PdfName  m_baseFont;
+
+    /// CIDSystemInfo (character collection).
+    PdfeCIDSystemInfo  m_cidSystemInfo;
+    /// Font descriptor.
+    PdfeFontDescriptor  m_fontDescriptor;
+    /// Horizontal widths of characters.
+    HWidthsArray  m_hWidths;
+};
+
+
+//**********************************************************//
+//                        PdfeFontCID                       //
+//**********************************************************//
+inline const PdfeFontDescriptor& PdfeFontCID::fontDescriptor() const
+{
+    return m_fontDescriptor;
+}
+inline double PdfeFontCID::width( pdf_cid c ) const
+{
+    return m_hWidths.width( c );
+}
+
+//**********************************************************//
+//                 PdfeFontCID::HWidthsArray                //
+//**********************************************************//
+inline double PdfeFontCID::HWidthsArray::width( pdf_cid c ) const
+{
+    // Find the group of CID it belongs to.
+    for( size_t i = 0 ; i < m_widthsCID.size() ; ++i ) {
+        if( c >= m_firstCID[i] && c <= m_lastCID[i] ) {
+            // Only one element: same size for the group.
+            if( m_widthsCID[i].size() == 1 ) {
+                return m_widthsCID[i][0];
+            }
+            else {
+                return m_widthsCID[i][c - m_firstCID[i]];
+            }
+        }
+    }
+    // Return default width.
+    return m_defaultWidth;
+}
+inline void PdfeFontCID::HWidthsArray::setDefaultWidth( double defWidth )
+{
+    m_defaultWidth = defWidth;
+}
+inline double PdfeFontCID::HWidthsArray::defaultWidth() const
+{
+    return m_defaultWidth;
+}
+
 
 }
 

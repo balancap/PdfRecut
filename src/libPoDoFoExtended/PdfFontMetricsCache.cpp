@@ -25,6 +25,7 @@
 #include "PdfFontMetrics14.h"
 
 #include "PdfeFont.h"
+#include "PdfeFontType0.h"
 #include "PdfeFontType1.h"
 #include "PdfeFontType3.h"
 #include "PdfeFontTrueType.h"
@@ -171,6 +172,7 @@ PoDoFo::PdfFontMetrics* PdfFontMetricsCache::addFontMetrics2( const PoDoFo::PdfR
 
     if( fontSubType == PdfName("Type0") )
     {
+        pFont = new PdfeFontType0( fontObj );
     }
     else if( fontSubType == PdfName("Type1") )
     {

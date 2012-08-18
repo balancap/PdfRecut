@@ -25,26 +25,10 @@ using namespace PoDoFo;
 namespace PoDoFoExtended {
 
 //**********************************************************//
-//                        PdfeFontCID                       //
-//**********************************************************//
-PdfeFontCID::PdfeFontCID()
-{
-    this->init();
-}
-void PdfeFontCID::init()
-{
-
-}
-void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
-{
-
-}
-
-//**********************************************************//
 //                          PdfeFont0                       //
 //**********************************************************//
 PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject *pFont ) :
-    PdfeFont( pFont )
+    PdfeFont( pFont ), m_fontCID( NULL )
 {
     this->init();
 
@@ -73,7 +57,7 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject *pFont ) :
     // Get descendant CID font.
     const PdfArray& descendantFonts  = pFont->GetIndirectKey( "DescendantFonts" )->GetArray();
     PdfObject* pDFont = pFont->GetOwner()->GetObject( descendantFonts[0].GetReference() );
-    m_fontCID.init( pDFont );
+    m_fontCID->init( pDFont );
 
     // TODO: unicode CMap.
 
@@ -82,50 +66,143 @@ void PdfeFontType0::init()
 {
     // Initialize members to default values.
     m_baseFont = PdfName();
+
+    if( !m_fontCID ) {
+        m_fontCID =  new PdfeFontCID();
+    }
+    m_fontCID->init();
 }
 PdfeFontType0::~PdfeFontType0()
 {
+    delete m_fontCID;
 }
 
 const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 {
-    //return m_fontDescriptor;
+    return m_fontCID->fontDescriptor();
 }
 PdfeCIDString PdfeFontType0::toCIDString( const std::string& str ) const
 {
-    // Perform a simple copy.
-    /*PdfeCIDString cidStr;
-    cidStr.reserve( str.length() );
-    for( size_t i = 0 ; i < str.length() ; ++i ) {
-        cidStr.push_back( static_cast<pdf_cid>( str[i] ) );
-    }
-    return cidStr;*/
+    // Use the encoding CMap to convert the string.
+    return m_encodingCMap.toCIDString( str );
 }
 double PdfeFontType0::width( pdf_cid c ) const
 {
-//    if( c >= m_firstCID && c <= m_lastCID ) {
-//        return m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ] / 1000.;
-//    }
-//    else {
-//        return m_fontDescriptor.missingWidth() / 1000.;
-//    }
+    // Use CID font to obtain the width.
+    return m_fontCID->width( c );
 }
 QChar PdfeFontType0::toUnicode( pdf_cid c ) const
 {
     // TODO: unicode map.
-
-//    if( m_encoding ) {
-//        // Get utf16 code from PdfEncoding object.
-//        return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
-//    }
-//    else {
-//        // Assume some kind of identity map...
-//        return QChar( c );
-//    }
+    return QChar();
 }
 PdfeFontSpace::Enum PdfeFontType0::isSpace( pdf_cid c ) const
 {
-//    return PdfeFontSpace::None;
+    return PdfeFontSpace::None;
 }
+
+//**********************************************************//
+//                        PdfeFontCID                       //
+//**********************************************************//
+PdfeFontCID::PdfeFontCID()
+{
+    this->init();
+}
+void PdfeFontCID::init()
+{
+    m_type = PdfeFontType::Unknown;
+    m_subtype =PdfeFontSubType::Unknown;
+
+    m_baseFont = PdfName();
+    m_cidSystemInfo.init();
+
+    m_fontDescriptor.init();
+}
+void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
+{
+    this->init();
+
+    // Subtype of the font.
+    const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
+    if( subtype == PdfName( "CIDFontType0" ) ) {
+        m_type = PdfeFontType::CIDFont;
+        m_subtype = PdfeFontSubType::CIDFontType0;
+    }
+    else if( subtype == PdfName( "CIDFontType2" ) ) {
+        m_type = PdfeFontType::CIDFont;
+        m_subtype = PdfeFontSubType::CIDFontType2;
+    }
+    else {
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a CID font." );
+    }
+
+    // Base font (required).
+    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
+
+    // Need the following entries in the dictionary.
+    PdfObject* pCIDSytemInfo = pFont->GetIndirectKey( "CIDSystemInfo" );
+    PdfObject* pDescriptor = pFont->GetIndirectKey( "FontDescriptor" );
+    PdfObject* pWidths = pFont->GetIndirectKey( "W" );
+
+    // Initialize CID system info and font descriptor.
+    m_cidSystemInfo.init( pCIDSytemInfo );
+    m_fontDescriptor.init( pDescriptor );
+
+    // Read width of glyphs CID.
+    m_hWidths.setDefaultWidth( static_cast<double>( pFont->GetDictionary().GetKeyAsLong( "DW", 1000L ) ) );
+    if( pWidths ) {
+        m_hWidths.init( pWidths->GetArray() );
+    }
+}
+
+//**********************************************************//
+//                 PdfeFontCID::HWidthsArray                //
+//**********************************************************//
+PdfeFontCID::HWidthsArray::HWidthsArray()
+{
+    this->init();
+}
+void PdfeFontCID::HWidthsArray::init()
+{
+    m_firstCID.clear();
+    m_lastCID.clear();
+    m_widthsCID.clear();
+    m_defaultWidth = 1000.;
+}
+void PdfeFontCID::HWidthsArray::init( const PdfArray& widths )
+{
+    this->init();
+
+    size_t i = 0;
+    while( i < widths.size() ) {
+        // Increase size of vectors.
+        m_firstCID.push_back( 0 );
+        m_lastCID.push_back( 0 );
+        m_widthsCID.push_back( std::vector<double>() );
+
+        // First CID value.
+        m_firstCID.back() = static_cast<pdf_cid>( widths[i].GetNumber() );
+        ++i;
+
+        // Read array of widths.
+        if( widths[i].IsArray() ) {
+            PdfArray widthsCID = widths[i].GetArray();
+            m_widthsCID.back().resize( widthsCID.size() );
+            for( size_t j = 0 ; j < widthsCID.size() ; ++j ) {
+                m_widthsCID.back()[j] = static_cast<double>( widthsCID[j].GetNumber() );
+            }
+            m_lastCID.back() = m_firstCID.back() + widthsCID.size() - 1;
+            ++i;
+        }
+        // Read width for a range of CIDs.
+        else {
+            m_lastCID.back() = static_cast<pdf_cid>( widths[i].GetNumber() );
+            ++i;
+            m_widthsCID.back().push_back( static_cast<double>( widths[i].GetNumber() )  );
+            ++i;
+        }
+    }
+}
+
 
 }

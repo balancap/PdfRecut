@@ -44,14 +44,17 @@ struct PdfeCIDSystemInfo
 
     /** Default constructor.
      */
-    PdfeCIDSystemInfo() : supplement(0) {}
-
+    PdfeCIDSystemInfo();
+    /** Initialize to default values.
+     */
+    void init();
     /** Initialize structure parameters from a PdfObject.
+     * \param cidSysInfoObj PoDoFo object containing CID system info.
      */
     void init( PoDoFo::PdfObject* cidSysInfoObj );
 };
 
-/** Class used to represent and handle a CMap as described in the Pdf reference.
+/** Class used to represent and handle a CMap as described in the PDF reference.
  */
 class PdfeCMap
 {
@@ -86,6 +89,12 @@ public:
      * \return A vector of corresponding CID.
      */
     std::vector<pdf_cid> getCID( const char* ptext, size_t length ) const;
+
+    /** Convert a simple string to a CID string using the CMap.
+     * \param str Std::string to convert.
+     * \return CID String corresponding.
+     */
+    PdfeCIDString toCIDString( const std::string& str ) const;
 
 protected:
     /// CMap name.
