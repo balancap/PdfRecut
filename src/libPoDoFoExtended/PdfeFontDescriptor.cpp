@@ -71,7 +71,10 @@ void PdfeFontDescriptor::init()
     m_fontName = PdfName();
     m_fontFamily = PdfString();
     m_fontStretch = PdfName();
+
     m_fontBBox.resize( 4, 0.0 );
+    m_fontBBox[2] = 1.0;
+    m_fontBBox[3] = 1.0;
 
     m_fontWeight = 400;
     m_flags = 0;
@@ -155,7 +158,10 @@ void PdfeFontDescriptor::resetKey( PdfeFontDescriptor::Key key )
     case FontStretch:
         m_fontStretch = PdfName();      break;
     case FontBBox:
-        m_fontBBox.resize( 4, 0.0 );    break;
+        m_fontBBox.resize( 4, 0.0 );
+        m_fontBBox[2] = 1.0;
+        m_fontBBox[3] = 1.0;
+        break;
     case FontWeight:
         m_fontWeight = 400; break;
     case Flags:

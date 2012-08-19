@@ -172,7 +172,7 @@ PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
 
     // PDF String data.
     const char* pstr = str.GetString();
-    size_t length = str.GetLength();
+    long length = str.GetLength();
 
     // Identity CMap
     if( m_identity ) {
@@ -180,7 +180,7 @@ PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
         const pdf_cid* pValue = reinterpret_cast<const pdf_cid*>( pstr );
 
         cidstr.reserve( length / 2 );
-        for( size_t i = 0 ; i < length-1 ; i += 2 ) {
+        for( long i = 0 ; i < length-1 ; i += 2 ) {
 
             // Read character (Litte endian: need to invert bytes).
             c = *pValue;

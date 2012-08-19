@@ -95,6 +95,8 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject *pFont ) :
 
     // TODO: unicode CMap.
 
+    // Space characters vector.
+    this->initSpaceCharacters();
 }
 void PdfeFontType3::init()
 {
@@ -114,6 +116,18 @@ void PdfeFontType3::init()
     m_encodingOwned = false;
 
 }
+void PdfeFontType3::initSpaceCharacters()
+{
+    m_spaceCharacters.clear();
+
+    // Find CIDs which correspond to the space character.
+    QChar qcharSpace( ' ' );
+    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        if( this->toUnicode( c ) == qcharSpace ) {
+            m_spaceCharacters.push_back( c );
+        }
+    }
+}
 
 PdfeFontType3::~PdfeFontType3()
 {
@@ -127,6 +141,19 @@ const PdfeFontDescriptor& PdfeFontType3::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
+PdfArray PdfeFontType3::fontBBox() const
+{
+    PdfArray bbox;
+
+    // Approximation of bounding box ~ remove the rotation component of the font matrix.
+    bbox[0] = m_fontBBox[0].GetReal() * m_fontMatrix(0,0);
+    bbox[1] = m_fontBBox[1].GetReal() * m_fontMatrix(1,1);
+    bbox[2] = m_fontBBox[2].GetReal() * m_fontMatrix(0,0);
+    bbox[3] = m_fontBBox[3].GetReal() * m_fontMatrix(1,1);
+
+    return bbox;
+}
+
 PdfeCIDString PdfeFontType3::toCIDString( const PdfString& str ) const
 {
     // PDF String data.
@@ -170,16 +197,28 @@ QChar PdfeFontType3::toUnicode( pdf_cid c ) const
     // TODO: unicode map.
 
     if( m_encoding ) {
-        // Get Utf16 code from PdfEncoding object.
-        return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
+        // Get UTF16 code from PdfEncoding object.
+        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        return QChar( PDF_UTF16_BE_LE( ucode ) );
     }
     else {
-        // Assume some identity map...
-        return QChar( c );
+        // Default empty character.
+        return QChar( 0 );
     }
 }
 PdfeFontSpace::Enum PdfeFontType3::isSpace( pdf_cid c ) const
 {
+    // Does the character belongs to the space vector ?
+    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
+        if( c == m_spaceCharacters[i] ) {
+            if( c == 32 ) {
+                return PdfeFontSpace::Code32;
+            }
+            else {
+                return PdfeFontSpace::Other;
+            }
+        }
+    }
     return PdfeFontSpace::None;
 }
 

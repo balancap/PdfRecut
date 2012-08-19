@@ -24,11 +24,15 @@
 #include "PdfeFontDescriptor.h"
 
 #include <QString>
+#include <QDebug>
+
+#include <iostream>
 
 namespace PoDoFo {
 class PdfObject;
 class PdfEncoding;
 class PdfString;
+class PdfArray;
 }
 
 namespace PoDoFoExtended {
@@ -37,9 +41,13 @@ namespace PoDoFoExtended {
  */
 typedef PoDoFo::pdf_uint16  pdf_cid;
 
-/** Macro that convert pdf_cid Big Endian to Little Endian.
+/** Macro that convert UTF16 Big Endian to Little Endian when necessary.
  */
-#define PDF_CID_BE_TO_LE(c) ( ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 ) )
+#ifdef PODOFO_IS_LITTLE_ENDIAN
+#define PDF_UTF16_BE_LE(c) ( ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 ) )
+#else
+#define PDF_UTF16_BE_LE(c) ( c )
+#endif
 
 /** Pdf CID String. To be improve ?
  */
@@ -78,8 +86,11 @@ namespace PdfeFontSpace {
 enum Enum {
     None = 0,   // Not a space character.
     Code32,     // Single byte 32 space.
-    Other       // Other kind (not single byte, tabular, ...).B
+    Other       // Other kind of space character (not single byte, tabular, ...).
 };
+
+/// BE-UTF16 code for the classic space character.
+static const PoDoFo::pdf_utf16be UTF16Code = 0x2000;
 }
 
 /** Class that represent a generic PDF Font. Extend and improve the class define in PoDoFo.
@@ -134,6 +145,11 @@ public:
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const = 0;
+
+    /** Get the font bounding box.
+     * \return PoDoFo::PdfArray containing the bounding box.
+     */
+    virtual PoDoFo::PdfArray fontBBox() const = 0;
 
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).

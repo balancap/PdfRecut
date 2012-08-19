@@ -54,12 +54,21 @@ protected:
      */
     PdfeFontType0() { }
 
+    /** Initialize the vector of space characters.
+     */
+    void initSpaceCharacters();
+
 public:
     // Virtual functions reimplemented.
     /** Get the descriptor object corresponding to the font.
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const;
+
+    /** Get the font bounding box.
+     * \return PoDoFo::PdfArray containing the bounding box.
+     */
+    virtual PoDoFo::PdfArray fontBBox() const;
 
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
@@ -95,6 +104,9 @@ protected:
 
     /// Descendant CID font.
     PdfeFontCID*  m_fontCID;
+
+    /// Vector of space characters.
+    std::vector<pdf_cid>  m_spaceCharacters;
 };
 
 //**********************************************************//

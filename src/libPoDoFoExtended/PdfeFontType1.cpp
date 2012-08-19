@@ -24,7 +24,7 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject *pFont ) :
+PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont ) :
     PdfeFont( pFont )
 {
     this->init();
@@ -86,6 +86,9 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject *pFont ) :
 
     // TODO: unicode CMap.
 
+
+    // Space characters vector.
+    this->initSpaceCharacters();
 }
 void PdfeFontType1::init()
 {
@@ -100,7 +103,7 @@ void PdfeFontType1::init()
 
     m_encoding = NULL;
     m_encodingOwned = false;
-
+    m_spaceCharacters.clear();
 }
 void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 {
@@ -158,16 +161,29 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         ucode = m_encoding->GetCharCode( i );
 
         // Dumb bug in PoDoFo: why bytes are inverted in GetCharCode but not UnicodeCharWidth ???
-#ifdef PODOFO_IS_LITTLE_ENDIAN
-        ucode = ((ucode & 0xff) << 8) | ((ucode & 0xff00) >> 8);
-#endif
+        ucode = PDF_UTF16_BE_LE( ucode );
+
         widthCID = pMetrics->UnicodeCharWidth( ucode ) * 1000.0;
         m_widthsCID.push_back( widthCID );
     }
 
     // TODO: unicode CMap.
-}
 
+    // Space characters vector.
+    this->initSpaceCharacters();
+}
+void PdfeFontType1::initSpaceCharacters()
+{
+    m_spaceCharacters.clear();
+
+    // Find CIDs which correspond to the space character.
+    QChar qcharSpace( ' ' );
+    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        if( this->toUnicode( c ) == qcharSpace ) {
+            m_spaceCharacters.push_back( c );
+        }
+    }
+}
 
 PdfeFontType1::~PdfeFontType1()
 {
@@ -181,6 +197,11 @@ const PdfeFontDescriptor& PdfeFontType1::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
+PdfArray PdfeFontType1::fontBBox() const
+{
+    return m_fontDescriptor.fontBBox();
+}
+
 PdfeCIDString PdfeFontType1::toCIDString( const PdfString& str ) const
 {
     // PDF String data.
@@ -219,16 +240,28 @@ QChar PdfeFontType1::toUnicode( pdf_cid c ) const
     // TODO: unicode map.
 
     if( m_encoding ) {
-        // Get utf16 code from PdfEncoding object.
-        return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
+        // Get UTF16 code from PdfEncoding object.
+        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        return QChar( PDF_UTF16_BE_LE( ucode ) );
     }
     else {
-        // Assume some kind of identity map...
-        return QChar( c );
+        // Default empty character.
+        return QChar( 0 );
     }
 }
 PdfeFontSpace::Enum PdfeFontType1::isSpace( pdf_cid c ) const
 {
+    // Does the character belongs to the space vector ?
+    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
+        if( c == m_spaceCharacters[i] ) {
+            if( c == 32 ) {
+                return PdfeFontSpace::Code32;
+            }
+            else {
+                return PdfeFontSpace::Other;
+            }
+        }
+    }
     return PdfeFontSpace::None;
 }
 

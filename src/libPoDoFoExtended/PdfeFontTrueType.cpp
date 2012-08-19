@@ -81,6 +81,8 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject *pFont ) :
 
     // TODO: unicode CMap.
 
+    // Space characters vector.
+    this->initSpaceCharacters();
 }
 void PdfeFontTrueType::init()
 {
@@ -97,6 +99,18 @@ void PdfeFontTrueType::init()
     m_encodingOwned = false;
 
 }
+void PdfeFontTrueType::initSpaceCharacters()
+{
+    m_spaceCharacters.clear();
+
+    // Find CIDs which correspond to the space character.
+    QChar qcharSpace( ' ' );
+    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        if( this->toUnicode( c ) == qcharSpace ) {
+            m_spaceCharacters.push_back( c );
+        }
+    }
+}
 
 PdfeFontTrueType::~PdfeFontTrueType()
 {
@@ -110,6 +124,11 @@ const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
+PdfArray PdfeFontTrueType::fontBBox() const
+{
+    return m_fontDescriptor.fontBBox();
+}
+
 PdfeCIDString PdfeFontTrueType::toCIDString( const PdfString& str ) const
 {
     // PDF String data.
@@ -148,16 +167,28 @@ QChar PdfeFontTrueType::toUnicode( pdf_cid c ) const
     // TODO: unicode map.
 
     if( m_encoding ) {
-        // Get Utf16 code from PdfEncoding object.
-        return QChar( m_encoding->GetCharCode( c - m_firstCID ) );
+        // Get UTF16 code from PdfEncoding object.
+        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        return QChar( PDF_UTF16_BE_LE( ucode ) );
     }
     else {
-        // Assume some identity map...
-        return QChar( c );
+        // Default empty character.
+        return QChar( 0 );
     }
 }
 PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdf_cid c ) const
 {
+    // Does the character belongs to the space vector ?
+    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
+        if( c == m_spaceCharacters[i] ) {
+            if( c == 32 ) {
+                return PdfeFontSpace::Code32;
+            }
+            else {
+                return PdfeFontSpace::Other;
+            }
+        }
+    }
     return PdfeFontSpace::None;
 }
 

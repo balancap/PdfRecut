@@ -235,31 +235,22 @@ charHeight = 1.0;
     }
 }
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
-                                       PoDoFoExtended::PdfeFont *pFont )
+                                       PoDoFoExtended::PdfeFont* pFont )
 {
-    // Get bounding box.
-   /* PdfArray boundingBox;
-    if( fontMetrics ) {
-        fontMetrics->GetBoundingBox( boundingBox );
-    }
-    else {
-        // Default values.
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 1000.0 );
-        boundingBox.push_back( 1000.0 );
-    }
-    m_boundingBox[0] = boundingBox[0].GetReal() / 1000.;
-    m_boundingBox[1] = boundingBox[1].GetReal() / 1000.;
-    m_boundingBox[2] = boundingBox[2].GetReal() / 1000.;
-    m_boundingBox[3] = boundingBox[3].GetReal() / 1000.;*/
+    // Get font bounding box.
+    PdfArray bbox = pFont->fontBBox();
+    m_boundingBox[0] = bbox[0].GetReal() / 1000.;
+    m_boundingBox[1] = bbox[1].GetReal() / 1000.;
+    m_boundingBox[2] = bbox[2].GetReal() / 1000.;
+    m_boundingBox[3] = bbox[3].GetReal() / 1000.;
 
-    double charHeight = 1.0;
+    // double charHeight = 1.0;
+    double charHeight = m_boundingBox[3];
 
     // Variant is a string.
     if( variant.IsString() || variant.IsHexString() )
     {
-        this->readPdfString( variant.GetString().GetString(), charHeight, pFont );
+        this->readPdfString( variant.GetString(), charHeight, pFont );
     }
     // Variant is an array (c.f. operator TJ).
     else if( variant.IsArray() )

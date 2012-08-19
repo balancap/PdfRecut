@@ -72,6 +72,14 @@ void PdfeFontType0::init()
     }
     m_fontCID->init();
 }
+
+void PdfeFontType0::initSpaceCharacters()
+{
+    m_spaceCharacters.clear();
+
+    // TODO: use unicode CMap.
+}
+
 PdfeFontType0::~PdfeFontType0()
 {
     delete m_fontCID;
@@ -81,6 +89,11 @@ const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 {
     return m_fontCID->fontDescriptor();
 }
+PdfArray PdfeFontType0::fontBBox() const
+{
+    return m_fontCID->fontDescriptor().fontBBox();
+}
+
 PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
 {
     // Use the encoding CMap to convert the string.
