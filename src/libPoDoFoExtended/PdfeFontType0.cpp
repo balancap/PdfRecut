@@ -81,15 +81,24 @@ const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 {
     return m_fontCID->fontDescriptor();
 }
-PdfeCIDString PdfeFontType0::toCIDString( const std::string& str ) const
+PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
 {
     // Use the encoding CMap to convert the string.
     return m_encodingCMap.toCIDString( str );
 }
-double PdfeFontType0::width( pdf_cid c ) const
+double PdfeFontType0::width( pdf_cid c, bool useFParams ) const
 {
     // Use CID font to obtain the width.
-    return m_fontCID->width( c );
+    double width = m_fontCID->width( c );
+
+    // Apply font parameters.
+    if( useFParams ) {
+        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            width += m_wordSpace * ( m_hScale / 100. );
+        }
+    }
+    return width;
 }
 QChar PdfeFontType0::toUnicode( pdf_cid c ) const
 {

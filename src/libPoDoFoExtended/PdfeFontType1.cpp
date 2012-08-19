@@ -65,7 +65,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject *pFont ) :
     const PdfArray&  widthsA = pWidths->GetArray();
     m_widthsCID.resize( widthsA.size() );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
-        m_widthsCID.push_back( widthsA[i].GetReal() );
+        m_widthsCID[i] =  widthsA[i].GetReal();
     }
     // Check the size for coherence.
     if( m_widthsCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
@@ -181,24 +181,38 @@ const PdfeFontDescriptor& PdfeFontType1::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
-PdfeCIDString PdfeFontType1::toCIDString( const std::string& str ) const
+PdfeCIDString PdfeFontType1::toCIDString( const PdfString& str ) const
 {
+    // PDF String data.
+    const char* pstr = str.GetString();
+    size_t length = str.GetLength();
+
     // Perform a simple copy.
-    PdfeCIDString cidStr;
-    cidStr.reserve( str.length() );
-    for( size_t i = 0 ; i < str.length() ; ++i ) {
-        cidStr.push_back( static_cast<pdf_cid>( str[i] ) );
+    PdfeCIDString cidstr;
+    cidstr.resize( length, 0 );
+    for( size_t i = 0 ; i < length ; ++i ) {
+        cidstr[i] = static_cast<unsigned char>( pstr[i] );
     }
-    return cidStr;
+    return cidstr;
 }
-double PdfeFontType1::width( pdf_cid c ) const
+double PdfeFontType1::width( pdf_cid c, bool useFParams ) const
 {
+    double width;
     if( c >= m_firstCID && c <= m_lastCID ) {
-        return m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ] / 1000.;
+        width = m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ] / 1000.;
     }
     else {
-        return m_fontDescriptor.missingWidth() / 1000.;
+        width = m_fontDescriptor.missingWidth() / 1000.;
     }
+
+    // Apply font parameters.
+    if( useFParams ) {
+        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            width += m_wordSpace * ( m_hScale / 100. );
+        }
+    }
+    return width;
 }
 QChar PdfeFontType1::toUnicode( pdf_cid c ) const
 {

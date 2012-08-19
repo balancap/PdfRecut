@@ -21,6 +21,7 @@
 #ifndef PRRENDERPAGE_H
 #define PRRENDERPAGE_H
 
+#include "PRDocument.h"
 #include "PRStreamAnalysis.h"
 #include "PdfFontMetricsCache.h"
 #include "PRTextStructure.h"
@@ -165,7 +166,8 @@ public:
      * \param pageIn Input page to draw.
      * \param fontMetricsCache Cache object for font metrics.
      */
-    PRRenderPage( PoDoFo::PdfPage* pageIn,
+    PRRenderPage( PRDocument* pDocument,
+                  PoDoFo::PdfPage* pageIn,
                   PdfFontMetricsCache* fontMetricsCache );
 
     /** Destructor: release image resources.
@@ -281,6 +283,9 @@ protected:
     void testPdfImage( PoDoFo::PdfObject* xobj );
 
 protected:
+    /// PRDocument object.
+    PRDocument* m_prDocument;
+
     /** Document object.
      */
     PoDoFo::PdfMemDocument* m_document;

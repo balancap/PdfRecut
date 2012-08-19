@@ -24,6 +24,7 @@
 #include "PdfFontMetricsType0.h"
 
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
@@ -121,6 +122,66 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         }
     }
 }
+void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
+                                      double charHeight,
+                                      PoDoFoExtended::PdfeFont* pFont )
+{
+    // To CID string.
+    PdfeCIDString cidstr = pFont->toCIDString( str );
+
+    // Text parameters.
+    //double hScale = m_textState.hScale;
+    double charSpace = m_textState.charSpace;
+    double wordSpace = m_textState.wordSpace;
+    double fontSize = m_textState.fontSize;
+
+    // Set font parameters (not necessary in theory).
+    pFont->setCharSpace( 0.0 );
+    pFont->setFontSize( 1.0 );
+    pFont->setHScale( 100. );
+
+    double charWidth = 1.0;
+
+    // Read characters from the string.
+    size_t i = 0;
+    while( i < cidstr.length() )
+    {
+        // Read space word.
+        if( pFont->isSpace( cidstr[i] ) )
+        {
+            Word textWord( 0, 0.0, charHeight, 1 );
+
+            // Read spaces (can be multiple...)
+            while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) ) {
+                charWidth = pFont->width( cidstr[i], false );
+                textWord.width += ( charWidth + charSpace / fontSize );
+
+                if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
+                    textWord.width += wordSpace / fontSize;
+                }
+
+                textWord.length++;
+                i++;
+            }
+            m_words.push_back( textWord );
+        }
+        else // Read classic word.
+        {
+            Word textWord( 0, 0.0, charHeight, 0 );
+
+            // Read word characters.
+            while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) ) {
+                charWidth = pFont->width( cidstr[i], false );
+                textWord.width += ( charWidth + charSpace / fontSize );
+
+                textWord.length++;
+                i++;
+            }
+            m_words.push_back( textWord );
+        }
+    }
+}
+
 void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
                                        PoDoFo::PdfFontMetrics* fontMetrics )
 {
@@ -142,7 +203,7 @@ void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
     m_boundingBox[3] = boundingBox[3].GetReal() / 1000.;
 
     double charHeight = boundingBox[3].GetReal() / 1000.;
-
+charHeight = 1.0;
 //    std::cout << boundingBox[0].GetReal() / 1000. << " / "
 //              << boundingBox[1].GetReal() / 1000. << " / "
 //              << boundingBox[2].GetReal() / 1000. << " / "
@@ -173,6 +234,54 @@ void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
         }
     }
 }
+void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
+                                       PoDoFoExtended::PdfeFont *pFont )
+{
+    // Get bounding box.
+   /* PdfArray boundingBox;
+    if( fontMetrics ) {
+        fontMetrics->GetBoundingBox( boundingBox );
+    }
+    else {
+        // Default values.
+        boundingBox.push_back( 0.0 );
+        boundingBox.push_back( 0.0 );
+        boundingBox.push_back( 1000.0 );
+        boundingBox.push_back( 1000.0 );
+    }
+    m_boundingBox[0] = boundingBox[0].GetReal() / 1000.;
+    m_boundingBox[1] = boundingBox[1].GetReal() / 1000.;
+    m_boundingBox[2] = boundingBox[2].GetReal() / 1000.;
+    m_boundingBox[3] = boundingBox[3].GetReal() / 1000.;*/
+
+    double charHeight = 1.0;
+
+    // Variant is a string.
+    if( variant.IsString() || variant.IsHexString() )
+    {
+        this->readPdfString( variant.GetString().GetString(), charHeight, pFont );
+    }
+    // Variant is an array (c.f. operator TJ).
+    else if( variant.IsArray() )
+    {
+        const PdfArray& array = variant.GetArray();
+        for( size_t i = 0 ; i < array.size() ; i++ ) {
+            if( array[i].IsString() || array[i].IsHexString() ) {
+                // Read string.
+                this->readPdfString( array[i].GetString(), charHeight, pFont );
+            }
+            else if( array[i].IsNumber() ) {
+                // Read pdf space.
+                m_words.push_back( Word( 1, -array[i].GetNumber() / 1000.0, charHeight, 2 ) );
+            }
+            else if( array[i].IsReal() ) {
+                // Read pdf space.
+                m_words.push_back( Word( 1, -array[i].GetReal() / 1000.0, charHeight, 2 ) );
+            }
+        }
+    }
+}
+
 void PRTextGroupWords::appendWord( const Word& word )
 {
     // Append the word to the vector.
@@ -200,7 +309,7 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
 {
     // Compute text rendering matrix.
     PdfeMatrix tmpMat, textMat;
-    tmpMat(0,0) = m_textState.fontSize * m_textState.hScale / 100;
+    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
     tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
     tmpMat(2,1) = m_textState.rise;
     textMat = tmpMat * m_textState.transMat * m_transMatrix;

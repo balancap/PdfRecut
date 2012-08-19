@@ -34,7 +34,7 @@ namespace PdfRecut {
 PRPageStatistics::PRPageStatistics( long pageIndex,
                                     PdfPage* pageIn,
                                     PdfFontMetricsCache* fontMetricsCache ) :
-    PRRenderPage( pageIn, fontMetricsCache )
+    PRRenderPage( NULL, pageIn, fontMetricsCache )
 {
     m_pageIndex = pageIndex;
     m_page = pageIn;

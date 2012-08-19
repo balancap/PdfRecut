@@ -60,20 +60,20 @@ double PdfeFont::width( const PdfeCIDString& str ) const
     double width = 0;
     for( size_t i = 0 ; i < str.length() ; ++i ) {
         pdf_cid c = str[i];
-        width += this->width( c );
+        width += this->width( c, false );
 
         // Space character 32: add word spacing.
         if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace;
+            width += m_wordSpace / m_fontSize;
         }
     }
     // Adjust using font parameters.
-    width += m_charSpace * str.length();
     width = width * m_fontSize * ( m_hScale / 100. );
+    width += m_charSpace * str.length() * ( m_hScale / 100. );
 
     return width;
 }
-double PdfeFont::width( const std::string& str ) const
+double PdfeFont::width( const PoDoFo::PdfString& str ) const
 {
     return this->width( this->toCIDString( str ) );
 }
@@ -87,7 +87,7 @@ QString PdfeFont::toUnicode( const PdfeCIDString& str ) const
     }
     return ustr;
 }
-QString PdfeFont::toUnicode( const std::string& str ) const
+QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
 {
     return this->toUnicode( this->toCIDString( str ) );
 }

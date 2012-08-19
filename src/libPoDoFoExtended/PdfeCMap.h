@@ -27,6 +27,7 @@ namespace PoDoFo {
 class PdfArray;
 class PdfObject;
 class PdfVariant;
+class PdfString;
 }
 
 namespace PoDoFoExtended {
@@ -91,10 +92,10 @@ public:
     std::vector<pdf_cid> getCID( const char* ptext, size_t length ) const;
 
     /** Convert a simple string to a CID string using the CMap.
-     * \param str Std::string to convert.
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
      */
-    PdfeCIDString toCIDString( const std::string& str ) const;
+    PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
 
 protected:
     /// CMap name.

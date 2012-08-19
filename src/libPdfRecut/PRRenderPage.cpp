@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+
 #include "PRRenderPage.h"
 
 #include <podofo/podofo.h>
@@ -27,6 +28,7 @@
 #include <fstream>
 
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
@@ -74,10 +76,12 @@ void PRRenderParameters::initPenBrush()
 //**********************************************************//
 //                       PRRenderPage                       //
 //**********************************************************//
-PRRenderPage::PRRenderPage( PoDoFo::PdfPage* pageIn,
+PRRenderPage::PRRenderPage( PRDocument* pDocument,
+                            PoDoFo::PdfPage* pageIn,
                             PdfFontMetricsCache* fontMetricsCache ) :
     PRStreamAnalysis( pageIn ), m_fontMetricsCache( fontMetricsCache )
 {
+    m_prDocument = pDocument;
     m_pageImage = NULL;
     m_pagePainter = NULL;
 
@@ -363,6 +367,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Get font metrics.
     PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
+    PdfeFont* pFont = m_prDocument->fontCache( gState.textState.fontRef );
 
     // Read group of words.
     PRTextGroupWords groupWords;
@@ -370,14 +375,15 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     groupWords.setTransMatrix( streamState.gStates.back().transMat );
     groupWords.setGroupIndex( m_nbTextGroups );
 
-    groupWords.readPdfVariant( variant, fontMetrics );
+    //groupWords.readPdfVariant( variant, fontMetrics );
+    groupWords.readPdfVariant( variant, pFont );
 
     // Increment the number of group of words.
     ++m_nbTextGroups;
 
     // Update text transform matrix.
     PdfeMatrix tmpMat;
-    tmpMat(2,0) = groupWords.getWidth() * textState.fontSize * textState.hScale / 100;
+    tmpMat(2,0) = groupWords.getWidth() * textState.fontSize * ( textState.hScale / 100. );
     m_textMatrix = tmpMat * m_textMatrix;
 
     return groupWords;

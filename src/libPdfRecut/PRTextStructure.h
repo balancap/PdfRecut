@@ -23,6 +23,7 @@
 
 #include "PdfGraphicsState.h"
 #include "PdfFontMetricsCache.h"
+#include "PdfeFont.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -46,24 +47,20 @@ public:
      */
     struct Word
     {
-        /** Length: number of characters.
-         */
-        int length;
+        /// Length: number of characters.
+        int  length;
 
-        /** Width in word coordinate system.
-         */
-        double width;
-
-        /** Height in word coordinate system.
-         */
-        double height;
+        /// Width in word coordinate system.
+        double  width;
+        /// Height in word coordinate system.
+        double  height;
 
         /** Word type :
          * 0: classic word.
          * 1: classic space.
          * 2: pdf space (c.f. TJ operator).
          */
-        unsigned char type;
+        unsigned char  type;
 
         /** Default constructor.
          */
@@ -83,13 +80,19 @@ public:
      */
     void init();
 
-
     /** Read a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
      * \param fontMetrics Font metrics object used to compute width of words.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
                          PoDoFo::PdfFontMetrics* fontMetrics );
+
+    /** Read a group of words from a PdfVariant (appended to the group).
+     * \param variant Pdf variant to read (can be string or array).
+     * \param pFont Font object used to compute words width.
+     */
+    void readPdfVariant( const PoDoFo::PdfVariant& variant,
+                         PoDoFoExtended::PdfeFont* pFont );
 
     /** Append a word to the group.
      * \param word Word to append.
@@ -124,6 +127,15 @@ protected:
                         double charHeight,
                         PoDoFo::PdfFontMetrics* fontMetrics );
 
+    /** Read a group of words from a PdfString (appended to the group).
+     * \param str Pdf string to read (can contain 0 characters !).
+     * \param charHeight Default height of characters.
+     * \param pFont Font object used to compute words width.
+     */
+    void readPdfString( const PoDoFo::PdfString& str,
+                        double charHeight,
+                        PoDoFoExtended::PdfeFont* pFont );
+
 public:
     /** Getters and setters...
      */
@@ -146,26 +158,20 @@ public:
     const std::vector<PRTextGroupWords::Word>& getWords() const;
 
 protected:
-    /** Index of the page to which belongs the group.
-     */
-    long m_pageIndex;
-    /** Index of the group in the page.
-     */
-    long m_groupIndex;
+    /// Index of the page to which belongs the group.
+    long  m_pageIndex;
+    /// Index of the group in the page.
+    long  m_groupIndex;
 
-    /** Vector of words that make the group.
-     */
-    std::vector<PRTextGroupWords::Word> m_words;
+    /// Vector of words that make the group.
+    std::vector<PRTextGroupWords::Word>  m_words;
 
-    /** Transformation matrix of the graphics state.
-     */
+    /// Transformation matrix of the graphics state.
     PdfeMatrix m_transMatrix;
-    /** Text state for this group of words.
-     */
+    /// Text state for this group of words.
     PdfTextState m_textState;
 
-    /** Font bounding box.
-     */
+    /// Font bounding box.
     double m_boundingBox[4];
 };
 

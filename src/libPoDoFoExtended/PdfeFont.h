@@ -28,6 +28,7 @@
 namespace PoDoFo {
 class PdfObject;
 class PdfEncoding;
+class PdfString;
 }
 
 namespace PoDoFoExtended {
@@ -111,10 +112,10 @@ public:
      */
     virtual double width( const PdfeCIDString& str ) const;
     /** Get the width of a string (first converted to a CID string).
-     * \param str Std::string to consider.
+     * \param str PoDoFo::PdfString to consider (can contain 0 characters !).
      * \return Width of the string.
      */
-    virtual double width( const std::string& str ) const;
+    virtual double width( const PoDoFo::PdfString& str ) const;
 
     /** Convert a CID string to unicode.
      * \param str CID string to convert.
@@ -122,10 +123,10 @@ public:
      */
     virtual QString toUnicode( const PdfeCIDString& str ) const;
     /** Convert a simple string to unicode.
-     * \param str Std::string to convert.
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return Unicode QString corresponding.
      */
-    virtual QString toUnicode( const std::string& str ) const;
+    virtual QString toUnicode( const PoDoFo::PdfString& str ) const;
 
 public:
     // Virtual functions to reimplement in derived classes.
@@ -134,17 +135,18 @@ public:
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const = 0;
 
-    /** Convert a simple string to a CID string (only perform a copy for simple fonts).
-     * \param str Std::string to convert.
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
      */
-    virtual PdfeCIDString toCIDString( const std::string& str ) const = 0;
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const = 0;
 
     /** Get the width of a character.
      * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Width of the character.
      */
-    virtual double width( pdf_cid c ) const = 0;
+    virtual double width( pdf_cid c, bool useFParams ) const = 0;
 
     /** Convert a character to its unicode equivalent (QChar).
      * \param  c Character identifier (CID).
@@ -191,8 +193,6 @@ public:
     void setHScale( double hScale )     {  m_hScale = hScale;  }
     double fontSize() const             {  return m_fontSize;  }
     void setFontSize( double fontSize ) {  m_fontSize = fontSize;  }
-
-
 };
 
 }

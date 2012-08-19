@@ -56,17 +56,18 @@ public:
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const;
 
-    /** Convert a simple string to a CID string (only perform a copy for simple fonts).
-     * \param str Std::string to convert.
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
      */
-    virtual PdfeCIDString toCIDString( const std::string& str ) const;
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
 
     /** Get the width of a character.
      * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Width of the character.
      */
-    virtual double width( pdf_cid c ) const;
+    virtual double width( pdf_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode equivalent (QChar).
      * \param  c Character identifier (CID).

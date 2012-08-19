@@ -166,32 +166,36 @@ std::vector<pdf_cid> PdfeCMap::getCID( const char *ptext, size_t length ) const
     return cidVect;
 }
 
-PdfeCIDString PdfeCMap::toCIDString( const std::string& str ) const
+PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
 {
-    PdfeCIDString cidStr;
+    PdfeCIDString cidstr;
+
+    // PDF String data.
+    const char* pstr = str.GetString();
+    size_t length = str.GetLength();
 
     // Identity CMap
     if( m_identity ) {
         pdf_cid c;
-        const pdf_cid* pValue = reinterpret_cast<const pdf_cid*>( str.c_str() );
+        const pdf_cid* pValue = reinterpret_cast<const pdf_cid*>( pstr );
 
-        cidStr.reserve( str.length() / 2 );
-        for( size_t i = 0 ; i < str.length()-1 ; i += 2 ) {
+        cidstr.reserve( length / 2 );
+        for( size_t i = 0 ; i < length-1 ; i += 2 ) {
 
             // Read character (Litte endian: need to invert bytes).
             c = *pValue;
 #ifdef PODOFO_IS_LITTLE_ENDIAN
             c = ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 );
 #endif
-            cidStr.push_back( c );
+            cidstr.push_back( c );
 
             ++pValue;
         }
-        return cidStr;
+        return cidstr;
     }
 
     // Otherwise: TODO !
-    return cidStr;
+    return cidstr;
 }
 
 }

@@ -169,7 +169,7 @@ void proceedFile( QString filePath )
     for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
 
-        PRRenderPage renderPage( document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
+        PRRenderPage renderPage( &document, document.getPoDoFoDocument()->GetPage(i), &fontMetricsCache );
         renderPage.renderPage( renderParams );
         renderPage.saveToFile( filename );
 
