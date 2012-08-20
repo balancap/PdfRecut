@@ -24,8 +24,8 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject *pFont ) :
-    PdfeFont( pFont )
+PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+    PdfeFont( pFont, ftLibrary )
 {
     this->init();
 

@@ -27,6 +27,8 @@
 #include <QMutex>
 #include <QtCore/QObject>
 
+#include <podofo/doc/PdfFontCache.h>
+
 #include "PdfeFont.h"
 
 namespace PoDoFo {
@@ -148,6 +150,9 @@ private:
 
     /// Map containing font cache. Each key corresponds to the reference of the font object.
     std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;
+
+    /// FreeType library.
+    FT_Library  m_ftLibrary;
 };
 
 //************************************************************//

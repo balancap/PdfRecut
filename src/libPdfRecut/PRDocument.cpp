@@ -29,6 +29,9 @@
 #include <QtCore>
 #include <podofo/podofo.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 using namespace PoDoFo;
 using namespace PoDoFoExtended;
 
@@ -39,6 +42,11 @@ PRDocument::PRDocument( QObject* parent, const QString& filename ) :
 {
     m_filename = filename;
     m_podofoDocument = NULL;
+
+    // Initialize freetype library.
+    if( FT_Init_FreeType( &m_ftLibrary ) ) {
+        PODOFO_RAISE_ERROR( ePdfError_FreeType );
+    }
 }
 PRDocument::~PRDocument()
 {
@@ -164,16 +172,16 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
 
     if( fontSubType == PdfName("Type0") ) {
-        pFont = new PdfeFontType0( fontObj );;
+        pFont = new PdfeFontType0( fontObj, &m_ftLibrary );
     }
     else if( fontSubType == PdfName("Type1") ) {
-        pFont = new PdfeFontType1( fontObj );
+        pFont = new PdfeFontType1( fontObj, &m_ftLibrary );
     }
     else if( fontSubType == PdfName("TrueType") ) {
-        pFont = new PdfeFontTrueType( fontObj );
+        pFont = new PdfeFontTrueType( fontObj, &m_ftLibrary );
     }
     else if( fontSubType == PdfName("Type3") ) {
-        pFont = new PdfeFontType3( fontObj );
+        pFont = new PdfeFontType3( fontObj, &m_ftLibrary );
     }
 
     // Insert font in the cache.

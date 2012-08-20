@@ -33,7 +33,7 @@ public:
     /** Create a PdfeFontTrueType from a PdfObject.
      * \param pFont Pointer to the object where is defined the TrueType font.
      */
-    PdfeFontTrueType( PoDoFo::PdfObject* pFont );
+    PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
 
     /** Initialize the object to default parameters.
      */

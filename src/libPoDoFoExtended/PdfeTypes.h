@@ -25,6 +25,7 @@
 #include <QPointF>
 #include <QTransform>
 #include <vector>
+#include <ostream>
 
 //namespace PoDoFoExtended {
 
@@ -155,6 +156,15 @@ public:
     const double& operator()( size_t index ) const {
         return this->at(0,index);
     }
+
+    /** << Overload.
+     */
+    friend std::ostream& operator<< ( std::ostream& out, PdfeVector& vect )
+    {
+        out << "(" << vect(0) << "," << vect(1) << ")";
+        return out;
+    }
+
 
     /** Initialize vector to (0,0,1)
      */

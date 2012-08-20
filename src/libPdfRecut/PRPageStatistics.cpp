@@ -31,10 +31,10 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PRPageStatistics::PRPageStatistics( long pageIndex,
-                                    PdfPage* pageIn,
-                                    PdfFontMetricsCache* fontMetricsCache ) :
-    PRRenderPage( NULL, pageIn, fontMetricsCache )
+PRPageStatistics::PRPageStatistics( PRDocument* pDocument,
+                                    long pageIndex,
+                                    PdfPage* pageIn ) :
+    PRRenderPage( pDocument, pageIn )
 {
     m_pageIndex = pageIndex;
     m_page = pageIn;
@@ -85,7 +85,14 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     this->textUpdateTransMatrix( streamState );
 
     // Read the group of words.
-    m_groupsWords.push_back( this->textReadGroupWords( streamState ) );
+    PRTextGroupWords group = this->textReadGroupWords( streamState );
+
+    // Empty group -> trash !
+    if( !group.getWords().size() ) {
+        return;
+    }
+
+    m_groupsWords.push_back( group );
     m_groupsWordsLines.push_back( -1 );
 
 //    std::cout << streamState.gOperands.back()
@@ -94,26 +101,20 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     // Try to find a line for the group of words.
     this->findTextLine( m_groupsWords.size()-1 );
 
-
-
-
     // Change the color used to fill text.
     //QRgb rgbColor = qRgb( 0, 255, 0);
 
     //QRgb rgbColor = RGB_MASK- RGB_MASK & (m_nbTextGroups + 1);
     QColor txtColor;
-    txtColor.setHsv( m_nbTextGroups*6 % 360, 255, 255 );
+    txtColor.setHsv( m_nbTextGroups % 360, 255, 255 );
 
     m_renderParameters.textPB.fillBrush->setColor( txtColor );
     //m_renderParameters.textSpacePB.fillBrush->setColor( txtColor );
 
-    //std::cout << std::hex << rgbColor << std::endl;
-    //std::cout << std::hex << (0xff000000|QRgb(m_nbTextGroups)) << std::endl;
-
     // Render the group of words.
     //this->textDrawGroupWords( m_groupsWords.back() );
 
-    //this->drawPdfeORect( m_groupsWords.back().getOrientedRect() );
+    //this->textDrawPdfeORect( m_groupsWords.back().getOrientedRect() );
 
     //PRRenderPage::fTextShowing( streamState );
 }
@@ -163,11 +164,11 @@ size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
     PdfeVector lbGroup = orectGroup.getLeftBottom();
     PdfeVector direcGroup = orectGroup.getDirection();
 
-    PdfeMatrix transMat, tmpMat;
-    tmpMat(0,0) = direcGroup(0);      tmpMat(0,1) = -direcGroup(1);
-    tmpMat(1,0) = direcGroup(1);      tmpMat(1,1) = direcGroup(0);
-    tmpMat(2,0) = lbGroup(0);         tmpMat(2,1) = lbGroup(1);
-    tmpMat.inverse( transMat );
+    PdfeMatrix transMat;
+    transMat(0,0) = direcGroup(0);      transMat(0,1) = -direcGroup(1);
+    transMat(1,0) = direcGroup(1);      transMat(1,1) = direcGroup(0);
+    transMat(2,0) = -lbGroup(0) * direcGroup(0) - lbGroup(1) * direcGroup(1);
+    transMat(2,1) = lbGroup(0) * direcGroup(1) - lbGroup(1) * direcGroup(0);
 
     // Try to find a group of words that could belong to a same line.
     size_t idxGroupLimit = std::max( long(0), long(idxGroupWords) - MaxSearchGroupWords );
@@ -180,12 +181,14 @@ size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
         if( PdfeVector::angle( orectGroup.getDirection(), tmpORect.getDirection() ) <= 0.1  )
         {
             // Compute the two points that interest us (rb and rt).
-            PdfeVector rbPoint, rtPoint;
-            rbPoint = tmpORect.getLeftBottom() + tmpORect.getDirection() * tmpORect.getWidth();
-            rtPoint = rbPoint + tmpORect.getDirection().rotate90() * tmpORect.getHeight();
+            PdfeVector rbPoint0, rtPoint0, rbPoint, rtPoint;
+            rbPoint0 = tmpORect.getLeftBottom() + tmpORect.getDirection() * tmpORect.getWidth();
+            rtPoint0 = rbPoint0 + tmpORect.getDirection().rotate90() * tmpORect.getHeight();
 
-            rbPoint = transMat.map( rbPoint );
-            rtPoint = transMat.map( rtPoint );
+            PdfeVector dir = tmpORect.getDirection().rotate90();
+
+            rbPoint = transMat.map( rbPoint0 );
+            rtPoint = transMat.map( rtPoint0 );
 
             // Compute horizontal distance and vertical overlap (in % of height).
             double hDistance = ( rbPoint(0) ) / orectGroup.getHeight();

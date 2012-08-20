@@ -15,10 +15,6 @@ SOURCES += \
     PdfResources.cpp \
     PdfPath.cpp \
     PdfGraphicsState.cpp \
-    PdfFontMetricsType3.cpp \
-    PdfFontMetricsType0.cpp \
-    PdfFontMetricsCache.cpp \
-    PdfFontMetrics14.cpp \
     PdfeFont.cpp \
     PdfeFontDescriptor.cpp \
     PdfeFontType0.cpp \
@@ -35,10 +31,6 @@ HEADERS += \
     PdfMisc.h \
     PdfGraphicsState.h \
     PdfGraphicsOperators.h \
-    PdfFontMetricsType3.h \
-    PdfFontMetricsType0.h \
-    PdfFontMetricsCache.h \
-    PdfFontMetrics14.h \
     PdfeFont.h \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
@@ -55,6 +47,7 @@ win32 {
 }
 unix {
     INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
+    INCLUDEPATH += /usr/include/freetype2
 }
 
 unix {

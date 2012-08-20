@@ -39,7 +39,7 @@ public:
     /** Create a PdfeFontType0 from a PdfObject.
      * \param pFont Pointer to the object where is defined the type 0 font.
      */
-    PdfeFontType0( PoDoFo::PdfObject* pFont );
+    PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
 
     /** Initialize the object to default parameters.
      */

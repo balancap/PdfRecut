@@ -20,6 +20,8 @@
 #include "PdfeFontDescriptor.h"
 #include "podofo/podofo.h"
 
+#include <iostream>
+
 using namespace PoDoFo;
 
 namespace PoDoFoExtended {
@@ -57,11 +59,9 @@ PdfeFontDescriptor::PdfeFontDescriptor( const PdfeFontDescriptor& fontDesc )
     m_maxWidth = fontDesc.m_maxWidth;
     m_missingWidth = fontDesc.m_missingWidth;
 
-    // TODO: FontFiles, CharSet and CID Keys.
-    m_fontFile = NULL;
-    m_fontFile2 = NULL;
-    m_fontFile3 = NULL;
+    m_fontEmbedded = fontDesc.m_fontEmbedded;
 
+    // TODO: CharSet and CID Keys.
     m_charSet = PdfString();
 }
 
@@ -91,9 +91,7 @@ void PdfeFontDescriptor::init()
     m_maxWidth = 0.0;
     m_missingWidth = 0.0;
 
-    m_fontFile = NULL;
-    m_fontFile2 = NULL;
-    m_fontFile3 = NULL;
+    m_fontEmbedded.init();
 
     m_charSet = PdfString();
 }
@@ -144,6 +142,11 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
     m_avgWidth = pFontDesc->GetDictionary().GetKeyAsReal( "AvgWidth", 0.0 );
     m_maxWidth = pFontDesc->GetDictionary().GetKeyAsReal( "MaxWidth", 0.0 );
     m_missingWidth = pFontDesc->GetDictionary().GetKeyAsReal( "MissingWidth", 0.0 );
+
+    // Read FontFiles
+    m_fontEmbedded.fontFile = pFontDesc->GetIndirectKey( "FontFile" );
+    m_fontEmbedded.fontFile2 = pFontDesc->GetIndirectKey( "FontFile2" );
+    m_fontEmbedded.fontFile3 = pFontDesc->GetIndirectKey( "FontFile3" );
 
     // TODO: FontFiles, CharSet and CID Keys.
 }

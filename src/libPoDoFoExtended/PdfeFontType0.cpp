@@ -27,8 +27,8 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                          PdfeFont0                       //
 //**********************************************************//
-PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject *pFont ) :
-    PdfeFont( pFont ), m_fontCID( NULL )
+PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+    PdfeFont( pFont, ftLibrary ), m_fontCID( NULL )
 {
     this->init();
 

@@ -24,8 +24,8 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont ) :
-    PdfeFont( pFont )
+PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+    PdfeFont( pFont, ftLibrary )
 {
     this->init();
 
@@ -89,6 +89,9 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont ) :
 
     // Space characters vector.
     this->initSpaceCharacters();
+
+    // Character size.
+    this->initCharactersSize( pFont );
 }
 void PdfeFontType1::init()
 {
@@ -183,6 +186,62 @@ void PdfeFontType1::initSpaceCharacters()
             m_spaceCharacters.push_back( c );
         }
     }
+}
+void PdfeFontType1::initCharactersSize( const PdfObject* pFont )
+{
+    // Is the font embedded ?
+    PdfeFontEmbedded  fontEmbedded = this->fontDescriptor().fontEmbedded();
+    if( !fontEmbedded.fontFile && !fontEmbedded.fontFile3 ) {
+        std::cout << "FT_Face " << m_baseFont.GetName() << " : No font file.";
+        return;
+    }
+
+    // Get fontFile object.
+    PdfObject* fontFile;
+    if( fontEmbedded.fontFile ) {
+        fontFile = fontEmbedded.fontFile;
+    }
+    else {
+        fontFile = fontEmbedded.fontFile3;
+    }
+
+    // Get the buffer.
+    char* buffer;
+    long length;
+    PdfStream* stream = fontFile->GetStream();
+    stream->GetFilteredCopy( &buffer, &length );
+
+    // Load Font Face from the font file.
+    FT_Face face;
+    int error;
+
+    error = FT_New_Memory_Face( *m_ftLibrary,
+                                reinterpret_cast<unsigned char*>( buffer ),
+                                length, 0, &face );
+
+
+    std::cout << "FT_Face " << m_baseFont.GetName() << " : ";
+    if( error ) {
+        std::cout << "Error.";
+        PODOFO_RAISE_ERROR( ePdfError_FreeType );
+    }
+    else {
+        std::cout << "Ok : " << face->num_glyphs << " / " << (m_lastCID-m_firstCID+1);
+    }
+
+//    for(size_t) {
+//        FT_Get_Char_Index( face, charcode );
+//    }
+
+    std::cout << std::endl;
+
+
+//    // Initialize freetype library.
+//    if( FT_Init_FreeType( &m_ftLibrary ) ) {
+//        PODOFO_RAISE_ERROR( ePdfError_FreeType );
+//    }
+
+    free( buffer );
 }
 
 PdfeFontType1::~PdfeFontType1()

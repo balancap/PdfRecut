@@ -141,31 +141,6 @@ void PdfeCMap::init( PdfObject* cmapStream )
     }
 }
 
-std::vector<pdf_cid> PdfeCMap::getCID( const char *ptext, size_t length ) const
-{
-    std::vector<pdf_cid> cidVect;
-
-    // Identity CMap
-    if( m_identity ) {
-        const pdf_uint16* pvalue = (const pdf_uint16*) ptext;
-        cidVect.reserve( length / 2 );
-
-        for( size_t i = 0 ; i < length-1 ; i+=2 ) {
-            cidVect.push_back( *pvalue );
-
-            // Litte endian: need to invert bytes.
-#ifdef PODOFO_IS_LITTLE_ENDIAN
-            cidVect.back() = ((cidVect.back() & 0xff) << 8) | ((cidVect.back() & 0xff00) >> 8);
-#endif
-            ++pvalue;
-        }
-        return cidVect;
-    }
-
-    // Otherwise: TODO !
-    return cidVect;
-}
-
 PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
 {
     PdfeCIDString cidstr;

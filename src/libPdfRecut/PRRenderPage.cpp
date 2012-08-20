@@ -77,14 +77,11 @@ void PRRenderParameters::initPenBrush()
 //                       PRRenderPage                       //
 //**********************************************************//
 PRRenderPage::PRRenderPage( PRDocument* pDocument,
-                            PoDoFo::PdfPage* pageIn,
-                            PdfFontMetricsCache* fontMetricsCache ) :
-    PRStreamAnalysis( pageIn ), m_fontMetricsCache( fontMetricsCache )
+                            PoDoFo::PdfPage* pageIn ) :
+    PRStreamAnalysis( pageIn ), m_prDocument( pDocument )
 {
-    m_prDocument = pDocument;
     m_pageImage = NULL;
     m_pagePainter = NULL;
-
     m_document = dynamic_cast<PdfMemDocument*> ( m_page->GetObject()->GetOwner()->GetParentDocument() );
 }
 PRRenderPage::~PRRenderPage()
@@ -366,7 +363,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     tokenizer.GetNextVariant( variant, NULL );
 
     // Get font metrics.
-    PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
+    //PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
     PdfeFont* pFont = m_prDocument->fontCache( gState.textState.fontRef );
 
     // Read group of words.

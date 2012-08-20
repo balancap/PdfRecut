@@ -22,7 +22,6 @@
 #define PRTEXTSTRUCTURE_H
 
 #include "PdfGraphicsState.h"
-#include "PdfFontMetricsCache.h"
 #include "PdfeFont.h"
 
 namespace PoDoFo {
@@ -82,13 +81,6 @@ public:
 
     /** Read a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
-     * \param fontMetrics Font metrics object used to compute width of words.
-     */
-    void readPdfVariant( const PoDoFo::PdfVariant& variant,
-                         PoDoFo::PdfFontMetrics* fontMetrics );
-
-    /** Read a group of words from a PdfVariant (appended to the group).
-     * \param variant Pdf variant to read (can be string or array).
      * \param pFont Font object used to compute words width.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
@@ -118,15 +110,6 @@ public:
     PdfeORect getOrientedRect() const;
 
 protected:
-    /** Read a group of words from a PdfString (appended to the group).
-     * \param str Pdf string to read.
-     * \param charHeight Default height of characters.
-     * \param fontMetrics Font metrics object used to compute width of words.
-     */
-    void readPdfString( const PoDoFo::PdfString& str,
-                        double charHeight,
-                        PoDoFo::PdfFontMetrics* fontMetrics );
-
     /** Read a group of words from a PdfString (appended to the group).
      * \param str Pdf string to read (can contain 0 characters !).
      * \param charHeight Default height of characters.

@@ -24,7 +24,7 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFont::PdfeFont( PoDoFo::PdfObject* pFont )
+PdfeFont::PdfeFont( PdfObject* pFont, FT_Library* ftLibrary )
 {
     this->init();
 
@@ -38,6 +38,8 @@ PdfeFont::PdfeFont( PoDoFo::PdfObject* pFont )
     else {
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
+
+    m_ftLibrary = ftLibrary;
 }
 void PdfeFont::init()
 {
@@ -50,6 +52,8 @@ void PdfeFont::init()
     m_charSpace = 0.0;
     m_wordSpace = 0.0;
     m_hScale = 0.0;
+
+    m_ftLibrary = NULL;
 }
 PdfeFont::~PdfeFont()
 {

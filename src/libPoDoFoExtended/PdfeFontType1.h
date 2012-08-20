@@ -23,6 +23,9 @@
 #include "PdfeFont.h"
 #include "PdfeFontDescriptor.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 namespace PoDoFoExtended {
 
 /** Class that represents a PDF Font of type 1 (c.f. PDF Reference).
@@ -33,7 +36,7 @@ public:
     /** Create a PdfeFontType1 from a PdfObject.
      * \param pFont Pointer to the object where is defined the type 1 font.
      */
-    PdfeFontType1( PoDoFo::PdfObject* pFont );
+    PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -56,6 +59,10 @@ protected:
     /** Initialize the vector of space characters.
      */
     void initSpaceCharacters();
+
+    /** Initialize the size of characters according to the font object.
+     */
+    void initCharactersSize( const PoDoFo::PdfObject* pFont );
 
 public:
     // Virtual functions reimplemented.

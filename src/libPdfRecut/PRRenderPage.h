@@ -23,7 +23,6 @@
 
 #include "PRDocument.h"
 #include "PRStreamAnalysis.h"
-#include "PdfFontMetricsCache.h"
 #include "PRTextStructure.h"
 
 #include <QtGui/QPainter>
@@ -167,8 +166,7 @@ public:
      * \param fontMetricsCache Cache object for font metrics.
      */
     PRRenderPage( PRDocument* pDocument,
-                  PoDoFo::PdfPage* pageIn,
-                  PdfFontMetricsCache* fontMetricsCache );
+                  PoDoFo::PdfPage* pageIn );
 
     /** Destructor: release image resources.
      */
@@ -285,34 +283,21 @@ protected:
 protected:
     /// PRDocument object.
     PRDocument* m_prDocument;
-
-    /** Document object.
-     */
+    /// PoDoFo Document object.
     PoDoFo::PdfMemDocument* m_document;
 
-    /** Font metrics cache.
-     */
-    PdfFontMetricsCache* m_fontMetricsCache;
-
-    /** QImage used to draw the page.
-     */
+    /// QImage in which is drawn the page.
     QImage* m_pageImage;
-
-    /** QPainter used to draw the page.
-     */
+    /// QPainter used to draw the page.
     QPainter* m_pagePainter;
 
-    /** Render parameters.
-     */
+    /// Render parameters.
     PRRenderParameters m_renderParameters;
 
-    /** PdfRect corresponding to the rectangle of the page drawn.
-     * Usually page crop box.
-     */
+    /// PdfRect corresponding to the rectangle of the page drawn (usually page crop box).
     PoDoFo::PdfRect m_pageRect;
 
-    /** Clipping paths stack. Used to store the clipping path in page coordinates.
-     */
+    /// Clipping paths stack. Used to store the clipping path in page coordinates.
     std::vector<QPainterPath> m_clippingPathStack;
 
     /** Transform from page space to image space.
@@ -320,11 +305,9 @@ protected:
      */
     PdfeMatrix m_pageImgTrans;
 
-    /** Text transform.
-     */
+    /// Text transform.
     PdfeMatrix m_textMatrix;
-    /** Number of text groups.
-     */
+    /// Number of text groups read.
     long m_nbTextGroups;
 };
 

@@ -21,6 +21,7 @@
 #define PDFEFONT_H
 
 #include "podofo/base/PdfDefines.h"
+#include "podofo/doc/PdfFontCache.h"
 #include "PdfeFontDescriptor.h"
 
 #include <QString>
@@ -100,8 +101,9 @@ class PdfeFont
 public:
     /** Create a PdfeFont from a PdfObject.
      * \param pFont Pointer to the object which is defined the font.
+     * \param ftLibrary FreeType library.
      */
-    PdfeFont( PoDoFo::PdfObject* pFont );
+    PdfeFont( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -191,6 +193,9 @@ protected:
     double  m_hScale;
     /// Font size (default: 1.0).
     double  m_fontSize;
+
+    /// FreeType library.
+    FT_Library*  m_ftLibrary;
 
 public:
     //**********************************************************//

@@ -84,13 +84,6 @@ public:
      */
     ~PdfeCMap();
 
-    /** Convert character codes in a string into a CID vector.
-     * \param ptext Pointer to a string of characters code.
-     * \param length Length of the string.
-     * \return A vector of corresponding CID.
-     */
-    std::vector<pdf_cid> getCID( const char* ptext, size_t length ) const;
-
     /** Convert a simple string to a CID string using the CMap.
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.

@@ -33,6 +33,25 @@ class PdfString;
 
 namespace PoDoFoExtended {
 
+/** Simple structure that gathers information on an embedded font.
+ */
+struct PdfeFontEmbedded
+{
+    /// FontFile object no1.
+    PoDoFo::PdfObject*  fontFile;
+    /// FontFile object no2.
+    PoDoFo::PdfObject*  fontFile2;
+    /// FontFile object no3.
+    PoDoFo::PdfObject*  fontFile3;
+
+    /** Initialize to default values.
+     */
+    void init() {
+        fontFile = fontFile2 = fontFile3 = NULL;
+    }
+};
+
+
 /** Class that represents a Font Descriptor, as defined in the PDF Reference.
  */
 class PdfeFontDescriptor
@@ -128,9 +147,7 @@ protected:
     double  m_maxWidth;
     double  m_missingWidth;
 
-    PoDoFo::PdfObject*  m_fontFile;
-    PoDoFo::PdfObject*  m_fontFile2;
-    PoDoFo::PdfObject*  m_fontFile3;
+    PdfeFontEmbedded  m_fontEmbedded;
 
     PoDoFo::PdfString   m_charSet;
 
@@ -174,6 +191,8 @@ public:
     void setMaxWidth( double maxWidth ) {  m_maxWidth = maxWidth;  }
     double missingWidth() const                 {  return m_missingWidth;  }
     void setMissingWidth( double missingWidth ) {  m_missingWidth = missingWidth;  }
+
+    PdfeFontEmbedded fontEmbedded() const       {  return m_fontEmbedded;  }
 };
 
 //**********************************************************//

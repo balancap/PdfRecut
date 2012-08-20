@@ -39,6 +39,7 @@ win32 {
 }
 unix {
     INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
+    INCLUDEPATH += /usr/include/freetype2
 }
 
 unix {

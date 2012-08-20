@@ -21,7 +21,6 @@
 #include "PRTextStructure.h"
 
 #include <podofo/podofo.h>
-#include "PdfFontMetricsType0.h"
 
 using namespace PoDoFo;
 using namespace PoDoFoExtended;
@@ -45,83 +44,6 @@ void PRTextGroupWords::init()
     m_textState.init();
 }
 
-void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
-                                      double charHeight,
-                                      PoDoFo::PdfFontMetrics* fontMetrics )
-{
-    // Unicode string. Don't know how to handle it, therefore ignore !
-    if( str.IsUnicode() ) {
-        return;
-    }
-
-    // String data.
-    const char* strData = str.GetString();
-    size_t strLength = str.GetLength();
-
-    // Text parameters.
-    double hScale = fontMetrics->GetFontScale() / 100.;
-    double wordSpace = m_textState.wordSpace;
-
-    // Font metrics parameters.
-    if( fontMetrics ) {
-        // Strange implementation of char space in CharWidth functions from metrics classes: must multiply by 100.
-        fontMetrics->SetFontCharSpace( m_textState.charSpace / m_textState.fontSize * 100 );
-        fontMetrics->SetFontSize( 1.0 );
-        fontMetrics->SetFontScale( 100. );
-    }
-    double charWidth = 1.0;
-
-    // Particular case of a Type 0 font.
-    if( EPdfFontTypeMetrics(fontMetrics->GetFontType()) ==  ePdfFontTypeMetrics_Type0 ) {
-        PdfFontMetricsType0* fontMetricsT0 = dynamic_cast<PdfFontMetricsType0*>( fontMetrics );
-
-        // Consider the string as a single word.
-        Word textWord( 0, 0.0, charHeight, 0 );
-        textWord.length = strLength;  // TODO.
-        textWord.width = fontMetricsT0->StringWidthCID( strData, strLength );
-
-        m_words.push_back( textWord );
-        //std::cout << strLength << " // " << textWord.width << std::endl;
-        return;
-    }
-
-    // Read characters from the string.
-    size_t i = 0;
-    while( i < strLength )
-    {
-        // Read space word.
-        if( strData[i] == ' ' )
-        {
-            Word textWord( 0, 0, charHeight, 1 );
-
-            // Read spaces (can be multiple...)
-            while( i < strLength && strData[i] == ' ' ) {
-                if( fontMetrics ) {
-                    charWidth = fontMetrics->CharWidth( strData[i] );
-                }
-                textWord.length++;
-                textWord.width += ( charWidth + wordSpace * hScale );
-                ++i;
-            }
-            m_words.push_back( textWord );
-        }
-        else // Read classic word.
-        {
-            Word textWord( 0, 0.0, charHeight, 0 );
-
-            // Read word characters.
-            while( i < strLength && strData[i] != ' ' ) {
-                if( fontMetrics ) {
-                    charWidth = fontMetrics->CharWidth( strData[i] );
-                }
-                textWord.length++;
-                textWord.width += charWidth;
-                ++i;
-            }
-            m_words.push_back( textWord );
-        }
-    }
-}
 void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                       double charHeight,
                                       PoDoFoExtended::PdfeFont* pFont )
@@ -182,58 +104,6 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     }
 }
 
-void PRTextGroupWords::readPdfVariant( const PoDoFo::PdfVariant& variant,
-                                       PoDoFo::PdfFontMetrics* fontMetrics )
-{
-    // Get bounding box.
-    PdfArray boundingBox;
-    if( fontMetrics ) {
-        fontMetrics->GetBoundingBox( boundingBox );
-    }
-    else {
-        // Default values.
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 0.0 );
-        boundingBox.push_back( 1000.0 );
-        boundingBox.push_back( 1000.0 );
-    }
-    m_boundingBox[0] = boundingBox[0].GetReal() / 1000.;
-    m_boundingBox[1] = boundingBox[1].GetReal() / 1000.;
-    m_boundingBox[2] = boundingBox[2].GetReal() / 1000.;
-    m_boundingBox[3] = boundingBox[3].GetReal() / 1000.;
-
-    double charHeight = boundingBox[3].GetReal() / 1000.;
-charHeight = 1.0;
-//    std::cout << boundingBox[0].GetReal() / 1000. << " / "
-//              << boundingBox[1].GetReal() / 1000. << " / "
-//              << boundingBox[2].GetReal() / 1000. << " / "
-//              << boundingBox[3].GetReal() / 1000. << " / " << std::endl;
-
-    // Variant is a string.
-    if( variant.IsString() || variant.IsHexString() )
-    {
-        this->readPdfString( variant.GetString(), charHeight, fontMetrics );
-    }
-    // Variant is an array (c.f. operator TJ).
-    else if( variant.IsArray() )
-    {
-        const PdfArray& array = variant.GetArray();
-        for( size_t i = 0 ; i < array.size() ; i++ ) {
-            if( array[i].IsString() || array[i].IsHexString() ) {
-                // Read string.
-                this->readPdfString( array[i].GetString(), charHeight, fontMetrics );
-            }
-            else if( array[i].IsNumber() ) {
-                // Read pdf space.
-                m_words.push_back( Word( 1, -array[i].GetNumber() / 1000.0, charHeight, 2 ) );
-            }
-            else if( array[i].IsReal() ) {
-                // Read pdf space.
-                m_words.push_back( Word( 1, -array[i].GetReal() / 1000.0, charHeight, 2 ) );
-            }
-        }
-    }
-}
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
                                        PoDoFoExtended::PdfeFont* pFont )
 {

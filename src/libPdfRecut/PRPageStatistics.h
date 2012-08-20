@@ -69,9 +69,9 @@ public:
      * \param pageIn Input page to analyse.
      * \param fontMetricsCache Cache object for font metrics.
      */
-    PRPageStatistics( long pageIndex,
-                      PoDoFo::PdfPage* pageIn,
-                      PdfFontMetricsCache* fontMetricsCache );
+    PRPageStatistics( PRDocument* pDocument,
+                      long pageIndex,
+                      PoDoFo::PdfPage* pageIn );
 
     /** Compute page text statistics.
      */
