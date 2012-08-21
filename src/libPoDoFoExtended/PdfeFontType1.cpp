@@ -20,6 +20,9 @@
 #include "PdfeFontType1.h"
 #include "podofo/podofo.h"
 
+#include FT_BBOX_H
+#include FT_GLYPH_H
+
 using namespace PoDoFo;
 
 namespace PoDoFoExtended {
@@ -226,8 +229,51 @@ void PdfeFontType1::initCharactersSize( const PdfObject* pFont )
         PODOFO_RAISE_ERROR( ePdfError_FreeType );
     }
     else {
-        std::cout << "Ok : " << face->num_glyphs << " / " << (m_lastCID-m_firstCID+1);
+        std::cout << "Ok : " << face->num_glyphs << " / " << (m_lastCID-m_firstCID+1) << std::endl;
     }
+
+    QString tmpstr;
+    QVector<uint> utf32vec;
+    unsigned int glyphIdx;
+
+    long nbChars = 0;
+
+    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        // Get UTF32 code.
+        tmpstr.clear();
+        tmpstr.append( this->toUnicode( c ) );
+        utf32vec = tmpstr.toUcs4();
+
+        // Get glyph index.
+        glyphIdx = FT_Get_Char_Index( face, utf32vec[0] );
+        if( glyphIdx ) {
+            // Load glyph.
+            error = FT_Load_Glyph( face, glyphIdx, FT_LOAD_NO_SCALE );
+            if( error ) {
+                std::cout << "Error glyph";
+                //PODOFO_RAISE_ERROR( ePdfError_FreeType );
+            }
+
+            FT_BBox bbox;
+            FT_Glyph glyph;
+            FT_Get_Glyph( face->glyph, &glyph );
+
+            FT_Glyph_Get_CBox( glyph, FT_GLYPH_BBOX_UNSCALED, &bbox );
+            error = FT_Outline_Get_BBox( &face->glyph->outline, &bbox );
+
+            std::cout << ( bbox.yMax - bbox.yMin ) << " / "
+                      << face->glyph->metrics.horiBearingY-face->glyph->metrics.horiBearingX << " // "
+                      << face->glyph->metrics.horiAdvance << " / " << m_widthsCID[c-m_firstCID] << std::endl;
+
+            if( error ) {
+                std::cout << "Error glyph";
+                //PODOFO_RAISE_ERROR( ePdfError_FreeType );
+            }
+
+            nbChars++;
+        }
+    }
+    std::cout << "Common : " << nbChars;
 
 //    for(size_t) {
 //        FT_Get_Char_Index( face, charcode );
