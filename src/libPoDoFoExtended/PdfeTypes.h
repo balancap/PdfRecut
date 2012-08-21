@@ -22,8 +22,11 @@
 #define PDFTYPES_H
 
 #include "vmmlib/vmmlib.hpp"
+#include "podofo/base/PdfRect.h"
+
 #include <QPointF>
 #include <QTransform>
+
 #include <vector>
 #include <ostream>
 
@@ -55,7 +58,6 @@ public:
         *( (vmml::mat3d*) this ) = source;
         return *this;
     }
-
     /** Initialize matrix to unit
      */
     void init() {
@@ -78,7 +80,6 @@ public:
     /** Map a vector in the new coordinate system defined by the matrix.
      */
     PdfeVector map( const PdfeVector& vect ) const;
-
     /** Map a rectangle in the new coordinate system defined by the matrix.
      */
     PdfeORect map( const PdfeORect& rect ) const;
@@ -95,18 +96,21 @@ public:
     PdfeVector() {
         this->init();
     }
-
+    /** Construction of a vector (x,y).
+     * \param x X coordinate.
+     * \param y Y coordinate.
+     */
     PdfeVector( double x, double y ) {
         this->init( x, y );
     }
 
-    /** =Operator overloaded
+    /** Operator = overloaded
      */
     const PdfeVector& operator=( const vmml::matrix<1,3,double>& source ) {
         *( (vmml::matrix<1,3,double>*) this ) = source;
         return *this;
     }
-    /** +Operator overloaded
+    /** Operator + overloaded
      */
     PdfeVector operator+( const PdfeVector& vect ) const {
         PdfeVector rvect;
@@ -124,7 +128,7 @@ public:
         rvect.at(0,2) = 1.0;
         return rvect;
     }
-    /** *Operator overloaded
+    /** Operator * overloaded
      */
     PdfeVector operator*( double coef ) const {
         PdfeVector rvect;
@@ -134,6 +138,24 @@ public:
 
         return rvect;
     }
+    /** Operator (idx) overloaded.
+     */
+    double& operator()( size_t index ) {
+        return this->at(0,index);
+    }
+    /** const Operator (idx) overloaded.
+     */
+    const double& operator()( size_t index ) const {
+        return this->at(0,index);
+    }
+    /** Operator << overloaded.
+     */
+    friend std::ostream& operator<< ( std::ostream& out, PdfeVector& vect )
+    {
+        out << "(" << vect(0) << "," << vect(1) << ")";
+        return out;
+    }
+
     /** Rotate a vector of 90°.
      * \return Copy of the vector rotated.
      */
@@ -142,36 +164,16 @@ public:
         rvect.at(0,0) = -this->at(0,1);
         rvect.at(0,1) = this->at(0,0);
         rvect.at(0,2) = 1.0;
-
         return rvect;
     }
-
-    /** (idx) Operator overload
-     */
-    double& operator()( size_t index ) {
-        return this->at(0,index);
-    }
-    /** const (idx) Operator overload
-     */
-    const double& operator()( size_t index ) const {
-        return this->at(0,index);
-    }
-
-    /** << Overload.
-     */
-    friend std::ostream& operator<< ( std::ostream& out, PdfeVector& vect )
-    {
-        out << "(" << vect(0) << "," << vect(1) << ")";
-        return out;
-    }
-
-
-    /** Initialize vector to (0,0,1)
+    /** Initialize vector to (0,0).
      */
     void init() {
         this->at(0,0) = this->at(0,1) = 0;
         this->at(0,2) = 1;
     }
+    /** Initialize vector to (x,y).
+     */
     void init( double x, double y ) {
         this->at(0,0) = x;
         this->at(0,1) = y;
@@ -179,6 +181,7 @@ public:
     }
 
     /** Convert to a QPointF object.
+     * \return Corresponding QPointF.
      */
     QPointF toQPoint() const {
         return QPointF( this->at(0,0), this->at(0,1) );
@@ -201,17 +204,28 @@ public:
     }
 };
 
-/** Orienlengthted rectangle: characterize by bottom-left coordinates, direction, width and height.
+/** Oriented rectangle: characterize by bottom-left coordinates, direction, width and height.
  */
 class PdfeORect
 {
 public:
-    /** Default constructor of the oriented rectangle: initialize to (0,0,w,h).
+    /** Construct an oriented rectangle with given width (w) and height (h) and direction (1,0).
+     * \param w Width of the rectangle.
+     * \param h Height of the rectangle.
      */
     PdfeORect( double width = 1.0, double height = 1.0 ) {
         this->init( width, height );
     }
+    /** Construct  an oriented rectangle from a PoDoFo::PdfRect and with direction (1,0).
+     */
+    PdfeORect( const PoDoFo::PdfRect& rect ) {
+        this->init( rect.GetWidth(), rect.GetHeight() );
+        m_leftBottom(0) = rect.GetLeft();
+        m_leftBottom(1) = rect.GetBottom();
+    }
     /** Initialize to oriented rectangle (0,0,w,h).
+     * \param w Width of the rectangle.
+     * \param h Height of the rectangle.
      */
     void init( double width = 1.0, double height = 1.0 ) {
         m_leftBottom.init();
@@ -221,9 +235,16 @@ public:
         m_height = height;
     }
 
+    /** Local transformation matrix: map a vector into the local coordinate system
+     * defined by the direction of the PdfORect.
+     * \return PdfeMatrix object representing the transformation.
+     */
+    PdfeMatrix localTransMatrix();
+
+    // Getters and setters.
     /** Get Left Bottom point.
      */
-    PdfeVector getLeftBottom() const {
+    PdfeVector leftBottom() const {
         return m_leftBottom;
     }
     /** Set Left Bottom point.
@@ -233,7 +254,7 @@ public:
     }
     /** Get direction (unit vector).
      */
-    PdfeVector getDirection() const {
+    PdfeVector direction() const {
         return m_direction;
     }
     /** Set direction vector.
@@ -247,7 +268,7 @@ public:
 
     /** Get rectangle width.
      */
-    double getWidth() const {
+    double width() const {
         return m_width;
     }
     /** Set rectangle width.
@@ -257,7 +278,7 @@ public:
     }
     /** Get rectangle height.
      */
-    double getHeight() const {
+    double height() const {
         return m_height;
     }
     /** Set rectangle height.
@@ -267,18 +288,13 @@ public:
     }
 
 private:
-    /** Left bottom point.
-     */
-    PdfeVector m_leftBottom;
-    /** Direction (unit vector).
-     */
-    PdfeVector m_direction;
-
-    /** Width of the rectangle.
-     */
-    double m_width;
-    /** Height of the rectangle.
-     */
+    /// Left bottom point.
+    PdfeVector  m_leftBottom;
+    /// Direction (unit vector).
+    PdfeVector  m_direction;
+    /// Width of the rectangle.
+    double  m_width;
+    /// Height of the rectangle.
     double m_height;
 };
 
@@ -292,9 +308,6 @@ private:
 inline PdfeVector PdfeMatrix::map( const PdfeVector& vect ) const
 {
     PdfeVector mapVect;
-//    mapVect(0) = this->at(0,0) * vect(0) + this->at(1,0) * vect(1) + this->at(2,0) * vect(2);
-//    mapVect(1) = this->at(0,1) * vect(0) + this->at(1,1) * vect(1) + this->at(2,1) * vect(2);
-//    mapVect(2) = this->at(0,2) * vect(0) + this->at(1,2) * vect(1) + this->at(2,2) * vect(2);
     mapVect(0) = this->at(0,0) * vect(0) + this->at(1,0) * vect(1) + this->at(2,0);
     mapVect(1) = this->at(0,1) * vect(0) + this->at(1,1) * vect(1) + this->at(2,1);
     mapVect(2) = 1.0;
@@ -306,33 +319,44 @@ inline PdfeORect PdfeMatrix::map( const PdfeORect& rect ) const
     PdfeVector tmpVect1, tmpVect2;
     double tmpVal;
 
-    // Set left bottom point.
-    mapRect.setLeftBottom( this->map( rect.getLeftBottom() ) );
+    // Map left bottom point.
+    mapRect.setLeftBottom( this->map( rect.leftBottom() ) );
 
-    // Set direction and width.
-    tmpVect2 = rect.getDirection();
+    // Set direction and width: only apply the 2x2 transformation matrix.
+    tmpVect2 = rect.direction();
     tmpVect1(0) = this->at(0,0) * tmpVect2(0) + this->at(1,0) * tmpVect2(1);
     tmpVect1(1) = this->at(0,1) * tmpVect2(0) + this->at(1,1) * tmpVect2(1);
     tmpVect1(2) = 1.0;
     tmpVal = tmpVect1.norm2();
 
     mapRect.setDirection( tmpVect1 );
-    mapRect.setWidth( rect.getWidth() * tmpVal );
+    mapRect.setWidth( rect.width() * tmpVal );
 
     // Set height (slight approximation...).
     tmpVect1(0) = this->at(0,0) * -tmpVect2(1) + this->at(1,0) * tmpVect2(0);
     tmpVect1(1) = this->at(0,1) * -tmpVect2(1) + this->at(1,1) * tmpVect2(0);
     tmpVect1(2) = 1.0;
-    tmpVect2 = mapRect.getDirection();
+    tmpVect2 = mapRect.direction();
     tmpVal = tmpVect1(0) * -tmpVect2(1) + tmpVect1(1) * tmpVect2(0);
 
-    mapRect.setHeight( rect.getHeight() * tmpVal );
+    mapRect.setHeight( rect.height() * tmpVal );
 
     return mapRect;
 }
 //**********************************************************//
 //                         PdfeORect                        //
 //**********************************************************//
+inline PdfeMatrix PdfeORect::localTransMatrix()
+{
+    PdfeMatrix transMat;
+    transMat(0,0) = m_direction(0);      transMat(0,1) = -m_direction(1);
+    transMat(1,0) = m_direction(1);      transMat(1,1) = m_direction(0);
+    transMat(2,0) = -m_leftBottom(0) * m_direction(0) - m_leftBottom(1) * m_direction(1);
+    transMat(2,1) =  m_leftBottom(0) * m_direction(1) - m_leftBottom(1) * m_direction(0);
+    return transMat;
+}
+
+
 
 //}
 

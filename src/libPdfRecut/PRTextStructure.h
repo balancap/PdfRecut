@@ -49,10 +49,9 @@ public:
         /// Length: number of characters.
         int  length;
 
-        /// Width in word coordinate system.
-        double  width;
-        /// Height in word coordinate system.
-        double  height;
+        /// Rectangle representing the word in local coordinates.
+        /// Assume that left coordinate of the word is always 0.
+        PoDoFo::PdfRect  rect;
 
         /** Word type :
          * 0: classic word.
@@ -63,12 +62,12 @@ public:
 
         /** Default constructor.
          */
-        Word() : length(0), width(0), height(0), type(0) { }
+        Word() : length(0), rect(0,0,1,1), type(0) { }
 
         /** Constructor with parameters.
          */
         Word( int _length, double _width, double _height, unsigned char _type ) :
-            length(_length), width(_width), height(_height), type(_type) { }
+            length(_length), rect(0,0,_width,_height), type(_type) { }
     };
 public:
     /** Default constructor.
@@ -86,7 +85,7 @@ public:
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
                          PoDoFoExtended::PdfeFont* pFont );
 
-    /** Append a word to the group.
+    /** Append a word to the group.,
      * \param word Word to append.
      */
     void appendWord( const Word& word );
@@ -94,13 +93,13 @@ public:
     /** Compute the width of the group of words.
      * \return Width of the group of words.
      */
-    double getWidth() const;
+    double width() const;
     /** Compute the height of the group of words.
      * \return Height of the group of words.
      */
-    double getHeight() const;
+    double height() const;
 
-    /** Get global transformation matrix (font+text+gState).
+    /** Get global transformation matrix (font + text + gState).
      */
     PdfeMatrix getGlobalTransMatrix() const;
 
@@ -120,25 +119,24 @@ protected:
                         PoDoFoExtended::PdfeFont* pFont );
 
 public:
-    /** Getters and setters...
-     */
-    long getPageIndex() const;
+    // Getters and setters...
+    long pageIndex() const;
     void setPageIndex( long pageIndex );
 
-    long getGroupIndex() const;
+    long groupIndex() const;
     void setGroupIndex( long groupIndex );
 
-    PdfeMatrix getTransMatrix() const;
+    PdfeMatrix transMatrix() const;
     void setTransMatrix( const PdfeMatrix& transMatrix );
 
-    PdfTextState getTextState() const;
+    PdfTextState textState() const;
     void setTextState( const PdfTextState& textState );
 
-    const double* getBoundingBox() const;
+    const double* boundingBox() const;
 
     /** Get a constant reference to the vector of group of words.
      */
-    const std::vector<PRTextGroupWords::Word>& getWords() const;
+    const std::vector<PRTextGroupWords::Word>& words() const;
 
 protected:
     /// Index of the page to which belongs the group.
@@ -199,7 +197,7 @@ protected:
 //**********************************************************//
 //                 Inline PRTextGroupWords                  //
 //**********************************************************//
-inline long PRTextGroupWords::getPageIndex() const
+inline long PRTextGroupWords::pageIndex() const
 {
     return m_pageIndex;
 }
@@ -207,7 +205,7 @@ inline void PRTextGroupWords::setPageIndex( long pageIndex )
 {
     m_pageIndex = pageIndex;
 }
-inline long PRTextGroupWords::getGroupIndex() const
+inline long PRTextGroupWords::groupIndex() const
 {
     return m_groupIndex;
 }
@@ -215,7 +213,7 @@ inline void PRTextGroupWords::setGroupIndex( long groupIndex )
 {
     m_groupIndex = groupIndex;
 }
-inline PdfeMatrix PRTextGroupWords::getTransMatrix() const
+inline PdfeMatrix PRTextGroupWords::transMatrix() const
 {
     return m_transMatrix;
 }
@@ -223,7 +221,7 @@ inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix;
 }
-inline PdfTextState PRTextGroupWords::getTextState() const
+inline PdfTextState PRTextGroupWords::textState() const
 {
     return m_textState;
 }
@@ -231,11 +229,11 @@ inline void PRTextGroupWords::setTextState( const PdfTextState& textState )
 {
     m_textState = textState;
 }
-inline const double* PRTextGroupWords::getBoundingBox() const
+inline const double* PRTextGroupWords::boundingBox() const
 {
     return m_boundingBox;
 }
-inline const std::vector<PRTextGroupWords::Word>& PRTextGroupWords::getWords() const
+inline const std::vector<PRTextGroupWords::Word>& PRTextGroupWords::words() const
 {
     return m_words;
 }

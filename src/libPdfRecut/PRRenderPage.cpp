@@ -380,7 +380,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Update text transform matrix.
     PdfeMatrix tmpMat;
-    tmpMat(2,0) = groupWords.getWidth() * textState.fontSize * ( textState.hScale / 100. );
+    tmpMat(2,0) = groupWords.width() * textState.fontSize * ( textState.hScale / 100. );
     m_textMatrix = tmpMat * m_textMatrix;
 
     return groupWords;
@@ -389,7 +389,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
     // Nothing to draw...
-    if( !groupWords.getWords().size() ) {
+    if( !groupWords.words().size() ) {
         return;
     }
 
@@ -400,7 +400,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 
     // Paint words.
     double widthStr = 0;
-    const std::vector<PRTextGroupWords::Word>& words = groupWords.getWords();
+    const std::vector<PRTextGroupWords::Word>& words = groupWords.words();
     for( size_t i = 0 ; i < words.size() ; i++ )
     {
         const PRTextGroupWords::Word& word = words[i];
@@ -412,8 +412,9 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
             m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
         }
         // Paint word.
-        m_pagePainter->drawRect( QRectF( widthStr, 0.0, word.width, 1.0 ) );
-        widthStr += word.width;
+        PdfRect rect = word.rect;
+        m_pagePainter->drawRect( QRectF( widthStr + rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() ) );
+        widthStr += rect.GetWidth();
     }
 }
 

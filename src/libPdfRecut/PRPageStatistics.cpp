@@ -88,7 +88,7 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     PRTextGroupWords group = this->textReadGroupWords( streamState );
 
     // Empty group -> trash !
-    if( !group.getWords().size() ) {
+    if( !group.words().size() ) {
         return;
     }
 
@@ -128,16 +128,16 @@ void PRPageStatistics::textDrawPdfeORect( const PdfeORect& orect )
 
     // Create polygon.
     QPolygonF polygon;
-    PdfeVector point = orect.getLeftBottom();
+    PdfeVector point = orect.leftBottom();
     polygon << point.toQPoint();
 
-    point = point + orect.getDirection() * orect.getWidth();
+    point = point + orect.direction() * orect.width();
     polygon << point.toQPoint();
 
-    point = point + orect.getDirection().rotate90() * orect.getHeight();
+    point = point + orect.direction().rotate90() * orect.height();
     polygon << point.toQPoint();
 
-    point = orect.getLeftBottom() + orect.getDirection().rotate90() * orect.getHeight();
+    point = orect.leftBottom() + orect.direction().rotate90() * orect.height();
     polygon << point.toQPoint();
 
     m_renderParameters.textPB.setPenBrush( m_pagePainter );
@@ -160,39 +160,32 @@ size_t PRPageStatistics::findTextLine( size_t idxGroupWords )
     PRTextGroupWords& groupWords = m_groupsWords[idxGroupWords];
     PdfeORect orectGroup = groupWords.getOrientedRect();
 
-    // Transformation matrix related to the group of words.
-    PdfeVector lbGroup = orectGroup.getLeftBottom();
-    PdfeVector direcGroup = orectGroup.getDirection();
-
-    PdfeMatrix transMat;
-    transMat(0,0) = direcGroup(0);      transMat(0,1) = -direcGroup(1);
-    transMat(1,0) = direcGroup(1);      transMat(1,1) = direcGroup(0);
-    transMat(2,0) = -lbGroup(0) * direcGroup(0) - lbGroup(1) * direcGroup(1);
-    transMat(2,1) = lbGroup(0) * direcGroup(1) - lbGroup(1) * direcGroup(0);
+    // Local transformation matrix related to the group of words.
+    PdfeMatrix transMat = orectGroup.localTransMatrix();
 
     // Try to find a group of words that could belong to a same line.
     size_t idxGroupLimit = std::max( long(0), long(idxGroupWords) - MaxSearchGroupWords );
 
     for( size_t idx = idxGroupLimit ; idx < idxGroupWords ; ++idx ) {
         PdfeORect tmpORect = m_groupsWords[idx].getOrientedRect();
-        double angle = PdfeVector::angle( orectGroup.getDirection(), tmpORect.getDirection() );
+        double angle = PdfeVector::angle( orectGroup.direction(), tmpORect.direction() );
 
         // Get the angle between the two groups: should be less than ~5°.
-        if( PdfeVector::angle( orectGroup.getDirection(), tmpORect.getDirection() ) <= 0.1  )
+        if( PdfeVector::angle( orectGroup.direction(), tmpORect.direction() ) <= 0.1  )
         {
             // Compute the two points that interest us (rb and rt).
             PdfeVector rbPoint0, rtPoint0, rbPoint, rtPoint;
-            rbPoint0 = tmpORect.getLeftBottom() + tmpORect.getDirection() * tmpORect.getWidth();
-            rtPoint0 = rbPoint0 + tmpORect.getDirection().rotate90() * tmpORect.getHeight();
+            rbPoint0 = tmpORect.leftBottom() + tmpORect.direction() * tmpORect.width();
+            rtPoint0 = rbPoint0 + tmpORect.direction().rotate90() * tmpORect.height();
 
-            PdfeVector dir = tmpORect.getDirection().rotate90();
+            PdfeVector dir = tmpORect.direction().rotate90();
 
             rbPoint = transMat.map( rbPoint0 );
             rtPoint = transMat.map( rtPoint0 );
 
             // Compute horizontal distance and vertical overlap (in % of height).
-            double hDistance = ( rbPoint(0) ) / orectGroup.getHeight();
-            double vOverlap = std::max( 0.0, std::min( orectGroup.getHeight(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / orectGroup.getHeight();
+            double hDistance = ( rbPoint(0) ) / orectGroup.height();
+            double vOverlap = std::max( 0.0, std::min( orectGroup.height(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / orectGroup.height();
 
             // Conditions to satisfy...
             if( hDistance >= -4.0 && hDistance <= 4.0 && vOverlap >= 0.25 ) {

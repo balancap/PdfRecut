@@ -71,34 +71,38 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         // Read space word.
         if( pFont->isSpace( cidstr[i] ) )
         {
+            double width = 0.0;
             Word textWord( 0, 0.0, charHeight, 1 );
 
             // Read spaces (can be multiple...)
             while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) ) {
                 charWidth = pFont->width( cidstr[i], false );
-                textWord.width += ( charWidth + charSpace / fontSize );
+                width += ( charWidth + charSpace / fontSize );
 
                 if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
-                    textWord.width += wordSpace / fontSize;
+                    width += wordSpace / fontSize;
                 }
 
                 textWord.length++;
                 i++;
             }
+            textWord.rect.SetWidth( width );
             m_words.push_back( textWord );
         }
         else // Read classic word.
         {
+            double width = 0.0;
             Word textWord( 0, 0.0, charHeight, 0 );
 
             // Read word characters.
             while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) ) {
                 charWidth = pFont->width( cidstr[i], false );
-                textWord.width += ( charWidth + charSpace / fontSize );
+                width += ( charWidth + charSpace / fontSize );
 
                 textWord.length++;
                 i++;
             }
+            textWord.rect.SetWidth( width );
             m_words.push_back( textWord );
         }
     }
@@ -149,19 +153,19 @@ void PRTextGroupWords::appendWord( const Word& word )
     m_words.push_back( word );
 }
 
-double PRTextGroupWords::getWidth() const
+double PRTextGroupWords::width() const
 {
     double width = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].width;
+        width += m_words[i].rect.GetWidth();
     }
     return width;
 }
-double PRTextGroupWords::getHeight() const
+double PRTextGroupWords::height() const
 {
     double height = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        height = std::max( m_words[i].height, height );
+        height = std::max( m_words[i].rect.GetHeight(), height );
     }
     return height;
 }
@@ -171,7 +175,8 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     // Compute text rendering matrix.
     PdfeMatrix tmpMat, textMat;
     tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
-    tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
+//    tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
+    tmpMat(1,1) = m_textState.fontSize;
     tmpMat(2,1) = m_textState.rise;
     textMat = tmpMat * m_textState.transMat * m_transMatrix;
 
@@ -183,12 +188,18 @@ PdfeORect PRTextGroupWords::getOrientedRect() const
 
     // Compute width and height.
     double width = 0;
+    double bottom = 0;
+    double top = 0;
+
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].width;
-        //groupORect.setWidth( groupORect.getWidth() + );
-        //groupORect.setHeight( std::max( groupORect.getHeight(), m_words[i].height ) );
+        width += m_words[i].rect.GetWidth();
+
+        bottom = std::min( bottom, m_words[i].rect.GetBottom() );
+        top = std::max( top, m_words[i].rect.GetBottom() + m_words[i].rect.GetHeight() );
     }
     groupORect.setWidth( width );
+    groupORect.setLeftBottom( PdfeVector( 0, bottom ) );
+    groupORect.setHeight( top - bottom );
 
     // Apply global transform.
     PdfeMatrix textMat = this->getGlobalTransMatrix();
