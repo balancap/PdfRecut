@@ -21,6 +21,7 @@
 #include "PRTextStructure.h"
 
 #include <podofo/podofo.h>
+#include <limits>
 
 using namespace PoDoFo;
 using namespace PoDoFoExtended;
@@ -62,7 +63,9 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     pFont->setFontSize( 1.0 );
     pFont->setHScale( 100. );
 
-    double charWidth = 1.0;
+    double cwidth = 1.0;
+    PdfRect cbbox;
+
 
     // Read characters from the string.
     size_t i = 0;
@@ -72,37 +75,60 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         if( pFont->isSpace( cidstr[i] ) )
         {
             double width = 0.0;
-            Word textWord( 0, 0.0, charHeight, 1 );
+            double bottom = std::numeric_limits<double>::max();
+            double top = std::numeric_limits<double>::min();
+            Word textWord( 0, 0.0, 0.0, 1 );
 
             // Read spaces (can be multiple...)
             while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) ) {
-                charWidth = pFont->width( cidstr[i], false );
-                width += ( charWidth + charSpace / fontSize );
+                //cwidth = pFont->width( cidstr[i], false );
+                // Get bounding box of the character.
+                cbbox = pFont->bbox( cidstr[i], false );
 
+                // Width to add.
+                width += ( cbbox.GetWidth() + charSpace / fontSize );
                 if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
                     width += wordSpace / fontSize;
                 }
+
+                // New bottom and top values.
+                bottom = std::min( bottom, cbbox.GetBottom() );
+                top = std::max( top, cbbox.GetBottom() + cbbox.GetHeight() );
 
                 textWord.length++;
                 i++;
             }
             textWord.rect.SetWidth( width );
+            textWord.rect.SetBottom( bottom );
+            textWord.rect.SetHeight( top-bottom );
+
             m_words.push_back( textWord );
         }
         else // Read classic word.
         {
             double width = 0.0;
-            Word textWord( 0, 0.0, charHeight, 0 );
+            double bottom = std::numeric_limits<double>::max();
+            double top = std::numeric_limits<double>::min();
+            Word textWord( 0, 0.0, 0.0, 0 );
 
             // Read word characters.
             while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) ) {
-                charWidth = pFont->width( cidstr[i], false );
-                width += ( charWidth + charSpace / fontSize );
+                //cwidth = pFont->width( cidstr[i], false );
+                // Get bounding box of the character.
+                cbbox = pFont->bbox( cidstr[i], false );
+
+                // Update width, bottom and top.
+                width += ( cbbox.GetWidth() + charSpace / fontSize );
+                bottom = std::min( bottom, cbbox.GetBottom() );
+                top = std::max( top, cbbox.GetBottom() + cbbox.GetHeight() );
 
                 textWord.length++;
                 i++;
             }
             textWord.rect.SetWidth( width );
+            textWord.rect.SetBottom( bottom );
+            textWord.rect.SetHeight( top-bottom );
+
             m_words.push_back( textWord );
         }
     }
@@ -184,12 +210,15 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
 }
 PdfeORect PRTextGroupWords::getOrientedRect() const
 {
-    PdfeORect groupORect( 0.0, 1.0 );
+    PdfeORect groupORect( 0.0, 0.0 );
+    if( !m_words.size() ) {
+        return groupORect;
+    }
 
     // Compute width and height.
     double width = 0;
-    double bottom = 0;
-    double top = 0;
+    double bottom = std::numeric_limits<double>::max();
+    double top = std::numeric_limits<double>::min();
 
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
         width += m_words[i].rect.GetWidth();

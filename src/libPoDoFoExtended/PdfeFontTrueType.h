@@ -52,6 +52,11 @@ protected:
      */
     void initSpaceCharacters();
 
+    /** Initialize the size of characters according to the font object.
+     * \param pFont Pointer to the object where is defined the standard type 1 font.
+     */
+    void initCharactersBBox( const PoDoFo::PdfObject* pFont );
+
 public:
     // Virtual functions reimplemented.
     /** Get the descriptor object corresponding to the font.
@@ -77,6 +82,13 @@ public:
      */
     virtual double width( pdf_cid c, bool useFParams ) const;
 
+    /** Get the bounding box of a character.
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Bounding box of the character.
+     */
+    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
+
     /** Convert a character to its unicode equivalent (QChar).
      * \param  c Character identifier (CID).
      * \return Unicode QChar corresponding.
@@ -100,6 +112,9 @@ protected:
     pdf_cid  m_lastCID;
     /// Array of character widths.
     std::vector<double>  m_widthsCID;
+
+    /// Array storing the bounding box of characters.
+    std::vector<PoDoFo::PdfRect>  m_bboxCID;
 
     /// Font descriptor.
     PdfeFontDescriptor  m_fontDescriptor;

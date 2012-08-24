@@ -20,9 +20,14 @@
 #ifndef PDFEFONT_H
 #define PDFEFONT_H
 
-#include "podofo/base/PdfDefines.h"
-#include "podofo/doc/PdfFontCache.h"
+#include <podofo/base/PdfDefines.h>
+#include <podofo/doc/PdfFontCache.h>
+#include <podofo/base/PdfRect.h>
+
 #include "PdfeFontDescriptor.h"
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #include <QString>
 #include <QDebug>
@@ -38,9 +43,13 @@ class PdfArray;
 
 namespace PoDoFoExtended {
 
-/** Pdf Character Identifier (CID) type.
+/** PDF Character Identifier (CID) type.
  */
 typedef PoDoFo::pdf_uint16  pdf_cid;
+
+/** PDF Glyph Identifier (CID) type.
+ */
+typedef unsigned int  pdf_gid;
 
 /** Macro that convert UTF16 Big Endian to Little Endian when necessary.
  */
@@ -165,6 +174,13 @@ public:
      * \return Width of the character.
      */
     virtual double width( pdf_cid c, bool useFParams ) const = 0;
+
+    /** Get the bounding box of a character.
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Bounding box of the character.
+     */
+    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode equivalent (QChar).
      * \param  c Character identifier (CID).

@@ -96,4 +96,25 @@ QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
     return this->toUnicode( this->toCIDString( str ) );
 }
 
+// Default implementation.
+PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
+{
+    // Font BBox for default height.
+    PdfArray fontBBox = this->fontBBox();
+
+    double width = this->width( c, false );
+    double height = fontBBox[3].GetReal() / 1000.;
+
+    // Apply font parameters.
+    if( useFParams ) {
+        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        height = height * m_fontSize;
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            width += m_wordSpace * ( m_hScale / 100. );
+        }
+    }
+    PdfRect cbbox( 0, 0, width, height );
+    return cbbox;
+}
+
 }

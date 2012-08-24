@@ -92,9 +92,6 @@ public:
 
 protected:
     // Members.
-    /// The PostScript name of the font.
-    PoDoFo::PdfName  m_baseFont;
-
     /// Font BBox.
     PoDoFo::PdfArray  m_fontBBox;
     /// Font Matrix.

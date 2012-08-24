@@ -23,8 +23,9 @@
 #include "PdfeFont.h"
 #include "PdfeFontDescriptor.h"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+namespace PoDoFo {
+struct PODOFO_CharData;
+}
 
 namespace PoDoFoExtended {
 
@@ -61,8 +62,9 @@ protected:
     void initSpaceCharacters();
 
     /** Initialize the size of characters according to the font object.
+     * \param pFont Pointer to the object where is defined the standard type 1 font.
      */
-    void initCharactersSize( const PoDoFo::PdfObject* pFont );
+    void initCharactersBBox( const PoDoFo::PdfObject* pFont );
 
 public:
     // Virtual functions reimplemented.
@@ -89,6 +91,13 @@ public:
      */
     virtual double width( pdf_cid c, bool useFParams ) const;
 
+    /** Get the bounding box of a character.
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Bounding box of the character.
+     */
+    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
+
     /** Convert a character to its unicode equivalent (QChar).
      * \param  c Character identifier (CID).
      * \return Unicode QChar corresponding.
@@ -113,6 +122,9 @@ protected:
     /// Array of character widths.
     std::vector<double>  m_widthsCID;
 
+    /// Array storing the bounding box of characters.
+    std::vector<PoDoFo::PdfRect>  m_bboxCID;
+
     /// Font descriptor.
     PdfeFontDescriptor  m_fontDescriptor;
 
@@ -120,6 +132,8 @@ protected:
     PoDoFo::PdfEncoding*  m_encoding;
     /// Does the object owns the encoding ?
     bool  m_encodingOwned;
+    /// Is the encoding a difference encoding ?
+    bool  m_encodingDiff;
 
     /// Vector of space characters.
     std::vector<pdf_cid>  m_spaceCharacters;

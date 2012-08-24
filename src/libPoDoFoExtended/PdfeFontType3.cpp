@@ -39,9 +39,6 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) 
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 3 font." );
     }
 
-    // Base font (required).
-    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
-
     // Need the following entries in the font dictionary.
     PdfObject* pBBox = pFont->GetIndirectKey( "FontBBox" );
     PdfObject* pMatrix = pFont->GetIndirectKey( "FontMatrix" );
@@ -92,7 +89,6 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) 
     // According to PoDoFo implementation.
     m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
 
-
     // TODO: unicode CMap.
 
     // Space characters vector.
@@ -101,7 +97,6 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) 
 void PdfeFontType3::init()
 {
     // Initialize members to default values.
-    m_baseFont = PdfName();
     m_fontDescriptor.init();
 
     m_fontBBox.resize( 4, 0.0 );
@@ -144,6 +139,7 @@ const PdfeFontDescriptor& PdfeFontType3::fontDescriptor() const
 PdfArray PdfeFontType3::fontBBox() const
 {
     PdfArray bbox;
+    bbox.resize( 4, 0.0 );
 
     // Approximation of bounding box ~ remove the rotation component of the font matrix.
     bbox[0] = m_fontBBox[0].GetReal() * m_fontMatrix(0,0);

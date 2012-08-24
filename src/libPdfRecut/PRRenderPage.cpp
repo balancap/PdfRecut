@@ -378,6 +378,9 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     // Increment the number of group of words.
     ++m_nbTextGroups;
 
+    const char* pstr = gOperands.back().c_str();
+    //std::cout << int( pstr[2] ) << " || " << gState.textState.fontRef.ObjectNumber() << std::endl;
+
     // Update text transform matrix.
     PdfeMatrix tmpMat;
     tmpMat(2,0) = groupWords.width() * textState.fontSize * ( textState.hScale / 100. );
@@ -413,7 +416,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
         }
         // Paint word.
         PdfRect rect = word.rect;
-        m_pagePainter->drawRect( QRectF( widthStr + rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() ) );
+        m_pagePainter->drawRect( QRectF( widthStr, rect.GetBottom(), rect.GetWidth(), rect.GetHeight() ) );
         widthStr += rect.GetWidth();
     }
 }

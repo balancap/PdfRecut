@@ -54,14 +54,15 @@ win32 {
 
     LIBS += -L../PoDoFo/win32/lib
     LIBS += -L"C:/Program Files/GnuWin32/lib"
-    LIBS += -lpodofo -lfreetype -ljpeg -lz
+    LIBS += -lpodofod -lfreetype -ljpeg -lz
     LIBS += -lpthread -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -lWS2_32
     LIBS +=  -lpoppler-qt4
 }
 unix {
     INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
+    INCLUDEPATH += /usr/include/freetype2
 
     LIBS += -L$$PWD/../../../PoDoFo/linux64/lib64
-    LIBS +=  -lpodofo -lfreetype -lfontconfig -ljpeg -lz
+    LIBS +=  -lpodofod -lfreetype -lfontconfig -ljpeg -lz
     LIBS +=  -lpoppler-qt4
 }

@@ -91,25 +91,20 @@ void PRPageStatistics::fTextShowing( const PdfStreamState& streamState )
     if( !group.words().size() ) {
         return;
     }
-
     m_groupsWords.push_back( group );
     m_groupsWordsLines.push_back( -1 );
 
-//    std::cout << streamState.gOperands.back()
-//              << " // " << streamState.gStates.back().textState.fontName << std::endl;
+//    std::cout << streamState.gOperands.back() << " // " << streamState.gStates.back().textState.fontName << std::endl;
 
     // Try to find a line for the group of words.
     this->findTextLine( m_groupsWords.size()-1 );
 
     // Change the color used to fill text.
-    //QRgb rgbColor = qRgb( 0, 255, 0);
-
-    //QRgb rgbColor = RGB_MASK- RGB_MASK & (m_nbTextGroups + 1);
     QColor txtColor;
     txtColor.setHsv( m_nbTextGroups % 360, 255, 255 );
 
     m_renderParameters.textPB.fillBrush->setColor( txtColor );
-    //m_renderParameters.textSpacePB.fillBrush->setColor( txtColor );
+    m_renderParameters.textSpacePB.fillBrush->setColor( txtColor );
 
     // Render the group of words.
     //this->textDrawGroupWords( m_groupsWords.back() );
