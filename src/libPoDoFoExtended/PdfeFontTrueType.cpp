@@ -237,15 +237,14 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
         }
     }
 
-    std::cout << m_baseFont.GetName()
-              << " (" << !fontEmbedded.fontFile << ") "
-              << nbCharsU << " | "
-              << nbCharsD << " / "
-              << (m_lastCID-m_firstCID+1) << " / "
-              << face->num_glyphs << " // "
-              << face->num_charmaps << "  "
-              << std::endl;
-
+//    std::cout << m_baseFont.GetName()
+//              << " (" << !fontEmbedded.fontFile << ") "
+//              << nbCharsU << " | "
+//              << nbCharsD << " / "
+//              << (m_lastCID-m_firstCID+1) << " / "
+//              << face->num_glyphs << " // "
+//              << face->num_charmaps << "  "
+//              << std::endl;
 
     // Free face object and font file buffer.
     FT_Done_Face( face );

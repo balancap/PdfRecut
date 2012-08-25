@@ -49,8 +49,6 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) 
     // Base font (required).
     m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
 
-    std::cout << m_baseFont.GetName() << std::endl;
-
     // Need the following entries in the dictionary.
     PdfObject* pFChar = pFont->GetIndirectKey( "FirstChar" );
     PdfObject* pLChar = pFont->GetIndirectKey( "LastChar" );
@@ -81,7 +79,6 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) 
     }
 
     // TODO: unicode CMap.
-
 
     // Space characters vector.
     this->initSpaceCharacters();
@@ -321,14 +318,14 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
         }
     }
 
-    std::cout << m_baseFont.GetName()
-              << " (" << !fontEmbedded.fontFile << ") "
-              << nbCharsU << " | "
-              << nbCharsD << " / "
-              << (m_lastCID-m_firstCID+1) << " / "
-              << face->num_glyphs << " // "
-              << face->num_charmaps << "  "
-              << std::endl;
+//    std::cout << m_baseFont.GetName()
+//              << " (" << !fontEmbedded.fontFile << ") "
+//              << nbCharsU << " | "
+//              << nbCharsD << " / "
+//              << (m_lastCID-m_firstCID+1) << " / "
+//              << face->num_glyphs << " // "
+//              << face->num_charmaps << "  "
+//              << std::endl;
 
 
     // Free face object and font file buffer.

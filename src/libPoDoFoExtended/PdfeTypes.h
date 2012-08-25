@@ -247,6 +247,22 @@ public:
     PdfeVector leftBottom() const {
         return m_leftBottom;
     }
+    /** Get Right Bottom point.
+     */
+    PdfeVector rightBottom() const {
+        return m_leftBottom + m_direction * m_width;
+    }
+    /** Get Left Top point.
+     */
+    PdfeVector leftTop() const {
+        return m_leftBottom + m_direction.rotate90() * m_height;
+    }
+    /** Get Right Top point.
+     */
+    PdfeVector rightTop() const {
+        return m_leftBottom + m_direction * m_width + m_direction.rotate90() * m_height;
+    }
+
     /** Set Left Bottom point.
      */
     void setLeftBottom( const PdfeVector& leftBottom ) {
@@ -286,6 +302,20 @@ public:
     void setHeight( double height ) {
         m_height = height;
     }
+
+    /** Compute the minimal distance between two PdfORect (roughly the Hausdorff distance).
+     * \param rect1 First rectangle to consider.
+     * \param rect2 Second rectangle.
+     *  \return Estimate of the minimal distance.
+     */
+    static double minDistance( const PdfeORect& rect1, const PdfeORect& rect2 );
+
+    /** Compute the minimal distance between a PdfORect and a point (represented by a PdfeVector).
+     * \param rect Rectangle to consider.
+     * \param point Point to consider.
+     *  \return Estimate of the minimal distance.
+     */
+    static double minDistance( const PdfeORect& rect, const PdfeVector& point );
 
 private:
     /// Left bottom point.
@@ -354,6 +384,66 @@ inline PdfeMatrix PdfeORect::localTransMatrix()
     transMat(2,0) = -m_leftBottom(0) * m_direction(0) - m_leftBottom(1) * m_direction(1);
     transMat(2,1) =  m_leftBottom(0) * m_direction(1) - m_leftBottom(1) * m_direction(0);
     return transMat;
+}
+
+inline double PdfeORect::minDistance( const PdfeORect& rect1, const PdfeORect& rect2 )
+{
+    PdfeVector point;
+    double dist = std::numeric_limits<double>::max();
+
+    point = rect1.leftBottom() - rect2.leftBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.rightBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.leftTop();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.rightTop();
+    dist = std::min( dist, point.norm2() );
+
+    point = rect1.rightBottom() - rect2.leftBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.rightBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.leftTop();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.rightTop();
+    dist = std::min( dist, point.norm2() );
+
+    point = rect1.leftTop() - rect2.leftBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.rightBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.leftTop();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.rightTop();
+    dist = std::min( dist, point.norm2() );
+
+    point = rect1.rightTop() - rect2.leftBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.rightBottom();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.leftTop();
+    dist = std::min( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.rightTop();
+    dist = std::min( dist, point.norm2() );
+
+    return dist;
+}
+inline double PdfeORect::minDistance( const PdfeORect& rect, const PdfeVector& point )
+{
+    PdfeVector point0;
+    double dist = std::numeric_limits<double>::max();
+
+    point0 = point - rect.leftBottom();
+    dist = std::min( dist, point0.norm2() );
+    point0 = point - rect.rightBottom();
+    dist = std::min( dist, point0.norm2() );
+    point0 = point - rect.leftTop();
+    dist = std::min( dist, point0.norm2() );
+    point0 = point - rect.rightTop();
+    dist = std::min( dist, point0.norm2() );
+
+    return dist;
 }
 
 
