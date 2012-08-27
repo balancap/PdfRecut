@@ -22,6 +22,7 @@
 
 #include FT_BBOX_H
 #include FT_GLYPH_H
+#include FT_OUTLINE_H
 
 using namespace PoDoFo;
 
@@ -119,6 +120,7 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0) );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
         m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
+        //m_bboxCID[i].SetBottom( fontBBox[1].GetReal() );
         m_bboxCID[i].SetHeight( fontBBox[3].GetReal() );
     }
     // Check the size for coherence.
@@ -157,7 +159,6 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     if( error ) {
         return;
     }
-
     long nbCharsU = 0;
     long nbCharsD = 0;
 
@@ -166,7 +167,6 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 
     // Default unicode charmap selected: first try this way !
     if( face->charmap ) {
-
         QString qstr;
         QVector<uint> utf32str;
         pdf_gid glyph_idx;
@@ -185,31 +185,22 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
             }
         }
     }
-
-    // In the case of a difference encoding: try a non-unicode charmap.
+    // In the case of a difference encoding.
     PdfDifferenceEncoding* encoding = dynamic_cast<PdfDifferenceEncoding*>( m_encoding );
     if( encoding ) {
-        // Try the first one the list !
-        //error = FT_Set_Charmap( face, face->charmaps[0] );
-        error = 0;
-        if( !error ) {
-            const PdfEncodingDifference& differences = encoding->GetDifferences();
+        const PdfEncodingDifference& differences = encoding->GetDifferences();
 
-            // Find characters defined in the encoding differences.
-            PdfName name;
-            pdf_utf16be code;
-            pdf_gid glyph_idx;
-
-            for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-                if( differences.Contains( c, name, code ) ) {
-
-                    glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( name.GetName().c_str() ) );
-
-                    //std::cout << "CID: " << c << " / " << name.GetName() << " / " << glyph_idx<< std::endl;
-                    if( glyph_idx ) {
-                        mapCIDToGID[c-m_firstCID] = glyph_idx;
-                        nbCharsD++;
-                    }
+        // Find characters defined in the encoding differences.
+        PdfName name;
+        pdf_utf16be code;
+        pdf_gid glyph_idx;
+        for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+            if( differences.Contains( c, name, code ) ) {
+                // Find the glyph index from its name.
+                glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( name.GetName().c_str() ) );
+                if( glyph_idx ) {
+                    mapCIDToGID[c-m_firstCID] = glyph_idx;
+                    nbCharsD++;
                 }
             }
         }
@@ -225,27 +216,20 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
             if( error ) {
                 continue;
             }
-
             // Get bounding box, computed using the outline of the glyph.
-            FT_BBox glyph_bbox;
-            error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
-            if( !error ) {
-                // Use yMin and YMax to compute bottom and height.
-                m_bboxCID[c - m_firstCID].SetBottom( glyph_bbox.yMin );
-                m_bboxCID[c - m_firstCID].SetHeight( glyph_bbox.yMax - glyph_bbox.yMin );
-            }
+            //FT_BBox glyph_bbox;
+            //error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
+
+            // Compute bottom and top using glyph metrics. Perform some corrections using the font bounding box.
+            FT_Glyph_Metrics metrics = face->glyph->metrics;
+            double bottom = std::max( fontBBox[1].GetReal(), static_cast<double>( metrics.horiBearingY - metrics.height ) );
+            double top = std::min( fontBBox[3].GetReal()+fontBBox[1].GetReal(),  static_cast<double>( metrics.horiBearingY ) );
+
+            // Set the bounding box of the CID.
+            m_bboxCID[c - m_firstCID].SetBottom( bottom );
+            m_bboxCID[c - m_firstCID].SetHeight( top-bottom );
         }
     }
-
-//    std::cout << m_baseFont.GetName()
-//              << " (" << !fontEmbedded.fontFile << ") "
-//              << nbCharsU << " | "
-//              << nbCharsD << " / "
-//              << (m_lastCID-m_firstCID+1) << " / "
-//              << face->num_glyphs << " // "
-//              << face->num_charmaps << "  "
-//              << std::endl;
-
     // Free face object and font file buffer.
     FT_Done_Face( face );
     free( buffer );

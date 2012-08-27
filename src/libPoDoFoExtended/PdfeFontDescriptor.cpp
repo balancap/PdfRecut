@@ -20,7 +20,7 @@
 #include "PdfeFontDescriptor.h"
 #include "podofo/podofo.h"
 
-#include <iostream>
+#include <QDebug>
 
 using namespace PoDoFo;
 
@@ -105,7 +105,7 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
         }
     }
     else {
-        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
+        qWarning() << "No key \'type\' in the PDF font descriptor:" << pFontDesc << ".";
     }
 
     // Default values.

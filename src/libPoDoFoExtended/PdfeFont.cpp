@@ -113,7 +113,7 @@ PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
             width += m_wordSpace * ( m_hScale / 100. );
         }
     }
-    PdfRect cbbox( 0, 0, width, height );
+    PdfRect cbbox( 0, fontBBox[1].GetReal() / 1000., width, height );
     return cbbox;
 }
 

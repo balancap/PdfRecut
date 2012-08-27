@@ -66,9 +66,22 @@ public:
     }
 
     /** Compute inverse matrix
+     * \param invMat Reference where is stored the inverse matrix.
+     * \return Is the matrix inversible?
      */
     bool inverse( PdfeMatrix& invMat ) const {
         return vmml::compute_inverse( *this, invMat );
+    }
+    /** Compute inverse matrix
+     * \return Inverse matrix. Null matrix if not inversible.
+     */
+    PdfeMatrix inverse() const {
+        PdfeMatrix invMat;
+        bool exist = vmml::compute_inverse( *this, invMat );
+        if( !exist ) {
+            invMat.fill( 0 );
+        }
+        return invMat;
     }
 
     /** Convert to a QTransform object.
@@ -317,6 +330,20 @@ public:
      */
     static double minDistance( const PdfeORect& rect, const PdfeVector& point );
 
+    /** Compute the maximal distance between two PdfORect.
+     * \param rect1 First rectangle to consider.
+     * \param rect2 Second rectangle.
+     *  \return Estimate of the maximal distance.
+     */
+    static double maxDistance( const PdfeORect& rect1, const PdfeORect& rect2 );
+
+    /** Compute the maximal distance between a PdfORect and a point (represented by a PdfeVector).
+     * \param rect Rectangle to consider.
+     * \param point Point to consider.
+     *  \return Estimate of the maximal distance.
+     */
+    static double maxDistance( const PdfeORect& rect, const PdfeVector& point );
+
 private:
     /// Left bottom point.
     PdfeVector  m_leftBottom;
@@ -442,6 +469,66 @@ inline double PdfeORect::minDistance( const PdfeORect& rect, const PdfeVector& p
     dist = std::min( dist, point0.norm2() );
     point0 = point - rect.rightTop();
     dist = std::min( dist, point0.norm2() );
+
+    return dist;
+}
+
+inline double PdfeORect::maxDistance( const PdfeORect& rect1, const PdfeORect& rect2 )
+{
+    PdfeVector point;
+    double dist = 0;
+
+    point = rect1.leftBottom() - rect2.leftBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.rightBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.leftTop();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftBottom() - rect2.rightTop();
+    dist = std::max( dist, point.norm2() );
+
+    point = rect1.rightBottom() - rect2.leftBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.rightBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.leftTop();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightBottom() - rect2.rightTop();
+    dist = std::max( dist, point.norm2() );
+
+    point = rect1.leftTop() - rect2.leftBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.rightBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.leftTop();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.leftTop() - rect2.rightTop();
+    dist = std::max( dist, point.norm2() );
+
+    point = rect1.rightTop() - rect2.leftBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.rightBottom();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.leftTop();
+    dist = std::max( dist, point.norm2() );
+    point = rect1.rightTop() - rect2.rightTop();
+    dist = std::max( dist, point.norm2() );
+
+    return dist;
+}
+inline double PdfeORect::maxDistance( const PdfeORect& rect, const PdfeVector& point )
+{
+    PdfeVector point0;
+    double dist = 0;
+
+    point0 = point - rect.leftBottom();
+    dist = std::max( dist, point0.norm2() );
+    point0 = point - rect.rightBottom();
+    dist = std::max( dist, point0.norm2() );
+    point0 = point - rect.leftTop();
+    dist = std::max( dist, point0.norm2() );
+    point0 = point - rect.rightTop();
+    dist = std::max( dist, point0.norm2() );
 
     return dist;
 }
