@@ -40,9 +40,9 @@ int PRRenderPage::imgNbs = 0;
 PRRenderParameters::PRRenderParameters()
 {
     this->resolution = 1.0;
-    this->initPenBrush();
+    this->initToDefault();
 }
-void PRRenderParameters::initPenBrush()
+void PRRenderParameters::initToDefault()
 {
     // Clipping path set to empty.
     clippingPath = QPainterPath();
@@ -72,17 +72,33 @@ void PRRenderParameters::initPenBrush()
     formPB.drawPen = new QPen( Qt::green );
     //formPB.fillBrush = new QBrush( Qt::green );
 }
+void PRRenderParameters::initToEmpty()
+{
+    clippingPath = QPainterPath();
+    resolution = 1.0;
+
+    textPB = PRRenderParameters::PRPenBrush();
+    textSpacePB = PRRenderParameters::PRPenBrush();
+    pathPB = PRRenderParameters::PRPenBrush();
+    clippingPathPB = PRRenderParameters::PRPenBrush();
+    inlineImagePB = PRRenderParameters::PRPenBrush();
+    imagePB = PRRenderParameters::PRPenBrush();
+    formPB = PRRenderParameters::PRPenBrush();
+    textPB = PRRenderParameters::PRPenBrush();
+    textSpacePB = PRRenderParameters::PRPenBrush();
+}
 
 //**********************************************************//
 //                       PRRenderPage                       //
 //**********************************************************//
-PRRenderPage::PRRenderPage( PRDocument* pDocument,
-                            PoDoFo::PdfPage* pageIn ) :
-    PRStreamAnalysis( pageIn ), m_prDocument( pDocument )
+PRRenderPage::PRRenderPage( PRDocument* document,
+                            long pageIndex ) :
+    PRStreamAnalysis( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    m_document( document ),
+    m_pageIndex( pageIndex )
 {
     m_pageImage = NULL;
     m_pagePainter = NULL;
-    m_document = dynamic_cast<PdfMemDocument*> ( m_page->GetObject()->GetOwner()->GetParentDocument() );
 }
 PRRenderPage::~PRRenderPage()
 {
@@ -160,7 +176,7 @@ void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
 {
     const PdfGraphicOperator& gOperator = streamState.gOperator;
     if( gOperator.code == ePdfGOperator_q ) {
-        // Push on the clipping paths stack.
+        // Push on the clipping paths stm_documentack.
         m_clippingPathStack.push_back( m_clippingPathStack.back() );
     }
     else if( gOperator.code == ePdfGOperator_Q ) {
@@ -204,10 +220,10 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 
     // Draw path.
     if( currentPath.getClippingPathOp().length() ) {
-        m_renderParameters.clippingPathPB.setPenBrush( m_pagePainter );
+        m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
     }
     else {
-        m_renderParameters.pathPB.setPenBrush( m_pagePainter );
+        m_renderParameters.pathPB.applyToPainter( m_pagePainter );
     }
     m_pagePainter->drawPath( qCurrentPath );
 }
@@ -282,7 +298,7 @@ void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the inline image: corresponds to a rectangle (0,0,1,1).
-        m_renderParameters.inlineImagePB.setPenBrush( m_pagePainter );
+        m_renderParameters.inlineImagePB.applyToPainter( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
 }
@@ -310,7 +326,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
-        m_renderParameters.imagePB.setPenBrush( m_pagePainter );
+        m_renderParameters.imagePB.applyToPainter( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
     else if( !xobjSubtype.compare( "Form" ) )
@@ -335,7 +351,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
-        m_renderParameters.formPB.setPenBrush( m_pagePainter );
+        m_renderParameters.formPB.applyToPainter( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( bbox[0].GetReal(),
                                           bbox[1].GetReal(),
                                           bbox[2].GetReal()-bbox[0].GetReal(),
@@ -364,7 +380,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Get font metrics.
     //PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
-    PdfeFont* pFont = m_prDocument->fontCache( gState.textState.fontRef );
+    PdfeFont* pFont = m_document->fontCache( gState.textState.fontRef );
 
     // Read group of words.
     PRTextGroupWords groupWords;
@@ -410,9 +426,9 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 
         // Set pen & brush
         if( word.type == 0 ) {
-            m_renderParameters.textPB.setPenBrush( m_pagePainter );
+            m_renderParameters.textPB.applyToPainter( m_pagePainter );
         } else {
-            m_renderParameters.textSpacePB.setPenBrush( m_pagePainter );
+            m_renderParameters.textSpacePB.applyToPainter( m_pagePainter );
         }
         // Paint word.
         PdfRect rect = word.rect;

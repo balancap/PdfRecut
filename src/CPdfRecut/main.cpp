@@ -22,7 +22,7 @@
 #include "PRDocumentLayout.h"
 #include "PRDocumentTools.h"
 #include "PRRenderPage.h"
-#include "PRPageStatistics.h"
+#include "PRTextPageStructure.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>
@@ -165,13 +165,17 @@ void proceedFile( QString filePath )
     for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
 
-//        PRRenderPage renderPage( &document, document.getPoDoFoDocument()->GetPage(i) );
+//        PRRenderPage renderPage( &document, i );
 //        renderPage.renderPage( renderParams );
 //        renderPage.saveToFile( filename );
 
-        PRPageStatistics statsPage( &document, i, document.getPoDoFoDocument()->GetPage(i) );
-        statsPage.computeTextLines();
-        statsPage.saveToFile( filename );
+        PRTextPageStructure textPage( &document, i );
+        textPage.analyseGroupsWords();
+        textPage.analyseLines();
+
+//        textPage.renderTextGroupsWords();
+        textPage.renderTextLines();
+        textPage.saveToFile( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 }

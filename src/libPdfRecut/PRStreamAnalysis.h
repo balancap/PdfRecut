@@ -68,6 +68,10 @@ public:
      */
     PRStreamAnalysis( PoDoFo::PdfPage* page );
 
+    /** Default destructor.
+     */
+    virtual ~PRStreamAnalysis();
+
     /** Analysing the page.
      */
     void analyse();
@@ -136,13 +140,11 @@ protected:
     void readValue( const std::string& str, double& value );
 
 protected:
-    /** Page analysed.
-     */
-    PoDoFo::PdfPage* m_page;
+    /// Page analysed.
+    PoDoFo::PdfPage*  m_page;
 
-    /** Istringstream used in conversion string->number.
-     */
-    std::istringstream m_iStrStream;
+    /// Istringstream used in conversion string -> number.
+    std::istringstream  m_iStrStream;
 };
 
 //**********************************************************//

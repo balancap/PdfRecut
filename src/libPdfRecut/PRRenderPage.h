@@ -21,11 +21,11 @@
 #ifndef PRRENDERPAGE_H
 #define PRRENDERPAGE_H
 
+#include <QtGui/QPainter>
+
 #include "PRDocument.h"
 #include "PRStreamAnalysis.h"
-#include "PRTextStructure.h"
-
-#include <QtGui/QPainter>
+#include "PRTextElements.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -100,7 +100,7 @@ struct PRRenderParameters
         }
         /** Set pen and brush to a painter.
          */
-        void setPenBrush( QPainter* painter )
+        void applyToPainter( QPainter* painter )
         {
             if( drawPen ) {
                 painter->setPen( *drawPen );
@@ -153,7 +153,11 @@ public:
 
     /** Initialize pen and brush to a default layout.
      */
-    void initPenBrush();
+    void initToDefault();
+
+    /** Initialize to an empty layout.
+     */
+    void initToEmpty();
 };
 
 /** Class used to obtain a basic render a Pdf page.
@@ -162,15 +166,15 @@ class PRRenderPage : public PRStreamAnalysis
 {
 public:
     /** Default constructor.
-     * \param pageIn Input page to draw.
-     * \param fontMetricsCache Cache object for font metrics.
+     * \param document Input document.
+     * \param pageIndex Index of the page to render.
      */
-    PRRenderPage( PRDocument* pDocument,
-                  PoDoFo::PdfPage* pageIn );
+    PRRenderPage( PRDocument* document,
+                  long pageIndex );
 
     /** Destructor: release image resources.
      */
-    ~PRRenderPage();
+    virtual ~PRRenderPage();
 
     /** Render the page, using given parameters.
      * \param parameters Structure containing resolution and painting parameters.
@@ -281,34 +285,34 @@ protected:
     void testPdfImage( PoDoFo::PdfObject* xobj );
 
 protected:
-    /// PRDocument object.
-    PRDocument* m_prDocument;
-    /// PoDoFo Document object.
-    PoDoFo::PdfMemDocument* m_document;
-
-    /// QImage in which is drawn the page.
-    QImage* m_pageImage;
-    /// QPainter used to draw the page.
-    QPainter* m_pagePainter;
-
-    /// Render parameters.
-    PRRenderParameters m_renderParameters;
+    /// Pointer to PRDocument object.
+    PRDocument*  m_document;
+    /// Page index.
+    long  m_pageIndex;
 
     /// PdfRect corresponding to the rectangle of the page drawn (usually page crop box).
-    PoDoFo::PdfRect m_pageRect;
+    PoDoFo::PdfRect  m_pageRect;
+
+    /// QImage in which is drawn the page.
+    QImage*  m_pageImage;
+    /// QPainter used to draw the page.
+    QPainter*  m_pagePainter;
+
+    /// Rendering parameters.
+    PRRenderParameters  m_renderParameters;
 
     /// Clipping paths stack. Used to store the clipping path in page coordinates.
-    std::vector<QPainterPath> m_clippingPathStack;
+    std::vector<QPainterPath>  m_clippingPathStack;
 
     /** Transform from page space to image space.
      * In particular, invert y-axis coordinate.
      */
-    PdfeMatrix m_pageImgTrans;
-
+    PdfeMatrix  m_pageImgTrans;
     /// Text transform.
-    PdfeMatrix m_textMatrix;
+    PdfeMatrix  m_textMatrix;
+
     /// Number of text groups read.
-    long m_nbTextGroups;
+    long  m_nbTextGroups;
 };
 
 //**********************************************************//

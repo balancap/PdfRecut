@@ -35,6 +35,9 @@ PRStreamAnalysis::PRStreamAnalysis( PoDoFo::PdfPage* page )
     // Set locale to english for istringstream.
     PdfLocaleImbue( m_iStrStream );
 }
+PRStreamAnalysis::~PRStreamAnalysis()
+{
+}
 
 void PRStreamAnalysis::analyse()
 {

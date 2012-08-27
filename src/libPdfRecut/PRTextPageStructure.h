@@ -18,113 +18,92 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PRPAGESTATISTICS_H
-#define PRPAGESTATISTICS_H
+#ifndef PRTEXTPAGESTRUCTURE_H
+#define PRTEXTPAGESTRUCTURE_H
 
-#include "PRTextStructure.h"
+#include "PRTextElements.h"
 #include "PRRenderPage.h"
 
 namespace PoDoFo {
-    class PdfPage;
-    class PdfRect;
-    class PdfMemDocument;
-    class PdfFontMetrics;
-    class PdfString;
+class PdfPage;
+class PdfRect;
+class PdfMemDocument;
+class PdfString;
+class PdfVariant;
 }
 
 namespace PdfRecut {
 
-/** Structure which gathers the different statistics computed.
- * Expressed in the coordinate system of the page.
+/** Class that analyse the text structure of a PDF page.
  */
-struct PRPageStatisticsData
-{
-    /** Page media box.
-     */
-    PoDoFo::PdfRect pageMediaBox;
-    /** Page crop box (checked to be inside media box).
-     */
-    PoDoFo::PdfRect pageCropBox;
-
-    /** Text bounding box.
-     */
-    PoDoFo::PdfRect textBoundingBox;
-
-    /** Path bounding box.
-     */
-    PoDoFo::PdfRect pathBoundingBox;
-
-    /** Image bounding box.
-     */
-    PoDoFo::PdfRect imageBoundingBox;
-};
-
-/** Class which estimates different statistics in a page: text/path/image positions...
- */
-class PRPageStatistics : public PRRenderPage
+class PRTextPageStructure : public PRRenderPage
 {
 public:
     /** Default constructor
-     * \param noPage Page number.
-     * \param pageIn Input page to analyse.
-     * \param fontMetricsCache Cache object for font metrics.
+     * \param document Input document.
+     * \param pageIndex Index of the page to render.
      */
-    PRPageStatistics( PRDocument* pDocument,
-                      long pageIndex,
-                      PoDoFo::PdfPage* pageIn );
+    PRTextPageStructure( PRDocument* document,
+                         long pageIndex );
 
-    /** Compute page text statistics.
+    /** Destructor.
      */
-    void computeTextStatistics();
+    virtual ~PRTextPageStructure();
 
-    /** Compute the information relative text lines in the page.
+protected:
+    /** Clear content of the object (i.e. different vectors).
      */
-    void computeTextLines();
+    void clearContent();
 
-    /** Reimplementation of text showing from PRRenderPage.
+public:
+    /** Basic analysis of the groups of words found in the page.
+     */
+    void analyseGroupsWords();
+    /** Reimplementation of text showing function from PRRenderPage.
+     * Used to read text groups of words.
      */
     virtual void fTextShowing( const PdfStreamState& streamState );
 
-    void textDrawPdfeORect( const PdfeORect& orect );
-
-    void textDrawLine( const PRTextLine& line );
+    /** Analyse lines structure of the page.
+     */
+    void analyseLines();
 
 protected:
     /** Find a line for a group of words. Line created if necessary.
      * \param idxGroupWords Index of the group of words.
-     * \return Index of the line.
+     * \return Pointer to the line object.
      */
-    size_t findTextLine( size_t idxGroupWords );
+    PRTextLine* findTextLine( size_t idxGroupWords );
+
+    /** No copy constructor allowed.
+     */
+    PRTextPageStructure( const PRTextPageStructure& obj );
 
 public:
-    /** Max of group of words used for a search of line.
+    // Drawing routines.
+    /** Render the groups of words in the page.
      */
+    void renderTextGroupsWords();
+    /** Render lines of text in the page.
+     */
+    void renderTextLines();
 
 protected:
-    /** Page index.
+    /** Draw a PdfeORect.
      */
-    long m_pageIndex;
-    /** Page object.
+    void textDrawPdfeORect( const PdfeORect& orect );
+    /** Draw a line of text.
      */
-    PoDoFo::PdfPage* m_page;
+    void textDrawLine( const PRTextLine& line );
 
-    /** Text lines that belongs to the page.
-     */
-    std::vector<PRTextLine> m_textLines;
+protected:
+    /// Groups of words that belong to the page (vector of pointers).
+    std::vector<PRTextGroupWords*>  m_pGroupsWords;
 
-    /** Group of words that belongs to the page.
-     */
-    std::vector<PRTextGroupWords> m_groupsWords;
-    /** Lines assigned to group of words that belongs to the page.
-     */
-    std::vector<long>   m_groupsWordsLines;
-
-    /** Page statistics data.
-     */
-    //PRPageStatisticsData m_data;
-
+    /// Text lines that belong to the page (vector of pointers).
+    std::vector<PRTextLine*>  m_pTextLines;
 };
 
 }
 
-#endif // PRPAGESTATISTICS_H
+#endif // PRTEXTPAGESTRUCTURE_H

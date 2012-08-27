@@ -16,8 +16,9 @@ SOURCES += \
     PRDocumentTools.cpp \
     PRStreamAnalysis.cpp \
     PRStreamLayoutZone.cpp \
+    PRTextElements.cpp \
     PRRenderPage.cpp \
-    PRPageStatistics.cpp \
+    PRTextPageStructure.cpp \
     PRTextStructure.cpp
 
 HEADERS +=\
@@ -26,10 +27,11 @@ HEADERS +=\
     PRDocumentLayout.h \
     PRDocumentStructure.h \
     PRDocumentTools.h \
-    PRRenderPage.h \
     PRStreamAnalysis.h \
     PRStreamLayoutZone.h \
-    PRPageStatistics.h \
+    PRTextElements.h \
+    PRRenderPage.h \
+    PRTextPageStructure.h \
     PRTextStructure.h
 
 INCLUDEPATH += $$PWD/../3rdparty
