@@ -27,7 +27,7 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                          PdfeFont0                       //
 //**********************************************************//
-PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary ), m_fontCID( NULL )
 {
     this->init();
@@ -113,10 +113,10 @@ double PdfeFontType0::width( pdf_cid c, bool useFParams ) const
     }
     return width;
 }
-QChar PdfeFontType0::toUnicode( pdf_cid c ) const
+PoDoFo::pdf_utf16be PdfeFontType0::toUnicode( pdf_cid c ) const
 {
     // TODO: unicode map.
-    return QChar();
+    return 0;
 }
 PdfeFontSpace::Enum PdfeFontType0::isSpace( pdf_cid c ) const
 {

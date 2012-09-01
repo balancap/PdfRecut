@@ -26,6 +26,62 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
+//**********************************************************//
+//                     PdfeFontEmbedded                     //
+//**********************************************************//
+PoDoFo::PdfObject* PdfeFontEmbedded::fontFile( size_t idx ) const
+{
+    // Valid index.
+    if( idx >= 1 && idx <= 3 ) {
+        if( idx == 1 ) {
+            return m_fontFile;
+        }
+        else if( idx == 2 ) {
+            return m_fontFile2;
+        }
+        else {
+            return m_fontFile3;
+        }
+    }
+
+    // First pointer in the list not null.
+    if( m_fontFile ) {
+        return m_fontFile;
+    }
+    else if( m_fontFile2 ) {
+        return m_fontFile3;
+    }
+    else {
+        return m_fontFile3;
+    }
+}
+void PdfeFontEmbedded::setFontFiles( PoDoFo::PdfObject* fontFile,
+                                     PoDoFo::PdfObject* fontFile2,
+                                     PoDoFo::PdfObject* fontFile3 )
+{
+    m_fontFile = fontFile;
+    m_fontFile2 = fontFile2;
+    m_fontFile3 = fontFile3;
+}
+void PdfeFontEmbedded::fontProgram( char** pBuffer, long* pLength ) const
+{
+    // Get font file.
+    PoDoFo::PdfObject* fontFile = this->fontFile();
+
+    // Uncompress and copy into a buffer.
+    if( fontFile ) {
+        PdfStream* stream = fontFile->GetStream();
+        stream->GetFilteredCopy( pBuffer, pLength );
+    }
+    else {
+        *pBuffer = NULL;
+        *pLength = -1;
+    }
+}
+
+//**********************************************************//
+//                    PdfeFontDescriptor                    //
+//**********************************************************//
 PdfeFontDescriptor::PdfeFontDescriptor()
 {
     this->init();
@@ -144,9 +200,9 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
     m_missingWidth = pFontDesc->GetDictionary().GetKeyAsReal( "MissingWidth", 0.0 );
 
     // Read FontFiles
-    m_fontEmbedded.fontFile = pFontDesc->GetIndirectKey( "FontFile" );
-    m_fontEmbedded.fontFile2 = pFontDesc->GetIndirectKey( "FontFile2" );
-    m_fontEmbedded.fontFile3 = pFontDesc->GetIndirectKey( "FontFile3" );
+    m_fontEmbedded.setFontFiles( pFontDesc->GetIndirectKey( "FontFile" ),
+                                 pFontDesc->GetIndirectKey( "FontFile2" ),
+                                 pFontDesc->GetIndirectKey( "FontFile3" ) );
 
     // TODO: FontFiles, CharSet and CID Keys.
 }

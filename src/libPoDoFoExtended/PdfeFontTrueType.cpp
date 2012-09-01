@@ -28,7 +28,7 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary )
 {
     this->init();
@@ -120,7 +120,6 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0) );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
         m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
-        //m_bboxCID[i].SetBottom( fontBBox[1].GetReal() );
         m_bboxCID[i].SetHeight( fontBBox[3].GetReal() );
     }
     // Check the size for coherence.
@@ -129,107 +128,47 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     }
 
     // For embedded fonts: try to get bottom and height using the font program and FreeType library.
-    PdfeFontEmbedded  fontEmbedded = this->fontDescriptor().fontEmbedded();
-    if( !fontEmbedded.fontFile2 && !fontEmbedded.fontFile3 ) {
-        return;
-    }
-
-    // Get fontFile object.
-    PdfObject* fontFile;
-    if( fontEmbedded.fontFile2 ) {
-        fontFile = fontEmbedded.fontFile2;
-    }
-    else {
-        fontFile = fontEmbedded.fontFile3;
-    }
-
-    // Uncompress and copy into a buffer.
     char* buffer;
     long length;
-    PdfStream* stream = fontFile->GetStream();
-    stream->GetFilteredCopy( &buffer, &length );
-
-    // Try to local font Face from the font file.
-    int error;
-    FT_Face face;
-    error = FT_New_Memory_Face( *m_ftLibrary, reinterpret_cast<unsigned char*>( buffer ),
-                                length, 0, &face );
-
-    // Can not load: return...
-    if( error ) {
+    PdfeFontEmbedded fontEmbedded = this->fontDescriptor().fontEmbedded();
+    fontEmbedded.fontProgram( &buffer, &length );
+    if( !buffer ) {
+        // No font program found...
         return;
     }
-    long nbCharsU = 0;
-    long nbCharsD = 0;
 
-    // Try to build a map CID->GID.
-    std::vector<pdf_gid>  mapCIDToGID( m_lastCID-m_firstCID+1, 0 );
-
-    // Default unicode charmap selected: first try this way !
-    if( face->charmap ) {
-        QString qstr;
-        QVector<uint> utf32str;
-        pdf_gid glyph_idx;
-
-        for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-            // Get character UTF32 code.
-            qstr.clear();
-            qstr.append( this->toUnicode( c ) );
-            utf32str = qstr.toUcs4();
-
-            // Get glyph index: succeed if != 0
-            glyph_idx = FT_Get_Char_Index( face, utf32str[0] );
-            if( glyph_idx ) {
-                mapCIDToGID[c-m_firstCID] = glyph_idx;
-                nbCharsU++;
-            }
-        }
-    }
-    // In the case of a difference encoding.
-    PdfDifferenceEncoding* encoding = dynamic_cast<PdfDifferenceEncoding*>( m_encoding );
-    if( encoding ) {
-        const PdfEncodingDifference& differences = encoding->GetDifferences();
-
-        // Find characters defined in the encoding differences.
-        PdfName name;
-        pdf_utf16be code;
-        pdf_gid glyph_idx;
-        for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-            if( differences.Contains( c, name, code ) ) {
-                // Find the glyph index from its name.
-                glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( name.GetName().c_str() ) );
-                if( glyph_idx ) {
-                    mapCIDToGID[c-m_firstCID] = glyph_idx;
-                    nbCharsD++;
-                }
-            }
-        }
+    // Load FreeType face from buffer.
+    int error;
+    FT_Face face;
+    error = FT_New_Memory_Face( m_ftLibrary, reinterpret_cast<unsigned char*>( buffer ),
+                                length, 0, &face );
+    if( error ) {
+        // Can not load: return...
+        return;
     }
 
-    // Get bounding box.
+    // Construct the map CID to GID.
+    std::vector<pdf_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
+                                                          dynamic_cast<PdfDifferenceEncoding*>( m_encoding ) );
+
+    // Get glyph bounding box.
+    pdf_gid glyphIdx;
+    PdfRect glyphBBox;
+
     for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-
-        pdf_gid glyph_idx = mapCIDToGID[c-m_firstCID];
-        if( glyph_idx ) {
+        glyphIdx = mapCIDToGID[c-m_firstCID];
+        if( glyphIdx ) {
             // Load glyph.
-            error = FT_Load_Glyph( face, glyph_idx, FT_LOAD_NO_SCALE );
-            if( error ) {
-                continue;
+            error = this->glyphBBox( face, glyphIdx, fontBBox, &glyphBBox );
+            if( !error ) {
+                //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
+                //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
+                m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
+                m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
             }
-            // Get bounding box, computed using the outline of the glyph.
-            //FT_BBox glyph_bbox;
-            //error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
-
-            // Compute bottom and top using glyph metrics. Perform some corrections using the font bounding box.
-            FT_Glyph_Metrics metrics = face->glyph->metrics;
-            double bottom = std::max( fontBBox[1].GetReal(), static_cast<double>( metrics.horiBearingY - metrics.height ) );
-            double top = std::min( fontBBox[3].GetReal()+fontBBox[1].GetReal(),  static_cast<double>( metrics.horiBearingY ) );
-
-            // Set the bounding box of the CID.
-            m_bboxCID[c - m_firstCID].SetBottom( bottom );
-            m_bboxCID[c - m_firstCID].SetHeight( top-bottom );
         }
     }
+
     // Free face object and font file buffer.
     FT_Done_Face( face );
     free( buffer );
@@ -316,18 +255,19 @@ PdfRect PdfeFontTrueType::bbox( pdf_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-QChar PdfeFontTrueType::toUnicode( pdf_cid c ) const
+PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdf_cid c ) const
 {
     // TODO: unicode map.
 
     if( m_encoding ) {
         // Get UTF16 code from PdfEncoding object.
         pdf_utf16be ucode = m_encoding->GetCharCode( c );
-        return QChar( PDF_UTF16_BE_LE( ucode ) );
+        ucode = PDF_UTF16_BE_LE( ucode );
+        return ucode;
     }
     else {
         // Default empty character.
-        return QChar( 0 );
+        return 0;
     }
 }
 PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdf_cid c ) const

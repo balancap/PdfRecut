@@ -37,6 +37,7 @@
 namespace PoDoFo {
 class PdfObject;
 class PdfEncoding;
+class PdfDifferenceEncoding;
 class PdfString;
 class PdfArray;
 }
@@ -112,7 +113,7 @@ public:
      * \param pFont Pointer to the object which is defined the font.
      * \param ftLibrary FreeType library.
      */
-    PdfeFont( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
+    PdfeFont( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -182,17 +183,43 @@ public:
      */
     virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
 
-    /** Convert a character to its unicode equivalent (QChar).
+    /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
-     * \return Unicode QChar corresponding.
+     * \return Unicode character code
      */
-    virtual QChar toUnicode( pdf_cid c ) const = 0;
+    virtual PoDoFo::pdf_utf16be toUnicode( pdf_cid c ) const = 0;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
     virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const = 0;
+
+protected:
+    /** Construct a CID to GID map.
+     * \param face Freetype face object.
+     * \param firstCID CID of the first character to consider.
+     * \param lastCID CID of the last character to consider.
+     * \param pDiffEncoding Difference encoding object (if existing, NULL else).
+     * \return Vector of corresponding GID.
+     */
+    std::vector<pdf_gid> mapCIDToGID( FT_Face face,
+                                      pdf_cid firstCID,
+                                      pdf_cid lastCID,
+                                      PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
+
+    /** Obtain the bounding box of a glyph.
+     * \param face Freetype face object.
+     * \param glyph_idx Glyph index.
+     * \param fontBBox Font bounding box.
+     * \param pGlyphBBox Pointer to the bounding box to set.
+     * \return Error code.
+     */
+    int glyphBBox( FT_Face face,
+                   pdf_gid glyphIdx,
+                   const PoDoFo::PdfArray& fontBBox,
+                   PoDoFo::PdfRect* pGlyphBBox ) const;
+
 
 protected:
     // Members
@@ -211,7 +238,7 @@ protected:
     double  m_fontSize;
 
     /// FreeType library.
-    FT_Library*  m_ftLibrary;
+    FT_Library  m_ftLibrary;
 
 public:
     //**********************************************************//

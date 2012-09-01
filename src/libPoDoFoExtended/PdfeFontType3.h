@@ -34,7 +34,7 @@ public:
     /** Create a PdfeFontType3 from a PdfObject.
      * \param pFont Pointer to the object where is defined the type 3 font.
      */
-    PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary );
+    PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -78,11 +78,11 @@ public:
      */
     virtual double width( pdf_cid c, bool useFParams ) const;
 
-    /** Convert a character to its unicode equivalent (QChar).
+    /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
-     * \return Unicode QChar corresponding.
+     * \return Unicode character code
      */
-    virtual QChar toUnicode( pdf_cid c ) const;
+    virtual PoDoFo::pdf_utf16be toUnicode( pdf_cid c ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).

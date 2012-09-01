@@ -70,6 +70,7 @@ void PRTextPageStructure::analyseGroupsWords()
     // Set rendering parameters to empty.
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
+    renderParameters.resolution = 1.5;
 
     // Clear content.
     this->clearContent();
@@ -290,8 +291,8 @@ void PRTextPageStructure::renderTextGroupsWords()
         m_renderParameters.textPB.fillBrush->setColor( groupColor );
         m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
 
-//        this->textDrawGroupWords( *m_pGroupsWords[idx] );
-        this->textDrawPdfeORect( m_pGroupsWords[idx]->getOrientedRect() );
+        this->textDrawGroupWords( *m_pGroupsWords[idx] );
+//        this->textDrawPdfeORect( m_pGroupsWords[idx]->getOrientedRect() );
     }
 }
 void PRTextPageStructure::renderTextLines()

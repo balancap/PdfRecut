@@ -33,22 +33,49 @@ class PdfString;
 
 namespace PoDoFoExtended {
 
-/** Simple structure that gathers information on an embedded font.
+/** Simple class that gathers information on an embedded font.
  */
-struct PdfeFontEmbedded
+class PdfeFontEmbedded
 {
-    /// FontFile object no1.
-    PoDoFo::PdfObject*  fontFile;
-    /// FontFile object no2.
-    PoDoFo::PdfObject*  fontFile2;
-    /// FontFile object no3.
-    PoDoFo::PdfObject*  fontFile3;
+public:
+    /** Default constructor.
+     */
+    PdfeFontEmbedded() {
+        this->init();
+    }
 
     /** Initialize to default values.
      */
     void init() {
-        fontFile = fontFile2 = fontFile3 = NULL;
+        m_fontFile = m_fontFile2 = m_fontFile3 = NULL;
     }
+
+    /** Get the font file object. If no index provided, return first pointer found not equal to zero.
+     * \param idx Index (1, 2 or 3).
+     * \return Pointer to the PoDoFo object.
+     */
+    PoDoFo::PdfObject* fontFile( size_t idx = 0 ) const;
+
+    /** Set font file objects.
+     */
+    void setFontFiles( PoDoFo::PdfObject* fontFile,
+                       PoDoFo::PdfObject* fontFile2,
+                       PoDoFo::PdfObject* fontFile3 );
+
+    /** Get the font program, stored in a buffer.
+     * \param pBuffer Pointer of the buffer which will contain the font program. Owned by the user.
+     * \param pLength Pointet to the length of the buffer.
+     */
+    void fontProgram( char** pBuffer, long* pLength ) const;
+
+protected:
+    /// FontFile object no1.
+    PoDoFo::PdfObject*  m_fontFile;
+    /// FontFile object no2.
+    PoDoFo::PdfObject*  m_fontFile2;
+    /// FontFile object no3.
+    PoDoFo::PdfObject*  m_fontFile3;
+
 };
 
 

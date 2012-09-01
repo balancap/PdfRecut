@@ -173,8 +173,8 @@ void proceedFile( QString filePath )
         textPage.analyseGroupsWords();
         textPage.analyseLines();
 
-//        textPage.renderTextGroupsWords();
-        textPage.renderTextLines();
+        textPage.renderTextGroupsWords();
+//        textPage.renderTextLines();
         textPage.saveToFile( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;

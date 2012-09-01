@@ -24,7 +24,7 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library* ftLibrary ) :
+PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary )
 {
     this->init();
@@ -188,18 +188,19 @@ double PdfeFontType3::width( pdf_cid c, bool useFParams ) const
     }
     return width;
 }
-QChar PdfeFontType3::toUnicode( pdf_cid c ) const
+PoDoFo::pdf_utf16be PdfeFontType3::toUnicode( pdf_cid c ) const
 {
     // TODO: unicode map.
 
     if( m_encoding ) {
         // Get UTF16 code from PdfEncoding object.
         pdf_utf16be ucode = m_encoding->GetCharCode( c );
-        return QChar( PDF_UTF16_BE_LE( ucode ) );
+        ucode = PDF_UTF16_BE_LE( ucode );
+        return ucode;
     }
     else {
         // Default empty character.
-        return QChar( 0 );
+        return 0;
     }
 }
 PdfeFontSpace::Enum PdfeFontType3::isSpace( pdf_cid c ) const

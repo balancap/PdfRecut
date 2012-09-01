@@ -52,6 +52,8 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     // To CID string.
     PdfeCIDString cidstr = pFont->toCIDString( str );
 
+    //qDebug() << pFont->toUnicode( cidstr );
+
     // Text parameters.
     //double hScale = m_textState.hScale;
     double charSpace = m_textState.charSpace;
