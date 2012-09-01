@@ -118,6 +118,12 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 textWord.length++;
                 i++;
             }
+            // Minimal height: add half for bottom and top.
+            if( top-bottom <= this->MinimalHeight ) {
+                top += this->MinimalHeight / 2;
+                bottom -= this->MinimalHeight / 2;
+            }
+
             // Word bounding box.
             textWord.rect.SetWidth( width );
             textWord.rect.SetBottom( bottom );

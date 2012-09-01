@@ -153,6 +153,8 @@ public:
 protected:
     /// Default space height used.
     static const double SpaceHeight = 0.5;
+    /// Minimal height for a character.
+    static const double MinimalHeight = 0.2;
 
 protected:
     /// Index of the page to which belongs the group.
