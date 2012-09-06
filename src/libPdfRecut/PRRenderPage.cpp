@@ -59,7 +59,7 @@ void PRRenderParameters::initToDefault()
 
     // Space filling color.
     textSpacePB.fillBrush = new QBrush( Qt::lightGray );
-    textPDFSpacePB.fillBrush = new QBrush( Qt::lightGray );
+    textPDFTranslationPB.fillBrush = new QBrush( Qt::lightGray );
 
     // Inline image pen color.
     inlineImagePB.drawPen = new QPen( Qt::darkCyan );
@@ -80,7 +80,7 @@ void PRRenderParameters::initToEmpty()
 
     textPB = PRRenderParameters::PRPenBrush();
     textSpacePB = PRRenderParameters::PRPenBrush();
-    textPDFSpacePB = PRRenderParameters::PRPenBrush();
+    textPDFTranslationPB = PRRenderParameters::PRPenBrush();
     pathPB = PRRenderParameters::PRPenBrush();
     clippingPathPB = PRRenderParameters::PRPenBrush();
     inlineImagePB = PRRenderParameters::PRPenBrush();
@@ -430,7 +430,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
             m_renderParameters.textSpacePB.applyToPainter( m_pagePainter );
         }
         else if( word.type() == PRTextWordType::PDFTranslation ) {
-            m_renderParameters.textPDFSpacePB.applyToPainter( m_pagePainter );
+            m_renderParameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if the width is positive !
         PdfRect bbox = word.bbox( false );

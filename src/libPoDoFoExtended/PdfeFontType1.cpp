@@ -245,6 +245,11 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
         }
     }
 
+    std::cout << m_baseFont.GetName() << " : "
+              << face->num_charmaps
+              << std::endl;
+
+
     // Free face object and font file buffer.
     FT_Done_Face( face );
     free( buffer );

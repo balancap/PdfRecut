@@ -97,10 +97,10 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     std::string bufstr = str.GetString();
 
     if( bufstr.find( "Here all" ) != std::string::npos ) {
-        std::cout << bufstr << std::endl;
-        qDebug() << pFont->toUnicode( str );
+//        std::cout << bufstr << std::endl;
+//        qDebug() << pFont->toUnicode( str );
     }
-    qDebug() << pFont->toUnicode( str );
+    //qDebug() << pFont->toUnicode( str );
 
     // Text parameters.
     double fontSize = m_textState.fontSize;

@@ -46,13 +46,9 @@ struct PRRenderParameters
      */
     struct PRPenBrush
     {
-        /** Pointer to a draw pen object (belongs to the structure).
-         * If NULL, object is not drawned.
-         */
+        /// Pointer to a draw pen object (belongs to the structure). If NULL, object is not drawned.
         QPen* drawPen;
-        /** Pointer to a fill brush object (belongs to the structure).
-         * If NULL, object is not filled.
-         */
+        /// Pointer to a fill brush object (belongs to the structure). If NULL, object is not filled.
         QBrush* fillBrush;
 
         /** Basic constructor: set pointers to NULL.
@@ -115,38 +111,28 @@ struct PRRenderParameters
         }
     };
 
-    /** Resolution used to render a page (default = 1.0).
-     */
+    /// Resolution used to render a page (default = 1.0).
     double resolution;
-    /** Initial clipping path used to render the page.
-     */
+    /// Initial clipping path used to render the page.
     QPainterPath clippingPath;
 
-    /** Pen and brush used to draw and fill text objects.
-     */
+    /// Pen and brush used to draw and fill text objects.
     PRPenBrush textPB;
-    /** Pen and brush used to draw and fill text spaces.
-     */
+    /// Pen and brush used to draw and fill text spaces.
     PRPenBrush textSpacePB;
-    /** Pen and brush used to draw and fill PDF text spaces.
-     */
-    PRPenBrush textPDFSpacePB;
+    /// Pen and brush used to draw and fill PDF text translation characters.
+    PRPenBrush textPDFTranslationPB;
 
-    /** Pen and brush used to draw and fill path objects.
-     */
+    /// Pen and brush used to draw and fill path objects.
     PRPenBrush pathPB;
-    /** Pen and brush used to draw and fill clipping path objects.
-     */
+    /// Pen and brush used to draw and fill clipping path objects.
     PRPenBrush clippingPathPB;
 
-    /** Pen and brush used to draw and fill inline images.
-     */
+    /// Pen and brush used to draw and fill inline images.
     PRPenBrush inlineImagePB;
-    /** Pen and brush used to draw and fill images (xobjects).
-     */
+    /// Pen and brush used to draw and fill images (xobjects).
     PRPenBrush imagePB;
-    /** Pen and brush used to draw and fill forms (xobjects).
-     */
+    /// Pen and brush used to draw and fill forms (xobjects).
     PRPenBrush formPB;
 
 public:

@@ -125,6 +125,11 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
     // Initialize the vector.
     std::vector<pdf_gid> vectGID( lastCID - firstCID+1, 0 );
 
+    // Set a CharMap: keep the default one if selected.
+    if( !face->charmap ) {
+        FT_Set_Charmap( face, face->charmaps[0] );
+    }
+
     // Get the glyph index of every character.
     PdfName cname;
     pdf_gid glyph_idx;
@@ -135,11 +140,8 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
         ucode = this->toUnicode( c );
         cname = PdfDifferenceEncoding::UnicodeIDToName( PDF_UTF16_BE_LE( ucode ) );
 
-        // Glyph index.
+        // Glyph index from the glyph name.
         glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
-        if( glyph_idx ) {
-            vectGID[ c - firstCID ] = glyph_idx;
-        }
 
         // Difference encoding: try to see if the character belongs to the difference map.
         if( pDiffEncoding ) {
@@ -148,10 +150,27 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
             if( differences.Contains( c, cname, ucode ) ) {
                 // Find the glyph index from its name.
                 glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
-                if( glyph_idx ) {
-                    vectGID[ c - firstCID ] = glyph_idx;
+            }
+        }
+
+        // No glyph index yet: try using the character code and the different charmaps.
+        if( !glyph_idx ) {
+            for( int n = 0; n < face->num_charmaps && !glyph_idx ; n++ )
+            {
+                FT_Set_Charmap( face, face->charmaps[n] );
+
+                if( ucode ) {
+                    glyph_idx = FT_Get_Char_Index( face, ucode );
+                }
+                if( !glyph_idx ) {
+                    glyph_idx = FT_Get_Char_Index( face, c );
                 }
             }
+        }
+
+        // Set glyph index if found.
+        if( glyph_idx ) {
+            vectGID[ c - firstCID ] = glyph_idx;
         }
     }
     return vectGID;
