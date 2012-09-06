@@ -128,6 +128,9 @@ struct PRRenderParameters
     /** Pen and brush used to draw and fill text spaces.
      */
     PRPenBrush textSpacePB;
+    /** Pen and brush used to draw and fill PDF text spaces.
+     */
+    PRPenBrush textPDFSpacePB;
 
     /** Pen and brush used to draw and fill path objects.
      */

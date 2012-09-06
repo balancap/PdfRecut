@@ -29,6 +29,49 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 //**********************************************************//
+//                         PRTextWord                       //
+//**********************************************************//
+PRTextWord::PRTextWord()
+{
+    this->init();
+}
+PRTextWord::PRTextWord( PRTextWordType::Enum type,
+                        long length,
+                        const PdfRect& bbox,
+                        double lastCharSpace ):
+    m_type(type), m_length(length), m_bbox(bbox), m_lastCharSpace(lastCharSpace)
+{
+}
+void PRTextWord::init()
+{
+    m_length = 0;
+    m_bbox = PdfRect(0,0,0,0);
+    m_lastCharSpace = 0;
+    m_type = PRTextWordType::Unknown;
+}
+
+PdfRect PRTextWord::bbox( bool lastSpace ) const
+{
+    PdfRect bbox = m_bbox;
+    if( !lastSpace ) {
+        bbox.SetWidth( bbox.GetWidth() - m_lastCharSpace );
+    }
+    return bbox;
+}
+double PRTextWord::width( bool lastSpace ) const
+{
+    double width  = m_bbox.GetWidth();
+    if( !lastSpace ) {
+        width -= m_lastCharSpace;
+    }
+    return width;
+}
+void PRTextWord::setBBox( const PdfRect& bbox )
+{
+    m_bbox = bbox;
+}
+
+//**********************************************************//
 //                     PRTextGroupWords                     //
 //**********************************************************//
 PRTextGroupWords::PRTextGroupWords()
@@ -51,14 +94,18 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 {
     // To CID string.
     PdfeCIDString cidstr = pFont->toCIDString( str );
+    std::string bufstr = str.GetString();
 
-    //qDebug() << pFont->toUnicode( cidstr );
+    if( bufstr.find( "Here all" ) != std::string::npos ) {
+        std::cout << bufstr << std::endl;
+        qDebug() << pFont->toUnicode( str );
+    }
+    qDebug() << pFont->toUnicode( str );
 
     // Text parameters.
-    //double hScale = m_textState.hScale;
-    double charSpace = m_textState.charSpace;
-    double wordSpace = m_textState.wordSpace;
     double fontSize = m_textState.fontSize;
+    double charSpace = m_textState.charSpace / fontSize;
+    double wordSpace = m_textState.wordSpace / fontSize;
 
     // Set font parameters (not necessary in theory).
     pFont->setCharSpace( 0.0 );
@@ -74,49 +121,69 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         // Read space word: use SpaceHeight for the character height.
         if( pFont->isSpace( cidstr[i] ) ) {
             double width = 0.0;
-            Word textWord( 0, 0.0, 0.0, 1 );
+            long length = 0;
 
             // Read spaces (can be multiple...)
-            while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) ) {
+            while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) )
+            {
                 // Get bounding box of the character.
                 cbbox = pFont->bbox( cidstr[i], false );
                 //cwidth = pFont->width( cidstr[i], false );
 
-                // Width to add.
-                width += ( cbbox.GetWidth() + charSpace / fontSize );
+                // Word space to add.
+                width += cbbox.GetWidth();
                 if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
-                    width += wordSpace / fontSize;
+                    width += wordSpace;
                 }
+                width += charSpace;
 
-                textWord.length++;
+                length++;
                 i++;
+
+                // Char space too big: divide the word into pieces.
+                if( charSpace > MaxWordCharSpace ) {
+                    break;
+                }
             }
-            textWord.rect.SetWidth( width );
-            textWord.rect.SetBottom( 0 );
-            textWord.rect.SetHeight( this->SpaceHeight );
+            // Add word to the collection !
+            PRTextWord textWord( PRTextWordType::Space,
+                                 length,
+                                 PdfRect( 0.0, 0.0, width, this->SpaceHeight ),
+                                 charSpace );
 
             m_words.push_back( textWord );
         }
         // Read classic word.
         else {
+            long length = 0;
             double width = 0.0;
             double bottom = std::numeric_limits<double>::max();
             double top = std::numeric_limits<double>::min();
-            Word textWord( 0, 0.0, 0.0, 0 );
 
             // Read word characters.
-            while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) ) {
+            while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) )
+            {
                 // Get bounding box of the character.
                 cbbox = pFont->bbox( cidstr[i], false );
                 // cwidth = pFont->width( cidstr[i], false );
 
-                // Update width, bottom and top.
-                width += ( cbbox.GetWidth() + charSpace / fontSize );
+                width += cbbox.GetWidth();
+                // Add char space if not the last character in the word.
+                //if( i != cidstr.length()-1 ) {
+                    width += charSpace;
+                //}
+
+                // Update bottom and top.
                 bottom = std::min( bottom, cbbox.GetBottom() );
                 top = std::max( top, cbbox.GetBottom() + cbbox.GetHeight() );
 
-                textWord.length++;
+                length++;
                 i++;
+
+                // Char space too big: divide the word into pieces.
+                if( charSpace > MaxWordCharSpace ) {
+                    break;
+                }
             }
             // Minimal height: add half for bottom and top.
             if( top-bottom <= this->MinimalHeight ) {
@@ -124,10 +191,11 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 bottom -= this->MinimalHeight / 2;
             }
 
-            // Word bounding box.
-            textWord.rect.SetWidth( width );
-            textWord.rect.SetBottom( bottom );
-            textWord.rect.SetHeight( top-bottom );
+            // Add word to the collection !
+            PRTextWord textWord( PRTextWordType::Classic,
+                                 length,
+                                 PdfRect( 0.0, bottom, width, top-bottom ),
+                                 charSpace );
 
             m_words.push_back( textWord );
         }
@@ -158,13 +226,18 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
             }
             else if( array[i].IsReal() || array[i].IsNumber() ) {
                 // Read pdf space.
-                m_words.push_back( Word( 1, -array[i].GetReal() / 1000.0, this->SpaceHeight, 2 ) );
+                PRTextWord textWord( PRTextWordType::PDFTranslation,
+                                     1,
+                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, this->SpaceHeight ),
+                                     0.0 );
+
+                m_words.push_back( textWord );
             }
         }
     }
 }
 
-void PRTextGroupWords::appendWord( const Word& word )
+void PRTextGroupWords::appendWord( const PRTextWord& word )
 {
     // Append the word to the vector.
     m_words.push_back( word );
@@ -174,7 +247,7 @@ double PRTextGroupWords::width() const
 {
     double width = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].rect.GetWidth();
+        width += m_words[i].width();
     }
     return width;
 }
@@ -182,7 +255,7 @@ double PRTextGroupWords::height() const
 {
     double height = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        height = std::max( m_words[i].rect.GetHeight(), height );
+        height = std::max( m_words[i].bbox().GetHeight(), height );
     }
     return height;
 }
@@ -190,8 +263,8 @@ size_t PRTextGroupWords::length( bool countSpaces )
 {
     size_t length = 0;
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        if( !m_words[i].type || countSpaces ) {
-            length += m_words[i].length;
+        if( m_words[i].type() == PRTextWordType::Classic || countSpaces ) {
+            length += m_words[i].length();
         }
     }
     return length;
@@ -223,10 +296,10 @@ PdfeORect PRTextGroupWords::getOrientedRect( bool pageCoords ) const
     double top = std::numeric_limits<double>::min();
 
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].rect.GetWidth();
+        width += m_words[i].bbox().GetWidth();
 
-        bottom = std::min( bottom, m_words[i].rect.GetBottom() );
-        top = std::max( top, m_words[i].rect.GetBottom() + m_words[i].rect.GetHeight() );
+        bottom = std::min( bottom, m_words[i].bbox().GetBottom() );
+        top = std::max( top, m_words[i].bbox().GetBottom() + m_words[i].bbox().GetHeight() );
     }
     groupORect.setWidth( width );
     groupORect.setLeftBottom( PdfeVector( 0, bottom ) );

@@ -59,6 +59,7 @@ void PRRenderParameters::initToDefault()
 
     // Space filling color.
     textSpacePB.fillBrush = new QBrush( Qt::lightGray );
+    textPDFSpacePB.fillBrush = new QBrush( Qt::lightGray );
 
     // Inline image pen color.
     inlineImagePB.drawPen = new QPen( Qt::darkCyan );
@@ -79,6 +80,7 @@ void PRRenderParameters::initToEmpty()
 
     textPB = PRRenderParameters::PRPenBrush();
     textSpacePB = PRRenderParameters::PRPenBrush();
+    textPDFSpacePB = PRRenderParameters::PRPenBrush();
     pathPB = PRRenderParameters::PRPenBrush();
     clippingPathPB = PRRenderParameters::PRPenBrush();
     inlineImagePB = PRRenderParameters::PRPenBrush();
@@ -379,7 +381,6 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
     tokenizer.GetNextVariant( variant, NULL );
 
     // Get font metrics.
-    //PdfFontMetrics* fontMetrics = m_fontMetricsCache->getFontMetrics( gState.textState.fontRef );
     PdfeFont* pFont = m_document->fontCache( gState.textState.fontRef );
 
     // Read group of words.
@@ -393,9 +394,6 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Increment the number of group of words.
     ++m_nbTextGroups;
-
-    const char* pstr = gOperands.back().c_str();
-    //std::cout << int( pstr[2] ) << " || " << gState.textState.fontRef.ObjectNumber() << std::endl;
 
     // Update text transform matrix.
     PdfeMatrix tmpMat;
@@ -419,21 +417,27 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 
     // Paint words.
     double widthStr = 0;
-    const std::vector<PRTextGroupWords::Word>& words = groupWords.words();
+    const std::vector<PRTextWord>& words = groupWords.words();
     for( size_t i = 0 ; i < words.size() ; i++ )
     {
-        const PRTextGroupWords::Word& word = words[i];
+        const PRTextWord& word = words[i];
 
         // Set pen & brush
-        if( word.type == 0 ) {
+        if( word.type() == PRTextWordType::Classic ) {
             m_renderParameters.textPB.applyToPainter( m_pagePainter );
-        } else {
+        }
+        else if( word.type() == PRTextWordType::Space ) {
             m_renderParameters.textSpacePB.applyToPainter( m_pagePainter );
         }
-        // Paint word.
-        PdfRect rect = word.rect;
-        m_pagePainter->drawRect( QRectF( widthStr, rect.GetBottom(), rect.GetWidth(), rect.GetHeight() ) );
-        widthStr += rect.GetWidth();
+        else if( word.type() == PRTextWordType::PDFTranslation ) {
+            m_renderParameters.textPDFSpacePB.applyToPainter( m_pagePainter );
+        }
+        // Paint word, if the width is positive !
+        PdfRect bbox = word.bbox( false );
+        if( bbox.GetWidth() >= 0) {
+            m_pagePainter->drawRect( QRectF( widthStr, bbox.GetBottom(), bbox.GetWidth(), bbox.GetHeight() ) );
+        }
+        widthStr += word.width( true );
     }
 }
 

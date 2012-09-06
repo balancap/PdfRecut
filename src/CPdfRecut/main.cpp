@@ -158,7 +158,7 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderParameters renderParams;
-    renderParams.resolution = 2.0;
+    renderParams.resolution = 3.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
@@ -173,8 +173,8 @@ void proceedFile( QString filePath )
         textPage.analyseGroupsWords();
         textPage.analyseLines();
 
-        textPage.renderTextGroupsWords();
-//        textPage.renderTextLines();
+//        textPage.renderTextGroupsWords();
+        textPage.renderTextLines();
         textPage.saveToFile( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
