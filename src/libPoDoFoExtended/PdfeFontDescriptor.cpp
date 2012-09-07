@@ -49,7 +49,7 @@ PoDoFo::PdfObject* PdfeFontEmbedded::fontFile( size_t idx ) const
         return m_fontFile;
     }
     else if( m_fontFile2 ) {
-        return m_fontFile3;
+        return m_fontFile2;
     }
     else {
         return m_fontFile3;

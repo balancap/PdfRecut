@@ -385,12 +385,11 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Read group of words.
     PRTextGroupWords groupWords;
-    groupWords.setTextState( textState );
-    groupWords.setTransMatrix( streamState.gStates.back().transMat );
+    groupWords.readPdfVariant( variant,
+                               streamState.gStates.back().transMat,
+                               textState,
+                               pFont );
     groupWords.setGroupIndex( m_nbTextGroups );
-
-    //groupWords.readPdfVariant( variant, fontMetrics );
-    groupWords.readPdfVariant( variant, pFont );
 
     // Increment the number of group of words.
     ++m_nbTextGroups;
@@ -406,7 +405,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
     // Nothing to draw...
-    if( !groupWords.words().size() ) {
+    if( !groupWords.nbWords() ) {
         return;
     }
 
@@ -417,10 +416,9 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 
     // Paint words.
     double widthStr = 0;
-    const std::vector<PRTextWord>& words = groupWords.words();
-    for( size_t i = 0 ; i < words.size() ; i++ )
+    for( size_t i = 0 ; i < groupWords.nbWords() ; i++ )
     {
-        const PRTextWord& word = words[i];
+        const PRTextWord& word = groupWords.word( i );
 
         // Set pen & brush
         if( word.type() == PRTextWordType::Classic ) {
