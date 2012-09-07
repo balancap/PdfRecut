@@ -20,6 +20,8 @@
 #include "PdfeFont.h"
 #include "podofo/podofo.h"
 
+#include FT_BBOX_H
+
 using namespace PoDoFo;
 
 namespace PoDoFoExtended {
@@ -186,8 +188,10 @@ int PdfeFont::glyphBBox( FT_Face face,
         return error;
     }
     // Get bounding box, computed using the outline of the glyph.
-    //FT_BBox glyph_bbox;
-    //error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
+//    FT_BBox glyph_bbox;
+//    error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
+//    double bottom = glyph_bbox.yMin;
+//    double top = glyph_bbox.yMax;
 
     // Compute bottom and top using glyph metrics.
     FT_Glyph_Metrics metrics = face->glyph->metrics;

@@ -100,24 +100,23 @@ public:
     double width( bool lastSpace = true ) const;
 
 protected:
+    /// Word type.
+    PRTextWordType::Enum  m_type;
     /// Length: number of characters.
     long  m_length;
 
     /// Bounding box representing the word in local coordinates (includes last char space).
     /// Always assume the left coordinate of the word is set to 0.
     PoDoFo::PdfRect  m_bbox;
-
     /// Width of the last char space (usually zero...).
     double  m_lastCharSpace;
-
-    /// Word type.
-    PRTextWordType::Enum  m_type;
 };
 
 //**********************************************************//
 //                      PRTextGroupWords                    //
 //**********************************************************//
 /** Class that represents a group of words read from a PDF stream.
+ * A group can be split in subgroups seperated by a PDF translation word.
  */
 class PRTextGroupWords
 {
@@ -132,9 +131,13 @@ public:
 
     /** Read a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
+     * \param transMatrix Transformation matrix from graphics state.
+     * \param textState Corresponding text state.
      * \param pFont Font object used to compute words width.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
+                         const PdfeMatrix& transMatrix,
+                         const PdfTextState& textState,
                          PoDoFoExtended::PdfeFont* pFont );
 
     /** Append a word to the group.,
@@ -143,18 +146,26 @@ public:
     void appendWord( const PRTextWord& word );
 
     /** Compute the width of the group of words.
+     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
+     * \param lastCharSpace Include last character char space?
      * \return Width of the group of words.
      */
-    double width() const;
+    double width( long idxSubGroup = -1,
+                  bool lastCharSpace = true ) const;
+
     /** Compute the height of the group of words.
+     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
      * \return Height of the group of words.
      */
-    double height() const;
+    double height( long idxSubGroup = -1 ) const;
+
     /** Compute the length of the group of words.
-     * \param countSpaces Also count spaces ?
+     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
+     * \param countSpaces Also count spaces?
      * \return Length of the group of words.
      */
-    size_t length( bool countSpaces = true );
+    size_t length( long idxSubGroup = -1,
+                   bool countSpaces = true );
 
     /** Get global transformation matrix (font + text + gState).
      */
@@ -172,10 +183,30 @@ protected:
      * \param pFont Font object used to compute words width.
      */
     void readPdfString( const PoDoFo::PdfString& str,
-                        PoDoFoExtended::PdfeFont *pFont );
+                        PoDoFoExtended::PdfeFont* pFont );
+
+    /** Build the private subgroup vector.
+     */
+    void buildSubGroups();
 
 public:
-    // Getters and setters...
+    /** Structure that represents of a subgroup:
+     * Index of the first and the last words.
+     */
+    struct SubGroup
+    {
+        /// Index of the first word.
+        long  idxFirstWord;
+        /// Index of the last word.
+        long  idxLastWord;
+
+        /** Default constructor: initialize both to -1.
+         */
+        SubGroup() : idxFirstWord(-1), idxLastWord(-1) { }
+    };
+
+public:
+    // Standard getters and setters...
     long pageIndex() const;
     void setPageIndex( long pageIndex );
 
@@ -191,12 +222,30 @@ public:
     PdfTextState textState() const;
     void setTextState( const PdfTextState& textState );
 
-    const double* boundingBox() const;
+    PoDoFo::PdfRect fontBBox() const;
 
-    /** Get a constant reference to the vector of group of words.
-     * \return Constant reference to an std::vector.
+public:
+    /** Get the number of words in the group.
+     * \return Number of words.
      */
-    const std::vector<PRTextWord>& words() const;
+    size_t nbWords() const;
+
+    /** Get a constant reference to a word.
+     * \param idx Index of the word.
+     * \return Constant reference to a PRTextWord.
+     */
+    const PRTextWord& word( size_t idx ) const;
+
+    /** Get the number of subgroups.
+     * \return Number of subgroups.
+     */
+    size_t nbSubGroups() const;
+
+    /** Get a subgroup component.
+     * \param idx Index of the subgroup.
+     * \return Structure PRTextGroupWords::SubGroup.
+     */
+    SubGroup subGroup( size_t idx ) const;
 
 protected:
     /// Default space height used.
@@ -214,16 +263,17 @@ protected:
     /// Line it belongs to (pointer).
     PRTextLine*  m_pTextLine;
 
-    /// Vector of words that make the group.
-    std::vector<PRTextWord>  m_words;
-
     /// Transformation matrix of the graphics state.
     PdfeMatrix  m_transMatrix;
     /// Text state for this group of words.
     PdfTextState  m_textState;
-
     /// Font bounding box.
-    double  m_boundingBox[4];
+    PoDoFo::PdfRect  m_fontBBox;
+
+    /// Vector of words that make the group.
+    std::vector<PRTextWord>  m_words;
+    /// Subgroups of words.
+    std::vector<SubGroup>  m_subGroups;
 };
 
 //**********************************************************//
@@ -307,13 +357,26 @@ inline void PRTextGroupWords::setTextState( const PdfTextState& textState )
 {
     m_textState = textState;
 }
-inline const double* PRTextGroupWords::boundingBox() const
+inline PoDoFo::PdfRect PRTextGroupWords::fontBBox() const
 {
-    return m_boundingBox;
+    return m_fontBBox;
 }
-inline const std::vector<PRTextWord>& PRTextGroupWords::words() const
+
+inline size_t PRTextGroupWords::nbWords() const
 {
-    return m_words;
+    return m_words.size();
+}
+inline const PRTextWord& PRTextGroupWords::word( size_t idx ) const
+{
+    return m_words.at(idx);     // Throw out of range exception if necessary.
+}
+inline size_t PRTextGroupWords::nbSubGroups() const
+{
+    return m_subGroups.size();
+}
+inline PRTextGroupWords::SubGroup PRTextGroupWords::subGroup( size_t idx ) const
+{
+    return m_subGroups.at( idx );
 }
 
 //**********************************************************//

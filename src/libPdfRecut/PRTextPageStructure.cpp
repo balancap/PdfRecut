@@ -87,7 +87,7 @@ void PRTextPageStructure::fTextShowing( const PdfStreamState& streamState )
     PRTextGroupWords* pGroup = new PRTextGroupWords( this->textReadGroupWords( streamState ) );
 
     // Empty group -> trash !
-    if( !pGroup->words().size() ) {
+    if( !pGroup->nbWords() ) {
         delete pGroup;
         return;
     }
@@ -97,8 +97,6 @@ void PRTextPageStructure::fTextShowing( const PdfStreamState& streamState )
 
     m_pGroupsWords.push_back( pGroup );
     //m_groupsWordsLines.push_back( -1 );
-
-
 }
 
 void PRTextPageStructure::analyseLines()

@@ -84,9 +84,180 @@ void PRTextGroupWords::init()
     m_pageIndex = -1;
     m_groupIndex = -1;
     m_pTextLine = NULL;
-    m_words.clear();
+
     m_transMatrix.init();
     m_textState.init();
+    m_fontBBox = PdfRect( 0,0,0,0 );
+
+    m_words.clear();
+    m_subGroups.clear();
+}
+
+void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
+                                       const PdfeMatrix& transMatrix,
+                                       const PdfTextState& textState,
+                                       PdfeFont *pFont )
+{
+    // Set transformation matrix and textstate.
+    m_transMatrix = transMatrix;
+    m_textState = textState;
+
+    // Get font bounding box.
+    PdfArray bbox = pFont->fontBBox();
+    m_fontBBox.SetLeft( bbox[0].GetReal() / 1000. );
+    m_fontBBox.SetBottom( bbox[1].GetReal() / 1000. );
+    m_fontBBox.SetWidth( ( bbox[2].GetReal() - bbox[0].GetReal() ) / 1000. );
+    m_fontBBox.SetHeight( ( bbox[3].GetReal() - bbox[1].GetReal() ) / 1000. );
+
+    // Variant is a string.
+    if( variant.IsString() || variant.IsHexString() ) {
+        this->readPdfString( variant.GetString(), pFont );
+    }
+    // Variant is an array (c.f. operator TJ).
+    else if( variant.IsArray() ) {
+        const PdfArray& array = variant.GetArray();
+        for( size_t i = 0 ; i < array.size() ; i++ ) {
+            if( array[i].IsString() || array[i].IsHexString() ) {
+                // Read string.
+                this->readPdfString( array[i].GetString(), pFont );
+            }
+            else if( array[i].IsReal() || array[i].IsNumber() ) {
+                // Read pdf space.
+                PRTextWord textWord( PRTextWordType::PDFTranslation,
+                                     1,
+                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, this->SpaceHeight ),
+                                     0.0 );
+
+                m_words.push_back( textWord );
+            }
+        }
+    }
+    // Construct subgroups vector.
+    this->buildSubGroups();
+}
+
+void PRTextGroupWords::appendWord( const PRTextWord& word )
+{
+    // Append the word to the vector.
+    m_words.push_back( word );
+
+    // Construct subgroups vector.
+    this->buildSubGroups();
+}
+
+double PRTextGroupWords::width( long idxSubGroup, bool lastCharSpace ) const
+{
+    // Consider a specific subgroup.
+    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
+        double width = 0;
+        const SubGroup& subgroup = m_subGroups[ idxSubGroup ];
+        for( long i = subgroup.idxFirstWord ; i <= subgroup.idxLastWord ; ++i ) {
+            // Last character space of last word.
+            if( i == subgroup.idxLastWord ) {
+                width += m_words[i].width( lastCharSpace );
+            }
+            else {
+                width += m_words[i].width( true );
+            }
+        }
+        return width;
+    }
+    else {
+        // Add width of every word.
+        double width = 0;
+        for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+            // Last character space of last word.
+            if( i == m_words.size()-1 ) {
+                width += m_words[i].width( lastCharSpace );
+            }
+            else {
+                width += m_words[i].width( true );
+            }
+        }
+        return width;
+    }
+}
+double PRTextGroupWords::height( long idxSubGroup ) const
+{
+    double height = 0;
+    long idxFirst = 0;
+    long idxLast = static_cast<long>( m_words.size() ) - 1;
+
+    // Consider a specific subgroup.
+    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
+        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
+        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
+    }
+    // Compute the height.
+    for( long i = idxFirst ; i <= idxLast ; ++i ) {
+        height = std::max( m_words[i].bbox().GetHeight(), height );
+    }
+    return height;
+}
+
+size_t PRTextGroupWords::length( long idxSubGroup, bool countSpaces )
+{
+    size_t length = 0;
+    long idxFirst = 0;
+    long idxLast = static_cast<long>( m_words.size() ) - 1;
+
+    // Consider a specific subgroup.
+    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
+        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
+        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
+    }
+
+    // Compute length.
+    for( long i = idxFirst ; i <= idxLast ; ++i ) {
+        if( m_words[i].type() == PRTextWordType::Classic ||
+            ( m_words[i].type() == PRTextWordType::Space && countSpaces ) ) {
+            length += m_words[i].length();
+        }
+    }
+    return length;
+}
+
+PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
+{
+    // Compute text rendering matrix.
+    PdfeMatrix tmpMat, textMat;
+    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
+    //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
+    tmpMat(1,1) = m_textState.fontSize;
+    tmpMat(2,1) = m_textState.rise;
+    textMat = tmpMat * m_textState.transMat * m_transMatrix;
+
+    return textMat;
+}
+
+PdfeORect PRTextGroupWords::getOrientedRect( bool pageCoords ) const
+{
+    PdfeORect groupORect( 0.0, 0.0 );
+    if( !m_words.size() ) {
+        return groupORect;
+    }
+
+    // Compute width and height.
+    double width = 0;
+    double bottom = std::numeric_limits<double>::max();
+    double top = std::numeric_limits<double>::min();
+
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        width += m_words[i].bbox().GetWidth();
+
+        bottom = std::min( bottom, m_words[i].bbox().GetBottom() );
+        top = std::max( top, m_words[i].bbox().GetBottom() + m_words[i].bbox().GetHeight() );
+    }
+    groupORect.setWidth( width );
+    groupORect.setLeftBottom( PdfeVector( 0, bottom ) );
+    groupORect.setHeight( top - bottom );
+
+    // Apply global transform if needed.
+    if( pageCoords ) {
+        PdfeMatrix textMat = this->getGlobalTransMatrix();
+        groupORect = textMat.map( groupORect );
+    }
+    return groupORect;
 }
 
 void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
@@ -96,11 +267,11 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     PdfeCIDString cidstr = pFont->toCIDString( str );
     std::string bufstr = str.GetString();
 
-    if( bufstr.find( "Here all" ) != std::string::npos ) {
+//    if( bufstr.find( "Here all" ) != std::string::npos ) {
 //        std::cout << bufstr << std::endl;
 //        qDebug() << pFont->toUnicode( str );
-    }
-    //qDebug() << pFont->toUnicode( str );
+//    }
+//    qDebug() << pFont->toUnicode( str );
 
     // Text parameters.
     double fontSize = m_textState.fontSize;
@@ -202,117 +373,33 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     }
 }
 
-void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
-                                       PoDoFoExtended::PdfeFont* pFont )
+void PRTextGroupWords::buildSubGroups()
 {
-    // Get font bounding box.
-    PdfArray bbox = pFont->fontBBox();
-    m_boundingBox[0] = bbox[0].GetReal() / 1000.;
-    m_boundingBox[1] = bbox[1].GetReal() / 1000.;
-    m_boundingBox[2] = bbox[2].GetReal() / 1000.;
-    m_boundingBox[3] = bbox[3].GetReal() / 1000.;
+    m_subGroups.clear();
 
-    // Variant is a string.
-    if( variant.IsString() || variant.IsHexString() ) {
-        this->readPdfString( variant.GetString(), pFont );
-    }
-    // Variant is an array (c.f. operator TJ).
-    else if( variant.IsArray() ) {
-        const PdfArray& array = variant.GetArray();
-        for( size_t i = 0 ; i < array.size() ; i++ ) {
-            if( array[i].IsString() || array[i].IsHexString() ) {
-                // Read string.
-                this->readPdfString( array[i].GetString(), pFont );
-            }
-            else if( array[i].IsReal() || array[i].IsNumber() ) {
-                // Read pdf space.
-                PRTextWord textWord( PRTextWordType::PDFTranslation,
-                                     1,
-                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, this->SpaceHeight ),
-                                     0.0 );
+    size_t idx = 0;
+    while( idx < m_words.size() ) {
+        // Remove PDF translation words.
+        while( idx < m_words.size() &&
+               m_words[idx].type() == PRTextWordType::PDFTranslation ) {
+            idx++;
+        }
 
-                m_words.push_back( textWord );
-            }
+        // Words in the subgroup.
+        SubGroup subgroup;
+        subgroup.idxFirstWord = idx;
+        while( idx < m_words.size() &&
+               m_words[idx].type() != PRTextWordType::PDFTranslation ) {
+            idx++;
+        }
+        subgroup.idxLastWord = idx-1;
+
+        // Add subgroup to the list.
+        if( subgroup.idxFirstWord != static_cast<long>( m_words.size() ) ) {
+            m_subGroups.push_back( subgroup );
         }
     }
 }
-
-void PRTextGroupWords::appendWord( const PRTextWord& word )
-{
-    // Append the word to the vector.
-    m_words.push_back( word );
-}
-
-double PRTextGroupWords::width() const
-{
-    double width = 0;
-    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].width();
-    }
-    return width;
-}
-double PRTextGroupWords::height() const
-{
-    double height = 0;
-    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        height = std::max( m_words[i].bbox().GetHeight(), height );
-    }
-    return height;
-}
-size_t PRTextGroupWords::length( bool countSpaces )
-{
-    size_t length = 0;
-    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        if( m_words[i].type() == PRTextWordType::Classic || countSpaces ) {
-            length += m_words[i].length();
-        }
-    }
-    return length;
-}
-
-PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
-{
-    // Compute text rendering matrix.
-    PdfeMatrix tmpMat, textMat;
-    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
-    //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
-    tmpMat(1,1) = m_textState.fontSize;
-    tmpMat(2,1) = m_textState.rise;
-    textMat = tmpMat * m_textState.transMat * m_transMatrix;
-
-    return textMat;
-}
-
-PdfeORect PRTextGroupWords::getOrientedRect( bool pageCoords ) const
-{
-    PdfeORect groupORect( 0.0, 0.0 );
-    if( !m_words.size() ) {
-        return groupORect;
-    }
-
-    // Compute width and height.
-    double width = 0;
-    double bottom = std::numeric_limits<double>::max();
-    double top = std::numeric_limits<double>::min();
-
-    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].bbox().GetWidth();
-
-        bottom = std::min( bottom, m_words[i].bbox().GetBottom() );
-        top = std::max( top, m_words[i].bbox().GetBottom() + m_words[i].bbox().GetHeight() );
-    }
-    groupORect.setWidth( width );
-    groupORect.setLeftBottom( PdfeVector( 0, bottom ) );
-    groupORect.setHeight( top - bottom );
-
-    // Apply global transform if needed.
-    if( pageCoords ) {
-        PdfeMatrix textMat = this->getGlobalTransMatrix();
-        groupORect = textMat.map( groupORect );
-    }
-    return groupORect;
-}
-
 
 //**********************************************************//
 //                        PRTextLine                        //
