@@ -396,7 +396,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Update text transform matrix.
     PdfeMatrix tmpMat;
-    tmpMat(2,0) = groupWords.width() * textState.fontSize * ( textState.hScale / 100. );
+    tmpMat(2,0) = groupWords.width( -1, true, true) * textState.fontSize * ( textState.hScale / 100. );
     m_textMatrix = tmpMat * m_textMatrix;
 
     return groupWords;

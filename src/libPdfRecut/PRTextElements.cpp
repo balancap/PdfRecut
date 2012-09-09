@@ -244,13 +244,13 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
     }
 
     // Compute width of words before the current group.
-    double leftWidth = 0;
+    double leftWidth = 0.0;
     for( long i = 0 ; i < idxFirst ; ++i ) {
         leftWidth += m_words[i].width( true );
     }
 
     // Compute width and vertical coordinates.
-    double width = 0;
+    double width = 0.0;
     double bottom = std::numeric_limits<double>::max();
     double top = std::numeric_limits<double>::min();
 
@@ -262,7 +262,7 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
         top = std::max( top, bbox.GetBottom() + bbox.GetHeight() );
     }
     groupORect.setWidth( width );
-    groupORect.setLeftBottom( PdfeVector( 0, bottom ) );
+    groupORect.setLeftBottom( PdfeVector( leftWidth, bottom ) );
     groupORect.setHeight( top - bottom );
 
     // Apply global transform if needed.
@@ -304,6 +304,7 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     while( i < cidstr.length() ) {
 
         // Length and bbox of the next word.
+        PRTextWordType::Enum type;
         long length = 0;
         double width = 0.0;
         double bottom = std::numeric_limits<double>::max();
@@ -338,10 +339,10 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
             }
             bottom = 0.0;
             top = this->SpaceHeight;
+            type = PRTextWordType::Space;
         }
         // Read classic word.
         else {
-
             // Read word characters.
             while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) )
             {
@@ -371,9 +372,10 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 top += this->MinimalHeight / 2;
                 bottom -= this->MinimalHeight / 2;
             }
+            type = PRTextWordType::Classic;
         }
         // Add word to the collection !
-        m_words.push_back( PRTextWord( PRTextWordType::Classic,
+        m_words.push_back( PRTextWord( type,
                                        length,
                                        PdfRect( 0.0, bottom, width, top-bottom ),
                                        charSpace ) );
@@ -400,7 +402,8 @@ void PRTextGroupWords::buildSubGroups()
     while( idx < m_words.size() ) {
         // Remove PDF translation words.
         while( idx < m_words.size() &&
-               m_words[idx].type() == PRTextWordType::PDFTranslation ) {
+               ( m_words[idx].type() == PRTextWordType::PDFTranslation ||
+                 m_words[idx].type() == PRTextWordType::PDFTranslationCS ) ) {
             idx++;
         }
 
@@ -408,7 +411,8 @@ void PRTextGroupWords::buildSubGroups()
         SubGroup subgroup;
         subgroup.idxFirstWord = idx;
         while( idx < m_words.size() &&
-               m_words[idx].type() != PRTextWordType::PDFTranslation ) {
+               m_words[idx].type() != PRTextWordType::PDFTranslation &&
+               m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
             idx++;
         }
         subgroup.idxLastWord = idx-1;

@@ -56,24 +56,26 @@ protected:
     void clearContent();
 
 public:
-    /** Basic analysis of the groups of words found in the page.
-     */
-    void analyseGroupsWords();
     /** Reimplementation of text showing function from PRRenderPage.
      * Used to read text groups of words.
      */
     virtual void fTextShowing( const PdfStreamState& streamState );
 
-    /** Analyse lines structure of the page.
+    /** Detect the groups of words in the page.
      */
-    void analyseLines();
+    void detectGroupsWords();
+    /** Detect text lines structure of the page.
+     */
+    void detectLines();
 
 protected:
     /** Find a line for a group of words. Line created if necessary.
+     * Basic algorithm used.
      * \param idxGroupWords Index of the group of words.
      * \return Pointer to the line object.
      */
-    PRTextLine* findTextLine( size_t idxGroupWords );
+    PRTextLine* findLine_Basic( size_t idxGroupWords );
+    PRTextLine *findLine_Basic2(size_t idxGroupWords);
 
     /** No copy constructor allowed.
      */
@@ -92,6 +94,9 @@ protected:
     /** Draw a PdfeORect.
      */
     void textDrawPdfeORect( const PdfeORect& orect );
+
+    void textDrawSubGroups( const PRTextGroupWords& groupWords );
+
     /** Draw a line of text.
      */
     void textDrawLine( const PRTextLine& line );

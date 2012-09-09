@@ -170,8 +170,8 @@ void proceedFile( QString filePath )
 //        renderPage.saveToFile( filename );
 
         PRTextPageStructure textPage( &document, i );
-        textPage.analyseGroupsWords();
-        textPage.analyseLines();
+        textPage.detectGroupsWords();
+        textPage.detectLines();
 
 //        textPage.renderTextGroupsWords();
         textPage.renderTextLines();
