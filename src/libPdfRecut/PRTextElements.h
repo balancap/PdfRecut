@@ -44,10 +44,11 @@ namespace PRTextWordType {
 /** Enumeration of the different types of word.
  */
 enum Enum {
-    Classic = 0,    /// Classic word.
-    Space,          /// Space character 0x0020.
-    PDFTranslation, /// PDF translation (c.f. TJ operator).
-    Unknown         /// Unknown...
+    Classic = 0,        /// Classic word.
+    Space,              /// Space character 0x0020.
+    PDFTranslation,     /// PDF translation (c.f. TJ operator).
+    PDFTranslationCS,   /// PDF translation replacing char space.
+    Unknown             /// Unknown...
 };
 }
 
@@ -252,8 +253,8 @@ protected:
     static const double SpaceHeight = 0.5;
     /// Minimal height for a character.
     static const double MinimalHeight = 0.2;
-    /// Max char space allowed inside a word.
-    static const double MaxWordCharSpace = 0.1;
+    /// Max char space allowed inside a word: when greater, split the word and replace char space by PDF translation.
+    static const double MaxWordCharSpace = 0.2;
 
 protected:
     /// Index of the page to which belongs the group.

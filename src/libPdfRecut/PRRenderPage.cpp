@@ -427,7 +427,8 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
         else if( word.type() == PRTextWordType::Space ) {
             m_renderParameters.textSpacePB.applyToPainter( m_pagePainter );
         }
-        else if( word.type() == PRTextWordType::PDFTranslation ) {
+        else if( word.type() == PRTextWordType::PDFTranslation ||
+                 word.type() == PRTextWordType::PDFTranslationCS ) {
             m_renderParameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if the width is positive !

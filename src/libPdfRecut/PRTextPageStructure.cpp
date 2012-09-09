@@ -70,7 +70,7 @@ void PRTextPageStructure::analyseGroupsWords()
     // Set rendering parameters to empty.
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
-    renderParameters.resolution = 1.0;
+    renderParameters.resolution = 1.5;
 
     // Clear content.
     this->clearContent();
@@ -151,7 +151,7 @@ PRTextLine* PRTextPageStructure::findTextLine( size_t idxGroupWords )
                 double distORects = PdfeORect::minDistance( lGroupORectLocal, rGroupORectLocal );
 
                 // Is the left group linked to rGroupWords ?
-                lrGroupLink = ( distORects <= 1.0 ) && ( lGroupsMaxDist <= 6.0 );
+                //lrGroupLink = ( distORects <= 1.0 ) && ( lGroupsMaxDist <= 6.0 );
             }
             // Left normal group and right simple group.
             /*else if( !lGroupSimple && rGroupSimple ) {

@@ -289,10 +289,15 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     // Read characters from the string.
     size_t i = 0;
     while( i < cidstr.length() ) {
+
+        // Length and bbox of the next word.
+        long length = 0;
+        double width = 0.0;
+        double bottom = std::numeric_limits<double>::max();
+        double top = std::numeric_limits<double>::min();
+
         // Read space word: use SpaceHeight for the character height.
         if( pFont->isSpace( cidstr[i] ) ) {
-            double width = 0.0;
-            long length = 0;
 
             // Read spaces (can be multiple...)
             while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) )
@@ -306,30 +311,23 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
                     width += wordSpace;
                 }
-                width += charSpace;
 
                 length++;
                 i++;
 
-                // Char space too big: divide the word into pieces.
+                // Char space too large: divide the word and replace with pdf translation.
                 if( charSpace > MaxWordCharSpace ) {
                     break;
                 }
+                else {
+                    width += charSpace;
+                }
             }
-            // Add word to the collection !
-            PRTextWord textWord( PRTextWordType::Space,
-                                 length,
-                                 PdfRect( 0.0, 0.0, width, this->SpaceHeight ),
-                                 charSpace );
-
-            m_words.push_back( textWord );
+            bottom = 0.0;
+            top = this->SpaceHeight;
         }
         // Read classic word.
         else {
-            long length = 0;
-            double width = 0.0;
-            double bottom = std::numeric_limits<double>::max();
-            double top = std::numeric_limits<double>::min();
 
             // Read word characters.
             while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) )
@@ -339,10 +337,6 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 // cwidth = pFont->width( cidstr[i], false );
 
                 width += cbbox.GetWidth();
-                // Add char space if not the last character in the word.
-                //if( i != cidstr.length()-1 ) {
-                    width += charSpace;
-                //}
 
                 // Update bottom and top.
                 bottom = std::min( bottom, cbbox.GetBottom() );
@@ -351,9 +345,12 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 length++;
                 i++;
 
-                // Char space too big: divide the word into pieces.
+                // Char space too large: divide the word and replace with pdf translation.
                 if( charSpace > MaxWordCharSpace ) {
                     break;
+                }
+                else {
+                    width += charSpace;
                 }
             }
             // Minimal height: add half for bottom and top.
@@ -361,14 +358,23 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 top += this->MinimalHeight / 2;
                 bottom -= this->MinimalHeight / 2;
             }
+        }
+        // Add word to the collection !
+        m_words.push_back( PRTextWord( PRTextWordType::Classic,
+                                       length,
+                                       PdfRect( 0.0, bottom, width, top-bottom ),
+                                       charSpace ) );
 
-            // Add word to the collection !
-            PRTextWord textWord( PRTextWordType::Classic,
-                                 length,
-                                 PdfRect( 0.0, bottom, width, top-bottom ),
-                                 charSpace );
+        // Char space too large: replace with pdf translation.
+        if( charSpace > MaxWordCharSpace ) {
+            // Reset last char space to zero.
+            m_words.back().setLastCharSpace( 0.0 );
 
-            m_words.push_back( textWord );
+            // Push back PDF translation word.
+            m_words.push_back( PRTextWord( PRTextWordType::PDFTranslationCS,
+                                           1,
+                                           PdfRect( 0.0, 0.0, charSpace, this->SpaceHeight ),
+                                           0.0 ) );
         }
     }
 }
