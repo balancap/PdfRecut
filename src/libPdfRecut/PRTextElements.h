@@ -98,7 +98,7 @@ public:
      * \param lastSpace Include last char space in width ? (default = true)
      * \return Width of the word.
      */
-    double width( bool lastSpace = true ) const;
+    double width( bool lastSpace ) const;
 
 protected:
     /// Word type.
@@ -148,10 +148,12 @@ public:
 
     /** Compute the width of the group of words.
      * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
+     * \param spaces Include space width.
      * \param lastCharSpace Include last character char space?
      * \return Width of the group of words.
      */
     double width( long idxSubGroup = -1,
+                  bool spaces = true,
                   bool lastCharSpace = true ) const;
 
     /** Compute the height of the group of words.
@@ -172,11 +174,13 @@ public:
      */
     PdfeMatrix getGlobalTransMatrix() const;
 
-    /** Get the oriented rectangle which represents the group of words.
-     * \param In page coordinates or local coordinates ?
-     * \return PdfeORect object.
+    /** Get the bounding box of the group of words.
+     * \param In page coordinates (true) or local coordinates (false) ?
+     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
+     * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect getOrientedRect( bool pageCoords = true ) const;
+    PdfeORect bbox( bool pageCoords = true,
+                    long idxSubGroup = -1 ) const;
 
 protected:
     /** Read a group of words from a PdfString (appended to the group).

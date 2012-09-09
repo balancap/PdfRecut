@@ -145,37 +145,34 @@ void PRTextGroupWords::appendWord( const PRTextWord& word )
     this->buildSubGroups();
 }
 
-double PRTextGroupWords::width( long idxSubGroup, bool lastCharSpace ) const
+double PRTextGroupWords::width( long idxSubGroup,
+                                bool countSpaces,
+                                bool lastCharSpace ) const
 {
+    double width = 0;
+    long idxFirst = 0;
+    long idxLast = static_cast<long>( m_words.size() ) - 1;
+
     // Consider a specific subgroup.
     if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
-        double width = 0;
-        const SubGroup& subgroup = m_subGroups[ idxSubGroup ];
-        for( long i = subgroup.idxFirstWord ; i <= subgroup.idxLastWord ; ++i ) {
+        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
+        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
+    }
+
+    // Compute group width.
+    for( long i = idxFirst ; i <= idxLast ; ++i ) {
+        // Add word width ?
+        if( countSpaces || m_words[i].type() == PRTextWordType::Classic ) {
             // Last character space of last word.
-            if( i == subgroup.idxLastWord ) {
+            if( i == idxLast ) {
                 width += m_words[i].width( lastCharSpace );
             }
             else {
                 width += m_words[i].width( true );
             }
         }
-        return width;
     }
-    else {
-        // Add width of every word.
-        double width = 0;
-        for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-            // Last character space of last word.
-            if( i == m_words.size()-1 ) {
-                width += m_words[i].width( lastCharSpace );
-            }
-            else {
-                width += m_words[i].width( true );
-            }
-        }
-        return width;
-    }
+    return width;
 }
 double PRTextGroupWords::height( long idxSubGroup ) const
 {
@@ -230,23 +227,39 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-PdfeORect PRTextGroupWords::getOrientedRect( bool pageCoords ) const
+PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
 {
+    // Handle the case of an empty group.
     PdfeORect groupORect( 0.0, 0.0 );
     if( !m_words.size() ) {
         return groupORect;
     }
 
-    // Compute width and height.
+    // Subgroup limits.
+    long idxFirst = 0;
+    long idxLast = static_cast<long>( m_words.size() ) - 1;
+    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
+        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
+        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
+    }
+
+    // Compute width of words before the current group.
+    double leftWidth = 0;
+    for( long i = 0 ; i < idxFirst ; ++i ) {
+        leftWidth += m_words[i].width( true );
+    }
+
+    // Compute width and vertical coordinates.
     double width = 0;
     double bottom = std::numeric_limits<double>::max();
     double top = std::numeric_limits<double>::min();
 
-    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
-        width += m_words[i].bbox().GetWidth();
+    for( long i = idxFirst ; i <= idxLast ; ++i ) {
+        PdfRect bbox = m_words[i].bbox();
 
-        bottom = std::min( bottom, m_words[i].bbox().GetBottom() );
-        top = std::max( top, m_words[i].bbox().GetBottom() + m_words[i].bbox().GetHeight() );
+        width += bbox.GetWidth();
+        bottom = std::min( bottom, bbox.GetBottom() );
+        top = std::max( top, bbox.GetBottom() + bbox.GetHeight() );
     }
     groupORect.setWidth( width );
     groupORect.setLeftBottom( PdfeVector( 0, bottom ) );
