@@ -158,9 +158,9 @@ PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
                 rLTPoint = rSubGroupBBoxLocal.leftTop();
 
                 double hDistance = lRBPoint(0) - rLBPoint(0);
-                double vOverlapR = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) ) / rSubGroupBBoxLocal.height();
-                double vOverlapL = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) ) / lSubGroupBBoxLocal.height();
-
+                double vOverlap = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) );
+                double vOverlapR = vOverlap / rSubGroupBBoxLocal.height();
+                double vOverlapL = vOverlap / lSubGroupBBoxLocal.height();
 
                 // Conditions to satisfy...
                 lrGroupLink = ( hDistance >= MaxHDistanceLB ) &&
@@ -301,32 +301,6 @@ PRTextLine* PRTextPageStructure::findLine_Basic2( size_t idxGroupWords )
                 double hDistance = lRBPoint(0);
                 double vOverlapR = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) ) / rGroupORectLocal.height();
                 double vOverlapL = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) ) / lGroupORectLocal.height();
-
-                /*
-                // Compute the two points that interest us (rb and rt).
-                PdfeVector rbPoint0, rtPoint0, rbPoint, rtPoint;
-                rbPoint0 = lGroupORect.leftBottom() + lGroupORect.direction() * lGroupORect.width();
-                rtPoint0 = rbPoint0 + lGroupORect.direction().rotate90() * lGroupORect.height();
-
-                //PdfeVector dir = lGroupORect.direction().rotate90();
-
-                rbPoint = rGroupTransMat.map( rbPoint0 );
-                rtPoint = rGroupTransMat.map( rtPoint0 );
-
-                //rbPoint = lGroupORect.rightBottom();
-                //rtPoint = lGroupORect.rightTop();
-
-                // Compute horizontal distance and vertical overlap (in % of height).
-                double hDistance = rbPoint(0);
-                double vOverlapR = std::max( 0.0, std::min( rGroupORectLocal.height(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / rGroupORectLocal.height();
-                double vOverlapL = std::max( 0.0, std::min( rGroupORectLocal.height(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / ( rtPoint(1) - rbPoint(1) );
-
-                */
-
-
-//                double hDistance = rbPoint(0);
-//                double vOverlapR = std::max( 0.0, std::min( rGroupORect.height(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / rGroupORect.height();
-//                double vOverlapL = std::max( 0.0, std::min( rGroupORect.height(), rtPoint(1) ) - std::max( 0.0, rbPoint(1) ) ) / ( rtPoint(1) - rbPoint(1) );
 
                 // Conditions to satisfy...
                 lrGroupLink = ( hDistance >= MaxHDistanceLB ) &&
