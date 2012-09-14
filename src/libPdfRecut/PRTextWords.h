@@ -292,60 +292,6 @@ protected:
 };
 
 //**********************************************************//
-//                        PRTextLine                        //
-//**********************************************************//
-/** Class that represent a line of text in a PDF page.
- */
-class PRTextLine
-{
-public:
-    /** Default constructor.
-     */
-    PRTextLine();
-
-    ~PRTextLine();
-
-    /** Initialize to an empty line.
-     */
-    void init();
-
-    /** Add a group of words to the line.
-     * \param groupWords Pointer to the group of words to add.
-     */
-    void addGroupWords( PRTextGroupWords* pGroupWords );
-
-    /** Get the vector of group of words.
-     */
-    std::vector<PRTextGroupWords*> groupsWords() const;
-
-    /** Sort two lines using the index of their groups.
-     * \param pLine1 Pointer to the first line.
-     * \param pLine2 Pointer to the second line.
-     * \return line1 < line2.
-     */
-    static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
-
-    /** Minimum index of group of words inside the line.
-     * \return Minimum index found.
-     */
-    long minGroupIndex();
-    /** Maximum index of group of words inside the line.
-     * \return Maximum index found.
-     */
-    long maxGroupIndex();
-
-protected:
-    /// Index of the page to which belongs the line.
-    long  m_pageIndex;
-    /// Index of the line in the page.
-    long  m_lineIndex;
-
-    /// Vector of pointers to groups of words which constitute the line (objects do not belong the line).
-    std::vector<PRTextGroupWords*>  m_pGroupsWords;
-};
-
-
-//**********************************************************//
 //                 Inline PRTextGroupWords                  //
 //**********************************************************//
 inline long PRTextGroupWords::pageIndex() const
@@ -410,16 +356,6 @@ inline PRTextGroupWords::SubGroup PRTextGroupWords::subGroup( size_t idx ) const
     return m_subGroups.at( idx );
 }
 
-//**********************************************************//
-//                     Inline PRTextLine                    //
-//**********************************************************//
-inline std::vector<PRTextGroupWords*> PRTextLine::groupsWords() const
-{
-    return m_pGroupsWords;
 }
-
-
-}
-
 
 #endif // PRTEXTELEMENTS_H

@@ -25,7 +25,7 @@
 
 #include "PRDocument.h"
 #include "PRStreamAnalysis.h"
-#include "PRTextElements.h"
+#include "PRTextWords.h"
 
 namespace PoDoFo {
     class PdfPage;

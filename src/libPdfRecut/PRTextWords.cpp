@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PRTextElements.h"
+#include "PRTextWords.h"
 
 #include <podofo/podofo.h>
 #include <limits>
@@ -446,57 +446,6 @@ void PRTextGroupWords::buildSubGroups()
             m_subGroups.push_back( subgroup );
         }
     }
-}
-
-//**********************************************************//
-//                        PRTextLine                        //
-//**********************************************************//
-PRTextLine::PRTextLine()
-{
-    this->init();
-}
-
-PRTextLine::~PRTextLine()
-{
-}
-void PRTextLine::init()
-{
-    m_pageIndex = -1;
-    m_lineIndex = -1;
-    m_pGroupsWords.clear();
-}
-
-void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
-{
-    if( pGroupWords ) {
-        // Set group textline (assume there is only one !).
-        pGroupWords->setTextLine( this );
-
-        m_pGroupsWords.push_back( pGroupWords );
-    }
-}
-
-bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
-{
-    // Compare minimum group index found in each line.
-    return ( pLine1->minGroupIndex() < pLine2->minGroupIndex() );
-}
-
-long PRTextLine::minGroupIndex()
-{
-    long minGroupIdx = std::numeric_limits<long>::max();
-    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
-        minGroupIdx = std::min( minGroupIdx, m_pGroupsWords[i]->groupIndex() );
-    }
-    return minGroupIdx;
-}
-long PRTextLine::maxGroupIndex()
-{
-    long maxGroupIdx = std::numeric_limits<long>::min();
-    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
-        maxGroupIdx = std::max( maxGroupIdx, m_pGroupsWords[i]->groupIndex() );
-    }
-    return maxGroupIdx;
 }
 
 }

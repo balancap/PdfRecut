@@ -21,7 +21,8 @@
 #ifndef PRTEXTPAGESTRUCTURE_H
 #define PRTEXTPAGESTRUCTURE_H
 
-#include "PRTextElements.h"
+#include "PRTextWords.h"
+#include "PRTextLine.h"
 #include "PRRenderPage.h"
 
 namespace PoDoFo {
