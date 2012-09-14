@@ -273,6 +273,30 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
     return groupORect;
 }
 
+double PRTextGroupWords::minDistance( const PRTextGroupWords& group1,
+                                      const PRTextGroupWords& group2 )
+{
+    PdfeORect grp1BBox, grp2BBox;
+    double dist = std::numeric_limits<double>::max();
+
+    // Inverse Transformation matrix of the first group.
+    PdfeMatrix grp1TransMat = group1.getGlobalTransMatrix().inverse();
+
+    // Loop on subgroups of the second one.
+    for( size_t j = 0 ; j < group2.nbSubGroups() ; ++j ) {
+        // Subgroup bounding box.
+        grp2BBox = grp1TransMat.map( group2.bbox( true, j ) );
+
+        // Subgroups of the first one.
+        for( size_t i = 0 ; i < group1.nbSubGroups() ; ++i ) {
+            grp1BBox = group1.bbox( false, i );
+
+            dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
+        }
+    }
+    return dist;
+}
+
 void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                       PoDoFoExtended::PdfeFont* pFont )
 {
@@ -441,6 +465,7 @@ void PRTextLine::init()
     m_lineIndex = -1;
     m_pGroupsWords.clear();
 }
+
 void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
 {
     if( pGroupWords ) {
@@ -449,6 +474,29 @@ void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
 
         m_pGroupsWords.push_back( pGroupWords );
     }
+}
+
+bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
+{
+    // Compare minimum group index found in each line.
+    return ( pLine1->minGroupIndex() < pLine2->minGroupIndex() );
+}
+
+long PRTextLine::minGroupIndex()
+{
+    long minGroupIdx = std::numeric_limits<long>::max();
+    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
+        minGroupIdx = std::min( minGroupIdx, m_pGroupsWords[i]->groupIndex() );
+    }
+    return minGroupIdx;
+}
+long PRTextLine::maxGroupIndex()
+{
+    long maxGroupIdx = std::numeric_limits<long>::min();
+    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
+        maxGroupIdx = std::max( maxGroupIdx, m_pGroupsWords[i]->groupIndex() );
+    }
+    return maxGroupIdx;
 }
 
 }

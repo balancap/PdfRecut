@@ -171,6 +171,7 @@ public:
                    bool countSpaces = true );
 
     /** Get global transformation matrix (font + text + gState).
+     * \return PdfeMatrix containing the transformation.
      */
     PdfeMatrix getGlobalTransMatrix() const;
 
@@ -181,6 +182,15 @@ public:
      */
     PdfeORect bbox( bool pageCoords = true,
                     long idxSubGroup = -1 ) const;
+
+    /** Minimal distance found between two groups of words.
+     * Use subgroups to compute the distance.
+     * Distance computed in the coordinate system of the first group.
+     * \param group1 First group.
+     * \param group2 Second group.
+     * \return Distance computed.
+     */
+    static double minDistance( const PRTextGroupWords& group1, const PRTextGroupWords& group2 );
 
 protected:
     /** Read a group of words from a PdfString (appended to the group).
@@ -308,6 +318,22 @@ public:
      */
     std::vector<PRTextGroupWords*> groupsWords() const;
 
+    /** Sort two lines using the index of their groups.
+     * \param pLine1 Pointer to the first line.
+     * \param pLine2 Pointer to the second line.
+     * \return line1 < line2.
+     */
+    static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
+
+    /** Minimum index of group of words inside the line.
+     * \return Minimum index found.
+     */
+    long minGroupIndex();
+    /** Maximum index of group of words inside the line.
+     * \return Maximum index found.
+     */
+    long maxGroupIndex();
+
 protected:
     /// Index of the page to which belongs the line.
     long  m_pageIndex;
@@ -391,6 +417,7 @@ inline std::vector<PRTextGroupWords*> PRTextLine::groupsWords() const
 {
     return m_pGroupsWords;
 }
+
 
 }
 

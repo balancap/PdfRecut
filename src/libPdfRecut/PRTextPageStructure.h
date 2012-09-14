@@ -75,7 +75,20 @@ protected:
      * \return Pointer to the line object.
      */
     PRTextLine* findLine_Basic( size_t idxGroupWords );
-    PRTextLine *findLine_Basic2(size_t idxGroupWords);
+    PRTextLine* findLine_Basic2( size_t idxGroupWords );
+
+    /** Find lines algorithm: try to merge existing lines.
+     * \param pLine Pointer of the line to consider.
+     * \return Pointer the merged line.
+     */
+    PRTextLine* findLine_Merge( PRTextLine* pLine );
+
+    /** Merge a vector of lines into a single one.
+     * Use the first element as base (other lines are deleted).
+     * \param pLines Vector of pointer of lines to merge.
+     * \return Pointer to the resulting line.
+     */
+    PRTextLine* mergeLines( const std::vector<PRTextLine*>& pLines );
 
     /** No copy constructor allowed.
      */
@@ -94,9 +107,9 @@ protected:
     /** Draw a PdfeORect.
      */
     void textDrawPdfeORect( const PdfeORect& orect );
-
+    /** Draw subgroups of a PRTextGroupWords.
+     */
     void textDrawSubGroups( const PRTextGroupWords& groupWords );
-
     /** Draw a line of text.
      */
     void textDrawLine( const PRTextLine& line );

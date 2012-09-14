@@ -21,7 +21,14 @@
 #ifndef PDFTYPES_H
 #define PDFTYPES_H
 
+//#ifndef NDEBUG
+//#define NDEBUG
+//#include "vmmlib/vmmlib.hpp"
+//#undef NDEBUG
+//#else
 #include "vmmlib/vmmlib.hpp"
+//#endif
+
 #include "podofo/base/PdfRect.h"
 
 #include <QPointF>
