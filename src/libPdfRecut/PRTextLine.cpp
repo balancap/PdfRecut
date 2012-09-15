@@ -82,6 +82,37 @@ long PRTextLine::maxGroupIndex()
     return maxGroupIdx;
 }
 
+PdfeORect PRTextLine::bbox( bool pageCoords )
+{
+    // Compute the bbox if necessary.
+    if( m_bboxHasChanged ) {
+        this->computeBBox();
+    }
+
+    PdfeORect bbox( m_bbox );
+    if( pageCoords ) {
+        bbox = m_transMatrix.map( bbox );
+    }
+    return bbox;
+}
+double PRTextLine::width()
+{
+    // Compute the bbox if necessary.
+    if( m_bboxHasChanged ) {
+        this->computeBBox();
+    }
+
+    return m_bbox.GetWidth();
+}
+size_t PRTextLine::length( bool countSpaces )
+{
+    size_t length = 0;
+    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
+        length += m_pGroupsWords[i]->length( countSpaces );
+    }
+    return length;
+}
+
 void PRTextLine::computeBBox()
 {
     // We basically assume that words have a zero angle between them.
@@ -99,8 +130,8 @@ void PRTextLine::computeBBox()
 
     // Left, Bottom, Right and Top coordinates of the bounding box.
     double left, bottom, right, top;
-    left = bottom = std::numeric_limits<double>::min();
-    right = top = std::numeric_limits<double>::max();
+    left = bottom = std::numeric_limits<double>::max();
+    right = top = std::numeric_limits<double>::min();
 
     // Mean coordinate of the base line.
     double meanYCoord = 0;

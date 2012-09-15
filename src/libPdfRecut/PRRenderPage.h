@@ -90,13 +90,13 @@ struct PRRenderParameters
 
         /** Is painting necessary ?
          */
-        bool isPainting()
+        bool isPainting() const
         {
-            return (drawPen || fillBrush);
+            return ( drawPen || fillBrush );
         }
         /** Set pen and brush to a painter.
          */
-        void applyToPainter( QPainter* painter )
+        void applyToPainter( QPainter* painter ) const
         {
             if( drawPen ) {
                 painter->setPen( *drawPen );

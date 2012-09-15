@@ -178,7 +178,7 @@ public:
     PdfeMatrix getGlobalTransMatrix() const;
 
     /** Get the bounding box of the group of words.
-     * \param In page coordinates (true) or local coordinates (false) ?
+     * \param pageCoords In page coordinates (true) or local coordinates (false) ?
      * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set to 0).
      * \return Oriented rectangle (PdfeORect object).

@@ -234,12 +234,12 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-PdfeORect PRTextGroupWords::bbox(bool pageCoords, long idxSubGroup, bool useBottomCoord ) const
+PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
-    PdfeORect groupORect( 0.0, 0.0 );
+    PdfeORect bbox( 0.0, 0.0 );
     if( !m_words.size() ) {
-        return groupORect;
+        return bbox;
     }
 
     // Subgroup limits.
@@ -262,22 +262,22 @@ PdfeORect PRTextGroupWords::bbox(bool pageCoords, long idxSubGroup, bool useBott
     double top = std::numeric_limits<double>::min();
 
     for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        PdfRect bbox = m_words[i].bbox( true, useBottomCoord );
+        PdfRect bboxWord = m_words[i].bbox( true, useBottomCoord );
 
-        width += bbox.GetWidth();
-        bottom = std::min( bottom, bbox.GetBottom() );
-        top = std::max( top, bbox.GetBottom() + bbox.GetHeight() );
+        width += bboxWord.GetWidth();
+        bottom = std::min( bottom, bboxWord.GetBottom() );
+        top = std::max( top, bboxWord.GetBottom() + bboxWord.GetHeight() );
     }
-    groupORect.setWidth( width );
-    groupORect.setLeftBottom( PdfeVector( leftWidth, bottom ) );
-    groupORect.setHeight( top - bottom );
+    bbox.setWidth( width );
+    bbox.setLeftBottom( PdfeVector( leftWidth, bottom ) );
+    bbox.setHeight( top - bottom );
 
     // Apply global transform if needed.
     if( pageCoords ) {
         PdfeMatrix textMat = this->getGlobalTransMatrix();
-        groupORect = textMat.map( groupORect );
+        bbox = textMat.map( bbox );
     }
-    return groupORect;
+    return bbox;
 }
 
 double PRTextGroupWords::minDistance( const PRTextGroupWords& group1,

@@ -57,6 +57,7 @@ public:
      */
     static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
 
+public:
     /** Minimum index of group of words inside the line.
      * \return Minimum index found.
      */
@@ -65,6 +66,27 @@ public:
      * \return Maximum index found.
      */
     long maxGroupIndex();
+
+    /** Get the line bounding box.
+     * \param pageCoords BBox in page coordinates (true) or local coordinates (false) ?
+     * \return Oriented rectangle containing the bounding box.
+     */
+    PdfeORect bbox( bool pageCoords = true );
+
+    /** Get the width of the line.
+     * \return Width in local coordinates.
+     */
+    double width();
+
+    /** Get the length of the line.
+     * \param countSpaces Also count spaces?
+     * \return Length of the line.
+     */
+    size_t length( bool countSpaces );
+
+
+
+
 
 protected:
     /** Compute the bounding box and the transformation matrix.

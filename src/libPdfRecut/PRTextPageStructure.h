@@ -107,13 +107,14 @@ public:
 protected:
     /** Draw a PdfeORect.
      */
-    void textDrawPdfeORect( const PdfeORect& orect );
+    void textDrawPdfeORect( const PdfeORect& orect,
+                            const PRRenderParameters::PRPenBrush& penBrush );
     /** Draw subgroups of a PRTextGroupWords.
      */
     void textDrawSubGroups( const PRTextGroupWords& groupWords );
     /** Draw a line of text.
      */
-    void textDrawLine( const PRTextLine& line );
+    void textDrawLineWords( const PRTextLine& line );
 
 protected:
     /// Groups of words that belong to the page (vector of pointers).
