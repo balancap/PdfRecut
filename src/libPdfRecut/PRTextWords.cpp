@@ -50,11 +50,18 @@ void PRTextWord::init()
     m_type = PRTextWordType::Unknown;
 }
 
-PdfRect PRTextWord::bbox( bool lastSpace ) const
+PdfRect PRTextWord::bbox( bool lastSpace,
+                          bool useBottomCoord ) const
 {
     PdfRect bbox = m_bbox;
+    // Remove last character space.
     if( !lastSpace ) {
         bbox.SetWidth( bbox.GetWidth() - m_lastCharSpace );
+    }
+    // Set bottom to zero.
+    if( !useBottomCoord ) {
+        bbox.SetHeight( bbox.GetHeight() + bbox.GetBottom() );
+        bbox.SetBottom( 0.0 );
     }
     return bbox;
 }
@@ -227,7 +234,7 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
+PdfeORect PRTextGroupWords::bbox(bool pageCoords, long idxSubGroup, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     PdfeORect groupORect( 0.0, 0.0 );
@@ -255,7 +262,7 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup ) const
     double top = std::numeric_limits<double>::min();
 
     for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        PdfRect bbox = m_words[i].bbox();
+        PdfRect bbox = m_words[i].bbox( true, useBottomCoord );
 
         width += bbox.GetWidth();
         bottom = std::min( bottom, bbox.GetBottom() );

@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PRTEXTELEMENTS_H
-#define PRTEXTELEMENTS_H
+#ifndef PRTEXTWORDS_H
+#define PRTEXTWORDS_H
 
 #include "PdfGraphicsState.h"
 #include "PdfeFont.h"
@@ -85,9 +85,11 @@ public:
 public:
     /** Get word bounding box.
      * \param lastSpace Include last char space in width ? (default = true)
+     * \param useBottomCoord Use the bottom coordinate of the bbox (unless set to 0).
      * \return Rectangle containing the bounding box.
      */
-    PoDoFo::PdfRect bbox( bool lastSpace = true ) const;
+    PoDoFo::PdfRect bbox( bool lastSpace = true,
+                          bool useBottomCoord = true ) const;
 
     /** Set the bounding box of the word (last char space included).
      * \param bbox New bounding box.
@@ -178,10 +180,12 @@ public:
     /** Get the bounding box of the group of words.
      * \param In page coordinates (true) or local coordinates (false) ?
      * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
+     * \param useBottomCoord Use the bottom coordinate of the bbox (unless set to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
     PdfeORect bbox( bool pageCoords = true,
-                    long idxSubGroup = -1 ) const;
+                    long idxSubGroup = -1,
+                    bool useBottomCoord = true ) const;
 
     /** Minimal distance found between two groups of words.
      * Use subgroups to compute the distance.
@@ -358,4 +362,4 @@ inline PRTextGroupWords::SubGroup PRTextGroupWords::subGroup( size_t idx ) const
 
 }
 
-#endif // PRTEXTELEMENTS_H
+#endif // PRTEXTWORDS_H

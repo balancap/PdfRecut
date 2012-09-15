@@ -262,23 +262,19 @@ public:
     PdfeMatrix localTransMatrix();
 
     // Getters and setters.
-    /** Get Left Bottom point.
-     */
+    /// Get Left Bottom point.
     PdfeVector leftBottom() const {
         return m_leftBottom;
     }
-    /** Get Right Bottom point.
-     */
+    /// Get Right Bottom point.
     PdfeVector rightBottom() const {
         return m_leftBottom + m_direction * m_width;
     }
-    /** Get Left Top point.
-     */
+    /// Get Left Top point.
     PdfeVector leftTop() const {
         return m_leftBottom + m_direction.rotate90() * m_height;
     }
-    /** Get Right Top point.
-     */
+    /// Get Right Top point.
     PdfeVector rightTop() const {
         return m_leftBottom + m_direction * m_width + m_direction.rotate90() * m_height;
     }

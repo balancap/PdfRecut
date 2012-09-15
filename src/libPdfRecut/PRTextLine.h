@@ -33,7 +33,8 @@ public:
     /** Default constructor.
      */
     PRTextLine();
-
+    /** Destructor...
+      */
     ~PRTextLine();
 
     /** Initialize to an empty line.
@@ -66,6 +67,11 @@ public:
     long maxGroupIndex();
 
 protected:
+    /** Compute the bounding box and the transformation matrix.
+     */
+    void computeBBox();
+
+protected:
     /// Index of the page to which belongs the line.
     long  m_pageIndex;
     /// Index of the line in the page.
@@ -73,6 +79,13 @@ protected:
 
     /// Vector of pointers to groups of words which constitute the line (objects do not belong the line).
     std::vector<PRTextGroupWords*>  m_pGroupsWords;
+
+    /// Transformation matrix (into page coordinates). Related to the bounding box.
+    PdfeMatrix  m_transMatrix;
+    /// Line bounding box.
+    PoDoFo::PdfRect  m_bbox;
+    /// Boolean value used to detect if the bbox could have changed (add words, ...).
+    bool  m_bboxHasChanged;
 };
 
 //**********************************************************//

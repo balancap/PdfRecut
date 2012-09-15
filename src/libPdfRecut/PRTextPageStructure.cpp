@@ -70,7 +70,7 @@ void PRTextPageStructure::detectGroupsWords()
     // Set rendering parameters to empty.
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
-    renderParameters.resolution = 1.5;
+    renderParameters.resolution = 1.1;
 
     // Clear content.
     this->clearContent();

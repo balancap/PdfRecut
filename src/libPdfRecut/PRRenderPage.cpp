@@ -432,7 +432,7 @@ void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
             m_renderParameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if the width is positive !
-        PdfRect bbox = word.bbox( false );
+        PdfRect bbox = word.bbox( false, true );
         if( bbox.GetWidth() >= 0) {
             m_pagePainter->drawRect( QRectF( widthStr, bbox.GetBottom(), bbox.GetWidth(), bbox.GetHeight() ) );
         }
