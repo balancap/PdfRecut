@@ -306,7 +306,7 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
 double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
 {
     PdfeORect grp1BBox, grp2BBox;
-    double dist = std::numeric_limits<double>::max();
+    double dist = 0.0;
 
     // Inverse Transformation matrix of the first group.
     PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
@@ -320,7 +320,7 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
         for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
             grp1BBox = this->bbox( false, i );
 
-            dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
+            dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }
     }
     return dist;

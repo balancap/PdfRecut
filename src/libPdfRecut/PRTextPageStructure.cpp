@@ -300,7 +300,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
     double MaxDistance = 1.0;
     double MaxWidthLine = 3.0;
     size_t MaxLengthLine = 5;
-    long MaxSearchGroupWords = 5;
+    long MaxSearchGroupWords = 8;
     double MaxWidthCumul = 5.0;
     double MaxDistCumul = 5.0;
 
@@ -497,7 +497,7 @@ void PRTextPageStructure::renderTextLines()
             //this->textDrawLineWords( *m_pTextLines[idx] );
 
             // Line bounding box.
-            this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true ), linePen );
+            this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true, true ), linePen );
         }
     }
 }

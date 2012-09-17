@@ -82,14 +82,21 @@ long PRTextLine::maxGroupIndex()
     return maxGroupIdx;
 }
 
-PdfeORect PRTextLine::bbox( bool pageCoords )
+PdfeORect PRTextLine::bbox( bool pageCoords, bool useBottomCoord )
 {
     // Compute the bbox if necessary.
     if( m_bboxHasChanged ) {
         this->computeBBox();
     }
-
     PdfeORect bbox( m_bbox );
+
+    if( !useBottomCoord ) {
+        PdfeVector lbPoint = bbox.leftBottom();
+
+        bbox.setHeight( bbox.height()+lbPoint(1) );
+        lbPoint(1) = 0.0;
+        bbox.setLeftBottom( lbPoint );
+    }
     if( pageCoords ) {
         bbox = m_transMatrix.map( bbox );
     }

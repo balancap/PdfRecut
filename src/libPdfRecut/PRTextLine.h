@@ -69,9 +69,11 @@ public:
 
     /** Get the line bounding box.
      * \param pageCoords BBox in page coordinates (true) or local coordinates (false) ?
+     * \param useBottomCoord Use bottom coordinates for the rectangle?
      * \return Oriented rectangle containing the bounding box.
      */
-    PdfeORect bbox( bool pageCoords = true );
+    PdfeORect bbox(bool pageCoords = true,
+                   bool useBottomCoord = true );
 
     /** Get the width of the line.
      * \return Width in local coordinates.
