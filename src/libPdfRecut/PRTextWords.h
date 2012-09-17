@@ -187,14 +187,21 @@ public:
                     long idxSubGroup = -1,
                     bool useBottomCoord = true ) const;
 
-    /** Minimal distance found between two groups of words.
+    /** Minimal distance between the object and another group.
      * Use subgroups to compute the distance.
-     * Distance computed in the coordinate system of the first group.
-     * \param group1 First group.
-     * \param group2 Second group.
+     * Distance computed in the coordinate system of the object.
+     * \param group Second group.
      * \return Distance computed.
      */
-    static double minDistance( const PRTextGroupWords& group1, const PRTextGroupWords& group2 );
+    double minDistance( const PRTextGroupWords& group ) const;
+
+    /** Maximal distance between the object and another group.
+     * Use subgroups to compute the distance.
+     * Distance computed in the coordinate system of the object.
+     * \param group Second group.
+     * \return Distance computed.
+     */
+    double maxDistance( const PRTextGroupWords& group ) const;
 
 protected:
     /** Read a group of words from a PdfString (appended to the group).

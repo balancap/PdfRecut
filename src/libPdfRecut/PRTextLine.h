@@ -84,8 +84,10 @@ public:
      */
     size_t length( bool countSpaces );
 
-
-
+    /** Get the transformation matrix associated to line coordinates.
+     * \return PdfeMatrix representing the transformation.
+     */
+    PdfeMatrix transMatrix() const {   return m_transMatrix;  }
 
 
 protected:

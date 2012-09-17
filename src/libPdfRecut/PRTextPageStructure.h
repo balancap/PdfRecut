@@ -78,18 +78,26 @@ protected:
     PRTextLine* findLine_Basic( size_t idxGroupWords );
     PRTextLine* findLine_Basic2( size_t idxGroupWords );
 
-    /** Find lines algorithm: try to merge existing lines.
+    /** Try to merge existing lines.
+     * Inside algorithm: detect elements inside a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
-    PRTextLine* findLine_Merge( PRTextLine* pLine );
+    PRTextLine* mergeLines_Inside( PRTextLine* pLine );
+
+    /** Try to merge existing lines.
+     * Small elements algorithm: detect small elements close to a line and check if they belong to it.
+     * \param pLine Pointer of the line to consider.
+     * \return Pointer the merged line.
+     */
+    PRTextLine* mergeLines_Small( PRTextLine* pLine );
 
     /** Merge a vector of lines into a single one.
      * Use the first element as base (other lines are deleted).
      * \param pLines Vector of pointer of lines to merge.
      * \return Pointer to the resulting line.
      */
-    PRTextLine* mergeLines( const std::vector<PRTextLine*>& pLines );
+    PRTextLine* mergeVectorLines( const std::vector<PRTextLine*>& pLines );
 
     /** No copy constructor allowed.
      */

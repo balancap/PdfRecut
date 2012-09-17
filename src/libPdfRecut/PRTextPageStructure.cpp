@@ -70,7 +70,7 @@ void PRTextPageStructure::detectGroupsWords()
     // Set rendering parameters to empty.
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
-    renderParameters.resolution = 1.1;
+    renderParameters.resolution = 1.05;
 
     // Clear content.
     this->clearContent();
@@ -108,15 +108,22 @@ void PRTextPageStructure::detectLines()
     // Sort lines using group index.
     std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::sortLines );
 
-    // Try to merge some lines.
     std::vector<PRTextLine*>::iterator it;
     PRTextLine* pLine;
+
+    // Try to merge some lines (inside elements).
     for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-        // Merge with other lines.
-        pLine = this->findLine_Merge( *it );
+        pLine = this->mergeLines_Inside( *it );
         it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+
         // Run it a second time to be sure !
-        pLine = this->findLine_Merge( *it );
+        pLine = this->mergeLines_Inside( *it );
+        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+    }
+
+    // Try to merge some lines (small elements).
+    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
+        pLine = this->mergeLines_Small( *it );
         it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
     }
 
@@ -215,15 +222,15 @@ PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
     std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
 
     // Merge lines.
-    return this->mergeLines( pLinesToMerge );
+    return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine* PRTextPageStructure::findLine_Merge( PRTextLine* pLine )
+PRTextLine* PRTextPageStructure::mergeLines_Inside( PRTextLine* pLine )
 {
     // Parameters of the algorithm.
     double MaxDistanceInside = 1.0;
-    double MaxWidthInside = 3.0;
-    size_t MaxLengthInside = 5;
+    double MaxWidthInside = 4.0;
+    size_t MaxLengthInside = 6;
 
     // Line min and max indexes.
     long lineMinGrpIdx = pLine->minGroupIndex();
@@ -262,8 +269,8 @@ PRTextLine* PRTextPageStructure::findLine_Merge( PRTextLine* pLine )
                 // Look at it if the line is not already inside the vector of lines...
                 if( std::find( pLinesToMerge.begin(), pLinesToMerge.end(), pLine1 ) == pLinesToMerge.end() ) {
                     // Begin and end minimal distances.
-                    double distBegin = PRTextGroupWords::minDistance( *m_pGroupsWords[ grpIdxBegin ], *m_pGroupsWords[ i ] );
-                    double distEnd = PRTextGroupWords::minDistance( *m_pGroupsWords[ grpIdxEnd ], *m_pGroupsWords[ i ] );
+                    double distBegin = m_pGroupsWords[grpIdxBegin]->minDistance( *m_pGroupsWords[i] );
+                    double distEnd = m_pGroupsWords[grpIdxEnd]->minDistance( *m_pGroupsWords[i] );
 
                     bool groupMerge = ( distBegin <= MaxDistanceInside ||
                                         distEnd <= MaxDistanceInside ) &&
@@ -280,66 +287,124 @@ PRTextLine* PRTextPageStructure::findLine_Merge( PRTextLine* pLine )
             grpIdxBegin = grpIdxEnd;
         }
     }
+    // Sort lines to merge using the indexes of their groups.
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
 
-    // Search groups before and after the line.
-    /*long MaxSearchGroupWords = 2;
-    double MaxDistanceOutside = 0.8;
-    double MaxWidthOutside = 3.0;
+    // Merge lines.
+    return this->mergeVectorLines( pLinesToMerge );
+}
+
+PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
+{
+    // Parameters of the algorithm.
+    double MaxDistance = 1.0;
+    double MaxWidthLine = 3.0;
+    size_t MaxLengthLine = 5;
+    long MaxSearchGroupWords = 5;
     double MaxWidthCumul = 5.0;
-    size_t MaxLengthOutside = 5;
+    double MaxDistCumul = 5.0;
 
-    // Before the beginning of the line.
-    grpIdxBegin = std::max( 0L, lineMinGrpIdx - MaxSearchGroupWords );
-    for( long i = lineMinGrpIdx-1 ; i >= grpIdxBegin ; --i ) {
-        // Width and line of the group.
-        double width = m_pGroupsWords[i]->width( -1, true, true );
-        PRTextLine* pLine1 = m_pGroupsWords[ i ]->textLine();
+    // Consider elements in the line if and only if it is sufficiently small.
+    if( pLine->width() > MaxWidthLine || pLine->length( false ) > MaxLengthLine ) {
+        return pLine;
+    }
+    PdfeMatrix lineTransMat = pLine->transMatrix().inverse();
+    PdfeORect lineBBox = pLine->bbox( false );
+    PdfeVector lineLBPoint = lineBBox.leftBottom();
 
-        // Look at it if the line is not already inside the vector of lines...
-        if( std::find( pLinesToMerge.begin(), pLinesToMerge.end(), pLine1 ) == pLinesToMerge.end() ) {
-            // Distance to the first group of the line.
-            double dist = PRTextGroupWords::minDistance( *m_pGroupsWords[ lineMinGrpIdx ], *m_pGroupsWords[i] );
+    // Vector of lines to merge.
+    std::vector<PRTextLine*> pLinesToMerge;
+    pLinesToMerge.push_back( pLine );
 
-            bool groupMerge = dist <= MaxDistanceOutside &&
-                    ( m_pGroupsWords[i]->length(-1, false) <= MaxLengthOutside ||
-                      m_pGroupsWords[i]->width(-1, true, true) <= MaxWidthOutside );
-            // Merge lines...
-            if( groupMerge ) {
-                pLinesToMerge.push_back( pLine1 );
+    // Look at groups inside the small line.
+    std::vector<PRTextGroupWords*> lineGroups = pLine->groupsWords();
+    for( size_t i = 0 ; i < lineGroups.size() ; ++i ) {
+        double widthCumulBefore = 0;
+        double widthCumulAfter = 0.0;
+        double distMaxBefore = 0.0;
+        double distMaxAfter = 0.0;
+        PRTextGroupWords* pGroupLine = lineGroups[i];
+
+        // Groups before the line one.
+        long idxBefore = std::max( 0L, pGroupLine->groupIndex() - MaxSearchGroupWords );
+        for( long j = idxBefore ; j < pGroupLine->groupIndex() ; ++j ) {
+            PRTextGroupWords* pGroup2nd = m_pGroupsWords[j];
+            PRTextLine* pLine2nd = pGroup2nd->textLine();
+
+            widthCumulBefore += pGroup2nd->width();
+
+            // Consider the group ?
+            if( widthCumulBefore <= MaxWidthCumul && distMaxBefore <= MaxDistCumul &&
+                std::find( pLinesToMerge.begin(), pLinesToMerge.end(), pLine2nd ) == pLinesToMerge.end() ) {
+
+                // Distance to the line group.
+                double distMin = pGroupLine->minDistance( *pGroup2nd );
+                distMaxBefore = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
+
+                // Line bounding box.
+                PdfeORect lineBBox2nd = pLine2nd->bbox( true );
+                lineBBox2nd = lineTransMat.map( lineBBox2nd );
+
+                // Compute the expected height of the merge line.
+                PdfeVector lineLBPoint2nd = lineBBox2nd.leftBottom();
+                double heightMerge = std::max( lineLBPoint2nd(1)+lineBBox2nd.height(), lineLBPoint(1)+lineBBox.height() ) -
+                         std::min( lineLBPoint2nd(1), lineLBPoint(1) ) ;
+
+                bool merge = ( distMin <= MaxDistance ) && ( pLine2nd->width() <= MaxWidthLine ||
+                                                          heightMerge <= lineBBox2nd.height() * 1.4 );
+
+
+                if( merge ) {
+                    pLinesToMerge.push_back( pGroup2nd->textLine() );
+                }
+            }
+        }
+
+        // Groups after the line one.
+        long idxAfter = std::min( static_cast<long>( m_pGroupsWords.size() )-1,
+                                pGroupLine->groupIndex() + MaxSearchGroupWords );
+        for( long j = pGroupLine->groupIndex()+1 ; j <= idxAfter  ; ++j ) {
+            PRTextGroupWords* pGroup2nd = m_pGroupsWords[j];
+            PRTextLine* pLine2nd = pGroup2nd->textLine();
+
+            widthCumulAfter += pGroup2nd->width();
+
+            // Consider the group ?
+            if( widthCumulAfter <= MaxWidthCumul && distMaxAfter <= MaxDistCumul &&
+                std::find( pLinesToMerge.begin(), pLinesToMerge.end(), pLine2nd ) == pLinesToMerge.end() ) {
+
+                // Distance to the line group.
+                double distMin = pGroupLine->minDistance( *pGroup2nd );
+                distMaxAfter = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
+
+                // Line bounding box.
+                PdfeORect lineBBox2nd = pLine2nd->bbox( true );
+                lineBBox2nd = lineTransMat.map( lineBBox2nd );
+
+                // Compute the expected height of the merge line.
+                PdfeVector lineLBPoint2nd = lineBBox2nd.leftBottom();
+                double heightMerge = std::max( lineLBPoint2nd(1)+lineBBox2nd.height(), lineLBPoint(1)+lineBBox.height() ) -
+                         std::min( lineLBPoint2nd(1), lineLBPoint(1) ) ;
+
+                bool merge = ( distMin <= MaxDistance ) && ( pLine2nd->width() <= MaxWidthLine ||
+                                                          heightMerge <= lineBBox2nd.height() * 1.4 );
+
+
+                if( merge ) {
+                    pLinesToMerge.push_back( pGroup2nd->textLine() );
+                }
             }
         }
     }
-    // Idem: after the end of the line.
-    grpIdxEnd = std::min( static_cast<long>( m_pTextLines.size() )-1, lineMaxGrpIdx + MaxSearchGroupWords );
-    for( long i = lineMaxGrpIdx+1 ; i <= grpIdxEnd ; ++i ) {
-        // Width and line of the group.
-
-        PRTextLine* pLine1 = m_pGroupsWords[i]->textLine();
-
-
-        // Look at it if the line is not already inside the vector of lines...
-        if( std::find( pLinesToMerge.begin(), pLinesToMerge.end(), pLine1 ) == pLinesToMerge.end() ) {
-            // Distance to the first group of the line.
-            double dist = PRTextGroupWords::minDistance( *m_pGroupsWords[ lineMinGrpIdx ], *m_pGroupsWords[i] );
-
-            bool groupMerge = dist <= MaxDistanceOutside &&
-                    ( m_pGroupsWords[i]->length(-1, false) <= MaxLengthOutside ||
-                      m_pGroupsWords[i]->width(-1, true, true) <= MaxWidthOutside );
-            // Merge lines...
-            if( groupMerge ) {
-//                pLinesToMerge.push_back( pLine1 );
-            }
-        }
-    }*/
 
     // Sort lines to merge using the indexes of their groups.
     std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
 
     // Merge lines.
-    return this->mergeLines( pLinesToMerge );
+    return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines( const std::vector<PRTextLine*>& pLines )
+PRTextLine *PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*>& pLines )
 {
     // Empty vector...
     if( pLines.empty() ) {

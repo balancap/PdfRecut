@@ -280,23 +280,45 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup, bool useBot
     return bbox;
 }
 
-double PRTextGroupWords::minDistance( const PRTextGroupWords& group1,
-                                      const PRTextGroupWords& group2 )
+double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
 {
     PdfeORect grp1BBox, grp2BBox;
     double dist = std::numeric_limits<double>::max();
 
     // Inverse Transformation matrix of the first group.
-    PdfeMatrix grp1TransMat = group1.getGlobalTransMatrix().inverse();
+    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
 
     // Loop on subgroups of the second one.
-    for( size_t j = 0 ; j < group2.nbSubGroups() ; ++j ) {
+    for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
         // Subgroup bounding box.
-        grp2BBox = grp1TransMat.map( group2.bbox( true, j ) );
+        grp2BBox = grp1TransMat.map( group.bbox( true, j ) );
 
         // Subgroups of the first one.
-        for( size_t i = 0 ; i < group1.nbSubGroups() ; ++i ) {
-            grp1BBox = group1.bbox( false, i );
+        for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
+            grp1BBox = this->bbox( false, i );
+
+            dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
+        }
+    }
+    return dist;
+}
+
+double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
+{
+    PdfeORect grp1BBox, grp2BBox;
+    double dist = std::numeric_limits<double>::max();
+
+    // Inverse Transformation matrix of the first group.
+    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
+
+    // Loop on subgroups of the second one.
+    for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
+        // Subgroup bounding box.
+        grp2BBox = grp1TransMat.map( group.bbox( true, j ) );
+
+        // Subgroups of the first one.
+        for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
+            grp1BBox = this->bbox( false, i );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
