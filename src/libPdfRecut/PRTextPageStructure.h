@@ -76,7 +76,6 @@ protected:
      * \return Pointer to the line object.
      */
     PRTextLine* findLine_Basic( size_t idxGroupWords );
-    PRTextLine* findLine_Basic2( size_t idxGroupWords );
 
     /** Try to merge existing lines.
      * Inside algorithm: detect elements inside a line and check if they belong to it.
