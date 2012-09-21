@@ -28,6 +28,9 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
+//**********************************************************//
+//                         PRTextLine                       //
+//**********************************************************//
 PRTextLine::PRTextLine()
 {
     this->init();
@@ -42,7 +45,7 @@ void PRTextLine::init()
     m_lineIndex = -1;
     m_pGroupsWords.clear();
 
-    m_bboxHasChanged = false;
+    m_modified = false;
     m_bbox = PdfRect( 0, 0, 0, 0 );
     m_transMatrix.fill( 0.0 );
 }
@@ -55,15 +58,18 @@ void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
         m_pGroupsWords.push_back( pGroupWords );
 
         // Bounding box has changed...
-        m_bboxHasChanged = true;
+        m_modified = true;
     }
 }
-
-bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
+void PRTextLine::analyse()
 {
-    // Compare minimum group index found in each line.
-    return ( pLine1->minGroupIndex() < pLine2->minGroupIndex() );
+    // Compute bounding box and transformation matrix.
+    this->computeBBox();
+
+    // Reset modified parameter.
+    m_modified = false;
 }
+
 
 long PRTextLine::minGroupIndex()
 {
@@ -85,8 +91,8 @@ long PRTextLine::maxGroupIndex()
 PdfeORect PRTextLine::bbox( bool pageCoords, bool useBottomCoord )
 {
     // Compute the bbox if necessary.
-    if( m_bboxHasChanged ) {
-        this->computeBBox();
+    if( m_modified ) {
+        this->analyse();
     }
     PdfeORect bbox( m_bbox );
 
@@ -105,8 +111,8 @@ PdfeORect PRTextLine::bbox( bool pageCoords, bool useBottomCoord )
 double PRTextLine::width()
 {
     // Compute the bbox if necessary.
-    if( m_bboxHasChanged ) {
-        this->computeBBox();
+    if( m_modified ) {
+        this->analyse();
     }
 
     return m_bbox.GetWidth();
@@ -120,6 +126,15 @@ size_t PRTextLine::length( bool countSpaces )
     return length;
 }
 
+PdfeMatrix PRTextLine::transMatrix()
+{
+    // Compute transformation matrix and bbox if necessary.
+    if( m_modified ) {
+        this->analyse();
+    }
+    return m_transMatrix;
+}
+
 void PRTextLine::computeBBox()
 {
     // We basically assume that words have a zero angle between them.
@@ -127,13 +142,14 @@ void PRTextLine::computeBBox()
 
     // Not element inside.
     if( m_pGroupsWords.empty() ) {
-        m_bboxHasChanged = false;
+        m_modified = false;
         m_bbox = PdfRect( 0, 0, 0, 0 );
         m_transMatrix.fill( 0.0 );
     }
 
     // Used the inverse transformation matrix of the first group of words.
-    PdfeMatrix invTransMat = m_pGroupsWords[0]->getGlobalTransMatrix().inverse();
+    PdfeMatrix transMat = m_pGroupsWords[0]->getGlobalTransMatrix();
+    PdfeMatrix invTransMat = transMat.inverse();
 
     // Left, Bottom, Right and Top coordinates of the bounding box.
     double left, bottom, right, top;
@@ -141,21 +157,23 @@ void PRTextLine::computeBBox()
     right = top = std::numeric_limits<double>::min();
 
     // Mean coordinate of the base line.
-    double meanYCoord = 0;
-    double widthSum = 0;
+    double meanYCoord = 0.0;
+    double meanHeight = 0.0;
+    double widthTotal = 0.0;
+    double width;
 
     // Big loop on groups of words.
-    PdfeORect  sbBBox;
+    PdfeORect subGpBBox;
     PdfeVector leftBottom, rightTop;
     for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
         // Second loop on subgroups.
         for( size_t j = 0 ; j < m_pGroupsWords[i]->nbSubGroups() ; ++j ) {
-            sbBBox = m_pGroupsWords[i]->bbox( true, j, true );
-            sbBBox = invTransMat.map( sbBBox );
+            // Update line bbox coordinates.
+            subGpBBox = m_pGroupsWords[i]->bbox( true, j, true );
+            subGpBBox = invTransMat.map( subGpBBox );
 
-            // Update bbox coordinates.
-            leftBottom = sbBBox.leftBottom();
-            rightTop = sbBBox.rightTop();
+            leftBottom = subGpBBox.leftBottom();
+            rightTop = subGpBBox.rightTop();
 
             left = std::min( left, leftBottom( 0 ) );
             bottom = std::min( bottom, leftBottom( 1 ) );
@@ -163,30 +181,88 @@ void PRTextLine::computeBBox()
             top = std::max( top, rightTop( 1 ) );
 
             // Update mean Y coordinate.
-            sbBBox = m_pGroupsWords[i]->bbox( true, j, false );
-            sbBBox = invTransMat.map( sbBBox );
+            subGpBBox = m_pGroupsWords[i]->bbox( true, j, false );
+            subGpBBox = invTransMat.map( subGpBBox );
 
-            leftBottom = sbBBox.leftBottom();
-            widthSum += sbBBox.width();
-            meanYCoord += leftBottom( 1 ) * sbBBox.width();
+            leftBottom = subGpBBox.leftBottom();
+            width = subGpBBox.width();
+            widthTotal += width;
+            meanYCoord += leftBottom( 1 ) * width;
+
+            // Update mean height.
+            subGpBBox = PdfRect( 0, 0, 1, 1 );
+            subGpBBox = invTransMat.map( transMat.map( subGpBBox ) );
+            meanHeight += subGpBBox.height() * width;
         }
     }
     // Final mean Y coordinate.
-    meanYCoord = meanYCoord / widthSum;
+    meanYCoord = meanYCoord / widthTotal;
+    double scaleCoef = meanHeight / widthTotal ;
 
-    // Transformation matrix used for the line. Set such the (0,0) corresponds to (left, meanY).
-    PdfeMatrix tmpMat;
-    tmpMat(2,0) = left;
-    tmpMat(2,1) = meanYCoord;
-    m_transMatrix = tmpMat * m_pGroupsWords[0]->getGlobalTransMatrix();
+    // Transformation matrix used for the line. Set such the (0,0) corresponds to (left, meanYCoord),
+    // and the scaling coefficient corresponds to the mean height.
+    PdfeMatrix rescaleMat;
+    rescaleMat(0,0) = rescaleMat(1,1) = scaleCoef;
+    rescaleMat(2,0) = left;
+    rescaleMat(2,1) = meanYCoord;
+    m_transMatrix = rescaleMat * m_pGroupsWords[0]->getGlobalTransMatrix();
 
     // Set bounding box.
     m_bbox.SetLeft( 0.0 );
-    m_bbox.SetBottom( bottom-meanYCoord );
+    m_bbox.SetBottom( (bottom - meanYCoord) / scaleCoef );
+    m_bbox.SetWidth( (right - left) / scaleCoef );
+    m_bbox.SetHeight( (top - bottom) / scaleCoef );
+}
+
+bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
+{
+    // Compare minimum group index found in each line.
+    return ( pLine1->minGroupIndex() < pLine2->minGroupIndex() );
+}
+
+//**********************************************************//
+//                     PRTextLine::Block                    //
+//**********************************************************//
+PRTextLine::Block::Block( PRTextGroupWords* pGroupWords, PdfeMatrix* pLineTransMat )
+{
+    // Initialize members.
+    m_pLineTransMat = pLineTransMat;
+    m_pGroupsWords.push_back( pGroupWords );
+
+    // Compute bounding box.
+    PdfeORect bbox = pGroupWords->bbox( true, -1, true );
+    bbox = pLineTransMat->inverse().map( bbox );
+
+    m_bbox.SetLeft( bbox.leftBottomX() );
+    m_bbox.SetBottom( bbox.leftBottomY() );
+    m_bbox.SetWidth( bbox.width() );
+    m_bbox.SetHeight( bbox.height() );
+}
+void PRTextLine::Block::merge( const PRTextLine::Block& block2nd )
+{
+    // Add groups.
+    m_pGroupsWords.reserve( m_pGroupsWords.size()+block2nd.m_pGroupsWords.size() );
+    for( size_t i = 0 ; i < block2nd.m_pGroupsWords.size() ; ++i ) {
+        m_pGroupsWords.push_back( block2nd.m_pGroupsWords[i] );
+    }
+
+    // Compute new bounding box.
+    double left = std::min( this->m_bbox.GetLeft(), block2nd.m_bbox.GetLeft() );
+    double bottom = std::min( this->m_bbox.GetBottom(), block2nd.m_bbox.GetBottom() );
+    double right = std::max( this->m_bbox.GetLeft() + this->m_bbox.GetWidth(),
+                             block2nd.m_bbox.GetLeft() + block2nd.m_bbox.GetWidth() );
+    double top = std::max( this->m_bbox.GetBottom() + this->m_bbox.GetHeight(),
+                           block2nd.m_bbox.GetBottom() + block2nd.m_bbox.GetHeight() );
+
+    m_bbox.SetLeft( left );
+    m_bbox.SetBottom( bottom );
     m_bbox.SetWidth( right-left );
     m_bbox.SetHeight( top-bottom );
+}
 
-    m_bboxHasChanged = false;
+PdfRect PRTextLine::Block::bbox()
+{
+    return m_bbox;
 }
 
 }

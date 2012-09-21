@@ -279,6 +279,15 @@ public:
         return m_leftBottom + m_direction * m_width + m_direction.rotate90() * m_height;
     }
 
+    /// Get Left Bottom X coordinate.
+    double leftBottomX() const {
+        return m_leftBottom( 0 );
+    }
+    /// Get Left Bottom Y coordinate.
+    double leftBottomY() const {
+        return m_leftBottom( 1 );
+    }
+
     /** Set Left Bottom point.
      */
     void setLeftBottom( const PdfeVector& leftBottom ) {

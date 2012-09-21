@@ -46,16 +46,9 @@ public:
      */
     void addGroupWords( PRTextGroupWords* pGroupWords );
 
-    /** Get the vector of group of words.
+    /** Analyse the line (compute bbox, first capital letter, ...).
      */
-    std::vector<PRTextGroupWords*> groupsWords() const;
-
-    /** Sort two lines using the index of their groups.
-     * \param pLine1 Pointer to the first line.
-     * \param pLine2 Pointer to the second line.
-     * \return line1 < line2.
-     */
-    static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
+    void analyse();
 
 public:
     /** Minimum index of group of words inside the line.
@@ -89,13 +82,55 @@ public:
     /** Get the transformation matrix associated to line coordinates.
      * \return PdfeMatrix representing the transformation.
      */
-    PdfeMatrix transMatrix() const {   return m_transMatrix;  }
+    PdfeMatrix transMatrix();
 
+    /** Get the vector of group of words.
+     */
+    std::vector<PRTextGroupWords*> groupsWords() const;
+
+public:
+    /** Block inside a line: correspond to a vector of groups of words.
+     */
+    class Block
+    {
+    public:
+        /** Default constructor: initialize with a given group.
+         * \param pGroupWords Pointer to the group of words.
+         * \param pLineTransMat Pointer to the line transformation matrix.
+         */
+        Block( PRTextGroupWords* pGroupWords,
+               PdfeMatrix* pLineTransMat );
+
+        /** Merge the block with another one.
+         * \param block2nd Second block (not modified).
+         */
+        void merge( const Block& block2nd );
+
+        /** Get the bounding box, in the line coordinate system.
+         */
+        PoDoFo::PdfRect bbox();
+
+    protected:
+        /// Vector of groups of words.
+        std::vector<PRTextGroupWords*>  m_pGroupsWords;
+        /// Bounding box.
+        PoDoFo::PdfRect  m_bbox;
+        /// Line transformation matrix.
+        PdfeMatrix*  m_pLineTransMat;
+    };
 
 protected:
     /** Compute the bounding box and the transformation matrix.
      */
     void computeBBox();
+
+public:
+    /** Sort two lines using the index of their groups.
+     * \param pLine1 Pointer to the first line.
+     * \param pLine2 Pointer to the second line.
+     * \return line1 < line2.
+     */
+    static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
 
 protected:
     /// Index of the page to which belongs the line.
@@ -105,13 +140,13 @@ protected:
 
     /// Vector of pointers to groups of words which constitute the line (objects do not belong the line).
     std::vector<PRTextGroupWords*>  m_pGroupsWords;
+    /// Boolean value used to detect if the line have been modified (add words, ...).
+    bool  m_modified;
 
     /// Transformation matrix (into page coordinates). Related to the bounding box.
     PdfeMatrix  m_transMatrix;
     /// Line bounding box.
     PoDoFo::PdfRect  m_bbox;
-    /// Boolean value used to detect if the bbox could have changed (add words, ...).
-    bool  m_bboxHasChanged;
 };
 
 //**********************************************************//
