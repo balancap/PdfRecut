@@ -237,14 +237,22 @@ public:
         /** Initialize to the complete subgroup using a given group.
          * \param pGroup Pointer to the group, if NULL, init to empty.
          */
-        void init( PRTextGroupWords* pGroup );
+        void init( PRTextGroupWords* pGroup = NULL );
+
+        /** Get the parent group.
+         * \return Pointer the parent group.
+         */
+        PRTextGroupWords* group() const;
+        /** Set the parent group.
+         * \param pGroup Pointer to the group.
+         */
+        void setGroup( PRTextGroupWords* pGroup );
 
         /** Is a word inside the subgroup? Can raise an exception.
          * \param idxWord Index of the word.
          * \return The word belongs to the subgroup?
          */
         bool inside( size_t idxWord ) const;
-
         /** Set if the word belongs, or not, to the subgroup.
          * Can raise an exception.
          * \param idxWord Index of the word.
@@ -306,7 +314,7 @@ public:
         PRTextGroupWords*  m_pGroup;
         /// Vector of boolean telling if words of the group belongs to the subgroup.
         std::vector<bool>  m_wordsInside;
-};
+    };
 
 public:
     // Standard getters and setters...
@@ -441,6 +449,14 @@ inline const PRTextGroupWords::Subgroup &PRTextGroupWords::mSubgroup( size_t idx
 //**********************************************************//
 //            Inline PRTextGroupWords::SubGroup             //
 //**********************************************************//
+inline PRTextGroupWords* PRTextGroupWords::Subgroup::group() const
+{
+    return const_cast<PRTextGroupWords*>( m_pGroup );
+}
+inline void PRTextGroupWords::Subgroup::setGroup( PRTextGroupWords* pGroup )
+{
+    m_pGroup = pGroup;
+}
 inline bool PRTextGroupWords::Subgroup::inside( size_t idxWord ) const
 {
     return m_wordsInside.at( idxWord );
@@ -456,8 +472,6 @@ inline const PRTextWord* PRTextGroupWords::Subgroup::word( size_t idxWord ) cons
     }
     return NULL;
 }
-
-
 
 }
 
