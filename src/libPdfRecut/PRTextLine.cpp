@@ -57,10 +57,22 @@ void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
         pGroupWords->setTextLine( this );
         m_pGroupsWords.push_back( pGroupWords );
 
-        // Bounding box has changed...
+        // Line has changed...
         m_modified = true;
     }
 }
+void PRTextLine::rmGroupWords( PRTextGroupWords* pGroupWords )
+{
+    std::vector<PRTextGroupWords*>::iterator it;
+
+    // Find the group and erase it.
+    it = std::find( m_pGroupsWords.begin(), m_pGroupsWords.end(), pGroupWords );
+    if( it != m_pGroupsWords.end() ) {
+        m_pGroupsWords.erase( it );
+        m_modified = true;
+    }
+}
+
 void PRTextLine::analyse()
 {
     // Compute bounding box and transformation matrix.
@@ -125,7 +137,6 @@ size_t PRTextLine::length( bool countSpaces )
     }
     return length;
 }
-
 PdfeMatrix PRTextLine::transMatrix()
 {
     // Compute transformation matrix and bbox if necessary.
@@ -133,6 +144,38 @@ PdfeMatrix PRTextLine::transMatrix()
         this->analyse();
     }
     return m_transMatrix;
+}
+
+std::vector<PRTextLine::Block> PRTextLine::horizontalBlocks( double hDistance ) const
+{
+    // Initial vector of blocks.
+    std::vector<Block> hBlocks( m_pGroupsWords.size() );
+    for( size_t i = 0 ; i < hBlocks.size() ; ++i ) {
+        hBlocks[i].init( m_pGroupsWords[i], &m_transMatrix );
+    }
+
+    // Horizontal sort of blocks.
+    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSort );
+
+    // Merge blocks.
+    std::vector<Block>::iterator lIt, rIt;
+    PdfRect lBBox, rBBox;
+    for( rIt = hBlocks.begin()+1 ; rIt != hBlocks.end() ; ) {
+        // Get left and right bounding boxes.
+        lIt = rIt - 1;
+        lBBox = lIt->bbox();
+        rBBox = rIt->bbox();
+
+        // Merge if horizontal overlap.
+        if( rBBox.GetLeft() - ( lBBox.GetLeft()+lBBox.GetWidth() ) <= hDistance ) {
+            lIt->merge( *rIt );
+            rIt = hBlocks.erase( rIt );
+        }
+        else {
+            ++rIt;
+        }
+    }
+    return hBlocks;
 }
 
 void PRTextLine::computeBBox()
@@ -169,7 +212,7 @@ void PRTextLine::computeBBox()
         // Second loop on subgroups.
         for( size_t j = 0 ; j < m_pGroupsWords[i]->nbSubGroups() ; ++j ) {
             // Update line bbox coordinates.
-            subGpBBox = m_pGroupsWords[i]->bbox( true, j, true );
+            subGpBBox = m_pGroupsWords[i]->bbox( j, true, true, true );
             subGpBBox = invTransMat.map( subGpBBox );
 
             leftBottom = subGpBBox.leftBottom();
@@ -181,7 +224,7 @@ void PRTextLine::computeBBox()
             top = std::max( top, rightTop( 1 ) );
 
             // Update mean Y coordinate.
-            subGpBBox = m_pGroupsWords[i]->bbox( true, j, false );
+            subGpBBox = m_pGroupsWords[i]->bbox( j, true, true, false );
             subGpBBox = invTransMat.map( subGpBBox );
 
             leftBottom = subGpBBox.leftBottom();
@@ -223,14 +266,27 @@ bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
 //**********************************************************//
 //                     PRTextLine::Block                    //
 //**********************************************************//
-PRTextLine::Block::Block( PRTextGroupWords* pGroupWords, PdfeMatrix* pLineTransMat )
+PRTextLine::Block::Block()
+{
+    m_pLineTransMat = NULL;
+    m_pGroupsWords.clear();
+    m_bbox = PdfRect( 0, 0, 0, 0 );
+}
+
+PRTextLine::Block::Block(PRTextGroupWords* pGroupWords, const PdfeMatrix *pLineTransMat )
+{
+    // Initialize block.
+    this->init( pGroupWords, pLineTransMat );
+}
+
+void PRTextLine::Block::init( PRTextGroupWords* pGroupWords, const PdfeMatrix* pLineTransMat )
 {
     // Initialize members.
-    m_pLineTransMat = pLineTransMat;
+    m_pLineTransMat = const_cast<PdfeMatrix*>( pLineTransMat );
     m_pGroupsWords.push_back( pGroupWords );
 
-    // Compute bounding box.
-    PdfeORect bbox = pGroupWords->bbox( true, -1, true );
+    // Compute bounding box (does not include leading and trailing spaces).
+    PdfeORect bbox = pGroupWords->bbox( -1, true, false, true );
     bbox = pLineTransMat->inverse().map( bbox );
 
     m_bbox.SetLeft( bbox.leftBottomX() );
@@ -238,6 +294,7 @@ PRTextLine::Block::Block( PRTextGroupWords* pGroupWords, PdfeMatrix* pLineTransM
     m_bbox.SetWidth( bbox.width() );
     m_bbox.SetHeight( bbox.height() );
 }
+
 void PRTextLine::Block::merge( const PRTextLine::Block& block2nd )
 {
     // Add groups.
@@ -260,9 +317,18 @@ void PRTextLine::Block::merge( const PRTextLine::Block& block2nd )
     m_bbox.SetHeight( top-bottom );
 }
 
-PdfRect PRTextLine::Block::bbox()
+PdfRect PRTextLine::Block::bbox() const
 {
     return m_bbox;
+}
+std::vector<PRTextGroupWords*> PRTextLine::Block::groupsWords() const
+{
+    return m_pGroupsWords;
+}
+
+bool PRTextLine::Block::horizontalSort( const PRTextLine::Block& block1, const PRTextLine::Block& block2 )
+{
+    return ( block1.m_bbox.GetLeft() < block2.m_bbox.GetLeft() );
 }
 
 }

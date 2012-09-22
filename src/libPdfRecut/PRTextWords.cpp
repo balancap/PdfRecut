@@ -234,7 +234,10 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup, bool useBottomCoord ) const
+PdfeORect PRTextGroupWords::bbox( long idxSubGroup,
+                                  bool pageCoords,
+                                  bool leadTrailSpaces,
+                                  bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     PdfeORect bbox( 0.0, 0.0 );
@@ -242,12 +245,32 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup, bool useBot
         return bbox;
     }
 
-    // Subgroup limits.
+    // First and last indexes (limits).
     long idxFirst = 0;
     long idxLast = static_cast<long>( m_words.size() ) - 1;
+
+    // Subgroup.
     if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
         idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
         idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
+    }
+    // Remove leading and trailing spaces.
+    else if( !leadTrailSpaces ) {
+        // Leading spaces.
+        while( idxFirst < static_cast<long>( m_words.size() ) &&
+               m_words[idxFirst].type() != PRTextWordType::Classic ) {
+            ++idxFirst;
+        }
+        // Trailing spaces.
+        while( idxLast >= 0L &&
+               m_words[idxLast].type() != PRTextWordType::Classic ) {
+            --idxLast;
+        }
+    }
+
+    // Check that the indexes. If wrong, return empty bbox.
+    if( idxFirst >= static_cast<long>( m_words.size() ) || idxLast < 0L || idxFirst > idxLast ) {
+        return bbox;
     }
 
     // Compute width of words before the current group.
@@ -268,9 +291,9 @@ PdfeORect PRTextGroupWords::bbox( bool pageCoords, long idxSubGroup, bool useBot
         bottom = std::min( bottom, bboxWord.GetBottom() );
         top = std::max( top, bboxWord.GetBottom() + bboxWord.GetHeight() );
     }
-    bbox.setWidth( width );
+    bbox.setWidth( std::max( 0.0, width ) );
     bbox.setLeftBottom( PdfeVector( leftWidth, bottom ) );
-    bbox.setHeight( top - bottom );
+    bbox.setHeight( std::max( 0.0, top - bottom ) );
 
     // Apply global transform if needed.
     if( pageCoords ) {
@@ -291,11 +314,11 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     // Loop on subgroups of the second one.
     for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
         // Subgroup bounding box.
-        grp2BBox = grp1TransMat.map( group.bbox( true, j ) );
+        grp2BBox = grp1TransMat.map( group.bbox( j, true, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
-            grp1BBox = this->bbox( false, i );
+            grp1BBox = this->bbox( i, false, true, true );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
@@ -314,11 +337,11 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
     // Loop on subgroups of the second one.
     for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
         // Subgroup bounding box.
-        grp2BBox = grp1TransMat.map( group.bbox( true, j ) );
+        grp2BBox = grp1TransMat.map( group.bbox( j, true, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
-            grp1BBox = this->bbox( false, i );
+            grp1BBox = this->bbox( i, false, true, true );
 
             dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }

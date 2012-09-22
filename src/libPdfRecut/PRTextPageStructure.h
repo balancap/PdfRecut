@@ -91,6 +91,12 @@ protected:
      */
     PRTextLine* mergeLines_Small( PRTextLine* pLine );
 
+    /** Split lines using horizontal blocks.
+     * \param pLine Pointer of the line to consider.
+     * \return Vector of new lines (the first element corresponds to pLine).
+     */
+    std::vector<PRTextLine*> splitLines_hBlocks( PRTextLine* pLine );
+
     /** Merge a vector of lines into a single one.
      * Use the first element as base (other lines are deleted).
      * \param pLines Vector of pointer of lines to merge.

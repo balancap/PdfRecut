@@ -178,13 +178,15 @@ public:
     PdfeMatrix getGlobalTransMatrix() const;
 
     /** Get the bounding box of the group of words.
-     * \param pageCoords In page coordinates (true) or local coordinates (false) ?
      * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
-     * \param useBottomCoord Use the bottom coordinate of the bbox (unless set to 0).
+     * \param pageCoords In page coordinates (true) or local coordinates (false) ?
+     * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
+     * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( bool pageCoords = true,
-                    long idxSubGroup = -1,
+    PdfeORect bbox( long idxSubGroup = -1,
+                    bool pageCoords = true,
+                    bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
 
     /** Minimal distance between the object and another group.
@@ -212,6 +214,7 @@ protected:
                         PoDoFoExtended::PdfeFont* pFont );
 
     /** Build the private subgroup vector.
+     * Subgroups are separated by PDF translation words.
      */
     void buildSubGroups();
 
