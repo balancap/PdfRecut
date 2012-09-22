@@ -196,6 +196,17 @@ public:
      */
     double maxDistance( const PRTextGroupWords& group ) const;
 
+    /** Add a text line. The (sub)group must belong to it.
+     */
+    void addTextLine( PRTextLine* pLine );
+    /** Remove a text line. The (sub)group must not belong to it.
+     */
+    void rmTextLine( PRTextLine* pLine );
+
+    /** Get lines the (sub)group belongs to.
+     */
+    std::vector<PRTextLine*> textLines() const;
+
 protected:
     /** Read a group of words from a PdfString (appended to the group).
      * \param str Pdf string to read (can contain 0 characters !).
@@ -305,9 +316,6 @@ public:
     long groupIndex() const;
     void setGroupIndex( long groupIndex );
 
-    PRTextLine* textLine() const;
-    void setTextLine( PRTextLine* pTextLine );
-
     PdfeMatrix transMatrix() const;
     void setTransMatrix( const PdfeMatrix& transMatrix );
 
@@ -352,8 +360,9 @@ protected:
     long  m_pageIndex;
     /// Index of the group in the page.
     long  m_groupIndex;
-    /// Line it belongs to (pointer).
-    PRTextLine*  m_pTextLine;
+
+    /// Text lines the group (or a subgroup) belongs to.
+    std::vector<PRTextLine*>  m_pTextLines;
 
     /// Transformation matrix of the graphics state.
     PdfeMatrix  m_transMatrix;
@@ -387,13 +396,9 @@ inline void PRTextGroupWords::setGroupIndex( long groupIndex )
 {
     m_groupIndex = groupIndex;
 }
-inline PRTextLine* PRTextGroupWords::textLine() const
+inline std::vector<PRTextLine*> PRTextGroupWords::textLines() const
 {
-    return m_pTextLine;
-}
-inline void PRTextGroupWords::setTextLine( PRTextLine* pTextLine )
-{
-    m_pTextLine = pTextLine;
+    return m_pTextLines;
 }
 inline PdfeMatrix PRTextGroupWords::transMatrix() const
 {

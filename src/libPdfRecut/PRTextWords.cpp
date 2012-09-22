@@ -90,7 +90,7 @@ void PRTextGroupWords::init()
     // Initialize members to default values.
     m_pageIndex = -1;
     m_groupIndex = -1;
-    m_pTextLine = NULL;
+    m_pTextLines.clear();
 
     m_transMatrix.init();
     m_textState.init();
@@ -242,6 +242,26 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
         }
     }
     return dist;
+}
+void PRTextGroupWords::addTextLine( PRTextLine* pLine )
+{
+    std::vector<PRTextLine*>::iterator it;
+    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+
+    // Add if not found.
+    if( it == m_pTextLines.end() ) {
+        m_pTextLines.push_back( pLine );
+    }
+}
+void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
+{
+    std::vector<PRTextLine*>::iterator it;
+    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+
+    // Remove if found.
+    if( it != m_pTextLines.end() ) {
+        m_pTextLines.erase( it );
+    }
 }
 
 void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
