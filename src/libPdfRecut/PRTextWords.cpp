@@ -97,7 +97,7 @@ void PRTextGroupWords::init()
     m_fontBBox = PdfRect( 0,0,0,0 );
 
     m_words.clear();
-    m_subGroups.clear();
+    m_mainSubgroups.clear();
 }
 
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
@@ -140,7 +140,7 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
         }
     }
     // Construct subgroups vector.
-    this->buildSubGroups();
+    this->buildMainSubGroups();
 }
 
 void PRTextGroupWords::appendWord( const PRTextWord& word )
@@ -149,76 +149,27 @@ void PRTextGroupWords::appendWord( const PRTextWord& word )
     m_words.push_back( word );
 
     // Construct subgroups vector.
-    this->buildSubGroups();
+    this->buildMainSubGroups();
 }
 
-double PRTextGroupWords::width( long idxSubGroup,
-                                bool countSpaces,
-                                bool lastCharSpace ) const
+double PRTextGroupWords::width( bool leadTrailSpaces ) const
 {
-    double width = 0;
-    long idxFirst = 0;
-    long idxLast = static_cast<long>( m_words.size() ) - 1;
-
-    // Consider a specific subgroup.
-    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
-        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
-        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
-    }
-
-    // Compute group width.
-    for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        // Add word width ?
-        if( countSpaces || m_words[i].type() == PRTextWordType::Classic ) {
-            // Last character space of last word.
-            if( i == idxLast ) {
-                width += m_words[i].width( lastCharSpace );
-            }
-            else {
-                width += m_words[i].width( true );
-            }
-        }
-    }
-    return width;
+    // Width of the complete subgroup.
+    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    return globalSubgroup.width( leadTrailSpaces );
 }
-double PRTextGroupWords::height( long idxSubGroup ) const
+double PRTextGroupWords::height() const
 {
-    double height = 0;
-    long idxFirst = 0;
-    long idxLast = static_cast<long>( m_words.size() ) - 1;
-
-    // Consider a specific subgroup.
-    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
-        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
-        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
-    }
-    // Compute the height.
-    for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        height = std::max( m_words[i].bbox().GetHeight(), height );
-    }
-    return height;
+    // Height of the complete subgroup.
+    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    return globalSubgroup.height();
 }
 
-size_t PRTextGroupWords::length( long idxSubGroup, bool countSpaces )
+size_t PRTextGroupWords::length( bool countSpaces ) const
 {
-    size_t length = 0;
-    long idxFirst = 0;
-    long idxLast = static_cast<long>( m_words.size() ) - 1;
-
-    // Consider a specific subgroup.
-    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
-        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
-        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
-    }
-
-    // Compute length.
-    for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        if( m_words[i].type() == PRTextWordType::Classic ||
-            ( m_words[i].type() == PRTextWordType::Space && countSpaces ) ) {
-            length += m_words[i].length();
-        }
-    }
-    return length;
+    // Length of the complete subgroup.
+    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    return globalSubgroup.length( countSpaces );
 }
 
 PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
@@ -234,73 +185,13 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-PdfeORect PRTextGroupWords::bbox( long idxSubGroup,
-                                  bool pageCoords,
-                                  bool leadTrailSpaces,
-                                  bool useBottomCoord ) const
+PdfeORect PRTextGroupWords::bbox(bool pageCoords,
+                                 bool leadTrailSpaces,
+                                 bool useBottomCoord ) const
 {
-    // Handle the case of an empty group.
-    PdfeORect bbox( 0.0, 0.0 );
-    if( !m_words.size() ) {
-        return bbox;
-    }
-
-    // First and last indexes (limits).
-    long idxFirst = 0;
-    long idxLast = static_cast<long>( m_words.size() ) - 1;
-
-    // Subgroup.
-    if( idxSubGroup >= 0 && idxSubGroup < static_cast<long>( m_subGroups.size() ) ) {
-        idxFirst = m_subGroups[ idxSubGroup ].idxFirstWord;
-        idxLast = m_subGroups[ idxSubGroup ].idxLastWord;
-    }
-    // Remove leading and trailing spaces.
-    else if( !leadTrailSpaces ) {
-        // Leading spaces.
-        while( idxFirst < static_cast<long>( m_words.size() ) &&
-               m_words[idxFirst].type() != PRTextWordType::Classic ) {
-            ++idxFirst;
-        }
-        // Trailing spaces.
-        while( idxLast >= 0L &&
-               m_words[idxLast].type() != PRTextWordType::Classic ) {
-            --idxLast;
-        }
-    }
-
-    // Check that the indexes. If wrong, return empty bbox.
-    if( idxFirst >= static_cast<long>( m_words.size() ) || idxLast < 0L || idxFirst > idxLast ) {
-        return bbox;
-    }
-
-    // Compute width of words before the current group.
-    double leftWidth = 0.0;
-    for( long i = 0 ; i < idxFirst ; ++i ) {
-        leftWidth += m_words[i].width( true );
-    }
-
-    // Compute width and vertical coordinates.
-    double width = 0.0;
-    double bottom = std::numeric_limits<double>::max();
-    double top = std::numeric_limits<double>::min();
-
-    for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        PdfRect bboxWord = m_words[i].bbox( true, useBottomCoord );
-
-        width += bboxWord.GetWidth();
-        bottom = std::min( bottom, bboxWord.GetBottom() );
-        top = std::max( top, bboxWord.GetBottom() + bboxWord.GetHeight() );
-    }
-    bbox.setWidth( std::max( 0.0, width ) );
-    bbox.setLeftBottom( PdfeVector( leftWidth, bottom ) );
-    bbox.setHeight( std::max( 0.0, top - bottom ) );
-
-    // Apply global transform if needed.
-    if( pageCoords ) {
-        PdfeMatrix textMat = this->getGlobalTransMatrix();
-        bbox = textMat.map( bbox );
-    }
-    return bbox;
+    // Bounding box of the complete subgroup.
+    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
 }
 
 double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
@@ -312,13 +203,15 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
 
     // Loop on subgroups of the second one.
-    for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
+    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
-        grp2BBox = grp1TransMat.map( group.bbox( j, true, true, true ) );
+        const Subgroup& subGrp2 = group.mSubgroup( j );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
 
         // Subgroups of the first one.
-        for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
-            grp1BBox = this->bbox( i, false, true, true );
+        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
+            const Subgroup& subGrp1 = group.mSubgroup( i );
+            grp1BBox = grp1TransMat.map( subGrp1.bbox( false, true, true ) );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
@@ -335,13 +228,15 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
     PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
 
     // Loop on subgroups of the second one.
-    for( size_t j = 0 ; j < group.nbSubGroups() ; ++j ) {
+    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
-        grp2BBox = grp1TransMat.map( group.bbox( j, true, true, true ) );
+        const Subgroup& subGrp2 = group.mSubgroup( j );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
 
         // Subgroups of the first one.
-        for( size_t i = 0 ; i < this->nbSubGroups() ; ++i ) {
-            grp1BBox = this->bbox( i, false, true, true );
+        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
+            const Subgroup& subGrp1 = group.mSubgroup( i );
+            grp1BBox = grp1TransMat.map( subGrp1.bbox( false, true, true ) );
 
             dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }
@@ -470,9 +365,9 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     }
 }
 
-void PRTextGroupWords::buildSubGroups()
+void PRTextGroupWords::buildMainSubGroups()
 {
-    m_subGroups.clear();
+    m_mainSubgroups.clear();
 
     size_t idx = 0;
     while( idx < m_words.size() ) {
@@ -483,21 +378,176 @@ void PRTextGroupWords::buildSubGroups()
             idx++;
         }
 
-        // Words in the subgroup.
-        SubGroup subgroup;
-        subgroup.idxFirstWord = idx;
-        while( idx < m_words.size() &&
-               m_words[idx].type() != PRTextWordType::PDFTranslation &&
-               m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
-            idx++;
-        }
-        subgroup.idxLastWord = idx-1;
-
-        // Add subgroup to the list.
-        if( subgroup.idxFirstWord != static_cast<long>( m_words.size() ) ) {
-            m_subGroups.push_back( subgroup );
+        // Create a subgroup.
+        if( idx < m_words.size() ) {
+            Subgroup subgroup( this );
+            while( idx < m_words.size() &&
+                   m_words[idx].type() != PRTextWordType::PDFTranslation &&
+                   m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
+                subgroup.setInside( idx, true );
+                idx++;
+            }
+            m_mainSubgroups.push_back( subgroup );
         }
     }
+}
+
+//**********************************************************//
+//                PRTextGroupWords::SubGroup                //
+//**********************************************************//
+PRTextGroupWords::Subgroup::Subgroup()
+{
+    // Initialize to empty subgroup.
+    this->init( NULL );
+}
+PRTextGroupWords::Subgroup::Subgroup( PRTextGroupWords* pGroup )
+{
+    // Initialize to complete subgroup.
+    this->init( pGroup );
+}
+
+void PRTextGroupWords::Subgroup::init( PRTextGroupWords* pGroup )
+{
+    // Empty subgroup.
+    if( !pGroup ) {
+        m_pGroup = NULL;
+        m_wordsInside.clear();
+    }
+    // Complete subgroup.
+    else {
+        m_pGroup = pGroup;
+        m_wordsInside.assign( pGroup->nbWords(), true );
+    }
+}
+
+PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
+{
+    // Handle the case of an empty group.
+    PdfeORect bbox( 0.0, 0.0 );
+    if( !m_wordsInside.size() ) {
+        return bbox;
+    }
+
+    // First and last indexes of the subgroup (remove leading and trailing spaces if necessary).
+    long idxFirst = 0;
+    while( idxFirst < static_cast<long>( m_wordsInside.size() ) &&
+           ( !m_wordsInside[idxFirst] ||
+           ( !leadTrailSpaces && word(idxFirst)->type() != PRTextWordType::Classic ) ) ) {
+         ++idxFirst;
+    }
+    long idxLast = static_cast<long>( m_wordsInside.size() ) - 1;
+    while( idxLast >= 0L &&
+           ( !m_wordsInside[idxLast] ||
+           ( !leadTrailSpaces && word(idxLast)->type() != PRTextWordType::Classic ) ) ) {
+        --idxLast;
+    }
+
+    // Check the indexes. If wrong, return empty bbox.
+    if( idxFirst >= static_cast<long>( m_wordsInside.size() ) || idxLast < 0L || idxFirst > idxLast ) {
+        return bbox;
+    }
+
+    // Bounding box coordinates.
+    double left = std::numeric_limits<double>::max();
+    double right = std::numeric_limits<double>::min();
+    double bottom = std::numeric_limits<double>::max();
+    double top = std::numeric_limits<double>::min();
+
+    // Sum of words width.
+    double widthSum = 0.0;
+
+    // Compute bounding box.
+    for( long i = 0 ; i < static_cast<long>( m_wordsInside.size() ) ; ++i ) {
+        // Current word and its bounding box.
+        const PRTextWord& word = m_pGroup->word( i );
+        PdfRect bboxWord = word.bbox( true, useBottomCoord );
+
+        // If inside the subgroup, update coordinates.
+        if( this->inside( i ) && i >= idxFirst && i <= idxLast ) {
+            left = std::min( left, widthSum + bboxWord.GetLeft() );
+            right = std::max( right, widthSum + bboxWord.GetLeft() + bboxWord.GetWidth() );
+            bottom = std::min( bottom, bboxWord.GetBottom() );
+            top = std::max( top, bboxWord.GetBottom() + bboxWord.GetHeight() );
+
+        }
+        widthSum += bboxWord.GetWidth();
+    }
+
+    // Strange coordinates, return empty bbox.
+    if( left > right && bottom > top ) {
+        return bbox;
+    }
+
+    // Set bounding box coordinates.
+    bbox.setWidth( right-left );
+    bbox.setLeftBottom( PdfeVector( left, bottom ) );
+    bbox.setHeight( top - bottom );
+
+    // Apply global transform if needed.
+    if( pageCoords ) {
+        PdfeMatrix textMat = m_pGroup->getGlobalTransMatrix();
+        bbox = textMat.map( bbox );
+    }
+    return bbox;
+}
+double PRTextGroupWords::Subgroup::width( bool leadTrailSpaces ) const
+{
+    // Get bounding box.
+    PdfeORect bbox = this->bbox( false, leadTrailSpaces, true );
+    return bbox.width();
+}
+double PRTextGroupWords::Subgroup::height() const
+{
+    // Get bounding box.
+    PdfeORect bbox = this->bbox( false, true, true );
+    return bbox.height();
+}
+size_t PRTextGroupWords::Subgroup::length( bool countSpaces )
+{
+    size_t length = 0;
+    for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
+        // Current word.
+        const PRTextWord& word = m_pGroup->word( i );
+        if( m_wordsInside[i] &&
+            ( word.type() == PRTextWordType::Classic ||
+            ( word.type() == PRTextWordType::Space && countSpaces ) ) ) {
+            length += word.length();
+        }
+    }
+    return length;
+}
+
+PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::intersection( const PRTextGroupWords::Subgroup& subgroup1,
+                                                                     const PRTextGroupWords::Subgroup& subgroup2 )
+{
+    Subgroup subgroup;
+    // Check the parent group is the same.
+    if( subgroup1.m_pGroup == subgroup2.m_pGroup ) {
+        subgroup.m_pGroup = subgroup1.m_pGroup;
+        subgroup.m_wordsInside.resize( subgroup1.m_wordsInside.size(), false );
+
+        // Intersection...
+        for( size_t i = 0 ; i < subgroup1.m_wordsInside.size() ; ++i ) {
+            subgroup.m_wordsInside[i] = subgroup1.m_wordsInside[i] && subgroup2.m_wordsInside[i];
+        }
+    }
+    return subgroup;
+}
+PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::reunion( const PRTextGroupWords::Subgroup& subgroup1,
+                                                                const PRTextGroupWords::Subgroup& subgroup2 )
+{
+    Subgroup subgroup;
+    // Check the parent group is the same.
+    if( subgroup1.m_pGroup == subgroup2.m_pGroup ) {
+        subgroup.m_pGroup = subgroup1.m_pGroup;
+        subgroup.m_wordsInside.resize( subgroup1.m_wordsInside.size(), false );
+
+        // Union...
+        for( size_t i = 0 ; i < subgroup1.m_wordsInside.size() ; ++i ) {
+            subgroup.m_wordsInside[i] = subgroup1.m_wordsInside[i] || subgroup2.m_wordsInside[i];
+        }
+    }
+    return subgroup;
 }
 
 }

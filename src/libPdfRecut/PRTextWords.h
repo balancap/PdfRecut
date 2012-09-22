@@ -149,28 +149,21 @@ public:
     void appendWord( const PRTextWord& word );
 
     /** Compute the width of the group of words.
-     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
-     * \param spaces Include space width.
-     * \param lastCharSpace Include last character char space?
+     * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Width of the group of words.
      */
-    double width( long idxSubGroup = -1,
-                  bool spaces = true,
-                  bool lastCharSpace = true ) const;
+    double width( bool leadTrailSpaces ) const;
 
     /** Compute the height of the group of words.
-     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
      * \return Height of the group of words.
      */
-    double height( long idxSubGroup = -1 ) const;
+    double height() const;
 
     /** Compute the length of the group of words.
-     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
      * \param countSpaces Also count spaces?
      * \return Length of the group of words.
      */
-    size_t length( long idxSubGroup = -1,
-                   bool countSpaces = true );
+    size_t length( bool countSpaces ) const;
 
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
@@ -178,16 +171,14 @@ public:
     PdfeMatrix getGlobalTransMatrix() const;
 
     /** Get the bounding box of the group of words.
-     * \param idxSubGroup Index of the subgroup to consider. -1 for the all group.
      * \param pageCoords In page coordinates (true) or local coordinates (false) ?
      * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( long idxSubGroup = -1,
-                    bool pageCoords = true,
-                    bool leadTrailSpaces = true,
-                    bool useBottomCoord = true ) const;
+    PdfeORect bbox( bool pageCoords,
+                    bool leadTrailSpaces,
+                    bool useBottomCoord ) const;
 
     /** Minimal distance between the object and another group.
      * Use subgroups to compute the distance.
@@ -213,26 +204,98 @@ protected:
     void readPdfString( const PoDoFo::PdfString& str,
                         PoDoFoExtended::PdfeFont* pFont );
 
-    /** Build the private subgroup vector.
-     * Subgroups are separated by PDF translation words.
+    /** Build the private vector of main subgroups.
+     * Main subgroups are separated by PDF translation words.
      */
-    void buildSubGroups();
+    void buildMainSubGroups();
 
 public:
-    /** Structure that represents of a subgroup:
-     * Index of the first and the last words.
+    /** Class that represents a subgroup of words.
      */
-    struct SubGroup
+    class Subgroup
     {
-        /// Index of the first word.
-        long  idxFirstWord;
-        /// Index of the last word.
-        long  idxLastWord;
-
-        /** Default constructor: initialize both to -1.
+    public:
+        /** Default empty constructor.
          */
-        SubGroup() : idxFirstWord(-1), idxLastWord(-1) { }
-    };
+        Subgroup();
+
+        /** Constructor from a PRTextGroups: initialize to the complete subgroup.
+         * \param pGroup Pointer to the group.
+         */
+        Subgroup( PRTextGroupWords* pGroup );
+        /** Initialize to the complete subgroup using a given group.
+         * \param pGroup Pointer to the group, if NULL, init to empty.
+         */
+        void init( PRTextGroupWords* pGroup );
+
+        /** Is a word inside the subgroup? Can raise an exception.
+         * \param idxWord Index of the word.
+         * \return The word belongs to the subgroup?
+         */
+        bool inside( size_t idxWord ) const;
+
+        /** Set if the word belongs, or not, to the subgroup.
+         * Can raise an exception.
+         * \param idxWord Index of the word.
+         * \param inside Is the word inside the subgroup.
+         */
+        void setInside( size_t idxWord, bool inside );
+
+        /** Get a pointer to a word. Can raise an exception.
+         * \param idxWord Index of the word.
+         * \return Pointer to the word. NULL if it does belong to the subgroup.
+         */
+        const PRTextWord* word( size_t idxWord ) const;
+
+        /** Get the bounding box of the subgroup of words.
+         * \param pageCoords In page coordinates (true) or local coordinates (false) ?
+         * \param leadTrailSpaces Include leading and trailing spaces ?
+         * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
+         * \return Oriented rectangle (PdfeORect object).
+         */
+        PdfeORect bbox( bool pageCoords = true,
+                        bool leadTrailSpaces = true,
+                        bool useBottomCoord = true ) const;
+
+        /** Compute the width of the subgroup of words.
+         * \param leadTrailSpaces Include leading and trailing spaces ?
+         * \return Width of the subgroup of words.
+         */
+        double width( bool leadTrailSpaces = true ) const;
+
+        /** Compute the height of the subgroup of words.
+         * \return Height of the subgroup of words.
+         */
+        double height() const;
+
+        /** Compute the length of the subgroup of words.
+         * \param countSpaces Also count spaces?
+         * \return Length of the subgroup of words.
+         */
+        size_t length( bool countSpaces = true );
+
+        /** Intersection of two subgroups.
+         * The parent group must be the same (return empty subgroup else).
+         * \param subgroup1 First subgroup.
+         * \param subgroup2 Second subgroup.
+         * \return New subgroup corresponding to the intersection.
+         */
+        static Subgroup intersection( const Subgroup& subgroup1, const Subgroup& subgroup2 );
+
+        /** Reunion of two subgroups.
+         * The parent group must be the same (return empty subgroup else).
+         * \param subgroup1 First subgroup.
+         * \param subgroup2 Second subgroup.
+         * \return New subgroup corresponding to the union.
+         */
+        static Subgroup reunion( const Subgroup& subgroup1, const Subgroup& subgroup2 );
+
+    protected:
+        /// Pointer to the group.
+        PRTextGroupWords*  m_pGroup;
+        /// Vector of boolean telling if words of the group belongs to the subgroup.
+        std::vector<bool>  m_wordsInside;
+};
 
 public:
     // Standard getters and setters...
@@ -265,16 +328,16 @@ public:
      */
     const PRTextWord& word( size_t idx ) const;
 
-    /** Get the number of subgroups.
+    /** Get the number of main subgroups.
      * \return Number of subgroups.
      */
-    size_t nbSubGroups() const;
+    size_t nbMSubgroups() const;
 
-    /** Get a subgroup component.
+    /** Get a main subgroup component.
      * \param idx Index of the subgroup.
-     * \return Structure PRTextGroupWords::SubGroup.
+     * \return Const reference to a PRTextGroupWords::SubGroup.
      */
-    SubGroup subGroup( size_t idx ) const;
+    const Subgroup& mSubgroup( size_t idx ) const;
 
 protected:
     /// Default space height used.
@@ -301,8 +364,8 @@ protected:
 
     /// Vector of words that make the group.
     std::vector<PRTextWord>  m_words;
-    /// Subgroups of words.
-    std::vector<SubGroup>  m_subGroups;
+    /// Main subgroups of words.
+    std::vector<Subgroup>  m_mainSubgroups;
 };
 
 //**********************************************************//
@@ -338,7 +401,7 @@ inline PdfeMatrix PRTextGroupWords::transMatrix() const
 }
 inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
 {
-    m_transMatrix = transMatrix;
+    m_transMatrix = transMatrix; m_words.size();
 }
 inline PdfTextState PRTextGroupWords::textState() const
 {
@@ -361,14 +424,35 @@ inline const PRTextWord& PRTextGroupWords::word( size_t idx ) const
 {
     return m_words.at(idx);     // Throw out of range exception if necessary.
 }
-inline size_t PRTextGroupWords::nbSubGroups() const
+inline size_t PRTextGroupWords::nbMSubgroups() const
 {
-    return m_subGroups.size();
+    return m_mainSubgroups.size();
 }
-inline PRTextGroupWords::SubGroup PRTextGroupWords::subGroup( size_t idx ) const
+inline const PRTextGroupWords::Subgroup &PRTextGroupWords::mSubgroup( size_t idx ) const
 {
-    return m_subGroups.at( idx );
+    return m_mainSubgroups.at( idx );
 }
+
+//**********************************************************//
+//            Inline PRTextGroupWords::SubGroup             //
+//**********************************************************//
+inline bool PRTextGroupWords::Subgroup::inside( size_t idxWord ) const
+{
+    return m_wordsInside.at( idxWord );
+}
+inline void PRTextGroupWords::Subgroup::setInside( size_t idxWord, bool inside )
+{
+    m_wordsInside.at( idxWord ) = inside;
+}
+inline const PRTextWord* PRTextGroupWords::Subgroup::word( size_t idxWord ) const
+{
+    if( m_wordsInside.at( idxWord ) ) {
+        return &( m_pGroup->word( idxWord ) );
+    }
+    return NULL;
+}
+
+
 
 }
 
