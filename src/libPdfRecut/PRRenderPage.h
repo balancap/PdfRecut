@@ -250,7 +250,6 @@ public:
     QRect fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect );
 
 protected:
-
     /** Read a group of words from a pdf stream state.
      * \param streamState Stream state to consider.
      * \return Group of words read.
@@ -261,6 +260,11 @@ protected:
      * \param groupWords Words to draw.
      */
     void textDrawGroupWords( const PRTextGroupWords& groupWords );
+
+    /** Draw a subgroup of words on the pdf image painter.
+     * \param subgroup Subgroup of words to draw.
+     */
+    void textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup );
 
     /** Update text transformation matrix. if necessary.
      * \param streamState Current tream state to consider.

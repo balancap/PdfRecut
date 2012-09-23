@@ -230,7 +230,7 @@ public:
          */
         Subgroup();
         /** Constructor from a PRTextGroups: initialize to the complete subgroup.
-         * \param group Constant eference to the group.
+         * \param group Constant reference to the group. Should not be a temp object !
          */
         Subgroup( const PRTextGroupWords& group );
         /** Copy constructor.
@@ -242,7 +242,7 @@ public:
          */
         void init();
         /** Initialize to the complete subgroup using a given group.
-         * \param pGroup Constant reference to the group.
+         * \param pGroup Constant reference to the group. Should not be a temp object !
          */
         void init( const PRTextGroupWords& group );
 

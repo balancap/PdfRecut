@@ -396,7 +396,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
     // Update text transform matrix.
     PdfeMatrix tmpMat;
-    tmpMat(2,0) = groupWords.width( -1, true, true) * textState.fontSize * ( textState.hScale / 100. );
+    tmpMat(2,0) = groupWords.width( true ) * textState.fontSize * ( textState.hScale / 100. );
     m_textMatrix = tmpMat * m_textMatrix;
 
     return groupWords;
@@ -404,21 +404,31 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 
 void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
+    // Render the complete subgroup.
+    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords ) );
+}
+void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup )
+{
     // Nothing to draw...
-    if( !groupWords.nbWords() ) {
+    PRTextGroupWords* pGroup = subgroup.group();
+    if( !pGroup || !pGroup->nbWords() ) {
         return;
     }
 
     // Compute text rendering matrix.
     PdfeMatrix textMat;
-    textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
+    textMat = pGroup->getGlobalTransMatrix() * m_pageImgTrans;
     m_pagePainter->setTransform( textMat.toQTransform() );
 
     // Paint words.
     double widthStr = 0;
-    for( size_t i = 0 ; i < groupWords.nbWords() ; i++ )
+    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i )
     {
-        const PRTextWord& word = groupWords.word( i );
+        // Check the word is inside the subgroup.
+        if( !subgroup.inside( i ) ) {
+            break;
+        }
+        const PRTextWord& word = pGroup->word( i );
 
         // Set pen & brush
         if( word.type() == PRTextWordType::Classic ) {
