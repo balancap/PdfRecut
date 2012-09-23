@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "PRTextPageStructure.h"
+#include "PRMiscUtils.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>
@@ -48,21 +49,11 @@ PRTextPageStructure::~PRTextPageStructure()
 
 void PRTextPageStructure::clearContent()
 {
-    // Groups of words.
-    for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
-        if( m_pGroupsWords[i] ) {
-            delete m_pGroupsWords[i];
-        }
-    }
-    m_pGroupsWords.clear();
+    // Delete groups of words.
+    std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), DeleteFunctor<PRTextGroupWords>() );
 
-    // Text lines.
-    for( size_t i = 0 ; i < m_pTextLines.size() ; ++i ) {
-        if( m_pTextLines[i] ) {
-            delete m_pTextLines[i];
-        }
-    }
-    m_pTextLines.clear();
+    // Delete text lines.
+    std::for_each( m_pTextLines.begin(), m_pTextLines.end(), DeleteFunctor<PRTextLine>() );
 }
 
 void PRTextPageStructure::detectGroupsWords()
@@ -319,7 +310,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
     double MaxDistance = 1.0;
     double MaxWidthLine = 3.0;
     size_t MaxLengthLine = 5;
-    long MaxSearchGroupWords = 8;
+    long MaxSearchGroupWords = 30;
     double MaxWidthCumul = 5.0;
     double MaxDistCumul = 5.0;
 
@@ -408,7 +399,6 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
                 bool merge = ( distMin <= MaxDistance ) && ( pLine2nd->width( true ) <= MaxWidthLine ||
                                                              heightMerge <= lineBBox2nd.height() * 1.4 );
 
-
                 if( merge ) {
                     pLinesToMerge.push_back( pGroup2nd->textLines().at(0) );
                 }
@@ -433,7 +423,11 @@ std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pL
     pLines.push_back( pLine );
 
     // Get horizontal blocks inside the line.
-    std::vector<PRTextLine::Block> hBlocks = pLine->horizontalBlocks( BlockHDistance );
+    std::vector<PRTextLine::Block*> hBlocks = pLine->horizontalBlocks( BlockHDistance );
+    //std::list<PRTextLine::Block> hBlocksList = pLine->horizontalBlocksList( BlockHDistance );
+
+
+    std::for_each( hBlocks.begin(), hBlocks.end(), DeleteFunctor<PRTextLine::Block>() );
 
     // Create new lines from blocks.
 //    std::vector<PRTextLine::Block>::iterator it;
@@ -524,7 +518,7 @@ void PRTextPageStructure::renderTextLines()
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
     m_renderParameters = renderParameters;
 
     // Line rendering pen.
@@ -542,23 +536,23 @@ void PRTextPageStructure::renderTextLines()
 
         m_renderParameters.textPB.fillBrush->setColor( lineColorWord );
         m_renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
-        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
+//        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
         linePen.drawPen->setColor( lineColorBBox );
 
         if( m_pTextLines[idx] ) {
             // Line words.
-            this->textDrawLineWords( *m_pTextLines[idx] );
+//            this->textDrawLineWords( *m_pTextLines[idx] );
 
             // Line bounding box.
             this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true, false, true ), linePen );
 
             // Line blocks.
-            std::vector<PRTextLine::Block> hBlocks = m_pTextLines[idx]->horizontalBlocks( 0.0 );
-            PdfeMatrix transMat = m_pTextLines[idx]->transMatrix();
-            for( size_t j = 0 ; j < hBlocks.size() ; ++j ) {
-                PdfeORect bbox = transMat.map( hBlocks[j].bbox() );
+//            std::vector<PRTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );
+//            PdfeMatrix transMat = m_pTextLines[idx]->transMatrix();
+//            for( size_t j = 0 ; j < hBlocks.size() ; ++j ) {
+//                PdfeORect bbox = transMat.map( hBlocks[j]->bbox() );
 //                this->textDrawPdfeORect( bbox, linePen );
-            }
+//            }
         }
     }
 }
@@ -616,7 +610,7 @@ void PRTextPageStructure::textDrawLineWords( const PRTextLine& line )
     // Draw the subgroups of words that belong to the line.
     for( size_t idx = 0 ; idx < line.nbSubgroups() ; ++idx ) {
         this->textDrawSubgroupWords( line.subgroup( idx ) );
-        //this->textDrawMainSubgroups( *line.subgroup( idx ).group() );
+//        this->textDrawMainSubgroups( *line.subgroup( idx ).group() );
     }
 }
 

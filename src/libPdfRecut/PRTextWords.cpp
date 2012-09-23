@@ -400,7 +400,7 @@ void PRTextGroupWords::buildMainSubGroups()
 
         // Create a subgroup.
         if( idx < m_words.size() ) {
-            Subgroup subgroup( *this );
+            Subgroup subgroup( *this, false );
             while( idx < m_words.size() &&
                    m_words[idx].type() != PRTextWordType::PDFTranslation &&
                    m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
@@ -420,10 +420,10 @@ PRTextGroupWords::Subgroup::Subgroup()
     // Initialize to empty subgroup.
     this->init();
 }
-PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords& group )
+PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords& group , bool allGroup )
 {
     // Initialize to complete subgroup.
-    this->init( group );
+    this->init( group, allGroup );
 }
 PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords::Subgroup& subgroup )
 {
@@ -437,11 +437,17 @@ void PRTextGroupWords::Subgroup::init()
     m_pGroup = NULL;
     m_wordsInside.clear();
 }
-void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group )
+
+void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGroup )
 {
     // Complete subgroup.
     m_pGroup = const_cast<PRTextGroupWords*>( &group );
-    m_wordsInside.assign( group.nbWords(), true );
+    if( allGroup ) {
+        m_wordsInside.assign( group.nbWords(), true );
+    }
+    else {
+        m_wordsInside.assign( group.nbWords(), false );
+    }
 }
 
 PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
@@ -494,12 +500,12 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
     }
 
     // Strange coordinates, return empty bbox.
-    if( left > right && bottom > top ) {
+    if( left > right || bottom > top ) {
         return bbox;
     }
 
     // Set bounding box coordinates.
-    bbox.setWidth( right-left );
+    bbox.setWidth( right - left );
     bbox.setLeftBottom( PdfeVector( left, bottom ) );
     bbox.setHeight( top - bottom );
 

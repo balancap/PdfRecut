@@ -20,7 +20,8 @@ SOURCES += \
     PRTextWords.cpp \
     PRTextLine.cpp \
     PRTextPageStructure.cpp \
-    PRTextStructure.cpp
+    PRTextStructure.cpp \
+    PRMiscUtils.cpp
 
 HEADERS +=\
     PRDocument.h \
@@ -34,7 +35,8 @@ HEADERS +=\
     PRTextLine.h \
     PRTextPageStructure.h \
     PRTextStructure.h \
-    PRTextWords.h
+    PRTextWords.h \
+    PRMiscUtils.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

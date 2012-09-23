@@ -181,29 +181,43 @@ long PRTextLine::hasGroupWords( PRTextGroupWords* pGroup ) const
     return -1;
 }
 
-std::vector<PRTextLine::Block> PRTextLine::horizontalBlocks( double hDistance ) const
+std::vector<PRTextLine::Block*> PRTextLine::horizontalBlocks( double hDistance ) const
 {
-    // Initial the vector of blocks with line's subgroups.
-    std::vector<Block> hBlocks( m_subgroupsWords.size() );
-    for( size_t i = 0 ; i < hBlocks.size() ; ++i ) {
-        hBlocks[i].init( this, i, true, true );
-    }
+    // Initialize the vector of blocks with line classic words (no space...).
+    std::vector<Block*> hBlocks;
 
+    // Add words as basic blocks.
+    PRTextGroupWords::Subgroup subGrpWord;
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
+        const PRTextGroupWords::Subgroup& subgroup = m_subgroupsWords[i];
+
+        // Words in the subgroup.
+        for( size_t j = 0 ; j < subgroup.group()->nbWords() ; ++j ) {
+            subGrpWord.init( *subgroup.group(), false );
+            const PRTextWord* pWord = subgroup.word( j );
+
+            // Add block corresponding to the word.
+            if( pWord && pWord->type() == PRTextWordType::Classic ) {
+                subGrpWord.setInside( j, true );
+                hBlocks.push_back( new Block( this, subGrpWord, false, true ) );
+            }
+        }
+    }
     // Horizontal sort of blocks.
-    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSort );
+    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSortP );
 
     // Merge blocks.
-    std::vector<Block>::iterator lIt, rIt;
+    std::vector<Block*>::iterator lIt, rIt;
     PdfRect lBBox, rBBox;
     for( rIt = hBlocks.begin()+1 ; rIt != hBlocks.end() ; ) {
         // Get left and right bounding boxes.
         lIt = rIt - 1;
-        lBBox = lIt->bbox();
-        rBBox = rIt->bbox();
+        lBBox = (*lIt)->bbox();
+        rBBox = (*rIt)->bbox();
 
         // Merge if horizontal overlap.
         if( rBBox.GetLeft() - ( lBBox.GetLeft()+lBBox.GetWidth() ) <= hDistance ) {
-            lIt->merge( *rIt );
+            (*lIt)->merge( *(*rIt) );
             rIt = hBlocks.erase( rIt );
         }
         else {
@@ -211,6 +225,55 @@ std::vector<PRTextLine::Block> PRTextLine::horizontalBlocks( double hDistance ) 
         }
     }
     return hBlocks;
+}
+
+std::list<PRTextLine::Block> PRTextLine::horizontalBlocksList(double hDistance) const
+{
+    // Initialize the list of blocks with line classic words (no space...).
+    std::list<Block> hBlocksList;
+    PRTextGroupWords::Subgroup subGrpWord;
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
+        const PRTextGroupWords::Subgroup& subgroup = m_subgroupsWords[i];
+
+        // Words in the subgroup.
+        for( size_t j = 0 ; j < subgroup.group()->nbWords() ; ++j ) {
+            subGrpWord.init( *subgroup.group(), false );
+            const PRTextWord* pWord = subgroup.word( j );
+
+            // Add block corresponding to the word.
+            if( pWord && pWord->type() == PRTextWordType::Classic ) {
+                subGrpWord.setInside( j, true );
+
+                hBlocksList.resize( hBlocksList.size()+1 );
+                hBlocksList.back().init( this, subGrpWord, false, true );
+                //hBlocksList.push_back( Block( this, subGrpWord, false, true )  );
+            }
+        }
+    }
+    // Horizontal sort of blocks.
+    hBlocksList.sort( Block::horizontalSort );
+
+    // Merge blocks.
+    std::list<Block>::iterator lIt, rIt;
+    PdfRect lBBox, rBBox;
+    for( rIt = ++hBlocksList.begin() ; rIt != hBlocksList.end() ; ) {
+        // Get left and right bounding boxes.
+        lIt = rIt;
+        --lIt;
+
+        lBBox = lIt->bbox();
+        rBBox = rIt->bbox();
+
+        // Merge if horizontal overlap.
+        if( rBBox.GetLeft() - ( lBBox.GetLeft()+lBBox.GetWidth() ) <= hDistance ) {
+            lIt->merge( *rIt );
+            rIt = hBlocksList.erase( rIt );
+        }
+        else {
+            ++rIt;
+        }
+    }
+    return hBlocksList;
 }
 
 void PRTextLine::computeData()
@@ -274,13 +337,15 @@ void PRTextLine::computeBBoxes()
         subGpBBox = m_subgroupsWords[i].bbox( true, false, true );
         subGpBBox = invTransMat.map( subGpBBox );
 
-        leftBottom = subGpBBox.leftBottom();
-        rightTop = subGpBBox.rightTop();
+        if( subGpBBox.width() > 0 && subGpBBox.height() > 0 ) {
+            leftBottom = subGpBBox.leftBottom();
+            rightTop = subGpBBox.rightTop();
 
-        leftNoLT = std::min( leftNoLT, leftBottom(0) );
-        bottomNoLT = std::min( bottomNoLT, leftBottom(1) );
-        rightNoLT = std::max( rightNoLT, rightTop(0) );
-        topNoLT = std::max( topNoLT, rightTop(1) );
+            leftNoLT = std::min( leftNoLT, leftBottom(0) );
+            bottomNoLT = std::min( bottomNoLT, leftBottom(1) );
+            rightNoLT = std::max( rightNoLT, rightTop(0) );
+            topNoLT = std::max( topNoLT, rightTop(1) );
+        }
 
         // Update mean Y coordinate.
         subGpBBox = m_subgroupsWords[i].bbox( true, true, false );
@@ -314,7 +379,7 @@ void PRTextLine::computeBBoxes()
     m_bbox.SetWidth( (right - left) / scaleCoef );
     m_bbox.SetHeight( (top - bottom) / scaleCoef );
 
-    m_bboxNoLTSpaces.SetLeft( 0.0 );
+    m_bboxNoLTSpaces.SetLeft( (leftNoLT - left) / scaleCoef );
     m_bboxNoLTSpaces.SetBottom( (bottomNoLT - meanYCoord) / scaleCoef );
     m_bboxNoLTSpaces.SetWidth( (rightNoLT - leftNoLT) / scaleCoef );
     m_bboxNoLTSpaces.SetHeight( (topNoLT - bottomNoLT) / scaleCoef );
@@ -331,26 +396,53 @@ bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
 //**********************************************************//
 PRTextLine::Block::Block()
 {
+    this->init();
+}
+PRTextLine::Block::Block( const PRTextLine* pLine,
+                          const PRTextGroupWords::Subgroup& subgroup,
+                          bool leadTrailSpaces, bool useBottomCoord )
+{
+    // Initialize block.
+    this->init( pLine, subgroup, leadTrailSpaces, useBottomCoord );
+}
+
+void PRTextLine::Block::init()
+{
     // Empty block.
     m_pLine = NULL;
     m_subgroupsInside.clear();
+    m_subgroupsWords.clear();
     m_bbox = PdfRect( 0, 0, 0, 0 );
 }
+void PRTextLine::Block::init( const PRTextLine* pLine,
+                              const PRTextGroupWords::Subgroup& subgroup,
+                              bool leadTrailSpaces, bool useBottomCoord )
+{
+    // Check the group of words belongs to the line.
+    if( !pLine  ) {
+        this->init();
+        return;
+    }
+    long idxSubgroup = pLine->hasGroupWords( subgroup.group() );
+    if( idxSubgroup == -1 ) {
+        this->init();
+        return;
+    }
 
-PRTextLine::Block::Block( const PRTextLine* pLine, size_t idxSubgroup, bool leadTrailSpaces, bool useBottomCoord )
-{
-    // Initialize block.
-    this->init( pLine, idxSubgroup, leadTrailSpaces, useBottomCoord );
-}
-void PRTextLine::Block::init( const PRTextLine* pLine, size_t idxSubgroup, bool leadTrailSpaces, bool useBottomCoord )
-{
     // Initialize members.
     m_pLine = const_cast<PRTextLine*>( pLine );
     m_subgroupsInside.resize( pLine->nbSubgroups(), false );
     m_subgroupsInside.at( idxSubgroup ) = true;
 
+    m_subgroupsWords.resize( pLine->nbSubgroups() );
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
+        m_subgroupsWords[i].init( *pLine->subgroup( i ).group(), false );
+    }
+    m_subgroupsWords.at( idxSubgroup ) = PRTextGroupWords::Subgroup::intersection( subgroup,
+                                                                                   pLine->subgroup( idxSubgroup ) );
+
     // Compute bounding box.
-    PdfeORect bbox = this->subgroup( idxSubgroup )->bbox( true, leadTrailSpaces, useBottomCoord );
+    PdfeORect bbox = subgroup.bbox( true, leadTrailSpaces, useBottomCoord );
     bbox = m_pLine->transMatrix().inverse().map( bbox );
 
     m_bbox.SetLeft( bbox.leftBottomX() );
@@ -365,9 +457,11 @@ void PRTextLine::Block::merge( const PRTextLine::Block& block2nd )
     if( m_pLine != block2nd.m_pLine ) {
         return;
     }
-    // Add subgroups of the second block.
+    // Merge subgroups with the second block.
     for( size_t i = 0 ; i < m_subgroupsInside.size() ; ++i ) {
         m_subgroupsInside[i] = m_subgroupsInside[i] || block2nd.m_subgroupsInside[i];
+        m_subgroupsWords[i] = PRTextGroupWords::Subgroup::reunion( m_subgroupsWords[i],
+                                                                   block2nd.m_subgroupsWords[i] );
     }
 
     // Compute new bounding box.
@@ -391,6 +485,10 @@ PdfRect PRTextLine::Block::bbox() const
 bool PRTextLine::Block::horizontalSort( const PRTextLine::Block& block1, const PRTextLine::Block& block2 )
 {
     return ( block1.m_bbox.GetLeft() < block2.m_bbox.GetLeft() );
+}
+bool PRTextLine::Block::horizontalSortP( PRTextLine::Block* pBlock1, PRTextLine::Block* pBlock2 )
+{
+    return (  pBlock1->m_bbox.GetLeft() < pBlock2->m_bbox.GetLeft() );
 }
 
 }

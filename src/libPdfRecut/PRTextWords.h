@@ -229,10 +229,11 @@ public:
         /** Default empty constructor.
          */
         Subgroup();
-        /** Constructor from a PRTextGroups: initialize to the complete subgroup.
+        /** Constructor from a PRTextGroups: initialize to the complete subgroup (true).
          * \param group Constant reference to the group. Should not be a temp object !
+         * \param allGroup Correspond to the complete group?
          */
-        Subgroup( const PRTextGroupWords& group );
+        Subgroup( const PRTextGroupWords& group, bool allGroup = true );
         /** Copy constructor.
          * \param subgroup Subgroup to copy.
          */
@@ -243,8 +244,9 @@ public:
         void init();
         /** Initialize to the complete subgroup using a given group.
          * \param pGroup Constant reference to the group. Should not be a temp object !
+         * \param allGroup Correspond to the complete group?
          */
-        void init( const PRTextGroupWords& group );
+        void init( const PRTextGroupWords& group, bool allGroup = true );
 
         /** Get the parent group.
          * \return Pointer the parent group.

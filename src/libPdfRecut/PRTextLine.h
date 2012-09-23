@@ -64,26 +64,28 @@ public:
         /** Default constructor.
          */
         Block();
-
         /** Constructor: initialize with a given line and subgroup.
          * \param pLine Pointer to the parent line.
-         * \param idxSubgroup Index of the subgroup in the line.
+         * \param subgroup Subgroup which must be a subset of a line subgroup.
          * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
          * \param useBottomCoord Use bottom coordinates for the BBox ?
          */
         Block( const PRTextLine* pLine,
-               size_t idxSubgroup,
+               const PRTextGroupWords::Subgroup& subgroup,
                bool leadTrailSpaces,
                bool useBottomCoord );
 
+        /** Initialize to an empty block.
+         */
+        void init();
         /** Initialize a block with a given line and subgroup of words.
          * \param pLine Pointer to the parent line.
-         * \param idxSubgroup Index of the subgroup in the line.
+         * \param subgroup Subgroup which must be a subset of a line subgroup.
          * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
          * \param useBottomCoord Use bottom coordinates for the BBox ?
          */
         void init( const PRTextLine* pLine,
-                   size_t idxSubgroup,
+                   const PRTextGroupWords::Subgroup& subgroup,
                    bool leadTrailSpaces,
                    bool useBottomCoord );
 
@@ -102,7 +104,7 @@ public:
          * \param idx Index of the subgroup.
          * \param inside Is the subgroup inside the block.
          */
-        void setInside(size_t idx, bool inside );
+        void setInside( size_t idx, bool inside );
 
         /** Get a pointer to a subgroup. Can raise an exception.
          * \param idx Index of the subgroup.
@@ -126,11 +128,16 @@ public:
          */
         static bool horizontalSort( const Block& block1, const Block& block2 );
 
+        static bool horizontalSortP( Block* pBlock1, Block* pBlock2 );
+
     protected:
         /// Pointer to the parent line.
         PRTextLine*  m_pLine;
-        /// Vector of boolean telling if a subgroup belongs to the block.
+
+        /// Vector of boolean telling if a line subgroup (or a subset) belongs to the block.
         std::vector<bool>  m_subgroupsInside;
+        /// Vector of words subgroups which constitute the block.
+        std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
 
         /// Bounding box.
         PoDoFo::PdfRect  m_bbox;
@@ -193,9 +200,15 @@ public:
 
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
-     * \return Vector of PRTextLine:: Block.
+     * \return Vector of PRTextLine::Block*. Objects are owned by the user.
      */
-    std::vector<Block> horizontalBlocks( double hDistance = 0.0 ) const;
+    std::vector<PRTextLine::Block*> horizontalBlocks( double hDistance = 0.0 ) const;
+
+    /** Obtain horizontal blocks defined by the line.
+     * \param hDistance Horizontal distance used for blocks merging.
+     * \return List of PRTextLine::Block.
+     */
+    std::list<PRTextLine::Block> horizontalBlocksList( double hDistance = 0.0 ) const;
 
 protected:
     /** Compuet cache data of the line (bbox, first capital letter, ...).
