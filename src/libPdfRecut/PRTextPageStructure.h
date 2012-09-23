@@ -122,9 +122,9 @@ protected:
      */
     void textDrawPdfeORect( const PdfeORect& orect,
                             const PRRenderParameters::PRPenBrush& penBrush );
-    /** Draw subgroups of a PRTextGroupWords.
+    /** Draw main subgroups of a PRTextGroupWords.
      */
-    void textDrawSubGroups( const PRTextGroupWords& groupWords );
+    void textDrawMainSubgroups( const PRTextGroupWords& groupWords );
     /** Draw a line of text.
      */
     void textDrawLineWords( const PRTextLine& line );

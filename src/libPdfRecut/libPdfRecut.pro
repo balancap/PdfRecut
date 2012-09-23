@@ -17,10 +17,10 @@ SOURCES += \
     PRStreamAnalysis.cpp \
     PRStreamLayoutZone.cpp \
     PRRenderPage.cpp \
+    PRTextWords.cpp \
     PRTextLine.cpp \
     PRTextPageStructure.cpp \
-    PRTextStructure.cpp \
-    PRTextWords.cpp
+    PRTextStructure.cpp
 
 HEADERS +=\
     PRDocument.h \
