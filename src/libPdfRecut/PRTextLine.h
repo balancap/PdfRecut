@@ -238,7 +238,7 @@ inline size_t PRTextLine::nbSubgroups() const
 {
     return m_subgroupsWords.size();
 }
-const PRTextGroupWords::Subgroup& PRTextLine::subgroup( size_t idx ) const
+inline const PRTextGroupWords::Subgroup& PRTextLine::subgroup( size_t idx ) const
 {
     return m_subgroupsWords.at( idx );
 }

@@ -54,7 +54,7 @@ void PRTextLine::addGroupWords( PRTextGroupWords* pGroupWords )
 {
     if( pGroupWords ) {
         // Add the complete subgroup to the line.
-        this->addSubgroupWords( PRTextGroupWords::Subgroup( pGroupWords ) );
+        this->addSubgroupWords( PRTextGroupWords::Subgroup( *pGroupWords ) );
     }
 }
 void PRTextLine::addSubgroupWords( const PRTextGroupWords::Subgroup& subgroup )
@@ -69,11 +69,13 @@ void PRTextLine::addSubgroupWords( const PRTextGroupWords::Subgroup& subgroup )
     if( idx != -1 ) {
         // Union of the subgroups...
         m_subgroupsWords[idx] = PRTextGroupWords::Subgroup::reunion( m_subgroupsWords[idx],
-                                                                   subgroup );
+                                                                     subgroup );
     }
     else {
         m_subgroupsWords.push_back( subgroup );
     }
+    // Add the line to the group.
+    pGroup->addTextLine( this );
 
     // Line has changed...
     m_modified = true;
@@ -84,6 +86,9 @@ void PRTextLine::rmGroupWords( PRTextGroupWords* pGroupWords )
     long idx = this->hasGroupWords( pGroupWords );
     if( idx != -1 ) {
         m_subgroupsWords.erase( m_subgroupsWords.begin()+idx );
+
+        // Remove the line from the group.
+        pGroupWords->rmTextLine( this );
 
         // Line has changed...
         m_modified = true;
@@ -98,7 +103,6 @@ void PRTextLine::analyse()
     // Reset modified parameter.
     m_modified = false;
 }
-
 
 long PRTextLine::minGroupIndex()
 {
@@ -293,6 +297,7 @@ bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
 //**********************************************************//
 PRTextLine::Block::Block()
 {
+    // Empty block.
     m_pLine = NULL;
     m_subgroupsInside.clear();
     m_bbox = PdfRect( 0, 0, 0, 0 );
