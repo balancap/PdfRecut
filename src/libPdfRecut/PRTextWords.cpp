@@ -444,7 +444,7 @@ void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group )
     m_wordsInside.assign( group.nbWords(), true );
 }
 
-PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
+PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     PdfeORect bbox( 0.0, 0.0 );
@@ -452,17 +452,13 @@ PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces
         return bbox;
     }
 
-    // First and last indexes of the subgroup (remove leading and trailing spaces if necessary).
+    // First and last indexes of the subgroup.
     long idxFirst = 0;
-    while( idxFirst < static_cast<long>( m_wordsInside.size() ) &&
-           ( !m_wordsInside[idxFirst] ||
-           ( !leadTrailSpaces && word(idxFirst)->type() != PRTextWordType::Classic ) ) ) {
+    while( idxFirst < static_cast<long>( m_wordsInside.size() ) && !m_wordsInside[idxFirst] ) {
          ++idxFirst;
     }
     long idxLast = static_cast<long>( m_wordsInside.size() ) - 1;
-    while( idxLast >= 0L &&
-           ( !m_wordsInside[idxLast] ||
-           ( !leadTrailSpaces && word(idxLast)->type() != PRTextWordType::Classic ) ) ) {
+    while( idxLast >= 0L && !m_wordsInside[idxLast] ) {
         --idxLast;
     }
 
@@ -470,7 +466,6 @@ PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces
     if( idxFirst >= static_cast<long>( m_wordsInside.size() ) || idxLast < 0L || idxFirst > idxLast ) {
         return bbox;
     }
-
     // Bounding box coordinates.
     double left = std::numeric_limits<double>::max();
     double right = std::numeric_limits<double>::min();
@@ -486,8 +481,9 @@ PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces
         const PRTextWord& word = m_pGroup->word( i );
         PdfRect bboxWord = word.bbox( true, useBottomCoord );
 
-        // If inside the subgroup, update coordinates.
-        if( this->inside( i ) && i >= idxFirst && i <= idxLast ) {
+        // If inside the subgroup, update coordinates (remove spaces if needed).
+        if( this->inside( i ) && i >= idxFirst && i <= idxLast &&
+                ( leadTrailSpaces || word.type() == PRTextWordType::Classic )  ) {
             left = std::min( left, widthSum + bboxWord.GetLeft() );
             right = std::max( right, widthSum + bboxWord.GetLeft() + bboxWord.GetWidth() );
             bottom = std::min( bottom, bboxWord.GetBottom() );

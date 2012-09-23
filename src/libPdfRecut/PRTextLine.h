@@ -54,10 +54,6 @@ public:
      */
     void rmGroupWords( PRTextGroupWords* pGroupWords );
 
-    /** Analyse the line (compute bbox, first capital letter, ...).
-     */
-    void analyse();
-
 public:
     /** Block inside a line: represent a generic collection of subgroups
      * that must belong to a common line.
@@ -202,9 +198,13 @@ public:
     std::vector<Block> horizontalBlocks( double hDistance = 0.0 ) const;
 
 protected:
-    /** Compute the bounding box and the transformation matrix.
+    /** Compuet cache data of the line (bbox, first capital letter, ...).
      */
-    void computeBBox();
+    void computeData();
+
+    /** Compute bounding boxes and the transformation matrix.
+     */
+    void computeBBoxes();
 
 public:
     /** Sort two lines using the index of their groups.
@@ -225,10 +225,15 @@ protected:
     /// Vector of words subgroups which constitute the line.
     std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
 
+    // Cache data for the line.
+
     /// Transformation matrix (into page coordinates). Related to the bounding box.
     PdfeMatrix  m_transMatrix;
     /// Line bounding box.
     PoDoFo::PdfRect  m_bbox;
+    /// Line bounding box (with no leading and trailing spaces).
+    PoDoFo::PdfRect  m_bboxNoLTSpaces;
+
 };
 
 //**********************************************************//

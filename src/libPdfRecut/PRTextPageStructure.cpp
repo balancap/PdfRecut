@@ -499,6 +499,7 @@ void PRTextPageStructure::renderTextGroupsWords()
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
+    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
     m_renderParameters = renderParameters;
 
     // Draw groups of words.
@@ -510,6 +511,7 @@ void PRTextPageStructure::renderTextGroupsWords()
 
         m_renderParameters.textPB.fillBrush->setColor( groupColor );
         m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
+        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 
         this->textDrawGroupWords( *m_pGroupsWords[idx] );
 //        this->textDrawPdfeORect( m_pGroupsWords[idx]->bbox() );
@@ -522,7 +524,7 @@ void PRTextPageStructure::renderTextLines()
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    //renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
     m_renderParameters = renderParameters;
 
     // Line rendering pen.
@@ -540,15 +542,15 @@ void PRTextPageStructure::renderTextLines()
 
         m_renderParameters.textPB.fillBrush->setColor( lineColorWord );
         m_renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
+        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
         linePen.drawPen->setColor( lineColorBBox );
-        //m_renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
 
         if( m_pTextLines[idx] ) {
             // Line words.
-//            this->textDrawLineWords( *m_pTextLines[idx] );
+            this->textDrawLineWords( *m_pTextLines[idx] );
 
             // Line bounding box.
-            this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true, true, true ), linePen );
+            this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true, false, true ), linePen );
 
             // Line blocks.
             std::vector<PRTextLine::Block> hBlocks = m_pTextLines[idx]->horizontalBlocks( 0.0 );

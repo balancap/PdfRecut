@@ -44,9 +44,11 @@ void PRTextLine::init()
     m_pageIndex = -1;
     m_lineIndex = -1;
     m_subgroupsWords.clear();
-
     m_modified = false;
+
+    // Cache data.
     m_bbox = PdfRect( 0, 0, 0, 0 );
+    m_bboxNoLTSpaces = PdfRect( 0, 0, 0, 0 );
     m_transMatrix.fill( 0.0 );
 }
 
@@ -95,15 +97,6 @@ void PRTextLine::rmGroupWords( PRTextGroupWords* pGroupWords )
     }
 }
 
-void PRTextLine::analyse()
-{
-    // Compute bounding box and transformation matrix.
-    this->computeBBox();
-
-    // Reset modified parameter.
-    m_modified = false;
-}
-
 long PRTextLine::minGroupIndex()
 {
     long minGroupIdx = std::numeric_limits<long>::max();
@@ -125,9 +118,14 @@ PdfeORect PRTextLine::bbox( bool pageCoords, bool leadTrailSpaces, bool useBotto
 {
     // Compute the bounding box if necessary.
     if( m_modified ) {
-        this->analyse();
+        this->computeData();
     }
+
+    // Classic or without leading and trailing spaces bbox.
     PdfeORect bbox( m_bbox );
+    if( !leadTrailSpaces ) {
+        bbox = m_bboxNoLTSpaces;
+    }
 
     if( !useBottomCoord ) {
         PdfeVector lbPoint = bbox.leftBottom();
@@ -147,9 +145,14 @@ double PRTextLine::width( bool leadTrailSpaces )
 {
     // Compute the bbox if necessary.
     if( m_modified ) {
-        this->analyse();
+        this->computeData();
     }
-    return m_bbox.GetWidth();
+    if( leadTrailSpaces ) {
+        return m_bbox.GetWidth();
+    }
+    else {
+        return m_bboxNoLTSpaces.GetWidth();
+    }
 }
 size_t PRTextLine::length( bool countSpaces )
 {
@@ -163,7 +166,7 @@ PdfeMatrix PRTextLine::transMatrix()
 {
     // Compute transformation matrix and bbox if necessary.
     if( m_modified ) {
-        this->analyse();
+        this->computeData();
     }
     return m_transMatrix;
 }
@@ -210,7 +213,15 @@ std::vector<PRTextLine::Block> PRTextLine::horizontalBlocks( double hDistance ) 
     return hBlocks;
 }
 
-void PRTextLine::computeBBox()
+void PRTextLine::computeData()
+{
+    // Compute bounding box and transformation matrix.
+    this->computeBBoxes();
+
+    // Reset modified parameter.
+    m_modified = false;
+}
+void PRTextLine::computeBBoxes()
 {
     // We basically assume that words have a zero angle between them.
     // That should usually be the case...
@@ -219,6 +230,7 @@ void PRTextLine::computeBBox()
     if( m_subgroupsWords.empty() ) {
         m_modified = false;
         m_bbox = PdfRect( 0, 0, 0, 0 );
+        m_bboxNoLTSpaces = PdfRect( 0, 0, 0, 0 );
         m_transMatrix.fill( 0.0 );
     }
 
@@ -230,6 +242,11 @@ void PRTextLine::computeBBox()
     double left, bottom, right, top;
     left = bottom = std::numeric_limits<double>::max();
     right = top = std::numeric_limits<double>::min();
+
+    // Left, Bottom, Right and Top coordinates of the No LT bounding box.
+    double leftNoLT, bottomNoLT, rightNoLT, topNoLT;
+    leftNoLT = bottomNoLT = std::numeric_limits<double>::max();
+    rightNoLT = topNoLT = std::numeric_limits<double>::min();
 
     // Mean coordinate of the base line.
     double meanYCoord = 0.0;
@@ -252,6 +269,18 @@ void PRTextLine::computeBBox()
         bottom = std::min( bottom, leftBottom(1) );
         right = std::max( right, rightTop(0) );
         top = std::max( top, rightTop(1) );
+
+        // Update no LT line bbox coordinates, if the width is positive.
+        subGpBBox = m_subgroupsWords[i].bbox( true, false, true );
+        subGpBBox = invTransMat.map( subGpBBox );
+
+        leftBottom = subGpBBox.leftBottom();
+        rightTop = subGpBBox.rightTop();
+
+        leftNoLT = std::min( leftNoLT, leftBottom(0) );
+        bottomNoLT = std::min( bottomNoLT, leftBottom(1) );
+        rightNoLT = std::max( rightNoLT, rightTop(0) );
+        topNoLT = std::max( topNoLT, rightTop(1) );
 
         // Update mean Y coordinate.
         subGpBBox = m_subgroupsWords[i].bbox( true, true, false );
@@ -279,11 +308,16 @@ void PRTextLine::computeBBox()
     rescaleMat(2,1) = meanYCoord;
     m_transMatrix = rescaleMat * transMat;
 
-    // Set bounding box.
+    // Set bounding boxes.
     m_bbox.SetLeft( 0.0 );
     m_bbox.SetBottom( (bottom - meanYCoord) / scaleCoef );
     m_bbox.SetWidth( (right - left) / scaleCoef );
     m_bbox.SetHeight( (top - bottom) / scaleCoef );
+
+    m_bboxNoLTSpaces.SetLeft( 0.0 );
+    m_bboxNoLTSpaces.SetBottom( (bottomNoLT - meanYCoord) / scaleCoef );
+    m_bboxNoLTSpaces.SetWidth( (rightNoLT - leftNoLT) / scaleCoef );
+    m_bboxNoLTSpaces.SetHeight( (topNoLT - bottomNoLT) / scaleCoef );
 }
 
 bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
