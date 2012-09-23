@@ -155,20 +155,20 @@ void PRTextGroupWords::appendWord( const PRTextWord& word )
 double PRTextGroupWords::width( bool leadTrailSpaces ) const
 {
     // Width of the complete subgroup.
-    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    Subgroup globalSubgroup( *this );
     return globalSubgroup.width( leadTrailSpaces );
 }
 double PRTextGroupWords::height() const
 {
     // Height of the complete subgroup.
-    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    Subgroup globalSubgroup( *this );
     return globalSubgroup.height();
 }
 
 size_t PRTextGroupWords::length( bool countSpaces ) const
 {
     // Length of the complete subgroup.
-    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    Subgroup globalSubgroup( *this );
     return globalSubgroup.length( countSpaces );
 }
 
@@ -190,7 +190,7 @@ PdfeORect PRTextGroupWords::bbox(bool pageCoords,
                                  bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
-    Subgroup globalSubgroup( const_cast<PRTextGroupWords*>( this ) );
+    Subgroup globalSubgroup( *this );
     return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
 }
 
@@ -210,8 +210,8 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
-            const Subgroup& subGrp1 = group.mSubgroup( i );
-            grp1BBox = grp1TransMat.map( subGrp1.bbox( false, true, true ) );
+            const Subgroup& subGrp1 = this->mSubgroup( i );
+            grp1BBox = subGrp1.bbox( false, true, true );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
@@ -235,8 +235,8 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
-            const Subgroup& subGrp1 = group.mSubgroup( i );
-            grp1BBox = grp1TransMat.map( subGrp1.bbox( false, true, true ) );
+            const Subgroup& subGrp1 = this->mSubgroup( i );
+            grp1BBox = subGrp1.bbox( false, true, true );
 
             dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }
@@ -400,7 +400,7 @@ void PRTextGroupWords::buildMainSubGroups()
 
         // Create a subgroup.
         if( idx < m_words.size() ) {
-            Subgroup subgroup( this );
+            Subgroup subgroup( *this );
             while( idx < m_words.size() &&
                    m_words[idx].type() != PRTextWordType::PDFTranslation &&
                    m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
@@ -418,26 +418,30 @@ void PRTextGroupWords::buildMainSubGroups()
 PRTextGroupWords::Subgroup::Subgroup()
 {
     // Initialize to empty subgroup.
-    this->init( NULL );
+    this->init();
 }
-PRTextGroupWords::Subgroup::Subgroup( PRTextGroupWords* pGroup )
+PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords& group )
 {
     // Initialize to complete subgroup.
-    this->init( pGroup );
+    this->init( group );
+}
+PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords::Subgroup& subgroup )
+{
+    // Comy members.
+    m_pGroup = subgroup.m_pGroup;
+    m_wordsInside = subgroup.m_wordsInside;
 }
 
-void PRTextGroupWords::Subgroup::init( PRTextGroupWords* pGroup )
+void PRTextGroupWords::Subgroup::init()
 {
-    // Empty subgroup.
-    if( !pGroup ) {
-        m_pGroup = NULL;
-        m_wordsInside.clear();
-    }
+    m_pGroup = NULL;
+    m_wordsInside.clear();
+}
+void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group )
+{
     // Complete subgroup.
-    else {
-        m_pGroup = pGroup;
-        m_wordsInside.assign( pGroup->nbWords(), true );
-    }
+    m_pGroup = const_cast<PRTextGroupWords*>( &group );
+    m_wordsInside.assign( group.nbWords(), true );
 }
 
 PdfeORect PRTextGroupWords::Subgroup::bbox(bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const

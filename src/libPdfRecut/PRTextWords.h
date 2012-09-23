@@ -229,15 +229,22 @@ public:
         /** Default empty constructor.
          */
         Subgroup();
-
         /** Constructor from a PRTextGroups: initialize to the complete subgroup.
-         * \param pGroup Pointer to the group.
+         * \param group Constant eference to the group.
          */
-        Subgroup( PRTextGroupWords* pGroup );
+        Subgroup( const PRTextGroupWords& group );
+        /** Copy constructor.
+         * \param subgroup Subgroup to copy.
+         */
+        Subgroup( const Subgroup& subgroup );
+
+        /** Initialize to the empty subgroup.
+         */
+        void init();
         /** Initialize to the complete subgroup using a given group.
-         * \param pGroup Pointer to the group, if NULL, init to empty.
+         * \param pGroup Constant reference to the group.
          */
-        void init( PRTextGroupWords* pGroup = NULL );
+        void init( const PRTextGroupWords& group );
 
         /** Get the parent group.
          * \return Pointer the parent group.
@@ -441,7 +448,7 @@ inline size_t PRTextGroupWords::nbMSubgroups() const
 {
     return m_mainSubgroups.size();
 }
-inline const PRTextGroupWords::Subgroup &PRTextGroupWords::mSubgroup( size_t idx ) const
+inline const PRTextGroupWords::Subgroup& PRTextGroupWords::mSubgroup( size_t idx ) const
 {
     return m_mainSubgroups.at( idx );
 }
