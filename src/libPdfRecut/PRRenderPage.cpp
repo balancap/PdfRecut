@@ -405,7 +405,7 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
 {
     // Render the complete subgroup.
-    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords ) );
+    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords, true ) );
 }
 void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup )
 {
@@ -424,10 +424,6 @@ void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subg
     double widthStr = 0;
     for( size_t i = 0 ; i < pGroup->nbWords() ; ++i )
     {
-        // Check the word is inside the subgroup.
-        if( !subgroup.inside( i ) ) {
-            break;
-        }
         const PRTextWord& word = pGroup->word( i );
 
         // Set pen & brush
@@ -441,9 +437,9 @@ void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subg
                  word.type() == PRTextWordType::PDFTranslationCS ) {
             m_renderParameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
-        // Paint word, if the width is positive !
+        // Paint word, if it is inside the subgroup and the width is positive !
         PdfRect bbox = word.bbox( false, true );
-        if( bbox.GetWidth() >= 0) {
+        if( subgroup.inside( i ) && bbox.GetWidth() >= 0) {
             m_pagePainter->drawRect( QRectF( widthStr, bbox.GetBottom(), bbox.GetWidth(), bbox.GetHeight() ) );
         }
         widthStr += word.width( true );

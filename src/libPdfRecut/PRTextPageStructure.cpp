@@ -129,17 +129,17 @@ void PRTextPageStructure::detectLines()
         }
     }
 
-//    // Now split lines, using horizontal blocks.
-//    std::vector<PRTextLine*> pLines;
-//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ) {
-//        pLines = this->splitLines_hBlocks( *it );
-//        ++it;
+    // Now split lines, using horizontal blocks.
+    std::vector<PRTextLine*> pLines;
+    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ) {
+        pLines = this->splitLines_hBlocks( *it );
+        ++it;
 
-//        // Add new lines.
-//        m_pTextLines.insert( it, pLines.begin()+1, pLines.end() );
-//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLines.back() );
-//        ++it;
-//    }
+        // Add new lines.
+        m_pTextLines.insert( it, pLines.begin()+1, pLines.end() );
+        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLines.back() );
+        ++it;
+    }
 }
 
 PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
