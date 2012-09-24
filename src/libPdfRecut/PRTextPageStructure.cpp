@@ -101,39 +101,39 @@ void PRTextPageStructure::detectLines()
     std::vector<PRTextLine*>::iterator it;
     PRTextLine* pLine;
 
-    // Try to merge some lines (inside elements).
-    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-        pLine = this->mergeLines_Inside( *it );
-        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+//    // Try to merge some lines (inside elements).
+//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
+//        pLine = this->mergeLines_Inside( *it );
+//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
 
-        // Run it a second time to be sure !
-        pLine = this->mergeLines_Inside( *it );
-        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-    }
+//        // Run it a second time to be sure !
+//        pLine = this->mergeLines_Inside( *it );
+//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+//    }
 
-    // Try to merge some lines (small elements).
-    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-        pLine = this->mergeLines_Small( *it );
-        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-    }
+//    // Try to merge some lines (small elements).
+//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
+//        pLine = this->mergeLines_Small( *it );
+//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+//    }
 
-    // Now split lines, using horizontal blocks.
-    std::vector<PRTextLine*> pLines;
-    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ) {
-        pLines = this->splitLines_hBlocks( *it );
-        ++it;
+//    // Now split lines, using horizontal blocks.
+//    std::vector<PRTextLine*> pLines;
+//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ) {
+//        pLines = this->splitLines_hBlocks( *it );
+//        ++it;
 
-        // Add new lines.
-        m_pTextLines.insert( it, pLines.begin()+1, pLines.end() );
-        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLines.back() );
-        ++it;
-    }
+//        // Add new lines.
+//        m_pTextLines.insert( it, pLines.begin()+1, pLines.end() );
+//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLines.back() );
+//        ++it;
+//    }
 }
 
 PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
 {
     // Parameters of the algorithm.
-    long MaxSearchGroupWords = 20;
+    long MaxSearchGroupWords = 10;
     double MaxHDistanceLB = -5.0;
     double MaxHDistanceUB = 3.0;
     double MaxCumulWidth = 15.0;
@@ -161,7 +161,7 @@ PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
 
         // Get the angle between the two groups: should be less than ~5°.
         if( PdfeVector::angle( rGroupBBox.direction(), lGroupBBox.direction() ) > 0.1  ) {
-            break;
+            continue;
         }
 
         // At this stage, we can assume that the group has only one unique line. Add one if necessary.
@@ -171,17 +171,17 @@ PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
         }
         std::vector<PRTextLine*> lGroupLines = lGroupWords.textLines();
         if( std::find( pLinesToMerge.begin(), pLinesToMerge.end(), lGroupLines[0] ) != pLinesToMerge.end() ) {
-            break;
+            continue;
         }
 
         // Investigate every subgroup of the left group.
-        for( long i = lGroupWords.nbMSubgroups()-1 ; i >=0 && !lrGroupLink ; --i ) {
+        for( long i = lGroupWords.nbMSubgroups()-1 ; i >=0 ; --i ) {
             // Subgroup bounding box in local coordinates.
-            PdfeORect lSubGroupBBoxLocal = lGroupWords.mSubgroup(i).bbox(  true, true, true );
+            PdfeORect lSubGroupBBoxLocal = lGroupWords.mSubgroup(i).bbox( true, true, true );
             lSubGroupBBoxLocal = rGroupTransMat.map( lSubGroupBBoxLocal );
 
             // Compare to every subgroup of the right group.
-            for( size_t j = 0 ; j < rGroupWords.nbMSubgroups() && !lrGroupLink ; ++j ) {
+            for( size_t j = 0 ; j < rGroupWords.nbMSubgroups() ; ++j ) {
                 PdfeORect rSubGroupBBoxLocal = rGroupWords.mSubgroup(j).bbox( false, true, true );
 
                 // Estimate the horizontal distance and vertical overlap.
@@ -192,7 +192,7 @@ PRTextLine* PRTextPageStructure::findLine_Basic( size_t idxGroupWords )
                 rLBPoint = rSubGroupBBoxLocal.leftBottom();
                 rLTPoint = rSubGroupBBoxLocal.leftTop();
 
-                double hDistance = lRBPoint(0) - rLBPoint(0);
+                double hDistance = rLBPoint(0) - lRBPoint(0);
                 double vOverlap = std::max( 0.0, std::min( rLTPoint(1), lRTPoint(1) ) - std::max( rLBPoint(1), lRBPoint(1) ) );
                 double vOverlapR = vOverlap / rSubGroupBBoxLocal.height();
                 double vOverlapL = vOverlap / lSubGroupBBoxLocal.height();
@@ -416,7 +416,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
 std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pLine )
 {
     // Parameters of the algorithm.
-    double BlockHDistance = 1.5;
+    double BlockHDistance = 2.0;
 
     // Vector of lines.
     std::vector<PRTextLine*> pLines;
@@ -426,26 +426,37 @@ std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pL
     std::vector<PRTextLine::Block*> hBlocks = pLine->horizontalBlocks( BlockHDistance );
     //std::list<PRTextLine::Block> hBlocksList = pLine->horizontalBlocksList( BlockHDistance );
 
+    // Size vector <= 1: nothing much to do...
+    if( hBlocks.size() <= 1 ) {
+        return pLines;
+    }
 
+    // Update the first line.
+    PRTextLine::Block& block0 = *hBlocks[0];
+    for( size_t j = 0 ; j < block0.nbSubgroups() ; ++j ) {
+        pLine->setSubgroup( j, block0.subgroup( j ) );
+    }
+    pLine->clearEmptySubgroups();
+
+    // Create new lines for other blocks.
+    std::vector<PRTextLine::Block*>::iterator it;
+    for( it = ++hBlocks.begin() ; it != hBlocks.end() ; ++it ) {
+        PRTextLine::Block& block = *(*it);
+        pLines.push_back( new PRTextLine() );
+
+        // Add subgroups to the new line.
+        for( size_t j = 0 ; j < block.nbSubgroups() ; ++j ) {
+            pLines.back()->addSubgroupWords( block.subgroup( j ) );
+        }
+        pLines.back()->clearEmptySubgroups();
+    }
+    // Delete blocks.
     std::for_each( hBlocks.begin(), hBlocks.end(), DeleteFunctor<PRTextLine::Block>() );
 
-    // Create new lines from blocks.
-//    std::vector<PRTextLine::Block>::iterator it;
-//    std::vector<PRTextGroupWords*> pGroups;
-//    for( it = hBlocks.begin()+1 ; it != hBlocks.end() ; ++it ) {
-//        pGroups = it->groupsWords();
-//        pLines.push_back( new PRTextLine() );
-
-//        // Add groups to the new line and remove them from the original one.
-//        for( size_t j = 0 ; j < pGroups.size() ; ++j ) {
-//            pLine->rmGroupWords( pGroups[j] );
-//            pLines.back()->addGroupWords( pGroups[j] );
-//        }
-//    }
     return pLines;
 }
 
-PRTextLine *PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*>& pLines )
+PRTextLine* PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*>& pLines )
 {
     // Empty vector...
     if( pLines.empty() ) {
@@ -465,7 +476,7 @@ PRTextLine *PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*
         it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
         if( it != m_pTextLines.end() ) {
 
-            // Copy the groups of words.
+            // Copy the subgroups of words.
             for( size_t j = 0 ; j < pLine->nbSubgroups() ; ++j ) {
                 const PRTextGroupWords::Subgroup& subgroup = pLine->subgroup( j );
 
@@ -507,7 +518,8 @@ void PRTextPageStructure::renderTextGroupsWords()
         m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
         m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 
-        this->textDrawGroupWords( *m_pGroupsWords[idx] );
+        //this->textDrawGroupWords( *m_pGroupsWords[idx] );
+        this->textDrawMainSubgroups( *m_pGroupsWords[idx] );
 //        this->textDrawPdfeORect( m_pGroupsWords[idx]->bbox() );
     }
 }
