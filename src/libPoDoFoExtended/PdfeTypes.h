@@ -381,8 +381,16 @@ public:
     /** Intersection between two PoDoFo::PdfRect objects.
      * \param rect1 First rectangle.
      * \param rect2 Second rectangle.
+     * \return Intersection of two rectangles.
      */
-    PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
+    static PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
+
+    /** Is a second rectangle inside the first one?
+     * \param rect1 First rectangle.
+     * \param rect2 Second rectangle.
+     * \return Rect2 in rect1 ?
+     */
+    static bool inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
 
 private:
     /// Left bottom point.
@@ -586,6 +594,13 @@ inline PoDoFo::PdfRect PdfeORect::intersection( const PoDoFo::PdfRect& rect1,
     return PoDoFo::PdfRect( left, bottom,
                             std::max( 0.0, right - left ),
                             std::max( 0.0, top - bottom ) );
+}
+inline bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
+{
+    return ( rect2.GetLeft() >= rect1.GetLeft() &&
+             rect2.GetBottom() >= rect1.GetBottom() &&
+             rect2.GetLeft() + rect2.GetWidth() <= rect1.GetLeft() + rect1.GetWidth() &&
+             rect2.GetBottom() + rect2.GetHeight() <= rect1.GetBottom() + rect1.GetHeight() );
 }
 
 

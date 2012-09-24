@@ -70,21 +70,38 @@ public:
     void detectLines();
 
 protected:
-    /** Find a line for a group of words. Line created if necessary.
+    /** Create a line for a group of words. Try to gather other groups inside the same line.
      * Basic algorithm used.
      * \param idxGroupWords Index of the group of words.
      * \return Pointer to the line object.
      */
-    PRTextLine* findLine_Basic( size_t idxGroupWords );
+    PRTextLine* createLine_Basic( size_t idxGroupWords );
 
     /** Try to merge existing lines.
+     * Enlarge inside algorithm: detect elements inside a line and check if they belong to it.
+     * \param pLine Pointer of the line to consider.
+     * \return Pointer the merged line.
+     */
+    PRTextLine* mergeLines_EnlargeInside( PRTextLine* pBaseLine );
+
+    /** Try to merge existing lines. Depreciated.
+     * Enlarge outside algorithm: detect elements in the neighbourhood of a line and check if they belong to it.
+     * \param pLine Pointer of the line to consider.
+     * \return Pointer the merged line.
+     */
+    PRTextLine* mergeLines_EnlargeOutside( PRTextLine* pBaseLine,
+                                           double ScaleXEnlarge,
+                                           double ScaleYEnlarge,
+                                           double MaxLineWidth );
+
+    /** Try to merge existing lines. Depreciated.
      * Inside algorithm: detect elements inside a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
     PRTextLine* mergeLines_Inside( PRTextLine* pLine );
 
-    /** Try to merge existing lines.
+    /** Try to merge existing lines. Depreciated.
      * Small elements algorithm: detect small elements close to a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
