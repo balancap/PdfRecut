@@ -328,6 +328,27 @@ public:
         m_height = height;
     }
 
+    /** Enlarge a rectangle along X and Y directions.
+     * \param xEnlarge Enlargement along X direction.
+     * \param yEnlarge Enlargement along Y direction.
+     */
+    void enlarge( double xEnlarge, double yEnlarge ) {
+        // Change coordinates and size.
+        m_leftBottom( 0 ) = m_leftBottom( 0 ) - xEnlarge;
+        m_leftBottom( 1 ) = m_leftBottom( 1 ) - yEnlarge;
+        m_width = m_width + 2 * xEnlarge;
+        m_height = m_height + 2* yEnlarge;
+    }
+
+    /** Rough conversion to PdfRect: basically ignore the direction.
+     * Could be improved !
+     * \return Corresponding PdfRect (roughly!).
+     */
+    PoDoFo::PdfRect toPdfRect() const {
+        return PoDoFo::PdfRect( m_leftBottom(0), m_leftBottom(1), m_width, m_height );
+    }
+
+public:
     /** Compute the minimal distance between two PdfORect (roughly the Hausdorff distance).
      * \param rect1 First rectangle to consider.
      * \param rect2 Second rectangle.
@@ -355,6 +376,13 @@ public:
      *  \return Estimate of the maximal distance.
      */
     static double maxDistance( const PdfeORect& rect, const PdfeVector& point );
+
+public:
+    /** Intersection between two PoDoFo::PdfRect objects.
+     * \param rect1 First rectangle.
+     * \param rect2 Second rectangle.
+     */
+    PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
 
 private:
     /// Left bottom point.
@@ -544,6 +572,22 @@ inline double PdfeORect::maxDistance( const PdfeORect& rect, const PdfeVector& p
 
     return dist;
 }
+
+inline PoDoFo::PdfRect PdfeORect::intersection( const PoDoFo::PdfRect& rect1,
+                                                const PoDoFo::PdfRect& rect2 )
+{
+    double left = std::max( rect1.GetLeft(), rect2.GetLeft() );
+    double bottom = std::max( rect1.GetBottom(), rect2.GetBottom() );
+    double right = std::min( rect1.GetLeft() + rect1.GetWidth(),
+                             rect2.GetLeft() + rect2.GetWidth() );
+    double top = std::min( rect1.GetBottom() + rect1.GetHeight(),
+                           rect2.GetBottom() + rect2.GetHeight() );
+
+    return PoDoFo::PdfRect( left, bottom,
+                            std::max( 0.0, right - left ),
+                            std::max( 0.0, top - bottom ) );
+}
+
 
 
 
