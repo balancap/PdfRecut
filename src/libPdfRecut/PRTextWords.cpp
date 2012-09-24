@@ -528,7 +528,7 @@ double PRTextGroupWords::Subgroup::height() const
     PdfeORect bbox = this->bbox( false, true, true );
     return bbox.height();
 }
-size_t PRTextGroupWords::Subgroup::length( bool countSpaces )
+size_t PRTextGroupWords::Subgroup::length( bool countSpaces ) const
 {
     size_t length = 0;
     for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {

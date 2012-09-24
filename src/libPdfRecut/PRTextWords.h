@@ -214,7 +214,7 @@ protected:
      */
     void readPdfString( const PoDoFo::PdfString& str,
                         PoDoFoExtended::PdfeFont* pFont );
-
+public:
     /** Build the private vector of main subgroups.
      * Main subgroups are separated by PDF translation words.
      */
@@ -300,7 +300,12 @@ public:
          * \param countSpaces Also count spaces?
          * \return Length of the subgroup of words.
          */
-        size_t length( bool countSpaces = true );
+        size_t length( bool countSpaces = true ) const;
+
+        /** Is the subgroup empty? Meaning to that no word belongs to it.
+         * \return True if empty, false otherwise.
+         */
+        bool isEmpty() const;
 
         /** Intersection of two subgroups.
          * The parent group must be the same (return empty subgroup else).
@@ -480,6 +485,15 @@ inline const PRTextWord* PRTextGroupWords::Subgroup::word( size_t idxWord ) cons
         return &( m_pGroup->word( idxWord ) );
     }
     return NULL;
+}
+inline bool PRTextGroupWords::Subgroup::isEmpty() const
+{
+    for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
+        if( m_wordsInside[i] ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }

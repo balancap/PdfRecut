@@ -54,6 +54,17 @@ public:
      */
     void rmGroupWords( PRTextGroupWords* pGroupWords );
 
+    /** Set a subgroup which is inside the line.
+     * Can raise an exception.
+     * \param idx Index of the subgroup to modify.
+     * \param subgroup Constant reference to the new subgroup.
+     */
+    void setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup );
+
+    /** Clear empty subgroups in the line.
+     */
+    void clearEmptySubgroups();
+
 public:
     /** Block inside a line: represent a generic collection of subgroups
      * that must belong to a common line.
@@ -106,11 +117,17 @@ public:
          */
         void setInside( size_t idx, bool inside );
 
-        /** Get a pointer to a subgroup. Can raise an exception.
-         * \param idx Index of the subgroup.
-         * \return Pointer to the subgroup. NULL if it does belong to the line.
+        /** Get the number of subgroups in the block.
+         * \return Number of subgroups.
          */
-        const PRTextGroupWords::Subgroup* subgroup( size_t idx ) const;
+        size_t nbSubgroups() const;
+
+        /** Get a subgroup of the block.
+         * Can raise an exception.
+         * \param idx Index of the subgroup.
+         * \return Constant reference to the subgroup.
+         */
+        const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
 
         /** Merge the block with another one.
          * \param block2nd Second block (not modified).
@@ -128,7 +145,11 @@ public:
          */
         static bool horizontalSort( const Block& block1, const Block& block2 );
 
-        static bool horizontalSortP( Block* pBlock1, Block* pBlock2 );
+        /** Sort horizontally two block (use pointers).
+         * \param block1 Pointer to the first block.
+         * \param block2 Pointer to the second block.
+         */
+        static bool horizontalSortPtr( Block* pBlock1, Block* pBlock2 );
 
     protected:
         /// Pointer to the parent line.
@@ -277,14 +298,13 @@ inline void PRTextLine::Block::setInside( size_t idx, bool inside )
 {
     m_subgroupsInside.at( idx ) = inside;
 }
-inline const PRTextGroupWords::Subgroup* PRTextLine::Block::subgroup( size_t idx ) const
+inline size_t PRTextLine::Block::nbSubgroups() const
 {
-    if( m_subgroupsInside.at( idx ) ) {
-        m_pLine->subgroup( idx );
-    }
-    else {
-        return NULL;
-    }
+    return m_subgroupsWords.size();
+}
+inline const PRTextGroupWords::Subgroup& PRTextLine::Block::subgroup( size_t idx ) const
+{
+    return m_subgroupsWords.at( idx );
 }
 
 }

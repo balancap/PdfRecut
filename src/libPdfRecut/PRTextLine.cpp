@@ -96,6 +96,39 @@ void PRTextLine::rmGroupWords( PRTextGroupWords* pGroupWords )
         m_modified = true;
     }
 }
+void PRTextLine::setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup )
+{
+    // Set if not empty...
+    PRTextGroupWords* pGroup = subgroup.group();
+    if( !pGroup ) {
+        return;
+    }
+
+    // Set subgroup and add reference of the line to the group.
+    m_subgroupsWords.at( idx ) = subgroup;
+    pGroup->addTextLine( this );
+
+    // Line has changed...
+    m_modified = true;
+}
+
+void PRTextLine::clearEmptySubgroups()
+{
+    std::vector<PRTextGroupWords::Subgroup>::iterator it;
+    for( it = m_subgroupsWords.begin() ; it != m_subgroupsWords.end() ; ) {
+        // Empty subgroup.
+        if( it->isEmpty() ) {
+            // Remove the subgroup and the reference to the line.
+            it->group()->rmTextLine( this );
+            it = m_subgroupsWords.erase( it );
+        }
+        else {
+            ++it;
+        }
+    }
+    // Line has changed...
+    m_modified = true;
+}
 
 long PRTextLine::minGroupIndex()
 {
@@ -203,8 +236,13 @@ std::vector<PRTextLine::Block*> PRTextLine::horizontalBlocks( double hDistance )
             }
         }
     }
+    // Empty vector... Must be a space line!
+    if( hBlocks.empty() ) {
+        return hBlocks;
+    }
+
     // Horizontal sort of blocks.
-    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSortP );
+    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSortPtr );
 
     // Merge blocks.
     std::vector<Block*>::iterator lIt, rIt;
@@ -250,6 +288,11 @@ std::list<PRTextLine::Block> PRTextLine::horizontalBlocksList(double hDistance) 
             }
         }
     }
+    // Empty list... Must be a space line!
+    if( hBlocksList.empty() ) {
+        return hBlocksList;
+    }
+
     // Horizontal sort of blocks.
     hBlocksList.sort( Block::horizontalSort );
 
@@ -278,6 +321,9 @@ std::list<PRTextLine::Block> PRTextLine::horizontalBlocksList(double hDistance) 
 
 void PRTextLine::computeData()
 {
+    // Remove empty subgroups.
+    this->clearEmptySubgroups();
+
     // Compute bounding box and transformation matrix.
     this->computeBBoxes();
 
@@ -486,7 +532,7 @@ bool PRTextLine::Block::horizontalSort( const PRTextLine::Block& block1, const P
 {
     return ( block1.m_bbox.GetLeft() < block2.m_bbox.GetLeft() );
 }
-bool PRTextLine::Block::horizontalSortP( PRTextLine::Block* pBlock1, PRTextLine::Block* pBlock2 )
+bool PRTextLine::Block::horizontalSortPtr( PRTextLine::Block* pBlock1, PRTextLine::Block* pBlock2 )
 {
     return (  pBlock1->m_bbox.GetLeft() < pBlock2->m_bbox.GetLeft() );
 }
