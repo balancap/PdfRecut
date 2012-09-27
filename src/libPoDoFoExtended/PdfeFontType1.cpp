@@ -187,20 +187,20 @@ void PdfeFontType1::initSpaceCharacters()
 void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
 {
     // Font bounding box used for default height.
-    PdfArray fontBBox = this->fontBBox();
+    PdfRect fontBBox = m_fontDescriptor.fontBBox();
 
     // First read characters widths given in font object.
     PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
     const PdfArray&  widthsA = pWidths->GetArray();
 
-    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0) );
+    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0 ) );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
         m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
-        m_bboxCID[i].SetHeight( fontBBox[3].GetReal() );
+        m_bboxCID[i].SetHeight( fontBBox.GetHeight() + fontBBox.GetBottom() );
     }
     // Check the size for coherence.
     if( m_bboxCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
-        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox[3].GetReal() ) );
+        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
     }
 
     // For embedded fonts: try to get bottom and height using the font program and FreeType library.
@@ -245,10 +245,6 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
         }
     }
 
-//    std::cout << m_baseFont.GetName() << " : "
-//              << face->num_charmaps
-//              << std::endl;
-
     // Free face object and font file buffer.
     FT_Done_Face( face );
     free( buffer );
@@ -266,9 +262,16 @@ const PdfeFontDescriptor& PdfeFontType1::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
-PdfArray PdfeFontType1::fontBBox() const
+PdfRect PdfeFontType1::fontBBox() const
 {
-    return m_fontDescriptor.fontBBox();
+    // Font bbox rescaled.
+    PdfRect fontBBox = m_fontDescriptor.fontBBox();
+    fontBBox.SetLeft( fontBBox.GetLeft() / 1000. );
+    fontBBox.SetBottom( fontBBox.GetBottom() / 1000. );
+    fontBBox.SetWidth( fontBBox.GetWidth() / 1000. );
+    fontBBox.SetHeight( fontBBox.GetHeight() / 1000. );
+
+    return fontBBox;
 }
 
 PdfeCIDString PdfeFontType1::toCIDString( const PdfString& str ) const

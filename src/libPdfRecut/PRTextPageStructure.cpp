@@ -107,7 +107,7 @@ void PRTextPageStructure::detectLines()
     }
 
     // Try to merge with elements outside a line.
-    const size_t nLoops = 8;
+    /*const size_t nLoops = 8;
     for( size_t n = 0 ; n <= nLoops ; ++n ) {
         // Algorithm parameters for this iteration.
         double ScaleXEnlarge = 0.15 * n;
@@ -139,7 +139,7 @@ void PRTextPageStructure::detectLines()
         m_pTextLines.insert( it, pLines.begin()+1, pLines.end() );
         it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLines.back() );
         ++it;
-    }
+    }*/
 }
 
 PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )

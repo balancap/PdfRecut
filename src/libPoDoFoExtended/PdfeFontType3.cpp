@@ -52,16 +52,16 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "Entries missing in the Type 3 font dictionary." );
     }
 
-    // Font BBox.
-    m_fontBBox = pBBox->GetArray();
+    // Initialize font BBox from array.
+    m_fontBBox = PdfRect( pBBox->GetArray() );
 
     // Font matrix.
     const PdfArray& matrixA = pMatrix->GetArray();
     m_fontMatrix(0,0) = matrixA[0].GetReal();
-    m_fontMatrix(1,0) = matrixA[1].GetReal();
-    m_fontMatrix(2,0) = matrixA[2].GetReal();
-    m_fontMatrix(0,1) = matrixA[3].GetReal();
-    m_fontMatrix(1,1) = matrixA[4].GetReal();
+    m_fontMatrix(0,1) = matrixA[1].GetReal();
+    m_fontMatrix(1,0) = matrixA[2].GetReal();
+    m_fontMatrix(1,1) = matrixA[3].GetReal();
+    m_fontMatrix(2,0) = matrixA[4].GetReal();
     m_fontMatrix(2,1) = matrixA[5].GetReal();
 
     // Read char widths.
@@ -99,7 +99,7 @@ void PdfeFontType3::init()
     // Initialize members to default values.
     m_fontDescriptor.init();
 
-    m_fontBBox.resize( 4, 0.0 );
+    m_fontBBox = PdfRect( 0.0, 0.0, 0.0, 0.0 );
     m_fontMatrix.init();
 
     // Last CID < First CID to avoid problems.
@@ -136,18 +136,14 @@ const PdfeFontDescriptor& PdfeFontType3::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
-PdfArray PdfeFontType3::fontBBox() const
+PdfRect PdfeFontType3::fontBBox() const
 {
-    PdfArray bbox;
-    bbox.resize( 4, 0.0 );
+    // Apply font transformation to font bbox.
+    PdfeORect fontBBox( m_fontBBox );
+    fontBBox = m_fontMatrix.map( fontBBox );
 
-    // Approximation of bounding box ~ remove the rotation component of the font matrix.
-    bbox[0] = m_fontBBox[0].GetReal() * m_fontMatrix(0,0);
-    bbox[1] = m_fontBBox[1].GetReal() * m_fontMatrix(1,1);
-    bbox[2] = m_fontBBox[2].GetReal() * m_fontMatrix(0,0);
-    bbox[3] = m_fontBBox[3].GetReal() * m_fontMatrix(1,1);
-
-    return bbox;
+    // Return the bounding box of the oriented rectangle.
+    return fontBBox.toPdfRect( true );
 }
 
 PdfeCIDString PdfeFontType3::toCIDString( const PdfString& str ) const
@@ -170,7 +166,7 @@ double PdfeFontType3::width( pdf_cid c, bool useFParams ) const
     if( c >= m_firstCID && c <= m_lastCID ) {
         // Assume the letter is a square...
         width = m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ];
-        PdfeVector cVect( width, width );
+        PdfeVector cVect( width, 0.0 );
         cVect = cVect * m_fontMatrix;
         width = cVect(0);
     }

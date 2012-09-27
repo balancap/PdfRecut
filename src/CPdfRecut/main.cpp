@@ -171,10 +171,10 @@ void proceedFile( QString filePath )
 
         PRTextPageStructure textPage( &document, i );
         textPage.detectGroupsWords();
-        textPage.detectLines();
+//        textPage.detectLines();
 
-//        textPage.renderTextGroupsWords();
-        textPage.renderTextLines();
+        textPage.renderTextGroupsWords();
+//        textPage.renderTextLines();
         textPage.saveToFile( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;

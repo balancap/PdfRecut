@@ -102,20 +102,27 @@ QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
 PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
 {
     // Font BBox for default height.
-    PdfArray fontBBox = this->fontBBox();
+    PdfRect fontBBox = this->fontBBox();
 
+    // CID width.
     double width = this->width( c, false );
-    double height = fontBBox[3].GetReal() / 1000.;
+
+    // Default bottom and height.
+    double bottom = fontBBox.GetBottom();
+    double height = fontBBox.GetHeight();
 
     // Apply font parameters.
     if( useFParams ) {
         width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+
+        bottom = bottom * m_fontSize;
         height = height * m_fontSize;
+
         if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
             width += m_wordSpace * ( m_hScale / 100. );
         }
     }
-    PdfRect cbbox( 0, fontBBox[1].GetReal() / 1000., width, height );
+    PdfRect cbbox( 0.0, bottom, width, height );
     return cbbox;
 }
 
@@ -177,9 +184,9 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
     }
     return vectGID;
 }
-int PdfeFont::glyphBBox( FT_Face face,
+int PdfeFont::glyphBBox(FT_Face face,
                          pdf_gid glyphIdx,
-                         const PdfArray& fontBBox,
+                         const PdfRect& fontBBox,
                          PdfRect* pGlyphBBox) const
 {
     // Tru to load the glyph.
@@ -199,8 +206,8 @@ int PdfeFont::glyphBBox( FT_Face face,
     double top = static_cast<double>( metrics.horiBearingY );
 
     // Perform some corrections using font bounding box.
-    bottom = std::max( fontBBox[1].GetReal(), bottom );
-    top = std::min( fontBBox[3].GetReal(), top );
+    bottom = std::max( fontBBox.GetBottom(), bottom );
+    top = std::min( fontBBox.GetHeight()+fontBBox.GetBottom(), top );
 
     // Set the bounding box of the glyph.
     pGlyphBBox->SetLeft( 0.0 );

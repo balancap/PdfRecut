@@ -111,20 +111,20 @@ void PdfeFontTrueType::initSpaceCharacters()
 void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 {
     // Font bounding box used for default height.
-    PdfArray fontBBox = this->fontBBox();
+    PdfRect fontBBox = m_fontDescriptor.fontBBox();
 
-    // Firt read characters widths given in font object.
+    // First read characters widths given in font object.
     PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
     const PdfArray&  widthsA = pWidths->GetArray();
 
-    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0) );
+    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0 ) );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
         m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
-        m_bboxCID[i].SetHeight( fontBBox[3].GetReal() );
+        m_bboxCID[i].SetHeight( fontBBox.GetHeight() + fontBBox.GetBottom() );
     }
     // Check the size for coherence.
     if( m_bboxCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
-        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox[3].GetReal() ) );
+        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
     }
 
     // For embedded fonts: try to get bottom and height using the font program and FreeType library.
@@ -186,7 +186,7 @@ const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
-PdfArray PdfeFontTrueType::fontBBox() const
+PdfRect PdfeFontTrueType::fontBBox() const
 {
     return m_fontDescriptor.fontBBox();
 }

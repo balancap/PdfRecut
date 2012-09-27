@@ -110,11 +110,7 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
     m_textState = textState;
 
     // Get font bounding box.
-    PdfArray bbox = pFont->fontBBox();
-    m_fontBBox.SetLeft( bbox[0].GetReal() / 1000. );
-    m_fontBBox.SetBottom( bbox[1].GetReal() / 1000. );
-    m_fontBBox.SetWidth( ( bbox[2].GetReal() - bbox[0].GetReal() ) / 1000. );
-    m_fontBBox.SetHeight( ( bbox[3].GetReal() - bbox[1].GetReal() ) / 1000. );
+    m_fontBBox = pFont->fontBBox();
 
     // Variant is a string.
     if( variant.IsString() || variant.IsHexString() ) {

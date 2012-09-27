@@ -89,7 +89,7 @@ const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 {
     return m_fontCID->fontDescriptor();
 }
-PdfArray PdfeFontType0::fontBBox() const
+PdfRect PdfeFontType0::fontBBox() const
 {
     return m_fontCID->fontDescriptor().fontBBox();
 }

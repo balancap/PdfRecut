@@ -281,25 +281,54 @@ public:
 
     /// Get Left Bottom X coordinate.
     double leftBottomX() const {
-        return m_leftBottom( 0 );
+        return m_leftBottom(0);
     }
     /// Get Left Bottom Y coordinate.
     double leftBottomY() const {
-        return m_leftBottom( 1 );
+        return m_leftBottom(1);
+    }
+    /// Get Right Bottom X coordinate.
+    double rightBottomX() const {
+        return m_leftBottom(0) + m_direction(0) * m_width;
+    }
+    /// Get Right Bottom Y coordinate.
+    double rightBottomY() const {
+        return m_leftBottom(1) + m_direction(1) * m_width;
+    }
+    /// Get Left Top X coordinate.
+    double leftTopX() const {
+        return m_leftBottom(0) - m_direction(1) * m_height;
+    }
+    /// Get Left Top Y coordinate.
+    double leftTopY() const {
+        return m_leftBottom(1) + m_direction(0) * m_height;
+    }
+    /// Get Right Top X coordinate.
+    double rightTopX() const {
+        return m_leftBottom(0) + m_direction(0) * m_width - m_direction(1) * m_height;
+    }
+    /// Get Right Top Y coordinate.
+    double rightTopY() const {
+        return m_leftBottom(1) + m_direction(1) * m_width + m_direction(0) * m_height;
     }
 
-    /** Set Left Bottom point.
-     */
+    /// Set Left Bottom point.
     void setLeftBottom( const PdfeVector& leftBottom ) {
         m_leftBottom = leftBottom;
     }
-    /** Get direction (unit vector).
-     */
+    /// Set Left Bottom X coordinate.
+    void setLeftBottomX( double lbX ) {
+        m_leftBottom(0) = lbX;
+    }
+    /// Set Left Bottom Y coordinate.
+    void setLeftBottomY( double lbY ) {
+        m_leftBottom(1) = lbY;
+    }
+    /// Get direction (unit vector).
     PdfeVector direction() const {
         return m_direction;
     }
-    /** Set direction vector.
-     */
+    /// Set direction vector.
     void setDirection( const PdfeVector& direction ) {
         // Transform into unit vector.
         double norm = direction.norm2();
@@ -307,23 +336,19 @@ public:
         m_direction(1) = direction(1) / norm;
     }
 
-    /** Get rectangle width.
-     */
+    /// Get rectangle width.
     double width() const {
         return m_width;
     }
-    /** Set rectangle width.
-     */
+    /// Set rectangle width.
     void setWidth( double width ) {
         m_width = width;
     }
-    /** Get rectangle height.
-     */
+    /// Get rectangle height.
     double height() const {
         return m_height;
     }
-    /** Set rectangle height.
-     */
+    /// Set rectangle height.
     void setHeight( double height ) {
         m_height = height;
     }
@@ -342,10 +367,24 @@ public:
 
     /** Rough conversion to PdfRect: basically ignore the direction.
      * Could be improved !
-     * \return Corresponding PdfRect (roughly!).
+     * \param bbox Return a the bounding box of the oriented rectangle ?
+     * Else, return a rough approximation.
+     * \return Corresponding PdfRect.
      */
-    PoDoFo::PdfRect toPdfRect() const {
-        return PoDoFo::PdfRect( m_leftBottom(0), m_leftBottom(1), m_width, m_height );
+    PoDoFo::PdfRect toPdfRect( bool bbox = false ) const {
+        if( bbox ) {
+            // Compute bounding box coordinates.
+            double left = std::min( leftBottomX(), std::min( leftTopX(), std::min( rightBottomX(), rightTopX() ) ) );
+            double right = std::max( leftBottomX(), std::max( leftTopX(), std::max( rightBottomX(), rightTopX() ) ) );
+            double bottom = std::min( leftBottomY(), std::min( leftTopY(), std::min( rightBottomY(), rightTopY() ) ) );
+            double top = std::max( leftBottomY(), std::max( leftTopY(), std::max( rightBottomY(), rightTopY() ) ) );
+
+            return PoDoFo::PdfRect( left, bottom, right-left, top-bottom );
+        }
+        else {
+            // Very deep approximation !
+            return PoDoFo::PdfRect( m_leftBottom(0), m_leftBottom(1), m_width, m_height );
+        }
     }
 
 public:
@@ -444,7 +483,15 @@ inline PdfeORect PdfeMatrix::map( const PdfeORect& rect ) const
     tmpVect2 = mapRect.direction();
     tmpVal = tmpVect1(0) * -tmpVect2(1) + tmpVect1(1) * tmpVect2(0);
 
-    mapRect.setHeight( rect.height() * tmpVal );
+    double height = rect.height() * tmpVal;
+    if( height < 0.0 ) {
+        // Negative height: modify left bottom point so that the height becomes positive.
+        mapRect.setLeftBottom( mapRect.leftBottom() + mapRect.direction().rotate90() * height );
+        mapRect.setHeight( -height );
+    }
+    else {
+        mapRect.setHeight( height );
+    }
 
     return mapRect;
 }

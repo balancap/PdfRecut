@@ -23,7 +23,7 @@
 #include "podofo/base/PdfDefines.h"
 #include "podofo/base/PdfName.h"
 #include "podofo/base/PdfString.h"
-#include "podofo/base/PdfArray.h"
+#include "podofo/base/PdfRect.h"
 
 namespace PoDoFo {
 class PdfObject;
@@ -75,7 +75,6 @@ protected:
     PoDoFo::PdfObject*  m_fontFile2;
     /// FontFile object no3.
     PoDoFo::PdfObject*  m_fontFile3;
-
 };
 
 
@@ -157,7 +156,7 @@ protected:
     PoDoFo::PdfName     m_fontName;
     PoDoFo::PdfString   m_fontFamily;
     PoDoFo::PdfName     m_fontStretch;
-    PoDoFo::PdfArray    m_fontBBox;
+    PoDoFo::PdfRect     m_fontBBox;
 
     PoDoFo::pdf_uint32  m_fontWeight;
     PoDoFo::pdf_uint32  m_flags;
@@ -188,8 +187,8 @@ public:
     void fontFamily( const PoDoFo::PdfString& fontFamily )  {  m_fontFamily = fontFamily;  }
     PoDoFo::PdfName fontStretch() const                         {  return m_fontStretch;  }
     void setFontStretch( const PoDoFo::PdfName& fontStretch )   {  m_fontStretch = fontStretch;  }
-    PoDoFo::PdfArray fontBBox() const                       {  return m_fontBBox;  }
-    void setFontBBox( const PoDoFo::PdfArray& fontBBox )    {  m_fontBBox = fontBBox;  }
+    PoDoFo::PdfRect fontBBox() const                       {  return m_fontBBox;  }
+    void setFontBBox( const PoDoFo::PdfRect& fontBBox )    {  m_fontBBox = fontBBox;  }
 
     PoDoFo::pdf_uint32 fontWeight() const               {  return m_fontWeight;  }
     void setFontWeight( PoDoFo::pdf_uint32 fontWeight ) {  m_fontWeight = fontWeight;  }

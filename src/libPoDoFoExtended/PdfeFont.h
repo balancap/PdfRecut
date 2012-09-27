@@ -159,9 +159,9 @@ public:
     virtual const PdfeFontDescriptor& fontDescriptor() const = 0;
 
     /** Get the font bounding box.
-     * \return PoDoFo::PdfArray containing the bounding box.
+     * \return PoDoFo::PdfRect containing the font bounding box.
      */
-    virtual PoDoFo::PdfArray fontBBox() const = 0;
+    virtual PoDoFo::PdfRect fontBBox() const = 0;
 
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
@@ -217,7 +217,7 @@ protected:
      */
     int glyphBBox( FT_Face face,
                    pdf_gid glyphIdx,
-                   const PoDoFo::PdfArray& fontBBox,
+                   const PoDoFo::PdfRect& fontBBox,
                    PoDoFo::PdfRect* pGlyphBBox ) const;
 
 

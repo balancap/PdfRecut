@@ -66,9 +66,9 @@ public:
     virtual const PdfeFontDescriptor& fontDescriptor() const;
 
     /** Get the font bounding box.
-     * \return PoDoFo::PdfArray containing the bounding box.
+     * \return PoDoFo::PdfRect containing the font bounding box.
      */
-    virtual PoDoFo::PdfArray fontBBox() const;
+    virtual PoDoFo::PdfRect fontBBox() const;
 
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
