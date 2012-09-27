@@ -188,7 +188,14 @@ const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
 }
 PdfRect PdfeFontTrueType::fontBBox() const
 {
-    return m_fontDescriptor.fontBBox();
+    // Font bbox rescaled.
+    PdfRect fontBBox = m_fontDescriptor.fontBBox();
+    fontBBox.SetLeft( fontBBox.GetLeft() / 1000. );
+    fontBBox.SetBottom( fontBBox.GetBottom() / 1000. );
+    fontBBox.SetWidth( fontBBox.GetWidth() / 1000. );
+    fontBBox.SetHeight( fontBBox.GetHeight() / 1000. );
+
+    return fontBBox;
 }
 
 PdfeCIDString PdfeFontTrueType::toCIDString( const PdfString& str ) const
