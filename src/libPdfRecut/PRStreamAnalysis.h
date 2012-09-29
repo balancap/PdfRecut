@@ -47,7 +47,7 @@ struct PdfStreamState
 
     /** Graphics operator read.
      */
-    PdfGraphicOperator gOperator;
+    PdfeGraphicOperator gOperator;
 
     /** Graphics operands associated to the operator.
      */

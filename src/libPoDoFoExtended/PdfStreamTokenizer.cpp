@@ -124,7 +124,7 @@ bool PdfStreamTokenizer::GetNextToken( const char*& pszToken , EPdfTokenType* pe
     return result;
 }
 
-bool PdfStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfGraphicOperator& op, std::string& variant )
+bool PdfStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicOperator& op, std::string& variant )
 {
     // Reading inline image.
     if (m_readingInlineImgData)

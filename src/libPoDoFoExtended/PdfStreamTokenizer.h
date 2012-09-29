@@ -22,7 +22,7 @@
 #ifndef PDFSTREAMTOKENIZER_H
 #define PDFSTREAMTOKENIZER_H
 
-#include "PdfGraphicsOperators.h"
+#include "PdfeGraphicsOperators.h"
 #include "podofo/base/PdfContentsTokenizer.h"
 
 namespace PdfRecut {
@@ -74,7 +74,7 @@ public:
      *  \param variant if type is haveset to ePdfContentsType_Variant or ePdfContentsType_ImageData
      *              this will be set to the read variant, otherwise the value is undefined.
      */
-    bool ReadNext( PoDoFo::EPdfContentsType& type, PdfGraphicOperator& op, std::string& variant );
+    bool ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicOperator& op, std::string& variant );
 
     /** Read a dictionary from the input device and store it into a std string.
      *  \param variant store the dictionary into this variable.

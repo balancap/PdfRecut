@@ -22,7 +22,7 @@
 #define PDFPATH_H
 
 #include "PdfeTypes.h"
-#include "PdfGraphicsOperators.h"
+#include "PdfeGraphicsOperators.h"
 
 #include "podofo/base/PdfRect.h"
 

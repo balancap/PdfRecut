@@ -25,9 +25,8 @@
 
 namespace PdfRecut {
 
-/** Pdf graphic operators categories, as defined in Pdf reference 1.7.
- */
-enum EPdfGCategory {
+/// Pdf graphic operators categories, as defined in PDF reference 1.7.
+enum EPdfeGCategory {
     ePdfGCategory_GeneralGState,
     ePdfGCategory_SpecialGState,
     ePdfGCategory_PathConstruction,
@@ -47,9 +46,8 @@ enum EPdfGCategory {
     ePdfGCategory_Unknown
 };
 
-/** Pdf graphic operator, as defined in Pdf reference 1.7.
- */
-enum EPdfGOperator {
+/// Pdf graphic operator, as defined in PDF reference 1.7.
+enum EPdfeGOperator {
     ePdfGOperator_w,
     ePdfGOperator_J,
     ePdfGOperator_j,
@@ -142,26 +140,22 @@ enum EPdfGOperator {
     ePdfGOperator_Unknown
 };
 
-struct PdfGraphicOperator
+/** Structure gathering information on a graphic operator.
+ */
+struct PdfeGraphicOperator
 {
-    /** Pdf name of the operator
-     */
-    char name[4];
-
-    /** Enum code of the operator
-     */
-    EPdfGOperator code;
-
-    /** Enum code of the category it belongs to.
-     */
-    EPdfGCategory cat;
+    /// Pdf name of the operator
+    char name[6];
+    /// Enum code of the operator
+    EPdfeGOperator code;
+    /// Enum code of the category it belongs to.
+    EPdfeGCategory cat;
 
     /** Default constructor.
      */
-    PdfGraphicOperator() {
+    PdfeGraphicOperator() {
         this->init();
     }
-
     /** Initialize to the operator Unknown.
      */
     void init() {
@@ -172,7 +166,7 @@ struct PdfGraphicOperator
 
     /** Constructor from a name string.
      */
-    PdfGraphicOperator( const char* str ) { set(str); }
+    PdfeGraphicOperator( const char* str ) { set(str); }
 
     /** Set the operator from a string.
      */
@@ -544,7 +538,13 @@ struct PdfGraphicOperator
             cat = ePdfGCategory_Compatibility;
         }
         else {
-            name[0] = 0;
+            // Copy name if short enough.
+            if( strlen( str ) < 6 ) {
+                strcpy( name, str );
+            }
+            else {
+                name[0] = 0;
+            }
             code = ePdfGOperator_Unknown;
             cat = ePdfGCategory_Unknown;
         }

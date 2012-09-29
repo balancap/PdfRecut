@@ -94,7 +94,7 @@ void PRStreamLayoutZone::generateStream()
 void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     m_bufStream.str("");
@@ -124,7 +124,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fSpecialGState( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     m_bufString.clear();
@@ -146,7 +146,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
                                         const PdfPath& currentPath )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Subpaths from the current path.
@@ -266,7 +266,7 @@ void PRStreamLayoutZone::fClippingPath( const PdfStreamState& streamState,
 void PRStreamLayoutZone::fTextObjects( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
 
     // Copy operator.
     m_bufString = gOperator.name;
@@ -277,7 +277,7 @@ void PRStreamLayoutZone::fTextObjects( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     if( gOperator.code == ePdfGOperator_Tf ) {
@@ -307,7 +307,7 @@ void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fTextPositioning( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     // Copy variables and operator.
@@ -321,7 +321,7 @@ void PRStreamLayoutZone::fTextPositioning( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
@@ -355,7 +355,7 @@ void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fType3Fonts( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     m_bufString.clear();
@@ -370,7 +370,7 @@ void PRStreamLayoutZone::fType3Fonts( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
     m_bufString.clear();
@@ -428,7 +428,7 @@ void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
@@ -564,7 +564,7 @@ void PRStreamLayoutZone::fMarkedContents( const PdfStreamState& streamState )
 void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
 
     // Graphic compatibility mode.
     m_bufString = gOperator.name;

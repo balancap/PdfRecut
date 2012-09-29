@@ -81,7 +81,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
     while( tokenizer.ReadNext( eType, streamState.gOperator, strVariant ) )
     {
         // References to have simpler notations...
-        PdfGraphicOperator& gOperator = streamState.gOperator;
+        PdfeGraphicOperator& gOperator = streamState.gOperator;
         std::vector<std::string>& gOperands = streamState.gOperands;
         PdfeGraphicsState& gState = streamState.gStates.back();
         PdfResources& resources = streamState.resources;

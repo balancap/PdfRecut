@@ -176,7 +176,7 @@ void PRRenderPage::fGeneralGState( const PdfStreamState& streamState ) { }
 
 void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
 {
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     if( gOperator.code == ePdfGOperator_q ) {
         // Push on the clipping paths stm_documentack.
         m_clippingPathStack.push_back( m_clippingPathStack.back() );
@@ -202,7 +202,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
                                   const PdfPath& currentPath )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
@@ -234,7 +234,7 @@ void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
                                   const PdfPath& currentPath )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Get Qt painter path which represents the clipping path.
@@ -289,7 +289,7 @@ void PRRenderPage::fShadingPatterns( const PdfStreamState& streamState ) { }
 void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
 {
     // Simpler references.
-    const PdfGraphicOperator& gOperator = streamState.gOperator;
+    const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     if( gOperator.code == ePdfGOperator_EI )
@@ -308,7 +308,7 @@ void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
 void PRRenderPage::fXObjects( const PdfStreamState& streamState )
 {
     // Simpler references.
-    //const PdfGraphicOperator& gOperator = streamState.gOperator;
+    //const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 

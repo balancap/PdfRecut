@@ -32,7 +32,6 @@ namespace PdfRecut {
 class PdfOStringStream : public std::ostringstream
 {
 public:
-
     explicit PdfOStringStream ( openmode which = ios_base::out )
         : std::ostringstream( which )
     {
