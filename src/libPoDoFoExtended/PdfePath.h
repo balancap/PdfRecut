@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFPATH_H
-#define PDFPATH_H
+#ifndef PDFEPATH_H
+#define PDFEPATH_H
 
 #include "PdfeTypes.h"
 #include "PdfeGraphicsOperators.h"
@@ -28,24 +28,21 @@
 
 namespace PdfRecut {
 
-struct PdfSubPath
+/** Structure representing a PDF subpath.
+ */
+struct PdfeSubPath
 {
-    /** Points which composed the path.
-     */
+    /// Points which composed the path.
     std::vector<PdfeVector> points;
-
-    /** Vector which identifies the constructor operator
-     * used for each point in the path.
-     */
+    /// Vector which identifies the constructor operator used for each point in the path.
     std::vector<std::string> opPoints;
 
-    /** Is the subpath closed.
-     */
+    /// Is the subpath closed.
     bool closed;
 
     /** Default constructor: create empty subpath.
      */
-    PdfSubPath() {
+    PdfeSubPath() {
         this->init();
     }
     /** Initialize to an empty subpath.
@@ -65,6 +62,7 @@ struct PdfSubPath
         opPoints.push_back( op );
     }
     /** Is subpath empty ?
+     * \return Is empty ?
      */
     bool isEmpty() {
         return ( points.size() == 0 );
@@ -78,7 +76,7 @@ struct PdfSubPath
                         bool strictInclusion = false );
 
     /** Evaluate if a rectangle path intersects a zone.
-     * \params path Rectangle path.
+     * \param path Rectangle path.
      * \param zone Rectangle representing the zone.
      * \param strictInclusion Evaluate if the path is stricly inside the zone.
      */
@@ -101,34 +99,30 @@ struct PdfSubPath
     /** Apply a transformation matrix to points of the subpath.
      * \param transMat Transformation matrix.
      */
-    void applyTransfMatrix( const PdfeMatrix& transMat );
+    void applyTransMatrix( const PdfeMatrix& transMat );
 };
 
-class PdfPath
+/** Class representing a PDF path.
+ */
+class PdfePath
 {
 public:
     /** Constructor: create an empty path.
      */
-    PdfPath();
+    PdfePath();
 
     /** Initialize to an empty path.
      */
     void init();
 
-    /** Get subPaths vector.
-     */
-    std::vector<PdfSubPath>& getSubpaths() {
-        return m_subpaths;
-    }
-    const std::vector<PdfSubPath>& getSubpaths() const {
-        return m_subpaths;
-    }
-
-    //**** Path Construction ****//
+public:
+    //**********************************************************//
+    //                      Path construction                   //
+    //**********************************************************//
     /** Append an entire path.
      * \param path Path to append.
      */
-    void appendPath( const PdfPath& path );
+    void appendPath( const PdfePath& path );
 
     /** Begin a new subpath, by moving current point.
      * Corresponds to operator "x y m".
@@ -181,16 +175,6 @@ public:
     void appendRectangle( const PdfeVector& llPoint,
                           const PdfeVector& size );
 
-    /** Get clipping path operator.
-     * \return Clipping path operator. Empty if it is not a clipping path.
-     */
-    std::string getClippingPathOp() const;
-
-    /** Set clipping path operator of the path.
-     * \param op Clipping path operator. Empty if it is not a clipping path.
-     */
-    void setClippingPathOp( const std::string& op );
-
     /** Convert the path to a Qt Painter Path object.
      * \param closeSubpaths Force (or not) to close subpaths.
      * \param evenOddRule Use the even-odd rule for painting.
@@ -199,38 +183,66 @@ public:
     QPainterPath toQPainterPath( bool closeSubpaths = true,
                                  bool evenOddRule = false ) const;
 
+
+public:
+    //**********************************************************//
+    //                       Getters/Setters                    //
+    //**********************************************************//
+    /** Get a reference to the subpaths vector.
+     * \return Reference to an std::vector of PdfeSubPath.
+     */
+    std::vector<PdfeSubPath>& subpaths() {
+        return m_subpaths;
+    }
+    /** Get a constant reference to the subpaths vector.
+     * \return Constant reference to an std::vector of PdfeSubPath.
+     */
+    const std::vector<PdfeSubPath>& subpaths() const {
+        return m_subpaths;
+    }
+
+    /** Get clipping path operator.
+     * \return Clipping path operator. Empty if it is not a clipping path.
+     */
+    std::string clippingPathOp() const;
+    /** Is it a clipping path.
+     * \return Boolean.
+     */
+    bool isClippingPath() const;
+    /** Set clipping path operator of the path.
+     * \param op Clipping path operator. Empty if it is not a clipping path.
+     */
+    void setClippingPathOp( const std::string& op );
+
 protected:
     /** Get current subpath. Append a new one if the last in the list
      * is closed.
      * \return Reference to the current subpath in the path.
      */
-    PdfSubPath& getCurrentSubPath();
+    PdfeSubPath& getCurrentSubPath();
 
 protected:
-    /** Subpaths vector.
-     */
-    std::vector<PdfSubPath> m_subpaths;
+    /// Subpaths vector.
+    std::vector<PdfeSubPath>  m_subpaths;
 
-    /** Current point in the path.
-     */
-    PdfeVector m_currentPoint;
+    /// Current point in the path.
+    PdfeVector  m_currentPoint;
 
-    /** Is a clipping path ?
-     */
-    std::string m_clippingPathOp;
+    /// Clipping path operator (empty if not a clipping path).
+    std::string  m_clippingPathOp;
 };
 
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfSubPath::reduceToZone( PdfeVector& point, const PoDoFo::PdfRect& zone )
+inline void PdfeSubPath::reduceToZone( PdfeVector& point, const PoDoFo::PdfRect& zone )
 {
     point(0) = std::min( std::max( point(0), zone.GetLeft() ),
-                             zone.GetLeft() + zone.GetWidth() );
+                         zone.GetLeft() + zone.GetWidth() );
     point(1) = std::min( std::max( point(1), zone.GetBottom() ),
-                             zone.GetBottom() + zone.GetHeight() );
+                         zone.GetBottom() + zone.GetHeight() );
 }
-inline void PdfSubPath::applyTransfMatrix( const PdfeMatrix& transMat )
+inline void PdfeSubPath::applyTransMatrix( const PdfeMatrix& transMat )
 {
     // Modify points in the subpath.
     for( size_t j = 0 ; j < points.size() ; j++ ) {
@@ -238,15 +250,19 @@ inline void PdfSubPath::applyTransfMatrix( const PdfeMatrix& transMat )
     }
 }
 
-inline std::string PdfPath::getClippingPathOp() const
+inline std::string PdfePath::clippingPathOp() const
 {
     return m_clippingPathOp;
 }
-inline void PdfPath::setClippingPathOp( const std::string& op )
+inline bool PdfePath::isClippingPath() const
+{
+    return m_clippingPathOp.length();
+}
+inline void PdfePath::setClippingPathOp( const std::string& op )
 {
     m_clippingPathOp = op;
 }
 
 }
 
-#endif // PDFPATH_H
+#endif // PDFEPATH_H

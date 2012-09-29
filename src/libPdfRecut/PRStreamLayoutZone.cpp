@@ -137,21 +137,21 @@ void PRStreamLayoutZone::fSpecialGState( const PdfStreamState& streamState )
 }
 
 void PRStreamLayoutZone::fPathConstruction( const PdfStreamState& streamState,
-                                            const PdfPath& currentPath )
+                                            const PdfePath& currentPath )
 {
     // Everything is done in painting function !
 }
 
 void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
-                                        const PdfPath& currentPath )
+                                        const PdfePath& currentPath )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Subpaths from the current path.
-    std::vector<PdfSubPath> subpaths = currentPath.getSubpaths();
-    std::vector<PdfSubPath> subpathsBack( subpaths );
+    std::vector<PdfeSubPath> subpaths = currentPath.subpaths();
+    std::vector<PdfeSubPath> subpathsBack( subpaths );
 
     // Temp variable, including inverse transformation matrix.
     bool inZone;
@@ -160,11 +160,11 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
     gState.transMat.inverse( invTransMat );
 
     // Keep subpaths which intersect the zone, and reduce them if necessary.
-    std::vector<PdfSubPath>::iterator it;
+    std::vector<PdfeSubPath>::iterator it;
     for( it = subpaths.begin() ; it != subpaths.end() ; )
     {
         // Apply transformation matrix.
-        it->applyTransfMatrix( gState.transMat );
+        it->applyTransMatrix( gState.transMat );
 
         // Does the subpath intersect the zone.
         inZone = it->intersectZone( m_zone.zoneIn, m_parameters.pathStrictlyInside );
@@ -175,7 +175,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
                 it->reduceToZone( m_zone.zoneIn );
 
                 // Apply inverse matrix to get points in current space.
-                it->applyTransfMatrix( invTransMat );
+                it->applyTransMatrix( invTransMat );
             }
             else {
                 // Simply get back original subpath.
@@ -249,7 +249,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
         }
     }
     // Add clipping path operator if necessary.
-    std::string clippingPathOp = currentPath.getClippingPathOp();
+    std::string clippingPathOp = currentPath.clippingPathOp();
     if( clippingPathOp.length() ) {
         m_bufStream << clippingPathOp << "\n";
     }
@@ -259,7 +259,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
 }
 
 void PRStreamLayoutZone::fClippingPath( const PdfStreamState& streamState,
-                                        const PdfPath& currentPath  )
+                                        const PdfePath& currentPath  )
 {
 }
 
@@ -438,11 +438,11 @@ void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
     }
     else if( gOperator.code == ePdfGOperator_EI ) {
         // Check if the inline image is inside the zone.
-        PdfPath pathII;
+        PdfePath pathII;
         pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
-        PdfSubPath& subpathII = pathII.getSubpaths().back();
-        subpathII.applyTransfMatrix( gState.transMat );
+        PdfeSubPath& subpathII = pathII.subpaths().back();
+        subpathII.applyTransMatrix( gState.transMat );
 
         bool inZone = subpathII.intersectZone( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
         if( !inZone ) {
@@ -476,11 +476,11 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
     // Distinction between different type of XObjects
     if( !xobjSubtype.compare( "Image" ) ) {
         // Check if the image is inside the zone.
-        PdfPath pathImg;
+        PdfePath pathImg;
         pathImg.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
-        PdfSubPath& subpathImg = pathImg.getSubpaths().back();
-        subpathImg.applyTransfMatrix( gState.transMat );
+        PdfeSubPath& subpathImg = pathImg.subpaths().back();
+        subpathImg.applyTransMatrix( gState.transMat );
 
         bool inZone = subpathImg.intersectZone( m_zone.zoneIn, m_parameters.imageStrictlyInside );
         if( inZone )

@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFMISC_H
-#define PDFMISC_H
+#ifndef PDFEMISC_H
+#define PDFEMISC_H
 
 #include <sstream>
 #include <algorithm>
@@ -214,4 +214,4 @@ inline PdfeOStringStream& operator<< (PdfeOStringStream& out, const std::string 
 
 }
 
-#endif // PDFMISC_H
+#endif // PDFEMISC_H

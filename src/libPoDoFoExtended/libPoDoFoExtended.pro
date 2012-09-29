@@ -13,7 +13,6 @@ DEFINES += LIBPODOFOEXTENDED_LIBRARY
 SOURCES += \
     PdfStreamTokenizer.cpp \
     PdfResources.cpp \
-    PdfPath.cpp \
     PdfeFont.cpp \
     PdfeFontDescriptor.cpp \
     PdfeFontType0.cpp \
@@ -21,13 +20,13 @@ SOURCES += \
     PdfeFontType3.cpp \
     PdfeFontTrueType.cpp \
     PdfeCMap.cpp \
-    PdfeGraphicsState.cpp
+    PdfeGraphicsState.cpp \
+    PdfePath.cpp
 
 HEADERS += \
     PdfStreamTokenizer.h \
     PdfSemaphore.h \
     PdfResources.h \
-    PdfPath.h \
     PdfeFont.h \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
@@ -38,7 +37,8 @@ HEADERS += \
     PdfeCMap.h \
     PdfeGraphicsState.h \
     PdfeGraphicsOperators.h \
-    PdfeMisc.h
+    PdfeMisc.h \
+    PdfePath.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

@@ -196,10 +196,10 @@ void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
     }
 }
 void PRRenderPage::fPathConstruction( const PdfStreamState& streamState,
-                                      const PdfPath& currentPath ) { }
+                                      const PdfePath& currentPath ) { }
 
 void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
-                                  const PdfPath& currentPath )
+                                  const PdfePath& currentPath )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -221,7 +221,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
     // Draw path.
-    if( currentPath.getClippingPathOp().length() ) {
+    if( currentPath.clippingPathOp().length() ) {
         m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
     }
     else {
@@ -231,7 +231,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 }
 
 void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
-                                  const PdfPath& currentPath )
+                                  const PdfePath& currentPath )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;

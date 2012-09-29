@@ -21,7 +21,7 @@
 #include <podofo/podofo.h>
 
 #include "PdfeGraphicsState.h"
-#include "PdfPath.h"
+#include "PdfePath.h"
 
 using namespace PoDoFo;
 

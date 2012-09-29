@@ -58,13 +58,13 @@ public:
     void fSpecialGState( const PdfStreamState& streamState );
 
     void fPathConstruction( const PdfStreamState& streamState,
-                            const PdfPath& currentPath );
+                            const PdfePath& currentPath );
 
     void fPathPainting( const PdfStreamState& streamState,
-                        const PdfPath& currentPath );
+                        const PdfePath& currentPath );
 
     void fClippingPath( const PdfStreamState& streamState,
-                        const PdfPath& currentPath );
+                        const PdfePath& currentPath );
 
     void fTextObjects( const PdfStreamState& streamState );
 

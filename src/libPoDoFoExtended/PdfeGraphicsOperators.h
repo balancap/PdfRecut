@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFGRAPHICSENUMS_H
-#define PDFGRAPHICSENUMS_H
+#ifndef PDFEGRAPHICSENUMS_H
+#define PDFEGRAPHICSENUMS_H
 
 #include <cstring>
 
@@ -580,4 +580,4 @@ struct PdfeGraphicOperator
 
 }
 
-#endif // PDFGRAPHICSENUMS_H
+#endif // PDFEGRAPHICSENUMS_H

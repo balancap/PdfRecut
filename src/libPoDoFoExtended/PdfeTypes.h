@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFTYPES_H
-#define PDFTYPES_H
+#ifndef PDFETYPES_H
+#define PDFETYPES_H
 
 //#ifndef NDEBUG
 //#define NDEBUG
@@ -651,9 +651,7 @@ inline bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRe
 }
 
 
-
-
 //}
 
-#endif // PDFTYPES_H
+#endif // PDFETYPES_H
 

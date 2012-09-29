@@ -18,12 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFGRAPHICSSTATE_H
-#define PDFGRAPHICSSTATE_H
+#ifndef PDFEGRAPHICSSTATE_H
+#define PDFEGRAPHICSSTATE_H
 
 #include "podofo/base/PdfDefines.h"
 #include "podofo/base/PdfReference.h"
-#include "PdfPath.h"
+
+#include "PdfePath.h"
 #include "PdfResources.h"
 
 namespace PoDoFo {
@@ -83,7 +84,7 @@ struct PdfeGraphicsState
     PdfeMatrix transMat;
 
     /// Clipping path.
-    PdfPath clippingPath;
+    PdfePath clippingPath;
 
     /// Pdf Text graphics state.
     PdfeTextState textState;
@@ -120,4 +121,4 @@ struct PdfeGraphicsState
 
 }
 
-#endif // PDFGRAPHICSSTATE_H
+#endif // PDFEGRAPHICSSTATE_H

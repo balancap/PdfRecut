@@ -189,13 +189,13 @@ public:
     virtual void fSpecialGState( const PdfStreamState& streamState );
 
     virtual void fPathConstruction( const PdfStreamState& streamState,
-                            const PdfPath& currentPath );
+                            const PdfePath& currentPath );
 
     virtual void fPathPainting( const PdfStreamState& streamState,
-                        const PdfPath& currentPath );
+                        const PdfePath& currentPath );
 
     virtual void fClippingPath( const PdfStreamState& streamState,
-                        const PdfPath& currentPath );
+                        const PdfePath& currentPath );
 
     virtual void fTextObjects( const PdfStreamState& streamState );
 

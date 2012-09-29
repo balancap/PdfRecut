@@ -57,7 +57,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
     // Stream state.
     PdfStreamState streamState;
     // Current path.
-    PdfPath currentPath;
+    PdfePath currentPath;
 
     // Temporary variables.
     std::string tmpString;
@@ -443,7 +443,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                     // Get form's BBox and append it to clipping path.
                     PdfArray& bbox = xObjPtr->GetIndirectKey( "BBox" )->GetArray();
 
-                    PdfPath pathBBox;
+                    PdfePath pathBBox;
                     pathBBox.beginSubpath( PdfeVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
                     pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
                     pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
