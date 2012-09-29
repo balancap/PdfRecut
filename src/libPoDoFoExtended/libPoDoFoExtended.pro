@@ -28,7 +28,6 @@ HEADERS += \
     PdfSemaphore.h \
     PdfResources.h \
     PdfPath.h \
-    PdfMisc.h \
     PdfeFont.h \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
@@ -38,7 +37,8 @@ HEADERS += \
     PdfeFontTrueType.h \
     PdfeCMap.h \
     PdfeGraphicsState.h \
-    PdfeGraphicsOperators.h
+    PdfeGraphicsOperators.h \
+    PdfeMisc.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

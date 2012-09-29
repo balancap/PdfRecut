@@ -28,7 +28,7 @@
 #include "PdfeTypes.h"
 #include "PdfSemaphore.h"
 #include "PRDocument.h"
-#include "PdfMisc.h"
+#include "PdfeMisc.h"
 
 namespace PoDoFo {
     class PdfObject;

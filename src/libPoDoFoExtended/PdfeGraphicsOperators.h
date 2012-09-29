@@ -169,6 +169,7 @@ struct PdfeGraphicOperator
     PdfeGraphicOperator( const char* str ) { set(str); }
 
     /** Set the operator from a string.
+     * \param str String containing the operator name.
      */
     void set( const char* str )
     {

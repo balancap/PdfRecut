@@ -23,7 +23,7 @@
 
 #include "PRStreamAnalysis.h"
 #include "PRDocumentLayout.h"
-#include "PdfMisc.h"
+#include "PdfeMisc.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -155,7 +155,7 @@ protected:
 
     /** Pdf stream buffer.
      */
-    PdfOStringStream m_bufStream;
+    PdfeOStringStream m_bufStream;
     /** String buffer.
      */
     std::string m_bufString;

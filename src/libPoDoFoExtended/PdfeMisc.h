@@ -29,26 +29,26 @@ namespace PdfRecut {
 /** Redefine an ostringstream class which behaves with float/double as
  * stated in Pdf reference (no "1e5" notation).
  */
-class PdfOStringStream : public std::ostringstream
+class PdfeOStringStream : public std::ostringstream
 {
 public:
-    explicit PdfOStringStream ( openmode which = ios_base::out )
+    explicit PdfeOStringStream ( openmode which = ios_base::out )
         : std::ostringstream( which )
     {
         this->initStream();
     }
-    explicit PdfOStringStream ( const std::string& str, openmode which = ios_base::out )
+    explicit PdfeOStringStream ( const std::string& str, openmode which = ios_base::out )
         : std::ostringstream( str, which )
     {
         this->initStream();
     }
 
-    PdfOStringStream( const PdfOStringStream& stream )
+    PdfeOStringStream( const PdfeOStringStream& stream )
         : std::basic_ios<char>(), std::ostringstream( stream.str() )
     {
         this->initStream();
     }
-    PdfOStringStream& operator= ( const PdfOStringStream& stream )
+    PdfeOStringStream& operator= ( const PdfeOStringStream& stream )
     {
         this->str( stream.str() );
         this->initStream();
@@ -56,57 +56,57 @@ public:
     }
 
     // Redefine operators to avoid ambiguity.
-    PdfOStringStream& operator<< (bool val)
+    PdfeOStringStream& operator<< (bool val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (short val)
+    PdfeOStringStream& operator<< (short val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (unsigned short val)
+    PdfeOStringStream& operator<< (unsigned short val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (int val)
+    PdfeOStringStream& operator<< (int val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (unsigned int val)
+    PdfeOStringStream& operator<< (unsigned int val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (long val)
+    PdfeOStringStream& operator<< (long val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (unsigned long val)
+    PdfeOStringStream& operator<< (unsigned long val)
     {
         std::ostringstream::operator<< ( val );
         return *this;
     }
-    PdfOStringStream& operator<< (std::streambuf* sb)
+    PdfeOStringStream& operator<< (std::streambuf* sb)
     {
         std::ostringstream::operator<< ( sb );
         return *this;
     }
-    PdfOStringStream& operator<< (std::ostream& ( *pf )(std::ostream&))
+    PdfeOStringStream& operator<< (std::ostream& ( *pf )(std::ostream&))
     {
         std::ostringstream::operator<< ( pf );
         return *this;
     }
-    PdfOStringStream& operator<< (std::ios& ( *pf )(std::ios&))
+    PdfeOStringStream& operator<< (std::ios& ( *pf )(std::ios&))
     {
         std::ostringstream::operator<< ( pf );
         return *this;
     }
-    PdfOStringStream& operator<< (std::ios_base& ( *pf )(std::ios_base&))
+    PdfeOStringStream& operator<< (std::ios_base& ( *pf )(std::ios_base&))
     {
         std::ostringstream::operator<< ( pf );
         return *this;
@@ -114,7 +114,7 @@ public:
 
     /** Operator<< on float/double, using fixed precision when  notation 'e' appears.
      */
-    PdfOStringStream& operator<< ( float val )
+    PdfeOStringStream& operator<< ( float val )
     {
         m_scientificBuf.str("");
         m_scientificBuf << val;
@@ -130,7 +130,7 @@ public:
         }
         return *this;
     }
-    PdfOStringStream& operator<< ( double val )
+    PdfeOStringStream& operator<< ( double val )
     {
         m_scientificBuf.str("");
         m_scientificBuf << val;
@@ -146,7 +146,7 @@ public:
         }
         return *this;
     }
-    PdfOStringStream& operator<< ( long double val )
+    PdfeOStringStream& operator<< ( long double val )
     {
         m_scientificBuf.str("");
         m_scientificBuf << val;
@@ -175,38 +175,38 @@ private:
     std::string m_buffer;
 };
 
-inline PdfOStringStream& operator<< (PdfOStringStream& out, char c )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, char c )
 {
     std::operator<< (out, c);
     return out;
 }
-inline PdfOStringStream& operator<< (PdfOStringStream& out, signed char c )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, signed char c )
 {
     std::operator<< (out, c);
     return out;
 }
-inline PdfOStringStream& operator<< (PdfOStringStream& out, unsigned char c )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, unsigned char c )
 {
     std::operator<< (out, c);
     return out;
 }
 
-inline PdfOStringStream& operator<< (PdfOStringStream& out, const char* s )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, const char* s )
 {
     std::operator<< (out, s);
     return out;
 }
-inline PdfOStringStream& operator<< (PdfOStringStream& out, const signed char* s )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, const signed char* s )
 {
     std::operator<< (out, s);
     return out;
 }
-inline PdfOStringStream& operator<< (PdfOStringStream& out, const unsigned char* s )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, const unsigned char* s )
 {
     std::operator<< (out, s);
     return out;
 }
-inline PdfOStringStream& operator<< (PdfOStringStream& out, const std::string s )
+inline PdfeOStringStream& operator<< (PdfeOStringStream& out, const std::string s )
 {
     std::operator<< (out, s);
     return out;
