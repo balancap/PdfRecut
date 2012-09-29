@@ -25,7 +25,7 @@
 #include "podofo/base/PdfReference.h"
 
 #include "PdfePath.h"
-#include "PdfResources.h"
+#include "PdfeResources.h"
 
 namespace PoDoFo {
     class PdfPage;

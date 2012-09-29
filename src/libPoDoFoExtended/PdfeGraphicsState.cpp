@@ -73,7 +73,7 @@ void PdfeGraphicsState::init()
 bool PdfeGraphicsState::importExtGState( const PdfResources& resources, const std::string& gsName )
 {
     // Obtain the expected graphics state.
-    PdfObject* eGState = resources.getIndirectKey( ePdfResourcesType_ExtGState, gsName );
+    PdfObject* eGState = resources.getIndirectKey( PdfResourcesType::ExtGState, gsName );
     if( !eGState ) {
         return false;
     }
@@ -107,7 +107,7 @@ bool PdfeGraphicsState::importExtGState( const PdfResources& resources, const st
 bool PdfeGraphicsState::importFontReference( const PdfResources& resources )
 {
     // Obtain the expected font reference.
-    PdfObject* font = resources.getKey( ePdfResourcesType_Font, textState.fontName );
+    PdfObject* font = resources.getKey( PdfResourcesType::Font, textState.fontName );
 
     if( font && font->IsReference() ) {
         textState.fontRef = font->GetReference();

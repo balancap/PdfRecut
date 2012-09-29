@@ -105,7 +105,7 @@ protected:
 
     /** Add out resources key.
      */
-    void addResourcesOutKey( EPdfResourcesType resourceType,
+    void addResourcesOutKey(PdfResourcesType::Enum resourceType,
                              const std::string& key,
                              const PdfResources& resourcesIn );
 

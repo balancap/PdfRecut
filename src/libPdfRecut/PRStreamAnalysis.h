@@ -22,7 +22,7 @@
 #define PRSTREAMANALYSIS_H
 
 #include "PdfeGraphicsState.h"
-#include "PdfResources.h"
+#include "PdfeResources.h"
 #include "podofo/podofo.h"
 
 namespace PoDoFo {

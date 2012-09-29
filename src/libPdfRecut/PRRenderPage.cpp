@@ -314,7 +314,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
 
     // Name of the XObject and dictionary entry.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
     PdfeMatrix pathMat;
 

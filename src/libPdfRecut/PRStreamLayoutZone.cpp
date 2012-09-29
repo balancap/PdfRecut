@@ -108,7 +108,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
         m_bufString += " gs\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( ePdfResourcesType_ExtGState,
+        this->addResourcesOutKey( PdfResourcesType::ExtGState,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
@@ -290,7 +290,7 @@ void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
         m_bufString += " Tf\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( ePdfResourcesType_Font,
+        this->addResourcesOutKey( PdfResourcesType::Font,
                                   gOperands[0].substr( 1 ),
                                   streamState.resources );
     }
@@ -389,7 +389,7 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
         m_bufString += "\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( ePdfResourcesType_ColorSpace,
+        this->addResourcesOutKey( PdfResourcesType::ColorSpace,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
@@ -419,7 +419,7 @@ void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
         m_streamOut->Append( m_bufString );
 
         // Add key to out resources.
-        this->addResourcesOutKey( ePdfResourcesType_Shading,
+        this->addResourcesOutKey( PdfResourcesType::Shading,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
@@ -470,7 +470,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
 
     // Get XObject and subtype.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
 
     // Distinction between different type of XObjects
@@ -492,7 +492,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
             m_streamOut->Append( m_bufString );
 
             // Add key to out resources.
-            this->addResourcesOutKey( ePdfResourcesType_XObject,
+            this->addResourcesOutKey( PdfResourcesType::XObject,
                                       xobjName,
                                       streamState.resources );
         }
@@ -572,7 +572,7 @@ void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::addResourcesOutKey( EPdfResourcesType resourceType,
+void PRStreamLayoutZone::addResourcesOutKey( PdfResourcesType::Enum resourceType,
                                              const std::string& key,
                                              const PdfResources& resourcesIn )
 {

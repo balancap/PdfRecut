@@ -414,7 +414,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
 
                 // Get XObject and subtype.
                 std::string xObjName = gOperands.back().substr( 1 );
-                PdfObject* xObjPtr = streamState.resources.getIndirectKey( ePdfResourcesType_XObject, xObjName );
+                PdfObject* xObjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xObjName );
                 std::string xObjSubtype = xObjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
 
                 // Form object.

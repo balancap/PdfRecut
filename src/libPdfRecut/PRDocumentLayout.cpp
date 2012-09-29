@@ -58,7 +58,7 @@ void PRDocumentLayout::addPages( int nbPages )
     if( nbPages > 0 )
     {
         // Write Locker semaphore needed.
-        PdfSemaphoreWriteLocker writeLocker( &m_semaphore );
+        PdfeSemaphoreWriteLocker writeLocker( &m_semaphore );
 
         // Add pages and set index.
         size_t oldSize = m_pageLayouts.size();
@@ -74,7 +74,7 @@ void PRDocumentLayout::addPageZone( int pageIndexOut, const PRPageZone& zoneIn )
     this->addPages( pageIndexOut+1 - m_pageLayouts.size() );
 
     // Write Locker semaphore needed.
-    PdfSemaphoreWriteLocker writeLocker( &m_semaphore );
+    PdfeSemaphoreWriteLocker writeLocker( &m_semaphore );
 
     // Add zone to page.
     m_pageLayouts[pageIndexOut].zonesIn.push_back(zoneIn);
@@ -89,7 +89,7 @@ void PRDocumentLayout::setPageBoxes( int pageIndexOut,
     this->addPages( pageIndexOut+1 - m_pageLayouts.size() );
 
     // Write Locker semaphore needed.
-    PdfSemaphoreWriteLocker writeLocker( &m_semaphore );
+    PdfeSemaphoreWriteLocker writeLocker( &m_semaphore );
 
     // Set media box.
     m_pageLayouts[pageIndexOut].mediaBox = mediaBox;
@@ -120,7 +120,7 @@ PoDoFo::PdfRect PRDocumentLayout::getPageCropBox( int pageIndexOut ) const
 void PRDocumentLayout::setLayoutParameters( const PRLayoutParameters& params )
 {
     // Write Locker semaphore needed.
-    PdfSemaphoreWriteLocker writeLocker( &m_semaphore );
+    PdfeSemaphoreWriteLocker writeLocker( &m_semaphore );
 
     m_parameters = params;
 }
@@ -128,7 +128,7 @@ void PRDocumentLayout::setLayoutParameters( const PRLayoutParameters& params )
 PRLayoutParameters PRDocumentLayout::getLayoutParameters() const
 {
     // Read Locker semaphore needed.
-    PdfSemaphoreReadLocker readLocker( const_cast<PdfClassSemaphore*> (&m_semaphore) );
+    PdfeSemaphoreReadLocker readLocker( const_cast<PdfeClassSemaphore*> (&m_semaphore) );
 
     return m_parameters;
 }
@@ -140,7 +140,7 @@ void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
                                           const QString& filename )
 {
     // Read Locker semaphore needed.
-    PdfSemaphoreReadLocker readLocker( &m_semaphore );
+    PdfeSemaphoreReadLocker readLocker( &m_semaphore );
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
@@ -180,7 +180,7 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
                                              const QString& filename )
 {
     // Read Locker semaphore needed.
-    PdfSemaphoreReadLocker readLocker( &m_semaphore );
+    PdfeSemaphoreReadLocker readLocker( &m_semaphore );
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
@@ -220,7 +220,7 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
                                               const QString& filename )
 {
     // Read Locker semaphore needed.
-    PdfSemaphoreReadLocker readLocker( &m_semaphore );
+    PdfeSemaphoreReadLocker readLocker( &m_semaphore );
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.

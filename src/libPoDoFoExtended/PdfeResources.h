@@ -31,16 +31,21 @@ namespace PoDoFo {
 
 namespace PdfRecut {
 
-enum EPdfResourcesType {
-    ePdfResourcesType_ExtGState = 0,
-    ePdfResourcesType_ColorSpace,
-    ePdfResourcesType_Pattern,
-    ePdfResourcesType_Shading,
-    ePdfResourcesType_XObject,
-    ePdfResourcesType_Font,
-    ePdfResourcesType_ProcSet,
-    ePdfResourcesType_Properties
+namespace PdfResourcesType {
+/** Enumeration of the different types of resources allowed in the PDF Reference.
+ */
+enum Enum {
+    ExtGState = 0,
+    ColorSpace,
+    Pattern,
+    Shading,
+    XObject,
+    Font,
+    ProcSet,
+    Properties,
+    Unknown
 };
+}
 
 /** Class used to handle a collection of resources associated to some contents.
  */
@@ -50,15 +55,14 @@ public:
     /** Create en empty object.
      */
     PdfResources();
-
     /** Copy constructor.
      * \param resources Object to copy.
      */
-    PdfResources( const PdfResources& resources );
+    PdfResources(const PdfResources& rhs );
     /** Operator=.
      * \param resources Object to copy.
      */
-    PdfResources& operator=( const PdfResources& resources );
+    PdfResources& operator=( const PdfResources& rhs );
 
     /** Push back a resources dictionary.
      * \param resourcesDict Dictionary to push (not owned by the PdfResources object).
@@ -68,38 +72,35 @@ public:
     /** Get the vector of resources dictionaries.
      * \return Vector of pointers.
      */
-    std::vector<PoDoFo::PdfObject*> getResources();
+    const std::vector<PoDoFo::PdfObject*>& resources() const;
 
     /** Add a key in resources.
      * \param resource Resource type where to add the key.
      * \param key Key to add.
      * \param PdfObject Value corresponding to the key.
      */
-    void addKey( EPdfResourcesType resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject *object );
+    void addKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
 
     /** Get a key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. Null, if not found.
      */
-    PoDoFo::PdfObject* getKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const;
+    PoDoFo::PdfObject* getKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
 
     /** Get an indirect key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. Null, if not found.
      */
-    PoDoFo::PdfObject* getIndirectKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const;
+    PoDoFo::PdfObject* getIndirectKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
 
 public:
-    /** Vector of C string corresponding to PdfResources types.
-     */
+    /// Vector of C string corresponding to PdfResources types.
     static const char* CTypes[];
 
 private:
-    /** Vector of resources objects, not owned by the class.
-     * Sorted by increasing order of importance.
-     */
+    /// Vector of resources objects, not owned by the class. Sorted by increasing order of importance.
     std::vector<PoDoFo::PdfObject*>  m_resources;
 };
 

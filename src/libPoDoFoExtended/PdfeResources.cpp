@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfResources.h"
+#include "PdfeResources.h"
 #include <podofo/podofo.h>
 
 using namespace PoDoFo;
@@ -36,18 +36,19 @@ const char* PdfResources::CTypes[] = { "ExtGState",
 
 PdfResources::PdfResources()
 {
+    // Nothing to do!
 }
-PdfResources::PdfResources( const PdfResources& resources )
+PdfResources::PdfResources(const PdfResources& rhs ) :
+    m_resources( rhs.m_resources )
 {
-    *this = resources;
 }
-PdfResources& PdfResources::operator=( const PdfResources& resources )
+PdfResources& PdfResources::operator=( const PdfResources& rhs )
 {
-    m_resources = resources.m_resources;
+    m_resources = rhs.m_resources;
     return *this;
 }
 
-void PdfResources::pushBack( PoDoFo::PdfObject* resourcesObj )
+void PdfResources::pushBack(PoDoFo::PdfObject* resourcesObj )
 {
     // Check it is a dictionary.
     if( resourcesObj->IsDictionary() ) {
@@ -57,12 +58,12 @@ void PdfResources::pushBack( PoDoFo::PdfObject* resourcesObj )
         // TODO: raise exception...
     }
 }
-std::vector<PoDoFo::PdfObject*> PdfResources::getResources()
+const std::vector<PoDoFo::PdfObject*>& PdfResources::resources() const
 {
     return m_resources;
 }
 
-void PdfResources::addKey( EPdfResourcesType resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
+void PdfResources::addKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
 {
     // Get resources dict. Create it, if necessary.
     if( !m_resources.back()->GetDictionary().HasKey( CTypes[resource] ) ) {
@@ -74,7 +75,7 @@ void PdfResources::addKey( EPdfResourcesType resource, const PoDoFo::PdfName& ke
     resDict->GetDictionary().AddKey( key, object );
 }
 
-PoDoFo::PdfObject* PdfResources::getKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const
+PoDoFo::PdfObject* PdfResources::getKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
 {
     PdfObject* keyObj = NULL;
 
@@ -94,7 +95,7 @@ PoDoFo::PdfObject* PdfResources::getKey( EPdfResourcesType resource, const PoDoF
     }
     return keyObj;
 }
-PoDoFo::PdfObject* PdfResources::getIndirectKey( EPdfResourcesType resource, const PoDoFo::PdfName& key ) const
+PoDoFo::PdfObject* PdfResources::getIndirectKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
 {
     PdfObject* keyObj = NULL;
 

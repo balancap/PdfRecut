@@ -26,7 +26,7 @@
 #include <podofo/base/PdfRect.h>
 
 #include "PdfeTypes.h"
-#include "PdfSemaphore.h"
+#include "PdfeSemaphore.h"
 #include "PRDocument.h"
 #include "PdfeMisc.h"
 
@@ -471,7 +471,7 @@ protected:
 
     /** Internal semaphore used to protect data and multithread access.
      */
-    PdfClassSemaphore m_semaphore;
+    PdfeClassSemaphore m_semaphore;
 
     /** Vector of page layouts for the redesigned document.
      */
