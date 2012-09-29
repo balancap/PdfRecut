@@ -121,6 +121,6 @@ public:
     bool m_readingInlineImgData;
 };
 
-};
+}
 
 #endif // PDFSTREAMTOKENIZER_H

@@ -18,79 +18,80 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFSEMAPHORE_H
-#define PDFSEMAPHORE_H
+#ifndef PDFESEMAPHORE_H
+#define PDFESEMAPHORE_H
 
 #include <QSemaphore>
+
+namespace PdfRecut {
 
 /** A semaphore class used in different Pdf class to protect members
  * in a multithread program and make the class thread-safe.
  */
-class PdfClassSemaphore : public QSemaphore
+class PdfeClassSemaphore : public QSemaphore
 {
 public:
-    /** Numbers of resources used for the semaphore
-     */
+    /// Numbers of resources used for the semaphore
     static const int NResources = 50;
 
 public:
     /** Constructor initialize semaphore with NResources
      */
-    PdfClassSemaphore() : QSemaphore( NResources ) { }
+    PdfeClassSemaphore() : QSemaphore( NResources ) { }
 };
 
 /** Similar to QMutexLocker: necessary to have a read-only access to class
  * members. Need to acquire one resource from the class semaphore. Allow parallel
  * access (NRessources as a maximum).
  */
-class PdfSemaphoreReadLocker
+class PdfeSemaphoreReadLocker
 {
 public:
     /** Constructor: block until can obtain one resource.
      */
-    PdfSemaphoreReadLocker( PdfClassSemaphore* semaphore )
+    PdfeSemaphoreReadLocker( PdfeClassSemaphore* semaphore )
     {
         m_semaphore = semaphore;
         m_semaphore->acquire( 1 );
     }
     /** Destructor: release the resource blocked.
      */
-    ~PdfSemaphoreReadLocker()
+    ~PdfeSemaphoreReadLocker()
     {
         m_semaphore->release( 1 );
     }
 
 private:
-    /** Pointer to the semaphore used.
-     */
-    PdfClassSemaphore* m_semaphore;
+    /// Pointer to the semaphore used.
+    PdfeClassSemaphore*  m_semaphore;
 };
 
 /** Similar to QMutexLocker: necessary to have a write access to class
  * members. Need to acquire all resources from the class semaphore, and thus block
  * read and write on the class.
  */
-class PdfSemaphoreWriteLocker
+class PdfeSemaphoreWriteLocker
 {
 public:
     /** Constructor: block until can obtain all resources of the semaphore.
      */
-    PdfSemaphoreWriteLocker( PdfClassSemaphore* semaphore )
+    PdfeSemaphoreWriteLocker( PdfeClassSemaphore* semaphore )
     {
         m_semaphore = semaphore;
-        m_semaphore->acquire( PdfClassSemaphore::NResources );
+        m_semaphore->acquire( PdfeClassSemaphore::NResources );
     }
     /** Destructor: release resources blocked.
      */
-    ~PdfSemaphoreWriteLocker()
+    ~PdfeSemaphoreWriteLocker()
     {
-        m_semaphore->release( PdfClassSemaphore::NResources );
+        m_semaphore->release( PdfeClassSemaphore::NResources );
     }
 
 private:
-    /** Pointer to the semaphore used.
-     */
-    PdfClassSemaphore* m_semaphore;
+    /// Pointer to the semaphore used.
+    PdfeClassSemaphore*  m_semaphore;
 };
 
-#endif // PDFSEMAPHORE_H
+}
+
+#endif // PDFESEMAPHORE_H

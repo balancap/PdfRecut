@@ -25,7 +25,6 @@ SOURCES += \
 
 HEADERS += \
     PdfStreamTokenizer.h \
-    PdfSemaphore.h \
     PdfResources.h \
     PdfeFont.h \
     PdfeTypes.h \
@@ -38,7 +37,8 @@ HEADERS += \
     PdfeGraphicsState.h \
     PdfeGraphicsOperators.h \
     PdfeMisc.h \
-    PdfePath.h
+    PdfePath.h \
+    PdfeSemaphore.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {
