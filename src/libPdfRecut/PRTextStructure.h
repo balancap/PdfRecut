@@ -21,7 +21,7 @@
 #ifndef PRTEXTSTRUCTURE_H
 #define PRTEXTSTRUCTURE_H
 
-#include "PdfGraphicsState.h"
+#include "PdfeGraphicsState.h"
 #include "PdfeFont.h"
 
 namespace PoDoFo {

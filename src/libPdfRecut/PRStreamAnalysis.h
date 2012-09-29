@@ -21,7 +21,7 @@
 #ifndef PRSTREAMANALYSIS_H
 #define PRSTREAMANALYSIS_H
 
-#include "PdfGraphicsState.h"
+#include "PdfeGraphicsState.h"
 #include "PdfResources.h"
 #include "podofo/podofo.h"
 
@@ -55,7 +55,7 @@ struct PdfStreamState
 
     /** Graphics state stack.
      */
-    std::vector<PdfGraphicsState> gStates;
+    std::vector<PdfeGraphicsState> gStates;
 };
 
 /** Basic class used to analysis the contents of a page's streams.
@@ -82,7 +82,7 @@ public:
      * \param initialResources Initial resources to use.
      */
     void analyseCanvas( PoDoFo::PdfCanvas* canvas,
-                        const PdfGraphicsState& initialGState,
+                        const PdfeGraphicsState& initialGState,
                         const PdfResources& initialResources );
 
     virtual void fGeneralGState( const PdfStreamState& streamState ) = 0;

@@ -34,55 +34,36 @@ namespace PdfRecut {
 
 /** Structure describing a text state in a Pdf stream.
  */
-struct PdfTextState
+struct PdfeTextState
 {
-    /** Text transformation matrix.
-     */
+    /// Text transformation matrix.
     PdfeMatrix transMat;
-
-    /** Line transformation matrix.
-     */
+    /// Line transformation matrix.
     PdfeMatrix lineTransMat;
 
-    /** Font name (as used in Font resources).
-     */
+    /// Font name (as used in Font resources).
     std::string fontName;
-
-    /** Reference to the Pdf font object.
-     */
+    /// Reference to the Pdf font object.
     PoDoFo::PdfReference fontRef;
 
-    /** Font size.
-     */
+    /// Font size.
     double fontSize;
-
-    /** Character space.
-     */
+    /// Character space.
     double charSpace;
-
-    /** Word space.
-     */
+    /// Word space.
     double wordSpace;
-
-    /** Horizontal scale.
-     */
+    /// Horizontal scale.
     double hScale;
-
-    /** Leading.
-     */
+    /// Leading.
     double leading;
-
-    /** Render.
-     */
+    /// Render.
     int render;
-
-    /** Rise.
-     */
+    /// Rise.
     double rise;
 
     /** Default constructor: initialize values as described in Pdf reference.
      */
-    PdfTextState();
+    PdfeTextState();
 
     /** Function which initializes members to default Pdf values.
      */
@@ -96,39 +77,29 @@ struct PdfTextState
 /** Structure describing a graphics state in a Pdf stream.
  * This structure does not reproduce all properties described the Pdf reference.
  */
-struct PdfGraphicsState
+struct PdfeGraphicsState
 {
-    /** Transformation matrix (set with cm).
-     */
+    /// Transformation matrix (set with cm).
     PdfeMatrix transMat;
 
-    /** Clipping path rectangle.
-     */
+    /// Clipping path.
     PdfPath clippingPath;
 
-    /** Pdf Text graphics state.
-     */
-    PdfTextState textState;
+    /// Pdf Text graphics state.
+    PdfeTextState textState;
 
-    /** Line width.
-     */
+    /// Line width.
     double lineWidth;
-
-    /** Line cap style.
-     */
+    /// Line cap style.
     int lineCap;
-
-    /** Line join style.
-     */
+    /// Line join style.
     int lineJoin;
-
-    /** Compatibility mode.
-     */
+    /// Compatibility mode.
     bool compatibilityMode;
 
     /** Default constructor.
      */
-    PdfGraphicsState();
+    PdfeGraphicsState();
 
     /** Function which initializes members to default Pdf values.
      */

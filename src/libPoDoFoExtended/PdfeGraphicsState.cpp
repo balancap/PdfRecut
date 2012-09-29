@@ -20,7 +20,7 @@
 
 #include <podofo/podofo.h>
 
-#include "PdfGraphicsState.h"
+#include "PdfeGraphicsState.h"
 #include "PdfPath.h"
 
 using namespace PoDoFo;
@@ -30,12 +30,12 @@ namespace PdfRecut {
 //**********************************************************//
 //                      Pdf Text State                      //
 //**********************************************************//
-PdfTextState::PdfTextState()
+PdfeTextState::PdfeTextState()
 {
     this->init();
 }
 
-void PdfTextState::init()
+void PdfeTextState::init()
 {
     render = 0;
     fontSize = charSpace = wordSpace = leading = rise = 0;
@@ -45,7 +45,7 @@ void PdfTextState::init()
     transMat.init();
     lineTransMat.init();
 }
-void PdfTextState::initMatrices()
+void PdfeTextState::initMatrices()
 {
     transMat.init();
     lineTransMat.init();
@@ -54,12 +54,12 @@ void PdfTextState::initMatrices()
 //**********************************************************//
 //                    Pdf Graphics State                    //
 //**********************************************************//
-PdfGraphicsState::PdfGraphicsState()
+PdfeGraphicsState::PdfeGraphicsState()
 {
     this->init();
 }
 
-void PdfGraphicsState::init()
+void PdfeGraphicsState::init()
 {
     transMat.init();
 
@@ -70,7 +70,7 @@ void PdfGraphicsState::init()
     compatibilityMode = false;
 }
 
-bool PdfGraphicsState::importExtGState( const PdfResources& resources, const std::string& gsName )
+bool PdfeGraphicsState::importExtGState( const PdfResources& resources, const std::string& gsName )
 {
     // Obtain the expected graphics state.
     PdfObject* eGState = resources.getIndirectKey( ePdfResourcesType_ExtGState, gsName );
@@ -104,7 +104,7 @@ bool PdfGraphicsState::importExtGState( const PdfResources& resources, const std
     }
     return true;
 }
-bool PdfGraphicsState::importFontReference( const PdfResources& resources )
+bool PdfeGraphicsState::importFontReference( const PdfResources& resources )
 {
     // Obtain the expected font reference.
     PdfObject* font = resources.getKey( ePdfResourcesType_Font, textState.fontName );
@@ -115,6 +115,5 @@ bool PdfGraphicsState::importFontReference( const PdfResources& resources )
     }
     return false;
 }
-
 
 }

@@ -43,12 +43,12 @@ void PRStreamAnalysis::analyse()
 {
     // Analyse main page.
     this->analyseCanvas( m_page,
-                         PdfGraphicsState(),
+                         PdfeGraphicsState(),
                          PdfResources() );
 }
 
 void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
-                                      const PdfGraphicsState& initialGState,
+                                      const PdfeGraphicsState& initialGState,
                                       const PdfResources& initialResources )
 {
     //Stream tokenizer and associated variables.
@@ -83,7 +83,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
         // References to have simpler notations...
         PdfGraphicOperator& gOperator = streamState.gOperator;
         std::vector<std::string>& gOperands = streamState.gOperands;
-        PdfGraphicsState& gState = streamState.gStates.back();
+        PdfeGraphicsState& gState = streamState.gStates.back();
         PdfResources& resources = streamState.resources;
 
         if ( eType == ePdfContentsType_Variant )

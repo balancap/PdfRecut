@@ -102,7 +102,7 @@ void PRTextGroupWords::init()
 
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
                                        const PdfeMatrix& transMatrix,
-                                       const PdfTextState& textState,
+                                       const PdfeTextState& textState,
                                        PdfeFont *pFont )
 {
     // Set transformation matrix and textstate.

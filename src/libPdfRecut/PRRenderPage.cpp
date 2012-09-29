@@ -203,7 +203,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
 {
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
     if( !m_renderParameters.pathPB.isPainting() ) {
@@ -235,7 +235,7 @@ void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
 {
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Get Qt painter path which represents the clipping path.
     bool evenOddRule = gOperator.isEvenOddRule();
@@ -290,7 +290,7 @@ void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
 {
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     if( gOperator.code == ePdfGOperator_EI )
     {
@@ -310,7 +310,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
     // Simpler references.
     //const PdfGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Name of the XObject and dictionary entry.
     std::string xobjName = gOperands.back().substr( 1 );
@@ -370,9 +370,9 @@ PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamS
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
-    PdfTextState textState = streamState.gStates.back().textState;
+    PdfeTextState textState = streamState.gStates.back().textState;
     textState.transMat = m_textMatrix;
 
     // Get variant from string.

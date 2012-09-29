@@ -14,14 +14,14 @@ SOURCES += \
     PdfStreamTokenizer.cpp \
     PdfResources.cpp \
     PdfPath.cpp \
-    PdfGraphicsState.cpp \
     PdfeFont.cpp \
     PdfeFontDescriptor.cpp \
     PdfeFontType0.cpp \
     PdfeFontType1.cpp \
     PdfeFontType3.cpp \
     PdfeFontTrueType.cpp \
-    PdfeCMap.cpp
+    PdfeCMap.cpp \
+    PdfeGraphicsState.cpp
 
 HEADERS += \
     PdfStreamTokenizer.h \
@@ -29,7 +29,6 @@ HEADERS += \
     PdfResources.h \
     PdfPath.h \
     PdfMisc.h \
-    PdfGraphicsState.h \
     PdfGraphicsOperators.h \
     PdfeFont.h \
     PdfeTypes.h \
@@ -38,7 +37,8 @@ HEADERS += \
     PdfeFontType1.h \
     PdfeFontType3.h \
     PdfeFontTrueType.h \
-    PdfeCMap.h
+    PdfeCMap.h \
+    PdfeGraphicsState.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

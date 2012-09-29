@@ -21,7 +21,7 @@
 #ifndef PRTEXTWORDS_H
 #define PRTEXTWORDS_H
 
-#include "PdfGraphicsState.h"
+#include "PdfeGraphicsState.h"
 #include "PdfeFont.h"
 
 namespace PoDoFo {
@@ -140,7 +140,7 @@ public:
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
                          const PdfeMatrix& transMatrix,
-                         const PdfTextState& textState,
+                         const PdfeTextState& textState,
                          PoDoFoExtended::PdfeFont* pFont );
 
     /** Append a word to the group.,
@@ -341,8 +341,8 @@ public:
     PdfeMatrix transMatrix() const;
     void setTransMatrix( const PdfeMatrix& transMatrix );
 
-    PdfTextState textState() const;
-    void setTextState( const PdfTextState& textState );
+    PdfeTextState textState() const;
+    void setTextState( const PdfeTextState& textState );
 
     PoDoFo::PdfRect fontBBox() const;
 
@@ -389,7 +389,7 @@ protected:
     /// Transformation matrix of the graphics state.
     PdfeMatrix  m_transMatrix;
     /// Text state for this group of words.
-    PdfTextState  m_textState;
+    PdfeTextState  m_textState;
     /// Font bounding box.
     PoDoFo::PdfRect  m_fontBBox;
 
@@ -430,11 +430,11 @@ inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix; m_words.size();
 }
-inline PdfTextState PRTextGroupWords::textState() const
+inline PdfeTextState PRTextGroupWords::textState() const
 {
     return m_textState;
 }
-inline void PRTextGroupWords::setTextState( const PdfTextState& textState )
+inline void PRTextGroupWords::setTextState( const PdfeTextState& textState )
 {
     m_textState = textState;
 }

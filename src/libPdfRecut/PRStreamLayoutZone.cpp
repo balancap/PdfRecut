@@ -147,7 +147,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
 {
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Subpaths from the current path.
     std::vector<PdfSubPath> subpaths = currentPath.getSubpaths();
@@ -323,7 +323,7 @@ void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Show text if inside page zone.
     PdfeMatrix tmpMat = gState.textState.transMat * gState.transMat;
@@ -430,7 +430,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
     // Simpler references.
     const PdfGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     if( gOperator.code == ePdfGOperator_ID ) {
         // Save variables.
@@ -466,7 +466,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Get XObject and subtype.
     std::string xobjName = gOperands.back().substr( 1 );
