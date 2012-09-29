@@ -19,7 +19,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfStreamTokenizer.h"
+#include "PdfeStreamTokenizer.h"
 
 #include "podofo/base/PdfCanvas.h"
 #include "podofo/base/PdfInputDevice.h"
@@ -41,7 +41,7 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PdfStreamTokenizer::PdfStreamTokenizer( PdfCanvas* pCanvas )
+PdfeStreamTokenizer::PdfeStreamTokenizer( PdfCanvas* pCanvas )
     : PdfTokenizer(), m_readingInlineImgData(false)
 {
     if( !pCanvas )
@@ -97,7 +97,7 @@ PdfStreamTokenizer::PdfStreamTokenizer( PdfCanvas* pCanvas )
     }
 }
 
-void PdfStreamTokenizer::SetCurrentContentsStream( PdfObject* pObject )
+void PdfeStreamTokenizer::SetCurrentContentsStream( PdfObject* pObject )
 {
     PODOFO_RAISE_LOGIC_IF( pObject == NULL, "Content stream object == NULL!" );
 
@@ -110,7 +110,7 @@ void PdfStreamTokenizer::SetCurrentContentsStream( PdfObject* pObject )
     m_device = PdfRefCountedInputDevice( buffer.GetBuffer(), buffer.GetSize() );
 }
 
-bool PdfStreamTokenizer::GetNextToken( const char*& pszToken , EPdfTokenType* peType )
+bool PdfeStreamTokenizer::GetNextToken( const char*& pszToken , EPdfTokenType* peType )
 {
     bool result = PdfTokenizer::GetNextToken(pszToken, peType);
     while (!result) {
@@ -124,7 +124,7 @@ bool PdfStreamTokenizer::GetNextToken( const char*& pszToken , EPdfTokenType* pe
     return result;
 }
 
-bool PdfStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicOperator& op, std::string& variant )
+bool PdfeStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicOperator& op, std::string& variant )
 {
     // Reading inline image.
     if (m_readingInlineImgData)
@@ -203,28 +203,28 @@ bool PdfStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicOp
     return true;
 }
 
-void PdfStreamTokenizer::ReadDictionary( std::string& variant )
+void PdfeStreamTokenizer::ReadDictionary( std::string& variant )
 {
     // Basic obtention. To be optimized...
     PdfVariant val;
     this->PdfTokenizer::ReadDictionary( val, NULL );
     val.ToString( variant, ePdfWriteMode_Compact );
 }
-void PdfStreamTokenizer::ReadArray( std::string& variant )
+void PdfeStreamTokenizer::ReadArray( std::string& variant )
 {
     // Basic obtention. To be optimized...
     PdfVariant val;
     this->PdfTokenizer::ReadArray( val, NULL );
     val.ToString( variant, ePdfWriteMode_Compact );
 }
-void PdfStreamTokenizer::ReadString( std::string& variant )
+void PdfeStreamTokenizer::ReadString( std::string& variant )
 {
     // Basic obtention. To be optimized...
     PdfVariant val;
     this->PdfTokenizer::ReadString( val, NULL );
     val.ToString( variant, ePdfWriteMode_Compact );
 }
-void PdfStreamTokenizer::ReadHexString( std::string& variant )
+void PdfeStreamTokenizer::ReadHexString( std::string& variant )
 {
     // Basic obtention. To be optimized...
     //PdfVariant val;
@@ -249,7 +249,7 @@ void PdfStreamTokenizer::ReadHexString( std::string& variant )
     variant.push_back( '>' );
 }
 
-void PdfStreamTokenizer::ReadName(std::string& variant )
+void PdfeStreamTokenizer::ReadName(std::string& variant )
 {
     // Basic obtention. To be optimized...
     PdfVariant val;
@@ -257,7 +257,7 @@ void PdfStreamTokenizer::ReadName(std::string& variant )
     val.ToString( variant, ePdfWriteMode_Compact );
 }
 
-bool PdfStreamTokenizer::ReadInlineImgData( PoDoFo::EPdfContentsType& type, std::string& variant )
+bool PdfeStreamTokenizer::ReadInlineImgData( PoDoFo::EPdfContentsType& type, std::string& variant )
 {
     int  c;
     long long  counter  = 0;

@@ -19,8 +19,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFSTREAMTOKENIZER_H
-#define PDFSTREAMTOKENIZER_H
+#ifndef PDFESTREAMTOKENIZER_H
+#define PDFESTREAMTOKENIZER_H
 
 #include "PdfeGraphicsOperators.h"
 #include "podofo/base/PdfContentsTokenizer.h"
@@ -31,24 +31,24 @@ namespace PdfRecut {
  * Reimplementation of the class PdfContentsTokenizer with slight modifications
  * in the ReadNext function.
  */
-class PdfStreamTokenizer : public PoDoFo::PdfTokenizer {
+class PdfeStreamTokenizer : public PoDoFo::PdfTokenizer {
 public:
 
-    /** Construct a PdfStreamTokenizer from an existing buffer. Usually a stream from a PdfPage.
+    /** Construct a PdfeStreamTokenizer from an existing buffer. Usually a stream from a PdfPage.
      *  \param pBuffer pointer to a buffer.
      *  \param lLen length of the buffer.
      */
-    PdfStreamTokenizer( const char* pBuffer, long lLen )
+    PdfeStreamTokenizer( const char* pBuffer, long lLen )
         : PoDoFo::PdfTokenizer( pBuffer, lLen ), m_readingInlineImgData(false)
     {
     }
 
-    /** Construct a PdfStreamTokenizer from a PdfCanvas (i.e. PdfPage or a PdfXObject).
+    /** Construct a PdfeStreamTokenizer from a PdfCanvas (i.e. PdfPage or a PdfXObject).
      *  \param pCanvas an object that hold a PDF contents stream
      */
-    PdfStreamTokenizer( PoDoFo::PdfCanvas* pCanvas );
+    PdfeStreamTokenizer( PoDoFo::PdfCanvas* pCanvas );
 
-    virtual ~PdfStreamTokenizer() { }
+    virtual ~PdfeStreamTokenizer() { }
 
     /** Reads the next token from the current file position ignoring all comments.
      *  \param pszToken On true return, set to a pointer to the read token (a NULL-terminated C string).
@@ -112,15 +112,13 @@ public:
     bool ReadInlineImgData( PoDoFo::EPdfContentsType& type, std::string& variant );
 
  private:
-    /** A list containing pointers to all contents objects.
-     */
-    std::list<PoDoFo::PdfObject*> m_lstContents;
+    /// A list containing pointers to all contents objects.
+    std::list<PoDoFo::PdfObject*>  m_lstContents;
 
-    /** A state of reading inline image data.
-     */
+    /// At stage of reading inline image data?
     bool m_readingInlineImgData;
 };
 
 }
 
-#endif // PDFSTREAMTOKENIZER_H
+#endif // PDFESTREAMTOKENIZER_H

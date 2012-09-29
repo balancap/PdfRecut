@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PDFRESOURCES_H
-#define PDFRESOURCES_H
+#ifndef PDFERESOURCES_H
+#define PDFERESOURCES_H
 
 #include <vector>
 #include <string>
@@ -106,4 +106,4 @@ private:
 
 }
 
-#endif // PDFRESOURCES_H
+#endif // PDFERESOURCES_H

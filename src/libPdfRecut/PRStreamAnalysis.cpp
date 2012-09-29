@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 #include "PRStreamAnalysis.h"
-#include "PdfStreamTokenizer.h"
+#include "PdfeStreamTokenizer.h"
 
 #include "podofo/podofo.h"
 
@@ -52,7 +52,7 @@ void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                                       const PdfResources& initialResources )
 {
     //Stream tokenizer and associated variables.
-    PdfStreamTokenizer tokenizer( canvas );
+    PdfeStreamTokenizer tokenizer( canvas );
 
     // Stream state.
     PdfStreamState streamState;
