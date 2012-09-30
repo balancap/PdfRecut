@@ -23,7 +23,7 @@
 
 #include <QtGui/QPainter>
 
-#include "PdfeStreamAnalysis.h"
+#include "PdfeCanvasAnalysis.h"
 
 #include "PRDocument.h"
 #include "PRTextWords.h"
@@ -152,7 +152,7 @@ public:
 
 /** Class used to obtain a basic render a Pdf page.
  */
-class PRRenderPage : public PdfeStreamAnalysis
+class PRRenderPage : public PdfeCanvasAnalysis
 {
 public:
     /** Default constructor.
@@ -185,45 +185,45 @@ public:
      */
     void saveToFile( const QString& filename );
 
-    virtual void fGeneralGState( const PdfStreamState& streamState );
+    virtual void fGeneralGState( const PdfeStreamState& streamState );
 
-    virtual void fSpecialGState( const PdfStreamState& streamState );
+    virtual void fSpecialGState( const PdfeStreamState& streamState );
 
-    virtual void fPathConstruction( const PdfStreamState& streamState,
+    virtual void fPathConstruction( const PdfeStreamState& streamState,
                             const PdfePath& currentPath );
 
-    virtual void fPathPainting( const PdfStreamState& streamState,
+    virtual void fPathPainting( const PdfeStreamState& streamState,
                         const PdfePath& currentPath );
 
-    virtual void fClippingPath( const PdfStreamState& streamState,
+    virtual void fClippingPath( const PdfeStreamState& streamState,
                         const PdfePath& currentPath );
 
-    virtual void fTextObjects( const PdfStreamState& streamState );
+    virtual void fTextObjects( const PdfeStreamState& streamState );
 
-    virtual void fTextState( const PdfStreamState& streamState );
+    virtual void fTextState( const PdfeStreamState& streamState );
 
-    virtual void fTextPositioning( const PdfStreamState& streamState );
+    virtual void fTextPositioning( const PdfeStreamState& streamState );
 
-    virtual void fTextShowing( const PdfStreamState& streamState );
+    virtual void fTextShowing( const PdfeStreamState& streamState );
 
-    virtual void fType3Fonts( const PdfStreamState& streamState );
+    virtual void fType3Fonts( const PdfeStreamState& streamState );
 
-    virtual void fColor( const PdfStreamState& streamState );
+    virtual void fColor( const PdfeStreamState& streamState );
 
-    virtual void fShadingPatterns( const PdfStreamState& streamState );
+    virtual void fShadingPatterns( const PdfeStreamState& streamState );
 
-    virtual void fInlineImages( const PdfStreamState& streamState );
+    virtual void fInlineImages( const PdfeStreamState& streamState );
 
-    virtual void fXObjects( const PdfStreamState& streamState );
+    virtual void fXObjects( const PdfeStreamState& streamState );
 
-    virtual void fMarkedContents( const PdfStreamState& streamState );
+    virtual void fMarkedContents( const PdfeStreamState& streamState );
 
-    virtual void fCompatibility( const PdfStreamState& streamState );
+    virtual void fCompatibility( const PdfeStreamState& streamState );
 
-    virtual void fFormBegin( const PdfStreamState& streamState,
+    virtual void fFormBegin( const PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) {}
 
-    virtual void fFormEnd( const PdfStreamState& streamState,
+    virtual void fFormEnd( const PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
     /** Convert Image coordinates to Page coordinates.
@@ -255,7 +255,7 @@ protected:
      * \param streamState Stream state to consider.
      * \return Group of words read.
      */
-    PRTextGroupWords textReadGroupWords( const PdfStreamState& streamState );
+    PRTextGroupWords textReadGroupWords( const PdfeStreamState& streamState );
 
     /** Draw a group of words on the pdf image painter.
      * \param groupWords Words to draw.
@@ -270,7 +270,7 @@ protected:
     /** Update text transformation matrix. if necessary.
      * \param streamState Current tream state to consider.
      */
-    void textUpdateTransMatrix( const PdfStreamState& streamState );
+    void textUpdateTransMatrix( const PdfeStreamState& streamState );
 
 protected:
     /** Test function on images.
@@ -281,6 +281,8 @@ protected:
 protected:
     /// Pointer to PRDocument object.
     PRDocument*  m_document;
+    /// Page pointer.
+    PoDoFo::PdfPage*  m_page;
     /// Page index.
     long  m_pageIndex;
 

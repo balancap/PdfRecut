@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PdfeStreamAnalysis.h"
+#include "PdfeCanvasAnalysis.h"
 #include "PdfeStreamTokenizer.h"
 
 #include "podofo/podofo.h"
@@ -27,35 +27,24 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PdfeStreamAnalysis::PdfeStreamAnalysis( PoDoFo::PdfPage* page )
+PdfeCanvasAnalysis::PdfeCanvasAnalysis()
 {
-    // Set page analysed.
-    m_page = page;
-
     // Set locale to english for istringstream.
     PdfLocaleImbue( m_iStrStream );
 }
-PdfeStreamAnalysis::~PdfeStreamAnalysis()
+PdfeCanvasAnalysis::~PdfeCanvasAnalysis()
 {
 }
 
-void PdfeStreamAnalysis::analyse()
-{
-    // Analyse main page.
-    this->analyseCanvas( m_page,
-                         PdfeGraphicsState(),
-                         PdfResources() );
-}
-
-void PdfeStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
-                                      const PdfeGraphicsState& initialGState,
-                                      const PdfResources& initialResources )
+void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
+                                        const PdfeGraphicsState& initialGState,
+                                        const PdfeResources& initialResources )
 {
     //Stream tokenizer and associated variables.
     PdfeStreamTokenizer tokenizer( canvas );
 
     // Stream state.
-    PdfStreamState streamState;
+    PdfeStreamState streamState;
     // Current path.
     PdfePath currentPath;
 
@@ -84,7 +73,7 @@ void PdfeStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
         PdfeGraphicOperator& gOperator = streamState.gOperator;
         std::vector<std::string>& gOperands = streamState.gOperands;
         PdfeGraphicsState& gState = streamState.gStates.back();
-        PdfResources& resources = streamState.resources;
+        PdfeResources& resources = streamState.resources;
 
         if ( eType == ePdfContentsType_Variant )
         {
@@ -414,7 +403,7 @@ void PdfeStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
 
                 // Get XObject and subtype.
                 std::string xObjName = gOperands.back().substr( 1 );
-                PdfObject* xObjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xObjName );
+                PdfObject* xObjPtr = streamState.resources.getIndirectKey( PdfeResourcesType::XObject, xObjName );
                 std::string xObjSubtype = xObjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
 
                 // Form object.
@@ -454,7 +443,7 @@ void PdfeStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
 
                     // Analayse Form.
                     this->fFormBegin( streamState, &xObject );
-                    this->analyseCanvas( &xObject,
+                    this->analyseContents( &xObject,
                                          streamState.gStates.back(),
                                          streamState.resources );
                     this->fFormEnd( streamState, &xObject );

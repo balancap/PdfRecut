@@ -69,7 +69,7 @@ void PRTextPageStructure::detectGroupsWords()
     // Analyse the page.
     this->renderPage( renderParameters );
 }
-void PRTextPageStructure::fTextShowing( const PdfStreamState& streamState )
+void PRTextPageStructure::fTextShowing( const PdfeStreamState& streamState )
 {
     // Update text transformation matrix.
     this->textUpdateTransMatrix( streamState );

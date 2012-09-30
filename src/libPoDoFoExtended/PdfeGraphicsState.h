@@ -111,12 +111,12 @@ struct PdfeGraphicsState
      * \param gsName Name of the graphics state to import.
      * \return True if the extGState was found and loaded. False else.
      */
-    bool importExtGState( const PdfResources& resources, const std::string& gsName );
+    bool importExtGState( const PdfeResources& resources, const std::string& gsName );
 
     /** Import the Pdf reference corresponding to the font object (with name fontName).
      * \param resources Resources where to find the font reference.
      */
-    bool importFontReference( const PdfResources& resources );
+    bool importFontReference( const PdfeResources& resources );
 };
 
 }

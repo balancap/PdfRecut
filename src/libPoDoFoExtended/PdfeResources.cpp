@@ -25,7 +25,7 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-const char* PdfResources::CTypes[] = { "ExtGState",
+const char* PdfeResources::CTypes[] = { "ExtGState",
                                        "ColorSpace",
                                        "Pattern",
                                        "Shading",
@@ -34,22 +34,27 @@ const char* PdfResources::CTypes[] = { "ExtGState",
                                        "ProcSet",
                                        "Properties" };
 
-PdfResources::PdfResources()
+PdfeResources::PdfeResources()
 {
     // Nothing to do!
 }
-PdfResources::PdfResources(const PdfResources& rhs ) :
+PdfeResources::PdfeResources(const PdfeResources& rhs ) :
     m_resources( rhs.m_resources )
 {
 }
-PdfResources& PdfResources::operator=( const PdfResources& rhs )
+PdfeResources& PdfeResources::operator=( const PdfeResources& rhs )
 {
     m_resources = rhs.m_resources;
     return *this;
 }
 
-void PdfResources::pushBack(PoDoFo::PdfObject* resourcesObj )
+void PdfeResources::pushBack( PoDoFo::PdfObject* resourcesObj )
 {
+    // Null object!
+    if( !resourcesObj ) {
+        return;
+    }
+
     // Check it is a dictionary.
     if( resourcesObj->IsDictionary() ) {
         m_resources.push_back( resourcesObj );
@@ -58,13 +63,18 @@ void PdfResources::pushBack(PoDoFo::PdfObject* resourcesObj )
         // TODO: raise exception...
     }
 }
-const std::vector<PoDoFo::PdfObject*>& PdfResources::resources() const
+const std::vector<PoDoFo::PdfObject*>& PdfeResources::resources() const
 {
     return m_resources;
 }
 
-void PdfResources::addKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
+void PdfeResources::addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
 {
+    // Empty resources object...
+    if( m_resources.empty() ) {
+        return;
+    }
+
     // Get resources dict. Create it, if necessary.
     if( !m_resources.back()->GetDictionary().HasKey( CTypes[resource] ) ) {
         m_resources.back()->GetDictionary().AddKey( CTypes[resource], PdfDictionary() );
@@ -75,7 +85,7 @@ void PdfResources::addKey( PdfResourcesType::Enum resource, const PoDoFo::PdfNam
     resDict->GetDictionary().AddKey( key, object );
 }
 
-PoDoFo::PdfObject* PdfResources::getKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
+PoDoFo::PdfObject* PdfeResources::getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
 {
     PdfObject* keyObj = NULL;
 
@@ -95,7 +105,7 @@ PoDoFo::PdfObject* PdfResources::getKey( PdfResourcesType::Enum resource, const 
     }
     return keyObj;
 }
-PoDoFo::PdfObject* PdfResources::getIndirectKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
+PoDoFo::PdfObject* PdfeResources::getIndirectKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
 {
     PdfObject* keyObj = NULL;
 

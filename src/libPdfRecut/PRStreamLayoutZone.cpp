@@ -29,10 +29,10 @@ namespace PdfRecut {
 
 PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                                         PoDoFo::PdfStream* streamOut,
-                                        PdfResources* resourcesOut,
+                                        PdfeResources* resourcesOut,
                                         const PRPageZone &zone,
                                         const PRLayoutParameters &parameters, const std::string &resSuffixe ) :
-    PdfeStreamAnalysis( pageIn ), m_zone ( zone ), m_resSuffixe ( resSuffixe ), m_parameters( parameters )
+    PdfeCanvasAnalysis(), m_pageIn( pageIn ), m_zone ( zone ), m_resSuffixe ( resSuffixe ), m_parameters( parameters )
 {
     // Downcasting to PdfMemStream pointer.resource
     m_streamOut = dynamic_cast<PdfMemStream*>( streamOut );
@@ -77,7 +77,7 @@ void PRStreamLayoutZone::generateStream()
     m_bufStream.str( "" );
 
     // Perform the analysis.
-    this->analyse();
+    this->analyseContents( m_pageIn, PdfeGraphicsState(), PdfeResources() );
 
     // Close stream.
     m_streamOut->Append("Q\n");
@@ -91,7 +91,7 @@ void PRStreamLayoutZone::generateStream()
     //    std::cout << bufs.str() << std::endl;
 }
 
-void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -108,7 +108,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
         m_bufString += " gs\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( PdfResourcesType::ExtGState,
+        this->addResourcesOutKey( PdfeResourcesType::ExtGState,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
@@ -121,7 +121,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fSpecialGState( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fSpecialGState( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -136,13 +136,13 @@ void PRStreamLayoutZone::fSpecialGState( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fPathConstruction( const PdfStreamState& streamState,
+void PRStreamLayoutZone::fPathConstruction( const PdfeStreamState& streamState,
                                             const PdfePath& currentPath )
 {
     // Everything is done in painting function !
 }
 
-void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
+void PRStreamLayoutZone::fPathPainting( const PdfeStreamState& streamState,
                                         const PdfePath& currentPath )
 {
     // Simpler references.
@@ -258,12 +258,12 @@ void PRStreamLayoutZone::fPathPainting( const PdfStreamState& streamState,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PRStreamLayoutZone::fClippingPath( const PdfStreamState& streamState,
+void PRStreamLayoutZone::fClippingPath( const PdfeStreamState& streamState,
                                         const PdfePath& currentPath  )
 {
 }
 
-void PRStreamLayoutZone::fTextObjects( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fTextObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -274,7 +274,7 @@ void PRStreamLayoutZone::fTextObjects( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -290,7 +290,7 @@ void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
         m_bufString += " Tf\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( PdfResourcesType::Font,
+        this->addResourcesOutKey( PdfeResourcesType::Font,
                                   gOperands[0].substr( 1 ),
                                   streamState.resources );
     }
@@ -304,7 +304,7 @@ void PRStreamLayoutZone::fTextState( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextPositioning( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fTextPositioning( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -318,7 +318,7 @@ void PRStreamLayoutZone::fTextPositioning( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -352,7 +352,7 @@ void PRStreamLayoutZone::fTextShowing( const PdfStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fType3Fonts( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fType3Fonts( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -367,7 +367,7 @@ void PRStreamLayoutZone::fType3Fonts( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fColor( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -389,7 +389,7 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
         m_bufString += "\n";
 
         // Add key to out resources.
-        this->addResourcesOutKey( PdfResourcesType::ColorSpace,
+        this->addResourcesOutKey( PdfeResourcesType::ColorSpace,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
@@ -403,7 +403,7 @@ void PRStreamLayoutZone::fColor( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fShadingPatterns( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -419,13 +419,13 @@ void PRStreamLayoutZone::fShadingPatterns( const PdfStreamState& streamState )
         m_streamOut->Append( m_bufString );
 
         // Add key to out resources.
-        this->addResourcesOutKey( PdfResourcesType::Shading,
+        this->addResourcesOutKey( PdfeResourcesType::Shading,
                                   gOperands.back().substr( 1 ),
                                   streamState.resources );
     }
 }
 
-void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -462,7 +462,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fXObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -470,7 +470,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
 
     // Get XObject and subtype.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
 
     // Distinction between different type of XObjects
@@ -492,7 +492,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
             m_streamOut->Append( m_bufString );
 
             // Add key to out resources.
-            this->addResourcesOutKey( PdfResourcesType::XObject,
+            this->addResourcesOutKey( PdfeResourcesType::XObject,
                                       xobjName,
                                       streamState.resources );
         }
@@ -507,7 +507,7 @@ void PRStreamLayoutZone::fXObjects( const PdfStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fFormBegin( const PdfStreamState& streamState,
+void PRStreamLayoutZone::fFormBegin( const PdfeStreamState& streamState,
                                      PoDoFo::PdfXObject* form )
 {
     // Push form.
@@ -546,7 +546,7 @@ void PRStreamLayoutZone::fFormBegin( const PdfStreamState& streamState,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PRStreamLayoutZone::fFormEnd( const PdfStreamState& streamState,
+void PRStreamLayoutZone::fFormEnd( const PdfeStreamState& streamState,
                                    PoDoFo::PdfXObject* form )
 {
     // Pop form.
@@ -556,12 +556,12 @@ void PRStreamLayoutZone::fFormEnd( const PdfStreamState& streamState,
     m_streamOut->Append( "Q\n" );
 }
 
-void PRStreamLayoutZone::fMarkedContents( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fMarkedContents( const PdfeStreamState& streamState )
 {
     // Vous dîtes ?
 }
 
-void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
+void PRStreamLayoutZone::fCompatibility( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -572,9 +572,9 @@ void PRStreamLayoutZone::fCompatibility( const PdfStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::addResourcesOutKey( PdfResourcesType::Enum resourceType,
+void PRStreamLayoutZone::addResourcesOutKey( PdfeResourcesType::Enum resourceType,
                                              const std::string& key,
-                                             const PdfResources& resourcesIn )
+                                             const PdfeResources& resourcesIn )
 {
     // Get and add key.
     PdfObject* objPtr = resourcesIn.getKey( resourceType, key );

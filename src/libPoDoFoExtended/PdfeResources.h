@@ -31,7 +31,7 @@ namespace PoDoFo {
 
 namespace PdfRecut {
 
-namespace PdfResourcesType {
+namespace PdfeResourcesType {
 /** Enumeration of the different types of resources allowed in the PDF Reference.
  */
 enum Enum {
@@ -49,20 +49,20 @@ enum Enum {
 
 /** Class used to handle a collection of resources associated to some contents.
  */
-class PdfResources
+class PdfeResources
 {
 public:
     /** Create en empty object.
      */
-    PdfResources();
+    PdfeResources();
     /** Copy constructor.
      * \param resources Object to copy.
      */
-    PdfResources(const PdfResources& rhs );
+    PdfeResources(const PdfeResources& rhs );
     /** Operator=.
      * \param resources Object to copy.
      */
-    PdfResources& operator=( const PdfResources& rhs );
+    PdfeResources& operator=( const PdfeResources& rhs );
 
     /** Push back a resources dictionary.
      * \param resourcesDict Dictionary to push (not owned by the PdfResources object).
@@ -79,21 +79,21 @@ public:
      * \param key Key to add.
      * \param PdfObject Value corresponding to the key.
      */
-    void addKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
+    void addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
 
     /** Get a key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. Null, if not found.
      */
-    PoDoFo::PdfObject* getKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
+    PoDoFo::PdfObject* getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
 
     /** Get an indirect key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. Null, if not found.
      */
-    PoDoFo::PdfObject* getIndirectKey( PdfResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
+    PoDoFo::PdfObject* getIndirectKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
 
 public:
     /// Vector of C string corresponding to PdfResources types.

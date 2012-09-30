@@ -95,12 +95,13 @@ void PRRenderParameters::initToEmpty()
 //**********************************************************//
 PRRenderPage::PRRenderPage( PRDocument* document,
                             long pageIndex ) :
-    PdfeStreamAnalysis( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    PdfeCanvasAnalysis(),
     m_document( document ),
-    m_pageIndex( pageIndex )
+    m_page( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    m_pageIndex( pageIndex ),
+    m_pageImage( NULL ),
+    m_pagePainter( NULL )
 {
-    m_pageImage = NULL;
-    m_pagePainter = NULL;
 }
 PRRenderPage::~PRRenderPage()
 {
@@ -152,7 +153,7 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
     m_nbTextGroups = 0;
 
     // Perform the analysis and draw.
-    this->analyse();
+    this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
 
     //m_pagePainter->end();
 }
@@ -172,9 +173,9 @@ void PRRenderPage::saveToFile( const QString& filename )
     m_pageImage->save( filename );
 }
 
-void PRRenderPage::fGeneralGState( const PdfStreamState& streamState ) { }
+void PRRenderPage::fGeneralGState( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
+void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
 {
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     if( gOperator.code == ePdfGOperator_q ) {
@@ -195,10 +196,10 @@ void PRRenderPage::fSpecialGState( const PdfStreamState& streamState )
         }
     }
 }
-void PRRenderPage::fPathConstruction( const PdfStreamState& streamState,
+void PRRenderPage::fPathConstruction( const PdfeStreamState& streamState,
                                       const PdfePath& currentPath ) { }
 
-void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
+void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
                                   const PdfePath& currentPath )
 {
     // Simpler references.
@@ -230,7 +231,7 @@ void PRRenderPage::fPathPainting( const PdfStreamState& streamState,
     m_pagePainter->drawPath( qCurrentPath );
 }
 
-void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
+void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
                                   const PdfePath& currentPath )
 {
     // Simpler references.
@@ -258,17 +259,17 @@ void PRRenderPage::fClippingPath( const PdfStreamState& streamState,
     m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
 }
 
-void PRRenderPage::fTextObjects( const PdfStreamState& streamState ) { }
+void PRRenderPage::fTextObjects( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fTextState( const PdfStreamState& streamState ) { }
+void PRRenderPage::fTextState( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fTextPositioning( const PdfStreamState& streamState )
+void PRRenderPage::fTextPositioning( const PdfeStreamState& streamState )
 {
     // Update text transformation matrix.
     this->textUpdateTransMatrix( streamState );
 }
 
-void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
+void PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Update text transformation matrix.
     this->textUpdateTransMatrix( streamState );
@@ -280,13 +281,13 @@ void PRRenderPage::fTextShowing( const PdfStreamState& streamState )
     this->textDrawGroupWords( groupWords );
 }
 
-void PRRenderPage::fType3Fonts( const PdfStreamState& streamState ) { }
+void PRRenderPage::fType3Fonts( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fColor( const PdfStreamState& streamState ) { }
+void PRRenderPage::fColor( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fShadingPatterns( const PdfStreamState& streamState ) { }
+void PRRenderPage::fShadingPatterns( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
+void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -305,7 +306,7 @@ void PRRenderPage::fInlineImages( const PdfStreamState& streamState )
     }
 }
 
-void PRRenderPage::fXObjects( const PdfStreamState& streamState )
+void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
     //const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -314,7 +315,7 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
 
     // Name of the XObject and dictionary entry.
     std::string xobjName = gOperands.back().substr( 1 );
-    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfResourcesType::XObject, xobjName );
+    PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
     PdfeMatrix pathMat;
 
@@ -361,12 +362,12 @@ void PRRenderPage::fXObjects( const PdfStreamState& streamState )
     }
 }
 
-void PRRenderPage::fMarkedContents( const PdfStreamState& streamState ) { }
+void PRRenderPage::fMarkedContents( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fCompatibility( const PdfStreamState& streamState ) { }
+void PRRenderPage::fCompatibility( const PdfeStreamState& streamState ) { }
 
 
-PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfStreamState& streamState )
+PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -446,7 +447,7 @@ void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subg
     }
 }
 
-void PRRenderPage::textUpdateTransMatrix( const PdfStreamState& streamState )
+void PRRenderPage::textUpdateTransMatrix( const PdfeStreamState& streamState )
 {
     // Text positioning operator or showing operator (quote or double quote).
     if( streamState.gOperator.cat == ePdfGCategory_TextPositioning ||

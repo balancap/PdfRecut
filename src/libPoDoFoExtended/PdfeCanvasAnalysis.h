@@ -18,8 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PRSTREAMANALYSIS_H
-#define PRSTREAMANALYSIS_H
+#ifndef PDFESTREAMANALYSIS_H
+#define PDFESTREAMANALYSIS_H
 
 #include "PdfeGraphicsState.h"
 #include "PdfeResources.h"
@@ -35,13 +35,13 @@ namespace PdfRecut {
 
 /** Simple structure that gathers information related to the current state of a stream.
  */
-struct PdfStreamState
+struct PdfeStreamState
 {
     /// Canvas analysed.
     PoDoFo::PdfCanvas* canvas;
 
     /// PdfResources associated.
-    PdfResources resources;
+    PdfeResources resources;
 
     /// Graphics operator read.
     PdfeGraphicOperator gOperator;
@@ -52,72 +52,67 @@ struct PdfStreamState
     std::vector<PdfeGraphicsState> gStates;
 };
 
-/** Basic class used to analysis the contents of a page's streams.
+/** Basic class used to analysis contents of a PDF canvas.
  */
-class PdfeStreamAnalysis
+class PdfeCanvasAnalysis
 {
 public:
-    /** Default constructor, with a page assigned.
-     * \param page  PoDoFo page to be analysed.
+    /** Default empty constructor.
      */
-    PdfeStreamAnalysis( PoDoFo::PdfPage* page );
+    PdfeCanvasAnalysis();
 
     /** Default destructor.
      */
-    virtual ~PdfeStreamAnalysis();
-
-    /** Analysing the page.
-     */
-    void analyse();
+    virtual ~PdfeCanvasAnalysis();
 
     /** Analyse the content stream of a canvas.
      * \param canvas Canvas to analyse.
      * \param initialGState Initial graphics state to use.
      * \param initialResources Initial resources to use.
      */
-    void analyseCanvas( PoDoFo::PdfCanvas* canvas,
-                        const PdfeGraphicsState& initialGState,
-                        const PdfResources& initialResources );
+    void analyseContents( PoDoFo::PdfCanvas* canvas,
+                          const PdfeGraphicsState& initialGState,
+                          const PdfeResources& initialResources );
 
-    virtual void fGeneralGState( const PdfStreamState& streamState ) = 0;
+    virtual void fGeneralGState( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fSpecialGState( const PdfStreamState& streamState ) = 0;
+    virtual void fSpecialGState( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fPathConstruction( const PdfStreamState& streamState,
+    virtual void fPathConstruction( const PdfeStreamState& streamState,
                                     const PdfePath& currentPath ) = 0;
 
-    virtual void fPathPainting( const PdfStreamState& streamState,
+    virtual void fPathPainting( const PdfeStreamState& streamState,
                                 const PdfePath& currentPath ) = 0;
 
-    virtual void fClippingPath( const PdfStreamState& streamState,
+    virtual void fClippingPath( const PdfeStreamState& streamState,
                                 const PdfePath& currentPath ) = 0;
 
-    virtual void fTextObjects( const PdfStreamState& streamState ) = 0;
+    virtual void fTextObjects( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fTextState( const PdfStreamState& streamState ) = 0;
+    virtual void fTextState( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fTextPositioning( const PdfStreamState& streamState ) = 0;
+    virtual void fTextPositioning( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fTextShowing( const PdfStreamState& streamState ) = 0;
+    virtual void fTextShowing( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fType3Fonts( const PdfStreamState& streamState ) = 0;
+    virtual void fType3Fonts( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fColor( const PdfStreamState& streamState ) = 0;
+    virtual void fColor( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fShadingPatterns( const PdfStreamState& streamState ) = 0;
+    virtual void fShadingPatterns( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fInlineImages( const PdfStreamState& streamState ) = 0;
+    virtual void fInlineImages( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fXObjects( const PdfStreamState& streamState ) = 0;
+    virtual void fXObjects( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fMarkedContents( const PdfStreamState& streamState ) = 0;
+    virtual void fMarkedContents( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fCompatibility( const PdfStreamState& streamState ) = 0;
+    virtual void fCompatibility( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fFormBegin( const PdfStreamState& streamState,
+    virtual void fFormBegin( const PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) = 0;
 
-    virtual void fFormEnd( const PdfStreamState& streamState,
+    virtual void fFormEnd( const PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) = 0;
 
 protected:
@@ -134,9 +129,6 @@ protected:
     void readValue( const std::string& str, double& value );
 
 protected:
-    /// Page analysed.
-    PoDoFo::PdfPage*  m_page;
-
     /// Istringstream used in conversion string -> number.
     std::istringstream  m_iStrStream;
 };
@@ -144,7 +136,7 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PdfeStreamAnalysis::readValue( const std::string& str, int& value )
+inline void PdfeCanvasAnalysis::readValue( const std::string& str, int& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();
@@ -156,7 +148,7 @@ inline void PdfeStreamAnalysis::readValue( const std::string& str, int& value )
         PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, str.c_str() );
     }
 }
-inline void PdfeStreamAnalysis::readValue( const std::string& str, double& value )
+inline void PdfeCanvasAnalysis::readValue( const std::string& str, double& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();
@@ -171,4 +163,4 @@ inline void PdfeStreamAnalysis::readValue( const std::string& str, double& value
 
 }
 
-#endif // PRSTREAMANALYSIS_H
+#endif // PDFESTREAMANALYSIS_H
