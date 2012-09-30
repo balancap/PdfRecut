@@ -36,7 +36,7 @@ namespace PdfRecut {
 /** Class used to generate a Pdf stream which corresponds to a given
  * document layout zone from a Pdf page.
  */
-class PRStreamLayoutZone : public PdfeCanvasAnalysis
+class PRStreamLayoutZone : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
     /** Default constructor.
@@ -47,54 +47,54 @@ public:
      */
     PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                         PoDoFo::PdfStream* streamOut,
-                        PdfeResources* resourcesOut,
+                        PoDoFoExtended::PdfeResources* resourcesOut,
                         const PRPageZone& zone,
                         const PRLayoutParameters& parameters,
                         const std::string& resSuffixe );
 
     void generateStream();
 
-    void fGeneralGState( const PdfeStreamState& streamState );
+    void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fSpecialGState( const PdfeStreamState& streamState );
+    void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fPathConstruction( const PdfeStreamState& streamState,
-                            const PdfePath& currentPath );
+    void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+                            const PoDoFoExtended::PdfePath& currentPath );
 
-    void fPathPainting( const PdfeStreamState& streamState,
-                        const PdfePath& currentPath );
+    void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+                        const PoDoFoExtended::PdfePath& currentPath );
 
-    void fClippingPath( const PdfeStreamState& streamState,
-                        const PdfePath& currentPath );
+    void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+                        const PoDoFoExtended::PdfePath& currentPath );
 
-    void fTextObjects( const PdfeStreamState& streamState );
+    void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fTextState( const PdfeStreamState& streamState );
+    void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fTextPositioning( const PdfeStreamState& streamState );
+    void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fTextShowing( const PdfeStreamState& streamState );
+    void fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fType3Fonts( const PdfeStreamState& streamState );
+    void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fColor( const PdfeStreamState& streamState );
+    void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fShadingPatterns( const PdfeStreamState& streamState );
+    void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fInlineImages( const PdfeStreamState& streamState );
+    void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fXObjects( const PdfeStreamState& streamState );
+    void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fMarkedContents( const PdfeStreamState& streamState );
+    void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fCompatibility( const PdfeStreamState& streamState );
+    void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fUnknown( const PdfeStreamState& streamState );
+    void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fFormBegin( const PdfeStreamState& streamState,
+    void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
                      PoDoFo::PdfXObject* form );
 
-    void fFormEnd( const PdfeStreamState& streamState,
+    void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
                    PoDoFo::PdfXObject* form );
 
     /** Get the list of form objects from the page.
@@ -108,9 +108,9 @@ protected:
 
     /** Add out resources key.
      */
-    void addResourcesOutKey(PdfeResourcesType::Enum resourceType,
+    void addResourcesOutKey( PoDoFoExtended::PdfeResourcesType::Enum resourceType,
                              const std::string& key,
-                             const PdfeResources& resourcesIn );
+                             const PoDoFoExtended::PdfeResources& resourcesIn );
 
     /** Push form.
      */
@@ -130,7 +130,7 @@ protected:
     /// Output stream.
     PoDoFo::PdfMemStream*  m_streamOut;
     /// Output resources.
-    PdfeResources*  m_resourcesOut;
+    PoDoFoExtended::PdfeResources*  m_resourcesOut;
 
     /// PDF page zone.
     PRPageZone  m_zone;
@@ -151,7 +151,7 @@ protected:
     PRLayoutParameters m_parameters;
 
     /// Pdf stream buffer.
-    PdfeOStringStream m_bufStream;
+    PoDoFoExtended::PdfeOStringStream m_bufStream;
     /// String buffer.
     std::string m_bufString;
 

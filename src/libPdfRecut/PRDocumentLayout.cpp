@@ -34,6 +34,7 @@
 #include <cmath>
 
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 

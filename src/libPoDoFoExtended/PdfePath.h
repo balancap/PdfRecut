@@ -26,7 +26,7 @@
 
 #include "podofo/base/PdfRect.h"
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /** Structure representing a PDF subpath.
  */

@@ -31,7 +31,7 @@ namespace PoDoFo {
     class PdfXObject;
 }
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /** Simple structure that gathers information related to the current state of a stream.
  */

@@ -25,7 +25,7 @@
 #include "PdfeGraphicsOperators.h"
 #include "podofo/base/PdfContentsTokenizer.h"
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /** This class is a parser for content streams in PDF documents.
  * Reimplementation of the class PdfContentsTokenizer with slight modifications

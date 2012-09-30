@@ -24,7 +24,7 @@
 #include <sstream>
 #include <algorithm>
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /** Redefine an ostringstream class which behaves with float/double as
  * stated in Pdf reference (no "1e5" notation).

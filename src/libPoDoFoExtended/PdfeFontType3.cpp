@@ -24,6 +24,9 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
+//**********************************************************//
+//                       PdfeFontType3                      //
+//**********************************************************//
 PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary )
 {
@@ -213,6 +216,13 @@ PdfeFontSpace::Enum PdfeFontType3::isSpace( pdf_cid c ) const
         }
     }
     return PdfeFontSpace::None;
+}
+
+//**********************************************************//
+//                      PdfeGlyphType3                      //
+//**********************************************************//
+PdfeGlyphType3::PdfeGlyphType3()
+{
 }
 
 }

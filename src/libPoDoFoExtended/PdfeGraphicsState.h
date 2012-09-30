@@ -31,7 +31,7 @@ namespace PoDoFo {
     class PdfPage;
 }
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /** Structure describing a text state in a Pdf stream.
  */

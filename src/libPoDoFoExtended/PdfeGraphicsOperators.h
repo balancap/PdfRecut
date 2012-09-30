@@ -23,7 +23,7 @@
 
 #include <cstring>
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 /// Pdf graphic operators categories, as defined in PDF reference 1.7.
 enum EPdfeGCategory {

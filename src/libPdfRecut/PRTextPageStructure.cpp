@@ -30,6 +30,7 @@
 #include <fstream>
 
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 

@@ -25,7 +25,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 PdfeCanvasAnalysis::PdfeCanvasAnalysis()
 {

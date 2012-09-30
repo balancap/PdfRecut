@@ -23,9 +23,15 @@
 #include "PdfeTypes.h"
 #include "PdfeFont.h"
 #include "PdfeFontDescriptor.h"
+#include "PdfeCanvasAnalysis.h"
+
+#include "podofo/base/PdfCanvas.h"
 
 namespace PoDoFoExtended {
 
+//**********************************************************//
+//                       PdfeFontType3                      //
+//**********************************************************//
 /** Class that represents a PDF Font of type 3 (c.f. PDF Reference).
  */
 class PdfeFontType3 : public PdfeFont
@@ -45,9 +51,9 @@ public:
     virtual ~PdfeFontType3();
 
 protected:
-    /** No default constructor.
+    /** Private default constructor.
      */
-    PdfeFontType3() { }
+    PdfeFontType3();
 
     /** Initialize the vector of space characters.
      */
@@ -114,6 +120,66 @@ protected:
 
     /// Vector of space characters.
     std::vector<pdf_cid>  m_spaceCharacters;
+};
+
+//**********************************************************//
+//                      PdfeGlyphType3                      //
+//**********************************************************//
+/** Class used to represent a glyph from a Type 3 font.
+ * Inherit from the interface PdfeCanvasAnalysis and the class PdfCanvas.
+ */
+class PdfeGlyphType3 : public PdfeCanvasAnalysis, public PoDoFo::PdfCanvas
+{
+public:
+    /** Default constructor.
+     */
+    PdfeGlyphType3();
+
+public:
+    // Reimplement PdfeCanvasAnalysis interface.
+    virtual void fGeneralGState( const PdfeStreamState& streamState ) { }
+
+    virtual void fSpecialGState( const PdfeStreamState& streamState ) { }
+
+    virtual void fPathConstruction( const PdfeStreamState& streamState,
+                                    const PdfePath& currentPath ) { }
+
+    virtual void fPathPainting( const PdfeStreamState& streamState,
+                                const PdfePath& currentPath ) { }
+
+    virtual void fClippingPath( const PdfeStreamState& streamState,
+                                const PdfePath& currentPath ) { }
+
+    virtual void fTextObjects( const PdfeStreamState& streamState ) { }
+
+    virtual void fTextState( const PdfeStreamState& streamState ) { }
+
+    virtual void fTextPositioning( const PdfeStreamState& streamState ) { }
+
+    virtual void fTextShowing( const PdfeStreamState& streamState ) { }
+
+    virtual void fType3Fonts( const PdfeStreamState& streamState ) { }
+
+    virtual void fColor( const PdfeStreamState& streamState ) { }
+
+    virtual void fShadingPatterns( const PdfeStreamState& streamState ) { }
+
+    virtual void fInlineImages( const PdfeStreamState& streamState ) { }
+
+    virtual void fXObjects( const PdfeStreamState& streamState ) { }
+
+    virtual void fMarkedContents( const PdfeStreamState& streamState ) { }
+
+    virtual void fCompatibility( const PdfeStreamState& streamState ) { }
+
+    virtual void fUnknown( const PdfeStreamState& streamState ) { }
+
+    virtual void fFormBegin( const PdfeStreamState& streamState,
+                             PoDoFo::PdfXObject* form ) { }
+
+    virtual void fFormEnd( const PdfeStreamState& streamState,
+                           PoDoFo::PdfXObject* form ) { }
+
 };
 
 }

@@ -60,7 +60,7 @@ public:
     /** Reimplementation of text showing function from PRRenderPage.
      * Used to read text groups of words.
      */
-    virtual void fTextShowing( const PdfeStreamState& streamState );
+    virtual void fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
     /** Detect the groups of words in the page.
      */

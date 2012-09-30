@@ -39,7 +39,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 PdfeStreamTokenizer::PdfeStreamTokenizer( PdfCanvas* pCanvas )
     : PdfTokenizer(), m_readingInlineImgData(false)

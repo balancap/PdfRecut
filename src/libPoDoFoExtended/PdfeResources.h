@@ -29,7 +29,7 @@ namespace PoDoFo {
     class PdfName;
 }
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 namespace PdfeResourcesType {
 /** Enumeration of the different types of resources allowed in the PDF Reference.

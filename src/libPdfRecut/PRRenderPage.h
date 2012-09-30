@@ -29,11 +29,11 @@
 #include "PRTextWords.h"
 
 namespace PoDoFo {
-    class PdfPage;
-    class PdfRect;
-    class PdfMemDocument;
-    class PdfFontMetrics;
-    class PdfString;
+class PdfPage;
+class PdfRect;
+class PdfMemDocument;
+class PdfFontMetrics;
+class PdfString;
 }
 
 namespace PdfRecut {
@@ -152,7 +152,7 @@ public:
 
 /** Class used to obtain a basic render a Pdf page.
  */
-class PRRenderPage : public PdfeCanvasAnalysis
+class PRRenderPage : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
     /** Default constructor.
@@ -185,47 +185,47 @@ public:
      */
     void saveToFile( const QString& filename );
 
-    virtual void fGeneralGState( const PdfeStreamState& streamState );
+    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fSpecialGState( const PdfeStreamState& streamState );
+    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fPathConstruction( const PdfeStreamState& streamState,
-                            const PdfePath& currentPath );
+    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+                                    const PoDoFoExtended::PdfePath& currentPath );
 
-    virtual void fPathPainting( const PdfeStreamState& streamState,
-                        const PdfePath& currentPath );
+    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath );
 
-    virtual void fClippingPath( const PdfeStreamState& streamState,
-                        const PdfePath& currentPath );
+    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath );
 
-    virtual void fTextObjects( const PdfeStreamState& streamState );
+    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fTextState( const PdfeStreamState& streamState );
+    virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fTextPositioning( const PdfeStreamState& streamState );
+    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fTextShowing( const PdfeStreamState& streamState );
+    virtual void fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fType3Fonts( const PdfeStreamState& streamState );
+    virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fColor( const PdfeStreamState& streamState );
+    virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fShadingPatterns( const PdfeStreamState& streamState );
+    virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fInlineImages( const PdfeStreamState& streamState );
+    virtual void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fXObjects( const PdfeStreamState& streamState );
+    virtual void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fMarkedContents( const PdfeStreamState& streamState );
+    virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fCompatibility( const PdfeStreamState& streamState );
+    virtual void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fUnknown( const PdfeStreamState& streamState ) {}
+    virtual void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState ) {}
 
-    virtual void fFormBegin( const PdfeStreamState& streamState,
+    virtual void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) {}
 
-    virtual void fFormEnd( const PdfeStreamState& streamState,
+    virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
     /** Convert Image coordinates to Page coordinates.
@@ -257,7 +257,7 @@ protected:
      * \param streamState Stream state to consider.
      * \return Group of words read.
      */
-    PRTextGroupWords textReadGroupWords( const PdfeStreamState& streamState );
+    PRTextGroupWords textReadGroupWords( const PoDoFoExtended::PdfeStreamState& streamState );
 
     /** Draw a group of words on the pdf image painter.
      * \param groupWords Words to draw.
@@ -272,7 +272,7 @@ protected:
     /** Update text transformation matrix. if necessary.
      * \param streamState Current tream state to consider.
      */
-    void textUpdateTransMatrix( const PdfeStreamState& streamState );
+    void textUpdateTransMatrix( const PoDoFoExtended::PdfeStreamState& streamState );
 
 protected:
     /** Test function on images.

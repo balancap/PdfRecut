@@ -24,6 +24,7 @@
 #define BUFFER_SIZE 4096
 
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 

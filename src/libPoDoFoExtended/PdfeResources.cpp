@@ -23,7 +23,7 @@
 
 using namespace PoDoFo;
 
-namespace PdfRecut {
+namespace PoDoFoExtended {
 
 const char* PdfeResources::CTypes[] = { "ExtGState",
                                        "ColorSpace",
