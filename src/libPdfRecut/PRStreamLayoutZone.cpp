@@ -572,6 +572,10 @@ void PRStreamLayoutZone::fCompatibility( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
+void PRStreamLayoutZone::fUnknown( const PdfeStreamState& streamState )
+{
+    // Euh...
+}
 void PRStreamLayoutZone::addResourcesOutKey( PdfeResourcesType::Enum resourceType,
                                              const std::string& key,
                                              const PdfeResources& resourcesIn )

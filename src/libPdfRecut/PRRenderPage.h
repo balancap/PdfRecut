@@ -220,6 +220,8 @@ public:
 
     virtual void fCompatibility( const PdfeStreamState& streamState );
 
+    virtual void fUnknown( const PdfeStreamState& streamState ) {}
+
     virtual void fFormBegin( const PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) {}
 

@@ -89,6 +89,8 @@ public:
 
     void fCompatibility( const PdfeStreamState& streamState );
 
+    void fUnknown( const PdfeStreamState& streamState );
+
     void fFormBegin( const PdfeStreamState& streamState,
                      PoDoFo::PdfXObject* form );
 

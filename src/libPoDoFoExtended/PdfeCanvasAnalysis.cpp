@@ -473,10 +473,13 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
             }
             else if( gOperator.cat == ePdfGCategory_Unknown )
             {
-                if( !gState.compatibilityMode ) {
-                    PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidContentStream,
-                                             "Invalid token in a stream" );
-                }
+                // Call category function.
+                this->fUnknown( streamState );
+
+//                if( !gState.compatibilityMode ) {
+//                    PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidContentStream,
+//                                             "Invalid token in a stream" );
+//                }
             }
             // Clear variables vector.
             gOperands.clear();
