@@ -21,9 +21,10 @@
 #ifndef PRSTREAMLAYOUTZONE_H
 #define PRSTREAMLAYOUTZONE_H
 
-#include "PRStreamAnalysis.h"
-#include "PRDocumentLayout.h"
+#include "PdfeStreamAnalysis.h"
 #include "PdfeMisc.h"
+
+#include "PRDocumentLayout.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -35,7 +36,7 @@ namespace PdfRecut {
 /** Class used to generate a Pdf stream which corresponds to a given
  * document layout zone from a Pdf page.
  */
-class PRStreamLayoutZone : public PRStreamAnalysis
+class PRStreamLayoutZone : public PdfeStreamAnalysis
 {
 public:
     /** Default constructor.

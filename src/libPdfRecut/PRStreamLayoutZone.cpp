@@ -32,7 +32,7 @@ PRStreamLayoutZone::PRStreamLayoutZone( PoDoFo::PdfPage* pageIn,
                                         PdfResources* resourcesOut,
                                         const PRPageZone &zone,
                                         const PRLayoutParameters &parameters, const std::string &resSuffixe ) :
-    PRStreamAnalysis( pageIn ), m_zone ( zone ), m_resSuffixe ( resSuffixe ), m_parameters( parameters )
+    PdfeStreamAnalysis( pageIn ), m_zone ( zone ), m_resSuffixe ( resSuffixe ), m_parameters( parameters )
 {
     // Downcasting to PdfMemStream pointer.resource
     m_streamOut = dynamic_cast<PdfMemStream*>( streamOut );

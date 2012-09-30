@@ -95,7 +95,7 @@ void PRRenderParameters::initToEmpty()
 //**********************************************************//
 PRRenderPage::PRRenderPage( PRDocument* document,
                             long pageIndex ) :
-    PRStreamAnalysis( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    PdfeStreamAnalysis( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
     m_document( document ),
     m_pageIndex( pageIndex )
 {

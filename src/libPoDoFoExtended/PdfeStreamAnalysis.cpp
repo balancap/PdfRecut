@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "PRStreamAnalysis.h"
+#include "PdfeStreamAnalysis.h"
 #include "PdfeStreamTokenizer.h"
 
 #include "podofo/podofo.h"
@@ -27,7 +27,7 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PRStreamAnalysis::PRStreamAnalysis( PoDoFo::PdfPage* page )
+PdfeStreamAnalysis::PdfeStreamAnalysis( PoDoFo::PdfPage* page )
 {
     // Set page analysed.
     m_page = page;
@@ -35,11 +35,11 @@ PRStreamAnalysis::PRStreamAnalysis( PoDoFo::PdfPage* page )
     // Set locale to english for istringstream.
     PdfLocaleImbue( m_iStrStream );
 }
-PRStreamAnalysis::~PRStreamAnalysis()
+PdfeStreamAnalysis::~PdfeStreamAnalysis()
 {
 }
 
-void PRStreamAnalysis::analyse()
+void PdfeStreamAnalysis::analyse()
 {
     // Analyse main page.
     this->analyseCanvas( m_page,
@@ -47,7 +47,7 @@ void PRStreamAnalysis::analyse()
                          PdfResources() );
 }
 
-void PRStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
+void PdfeStreamAnalysis::analyseCanvas( PoDoFo::PdfCanvas* canvas,
                                       const PdfeGraphicsState& initialGState,
                                       const PdfResources& initialResources )
 {

@@ -37,40 +37,34 @@ namespace PdfRecut {
  */
 struct PdfStreamState
 {
-    /** Canvas analysed.
-     */
+    /// Canvas analysed.
     PoDoFo::PdfCanvas* canvas;
 
-    /** PdfResources associated.
-     */
+    /// PdfResources associated.
     PdfResources resources;
 
-    /** Graphics operator read.
-     */
+    /// Graphics operator read.
     PdfeGraphicOperator gOperator;
-
-    /** Graphics operands associated to the operator.
-     */
+    /// Graphics operands associated to the operator.
     std::vector<std::string> gOperands;
 
-    /** Graphics state stack.
-     */
+    /// Graphics state stack.
     std::vector<PdfeGraphicsState> gStates;
 };
 
 /** Basic class used to analysis the contents of a page's streams.
  */
-class PRStreamAnalysis
+class PdfeStreamAnalysis
 {
 public:
     /** Default constructor, with a page assigned.
      * \param page  PoDoFo page to be analysed.
      */
-    PRStreamAnalysis( PoDoFo::PdfPage* page );
+    PdfeStreamAnalysis( PoDoFo::PdfPage* page );
 
     /** Default destructor.
      */
-    virtual ~PRStreamAnalysis();
+    virtual ~PdfeStreamAnalysis();
 
     /** Analysing the page.
      */
@@ -150,7 +144,7 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PRStreamAnalysis::readValue( const std::string& str, int& value )
+inline void PdfeStreamAnalysis::readValue( const std::string& str, int& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();
@@ -162,7 +156,7 @@ inline void PRStreamAnalysis::readValue( const std::string& str, int& value )
         PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, str.c_str() );
     }
 }
-inline void PRStreamAnalysis::readValue( const std::string& str, double& value )
+inline void PdfeStreamAnalysis::readValue( const std::string& str, double& value )
 {
     // Clear error state and set string.
     m_iStrStream.clear();

@@ -14,7 +14,6 @@ SOURCES += \
     PRDocumentLayout.cpp \
     PRDocumentStructure.cpp \
     PRDocumentTools.cpp \
-    PRStreamAnalysis.cpp \
     PRStreamLayoutZone.cpp \
     PRRenderPage.cpp \
     PRTextWords.cpp \
@@ -29,7 +28,6 @@ HEADERS +=\
     PRDocumentLayout.h \
     PRDocumentStructure.h \
     PRDocumentTools.h \
-    PRStreamAnalysis.h \
     PRStreamLayoutZone.h \
     PRRenderPage.h \
     PRTextLine.h \

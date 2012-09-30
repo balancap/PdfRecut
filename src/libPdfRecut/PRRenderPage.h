@@ -23,8 +23,9 @@
 
 #include <QtGui/QPainter>
 
+#include "PdfeStreamAnalysis.h"
+
 #include "PRDocument.h"
-#include "PRStreamAnalysis.h"
 #include "PRTextWords.h"
 
 namespace PoDoFo {
@@ -151,7 +152,7 @@ public:
 
 /** Class used to obtain a basic render a Pdf page.
  */
-class PRRenderPage : public PRStreamAnalysis
+class PRRenderPage : public PdfeStreamAnalysis
 {
 public:
     /** Default constructor.
