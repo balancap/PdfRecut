@@ -62,7 +62,7 @@ protected:
     void initSpaceCharacters();
 
     /** Initialize the size of characters according to the font object.
-     * \param pFont Pointer to the object where is defined the standard type 1 font.
+     * \param pFont Pointer to the object where is defined the type 1 font.
      */
     void initCharactersBBox( const PoDoFo::PdfObject* pFont );
 

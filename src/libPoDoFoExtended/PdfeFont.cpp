@@ -126,6 +126,29 @@ PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
     return cbbox;
 }
 
+void PdfeFont::cidToName( PdfEncoding* pEncoding, pdf_cid c, PdfName& cname )
+{
+    // No encoding...
+    if( !pEncoding ) {
+        cname = PdfName();
+    }
+    pdf_utf16be ucode;
+
+    // First try using difference encoding.
+    PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( pEncoding );
+    if( pDiffEncoding ) {
+        const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
+        if( differences.Contains( c, cname, ucode ) ) {
+            // Name found!
+            return;
+        }
+    }
+
+    // Classic encoding: try using the char code (UTF16) and the map unicode<->name.
+    ucode = pEncoding->GetCharCode( c );
+    cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
+}
+
 std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
                                             pdf_cid firstCID,
                                             pdf_cid lastCID,

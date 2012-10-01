@@ -60,6 +60,14 @@ public:
     /** Default empty constructor.
      */
     PdfeCanvasAnalysis();
+    /** Copy constructor.
+     * \param rhs Object to copy.
+     */
+    PdfeCanvasAnalysis( const PdfeCanvasAnalysis& rhs );
+    /** Copy operator=.
+     * \param rhs Object to copy.
+     */
+    PdfeCanvasAnalysis& operator=( const PdfeCanvasAnalysis& rhs );
 
     /** Default destructor.
      */

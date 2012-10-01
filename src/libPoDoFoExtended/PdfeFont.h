@@ -126,7 +126,7 @@ public:
 protected:
     /** No default constructor.
      */
-    PdfeFont() { }
+    PdfeFont();
 
 public:
     /** Get the width of a CID string.
@@ -196,6 +196,15 @@ public:
     virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const = 0;
 
 protected:
+    /** Get a character name from a CID using a PdfEncoding.
+     * \param pEncoding Pointer to the encoding.
+     * \param c CID of the character.
+     * \param cname Reference to the name to set.
+     */
+    void cidToName(PoDoFo::PdfEncoding* pEncoding,
+                   pdf_cid c,
+                   PoDoFo::PdfName& cname );
+
     /** Construct a CID to GID map.
      * \param face Freetype face object.
      * \param firstCID CID of the first character to consider.

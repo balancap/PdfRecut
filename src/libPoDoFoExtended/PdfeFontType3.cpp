@@ -87,8 +87,8 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         m_fontDescriptor.init( pDescriptor );
     }
 
-    // Font encoding.
-    m_encoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+    // Font encoding. Should be a difference encoding.
+    m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
     // According to PoDoFo implementation.
     m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
 
@@ -96,6 +96,9 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Space characters vector.
     this->initSpaceCharacters();
+
+    // Glyph vectors.
+    this->initGlyphs( pFont );
 }
 void PdfeFontType3::init()
 {
@@ -110,9 +113,11 @@ void PdfeFontType3::init()
     m_lastCID = 0;
     m_widthsCID.clear();
 
-    m_encoding = NULL;
+    m_pEncoding = NULL;
     m_encodingOwned = false;
 
+    m_mapCIDToGID.clear();
+    m_glyphs.clear();
 }
 void PdfeFontType3::initSpaceCharacters()
 {
@@ -126,12 +131,42 @@ void PdfeFontType3::initSpaceCharacters()
         }
     }
 }
+void PdfeFontType3::initGlyphs( const PdfObject* pFont )
+{
+    // CharProcs and Resources objects.
+    PdfObject* pCharProcs = pFont->GetIndirectKey( "CharProcs" );
+    PdfObject* pResources = pFont->GetIndirectKey( "Resources" );
+
+    // No CharProcs: exception raised.
+    if( !pCharProcs || !pCharProcs->IsDictionary() ) {
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "Entries missing in the Type 3 font dictionary." );
+    }
+
+    // Resize space vectors.
+    m_mapCIDToGID.resize( m_lastCID-m_firstCID+1, 0 );
+    m_glyphs.resize( m_lastCID-m_firstCID+1, PdfeGlyphType3() );
+
+    // Look at each character.
+    PdfName cname;
+    PdfObject* pGlyph;
+    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        // Get character name and search it in CharProcs.
+        PdfeFont::cidToName( m_pEncoding, c, cname );
+        pGlyph = pCharProcs->GetIndirectKey( cname );
+
+        // If found, set GID to c-m_firstCID+1 and create glyph.
+        if( pGlyph ) {
+            m_mapCIDToGID[c-m_firstCID] = c-m_firstCID+1;
+            m_glyphs[c-m_firstCID] = PdfeGlyphType3( cname, pGlyph, pResources );
+        }
+    }
+}
 
 PdfeFontType3::~PdfeFontType3()
 {
     // Delete encoding object if necessary.
     if( m_encodingOwned ) {
-        delete m_encoding;
+        delete m_pEncoding;
     }
 }
 
@@ -187,13 +222,52 @@ double PdfeFontType3::width( pdf_cid c, bool useFParams ) const
     }
     return width;
 }
+PdfRect PdfeFontType3::bbox( pdf_cid c, bool useFParams ) const
+{
+    PdfRect cbbox;
+    if( c >= m_firstCID && c <= m_lastCID && m_mapCIDToGID[c-m_firstCID] ) {
+        // Get glyph bounding box.
+        cbbox = m_glyphs[c-m_firstCID].bbox();
+
+        // Empty glyph bbox: call default implementation.
+        if( cbbox.GetHeight() == 0 ) {
+            return PdfeFont::bbox( c, useFParams );
+        }
+
+        // Modify left and width accordingly to char width.
+        cbbox.SetLeft( 0.0 );
+        cbbox.SetWidth( m_widthsCID[c-m_firstCID] );
+
+        // Apply font transformation to char bbox.
+        PdfeORect oBBox( cbbox );
+        oBBox = m_fontMatrix.map( oBBox );
+        cbbox = oBBox.toPdfRect( true );
+    }
+    else {
+        // Call default implementation.
+        return PdfeFont::bbox( c, useFParams );
+    }
+
+    // Apply font parameters.
+    double width = cbbox.GetWidth();
+    if( useFParams ) {
+        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            width += m_wordSpace * ( m_hScale / 100. );
+        }
+        cbbox.SetWidth( width );
+        cbbox.SetBottom( cbbox.GetBottom() * m_fontSize );
+        cbbox.SetHeight( cbbox.GetHeight() * m_fontSize );
+    }
+    return cbbox;
+}
 PoDoFo::pdf_utf16be PdfeFontType3::toUnicode( pdf_cid c ) const
 {
     // TODO: unicode map.
 
-    if( m_encoding ) {
+    if( m_pEncoding ) {
         // Get UTF16 code from PdfEncoding object.
-        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
         ucode = PDF_UTF16_BE_LE( ucode );
         return ucode;
     }
@@ -221,8 +295,101 @@ PdfeFontSpace::Enum PdfeFontType3::isSpace( pdf_cid c ) const
 //**********************************************************//
 //                      PdfeGlyphType3                      //
 //**********************************************************//
-PdfeGlyphType3::PdfeGlyphType3()
+PdfeGlyphType3::PdfeGlyphType3() :
+    PdfeCanvasAnalysis(), PdfCanvas(),
+    m_name(), m_pStream( NULL ), m_pResources( NULL ),
+    m_isBBoxComputed( false ), m_bboxD1( 0,0,0,0 ), m_cbox( 0,0,0,0 )
+
 {
+}
+
+PdfeGlyphType3::PdfeGlyphType3( const PdfName& glyphName,
+                                PdfObject* glyphStream,
+                                PdfObject* fontResources ) :
+    PdfeCanvasAnalysis(), PdfCanvas(),
+    m_name( glyphName ), m_pStream( glyphStream ), m_pResources( fontResources ),
+    m_isBBoxComputed( false ), m_bboxD1( 0,0,0,0 ), m_cbox( 0,0,0,0 )
+{
+    // Not stream in the object...
+    if( !m_pStream->HasStream() ) {
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The glyph description object does not contain a stream." );
+    }
+
+    // Compute glyph bounding box.
+    this->computeBBox();
+}
+PdfRect PdfeGlyphType3::bbox() const
+{
+    // Return bounding box given by d1 command. Can be empty if d0 is used in contents stream.
+    // TODO: use computed cbox.
+    return m_bboxD1;
+}
+
+void PdfeGlyphType3::computeBBox()
+{
+    // Reset bounding boxes to zero.
+    m_bboxD1 = PdfRect( 0, 0, 0, 0 );
+    m_cbox = PdfRect( 0, 0, 0, 0 );
+
+    // Analyse contents stream of the glyph.
+    this->analyseContents( this, PdfeGraphicsState(), PdfeResources() );
+}
+
+//**********************************************//
+//         PdfeCanvasAnalysis interface         //
+//**********************************************//
+void PdfeGlyphType3::fPathPainting( const PdfeStreamState& streamState,
+                                    const PdfePath& currentPath )
+{
+}
+void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
+{
+    // Update d1 bounding box if possible.
+    if( streamState.gOperator.code == ePdfGOperator_d1 ) {
+        double left, right, bottom, top;
+        size_t nbvars = streamState.gOperands.size();
+
+        // Read bbox coordinates.
+        this->readValue( streamState.gOperands[nbvars-4], left );
+        this->readValue( streamState.gOperands[nbvars-3], bottom );
+        this->readValue( streamState.gOperands[nbvars-2], right );
+        this->readValue( streamState.gOperands[nbvars-1], top );
+
+        m_bboxD1 = PdfRect( left, bottom, right-left, top-bottom );
+    }
+}
+
+void PdfeGlyphType3::fUnknown( const PdfeStreamState& streamState )
+{
+    // TODO: implement the computation of cbox.
+
+//    std::cout << this << " / " << streamState.gOperator.name << " : ";
+//    std::copy( streamState.gOperands.begin(),
+//               streamState.gOperands.end(),
+//               std::ostream_iterator<std::string>( std::cout, " " ) );
+//    std::cout << std::endl;
+}
+
+//**********************************************//
+//              PdfCanvas interface             //
+//**********************************************//
+PdfObject* PdfeGlyphType3::GetContents() const
+{
+    return m_pStream;
+}
+PdfObject* PdfeGlyphType3::GetContentsForAppending() const
+{
+    // No way someone's gonna modify the content!
+    return NULL;
+}
+PdfObject* PdfeGlyphType3::GetResources() const
+{
+    return m_pResources;
+}
+const PdfRect PdfeGlyphType3::GetPageSize() const
+{
+    // Don't care...
+    return PdfRect( 0, 0, 0, 0 );
 }
 
 }

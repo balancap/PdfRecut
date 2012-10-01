@@ -422,7 +422,14 @@ public:
      * \param rect2 Second rectangle.
      * \return Intersection of two rectangles.
      */
-    static PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
+    static PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& lhs, const PoDoFo::PdfRect& rhs );
+
+    /** Union between two PoDoFo::PdfRect objects.
+     * \param rect1 First rectangle.
+     * \param rect2 Second rectangle.
+     * \return Intersection of two rectangles.
+     */
+    static PoDoFo::PdfRect reunion( const PoDoFo::PdfRect& lhs, const PoDoFo::PdfRect& rhs );
 
     /** Is a second rectangle inside the first one?
      * \param rect1 First rectangle.
@@ -628,19 +635,32 @@ inline double PdfeORect::maxDistance( const PdfeORect& rect, const PdfeVector& p
     return dist;
 }
 
-inline PoDoFo::PdfRect PdfeORect::intersection( const PoDoFo::PdfRect& rect1,
-                                                const PoDoFo::PdfRect& rect2 )
+inline PoDoFo::PdfRect PdfeORect::intersection(const PoDoFo::PdfRect& lhs,
+                                               const PoDoFo::PdfRect& rhs )
 {
-    double left = std::max( rect1.GetLeft(), rect2.GetLeft() );
-    double bottom = std::max( rect1.GetBottom(), rect2.GetBottom() );
-    double right = std::min( rect1.GetLeft() + rect1.GetWidth(),
-                             rect2.GetLeft() + rect2.GetWidth() );
-    double top = std::min( rect1.GetBottom() + rect1.GetHeight(),
-                           rect2.GetBottom() + rect2.GetHeight() );
+    double left = std::max( lhs.GetLeft(), rhs.GetLeft() );
+    double bottom = std::max( lhs.GetBottom(), rhs.GetBottom() );
+    double right = std::min( lhs.GetLeft() + lhs.GetWidth(),
+                             rhs.GetLeft() + rhs.GetWidth() );
+    double top = std::min( lhs.GetBottom() + lhs.GetHeight(),
+                           rhs.GetBottom() + rhs.GetHeight() );
 
     return PoDoFo::PdfRect( left, bottom,
                             std::max( 0.0, right - left ),
                             std::max( 0.0, top - bottom ) );
+}
+inline PoDoFo::PdfRect PdfeORect::reunion(const PoDoFo::PdfRect &lhs, const PoDoFo::PdfRect &rhs)
+{
+    double left = std::min( lhs.GetLeft(), rhs.GetLeft() );
+    double bottom = std::min( lhs.GetBottom(), rhs.GetBottom() );
+    double right = std::max( lhs.GetLeft() + lhs.GetWidth(),
+                             rhs.GetLeft() + rhs.GetWidth() );
+    double top = std::max( lhs.GetBottom() + lhs.GetHeight(),
+                           rhs.GetBottom() + rhs.GetHeight() );
+
+    return PoDoFo::PdfRect( left, bottom,
+                            right - left,
+                            top - bottom );
 }
 inline bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
 {

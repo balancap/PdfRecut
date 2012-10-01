@@ -42,7 +42,7 @@ using namespace PoDoFo;
 namespace PoDoFoExtended {
 
 PdfeStreamTokenizer::PdfeStreamTokenizer( PdfCanvas* pCanvas )
-    : PdfTokenizer(), m_readingInlineImgData(false)
+    : PdfTokenizer(), m_readingInlineImgData( false )
 {
     if( !pCanvas )
     {

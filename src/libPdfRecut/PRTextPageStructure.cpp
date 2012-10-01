@@ -679,8 +679,8 @@ void PRTextPageStructure::renderTextGroupsWords()
         m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
         m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 
-        //this->textDrawGroupWords( *m_pGroupsWords[idx] );
-        this->textDrawMainSubgroups( *m_pGroupsWords[idx] );
+        this->textDrawGroupWords( *m_pGroupsWords[idx] );
+//        this->textDrawMainSubgroups( *m_pGroupsWords[idx] );
 //        this->textDrawPdfeORect( m_pGroupsWords[idx]->bbox() );
     }
 }

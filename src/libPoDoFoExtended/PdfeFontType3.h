@@ -29,6 +29,7 @@
 
 namespace PoDoFoExtended {
 
+class PdfeGlyphType3;
 //**********************************************************//
 //                       PdfeFontType3                      //
 //**********************************************************//
@@ -58,6 +59,10 @@ protected:
     /** Initialize the vector of space characters.
      */
     void initSpaceCharacters();
+    /** Initialize the vector of glyphs and their bounding box.
+     * \param pFont Pointer to the object where is defined the type 3 font.
+     */
+    void initGlyphs( const PoDoFo::PdfObject* pFont );
 
 public:
     // Virtual functions reimplemented.
@@ -83,6 +88,13 @@ public:
      * \return Width of the character.
      */
     virtual double width( pdf_cid c, bool useFParams ) const;
+
+    /** Get the bounding box of a character.
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Bounding box of the character.
+     */
+    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
@@ -114,12 +126,17 @@ protected:
     PdfeFontDescriptor  m_fontDescriptor;
 
     /// Font encoding.
-    PoDoFo::PdfEncoding*  m_encoding;
+    PoDoFo::PdfEncoding*  m_pEncoding;
     /// Does the object owns the encoding ?
     bool  m_encodingOwned;
 
     /// Vector of space characters.
     std::vector<pdf_cid>  m_spaceCharacters;
+
+    /// Vector of type 3 glyphs.
+    std::vector<PdfeGlyphType3>  m_glyphs;
+    /// CID to GID map.
+    std::vector<pdf_gid>  m_mapCIDToGID;
 };
 
 //**********************************************************//
@@ -135,6 +152,25 @@ public:
      */
     PdfeGlyphType3();
 
+    /** Main constructor.
+     * \param glyphName Name of the glyph used in CharProcs.
+     * \param glyphStream Object where is defined the glyph stream.
+     * \param fontResources Object containing font resources.
+     */
+    PdfeGlyphType3( const PoDoFo::PdfName& glyphName,
+                    PoDoFo::PdfObject* glyphStream,
+                    PoDoFo::PdfObject* fontResources );
+
+    /** Get glyph bounding box.
+     * \return PdfRect containing the bbox.
+     */
+    PoDoFo::PdfRect bbox() const;
+
+protected:
+    /** Compute bounding box.
+     */
+    void computeBBox();
+
 public:
     // Reimplement PdfeCanvasAnalysis interface.
     virtual void fGeneralGState( const PdfeStreamState& streamState ) { }
@@ -145,7 +181,7 @@ public:
                                     const PdfePath& currentPath ) { }
 
     virtual void fPathPainting( const PdfeStreamState& streamState,
-                                const PdfePath& currentPath ) { }
+                                const PdfePath& currentPath );
 
     virtual void fClippingPath( const PdfeStreamState& streamState,
                                 const PdfePath& currentPath ) { }
@@ -158,7 +194,7 @@ public:
 
     virtual void fTextShowing( const PdfeStreamState& streamState ) { }
 
-    virtual void fType3Fonts( const PdfeStreamState& streamState ) { }
+    virtual void fType3Fonts( const PdfeStreamState& streamState );
 
     virtual void fColor( const PdfeStreamState& streamState ) { }
 
@@ -172,7 +208,7 @@ public:
 
     virtual void fCompatibility( const PdfeStreamState& streamState ) { }
 
-    virtual void fUnknown( const PdfeStreamState& streamState ) { }
+    virtual void fUnknown( const PdfeStreamState& streamState );
 
     virtual void fFormBegin( const PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) { }
@@ -180,6 +216,31 @@ public:
     virtual void fFormEnd( const PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) { }
 
+public:
+    // Reimplement PdfCanvas interface.
+    virtual PoDoFo::PdfObject* GetContents() const;
+
+    virtual PoDoFo::PdfObject* GetContentsForAppending() const;
+
+    virtual PoDoFo::PdfObject* GetResources() const;
+
+    virtual const PoDoFo::PdfRect GetPageSize() const;
+
+protected:
+    /// Glyph name (c.f. CharProcs entry).
+    PoDoFo::PdfName  m_name;
+    /// Stream object that defines the glyph.
+    PoDoFo::PdfObject*  m_pStream;
+    /// Font resources object.
+    PoDoFo::PdfObject*  m_pResources;
+
+    // Cache data.
+    /// Has the bbox been computed?
+    bool  m_isBBoxComputed;
+    /// BBox defined by the operator d1 (=0.0 if not defined).
+    PoDoFo::PdfRect  m_bboxD1;
+    /// CBox corresponding computed using glyph stream.
+    PoDoFo::PdfRect  m_cbox;
 };
 
 }

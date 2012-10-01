@@ -32,6 +32,16 @@ PdfeCanvasAnalysis::PdfeCanvasAnalysis()
     // Set locale to english for istringstream.
     PdfLocaleImbue( m_iStrStream );
 }
+PdfeCanvasAnalysis::PdfeCanvasAnalysis( const PdfeCanvasAnalysis& rhs )
+{
+    // Well, nothing to do!
+}
+PdfeCanvasAnalysis& PdfeCanvasAnalysis::operator =(const PdfeCanvasAnalysis &rhs)
+{
+    // Still nothing to do!
+    return *this;
+}
+
 PdfeCanvasAnalysis::~PdfeCanvasAnalysis()
 {
 }
@@ -82,6 +92,8 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
         }
         else if( eType == ePdfContentsType_Keyword )
         {
+            //this->fUnknown( streamState );
+
             // Distinction between operator categories.
             if( gOperator.cat == ePdfGCategory_GeneralGState )
             {
