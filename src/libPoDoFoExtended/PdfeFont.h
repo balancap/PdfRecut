@@ -229,6 +229,20 @@ protected:
                    const PoDoFo::PdfRect& fontBBox,
                    PoDoFo::PdfRect* pGlyphBBox ) const;
 
+    /** Apply font parameter to a character width.
+     * \param Reference to the width to modify.
+     * \param space32 Is the character a 32 type space?
+     */
+    void applyFontParameters( double& width,
+                              bool space32 ) const;
+
+    /** Apply font parameter to a character bounding box.
+     * \param Reference to the bbox to modify.
+     * \param space32 Is the character a 32 type space?
+     */
+    void applyFontParameters( PoDoFo::PdfRect& bbox,
+                              bool space32 ) const;
+
 
 protected:
     // Members

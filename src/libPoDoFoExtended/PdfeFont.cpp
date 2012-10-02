@@ -241,4 +241,24 @@ int PdfeFont::glyphBBox(FT_Face face,
     return 0;
 }
 
+void PdfeFont::applyFontParameters( double& width, bool space32 ) const
+{
+    // Apply font parameters.
+    width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+    if( space32 ) {
+        width += m_wordSpace * ( m_hScale / 100. );
+    }
+}
+void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
+{
+    double width = bbox.GetWidth();
+    width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+    if( space32 ) {
+        width += m_wordSpace * ( m_hScale / 100. );
+    }
+    bbox.SetWidth( width );
+    bbox.SetBottom( bbox.GetBottom() * m_fontSize );
+    bbox.SetHeight( bbox.GetHeight() * m_fontSize );
+}
+
 }

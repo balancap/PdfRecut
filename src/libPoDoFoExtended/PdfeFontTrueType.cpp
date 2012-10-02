@@ -225,10 +225,7 @@ double PdfeFontTrueType::width( pdf_cid c, bool useFParams ) const
 
     // Apply font parameters.
     if( useFParams ) {
-        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
-        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace * ( m_hScale / 100. );
-        }
+        this->applyFontParameters( width, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return width;
 }
@@ -250,15 +247,8 @@ PdfRect PdfeFontTrueType::bbox( pdf_cid c, bool useFParams ) const
     }
 
     // Apply font parameters.
-    double width = cbbox.GetWidth();
     if( useFParams ) {
-        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
-        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace * ( m_hScale / 100. );
-        }
-        cbbox.SetWidth( width );
-        cbbox.SetBottom( cbbox.GetBottom() * m_fontSize );
-        cbbox.SetHeight( cbbox.GetHeight() * m_fontSize );
+        this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return cbbox;
 }
