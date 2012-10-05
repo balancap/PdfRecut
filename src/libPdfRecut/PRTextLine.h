@@ -288,7 +288,7 @@ inline const PRTextGroupWords::Subgroup& PRTextLine::subgroup( size_t idx ) cons
 
 inline PRTextLine* PRTextLine::Block::line() const
 {
-    return const_cast<PRTextLine*>( m_pLine );
+    return m_pLine;
 }
 inline bool PRTextLine::Block::inside( size_t idx ) const
 {

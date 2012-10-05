@@ -206,7 +206,7 @@ PdfeMatrix PRTextLine::transMatrix()
 long PRTextLine::hasGroupWords( PRTextGroupWords* pGroup ) const
 {
     // Look at subgroups...
-    for( long i = 0 ; i < static_cast<long>( m_subgroupsWords.size() ) ; ++i ) {
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
         if( m_subgroupsWords[i].group() == pGroup ) {
             return i;
         }
