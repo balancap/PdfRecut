@@ -58,6 +58,11 @@ protected:
      */
     void initSpaceCharacters();
 
+    /** Initialize Unicode CMap.
+     * \param pFont Font object.
+     */
+    void initUnicodeCMap( PoDoFo::PdfObject* pFont );
+
 public:
     // Virtual functions reimplemented.
     /** Get the descriptor object corresponding to the font.
@@ -81,19 +86,19 @@ public:
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Width of the character.
      */
-    virtual double width( pdf_cid c, bool useFParams ) const;
+    virtual double width( pdfe_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
      * \return Unicode character code
      */
-    virtual PoDoFo::pdf_utf16be toUnicode( pdf_cid c ) const;
+    virtual PoDoFo::pdf_utf16be toUnicode( pdfe_cid c ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
-    virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const;
+    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
 
 protected:
     // Members.
@@ -106,7 +111,7 @@ protected:
     PdfeFontCID*  m_fontCID;
 
     /// Vector of space characters.
-    std::vector<pdf_cid>  m_spaceCharacters;
+    std::vector<pdfe_cid>  m_spaceCharacters;
 };
 
 //**********************************************************//
@@ -140,7 +145,7 @@ public:
      * \param c Character identifier (CID).
      * \return Width of the character.
      */
-    double width( pdf_cid c ) const;
+    double width( pdfe_cid c ) const;
 
 protected:
     /** Private class that represents an array of glyph's horizontal width.
@@ -172,13 +177,13 @@ protected:
          * \param c Character identifier (CID).
          * \return Width of the character.
          */
-        double width( pdf_cid c ) const;
+        double width( pdfe_cid c ) const;
 
     private:
         /// Vector containing first CID of each group.
-        std::vector<pdf_cid>  m_firstCID;
+        std::vector<pdfe_cid>  m_firstCID;
         /// Vector containing last CID of each group.
-        std::vector<pdf_cid>  m_lastCID;
+        std::vector<pdfe_cid>  m_lastCID;
         /// Vector containing widths of each group.
         std::vector< std::vector<double> >  m_widthsCID;
 
@@ -211,7 +216,7 @@ inline const PdfeFontDescriptor& PdfeFontCID::fontDescriptor() const
 {
     return m_fontDescriptor;
 }
-inline double PdfeFontCID::width( pdf_cid c ) const
+inline double PdfeFontCID::width( pdfe_cid c ) const
 {
     return m_hWidths.width( c ) / 1000.;
 }
@@ -219,7 +224,7 @@ inline double PdfeFontCID::width( pdf_cid c ) const
 //**********************************************************//
 //                 PdfeFontCID::HWidthsArray                //
 //**********************************************************//
-inline double PdfeFontCID::HWidthsArray::width( pdf_cid c ) const
+inline double PdfeFontCID::HWidthsArray::width( pdfe_cid c ) const
 {
     // Find the group of CID it belongs to.
     for( size_t i = 0 ; i < m_widthsCID.size() ; ++i ) {

@@ -60,6 +60,7 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     m_fontCID->init( pDFont );
 
     // TODO: unicode CMap.
+    this->initUnicodeCMap( pFont );
 
 }
 void PdfeFontType0::init()
@@ -78,6 +79,30 @@ void PdfeFontType0::initSpaceCharacters()
     m_spaceCharacters.clear();
 
     // TODO: use unicode CMap.
+}
+void PdfeFontType0::initUnicodeCMap( PdfObject* pFont )
+{
+    PdfObject* pUCMap = pFont->GetIndirectKey( "ToUnicode" );
+
+    // Unicode entry exists!
+    if( pUCMap && pUCMap->HasStream() ) {
+        std::string path( "./cmaps/" );
+        path += m_baseFont.GetName();
+        path += ".txt";
+
+        PdfOutputDevice outFile( path.c_str() );
+
+        PdfMemStream* pStream = dynamic_cast<PdfMemStream*>( pUCMap->GetStream() );
+        pStream->Uncompress();
+        pStream->Write( &outFile );
+
+        // Create CMap
+        std::cout << m_baseFont.GetName() << std::endl;
+        PdfeCMap unicodeCMap( pUCMap );
+
+    }
+
+
 }
 
 PdfeFontType0::~PdfeFontType0()
@@ -106,7 +131,7 @@ PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
     // Use the encoding CMap to convert the string.
     return m_encodingCMap.toCIDString( str );
 }
-double PdfeFontType0::width( pdf_cid c, bool useFParams ) const
+double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
 {
     // Use CID font to obtain the width.
     double width = m_fontCID->width( c );
@@ -120,12 +145,12 @@ double PdfeFontType0::width( pdf_cid c, bool useFParams ) const
     }
     return width;
 }
-PoDoFo::pdf_utf16be PdfeFontType0::toUnicode( pdf_cid c ) const
+PoDoFo::pdf_utf16be PdfeFontType0::toUnicode( pdfe_cid c ) const
 {
     // TODO: unicode map.
     return 0;
 }
-PdfeFontSpace::Enum PdfeFontType0::isSpace( pdf_cid c ) const
+PdfeFontSpace::Enum PdfeFontType0::isSpace( pdfe_cid c ) const
 {
     return PdfeFontSpace::None;
 }
@@ -210,7 +235,7 @@ void PdfeFontCID::HWidthsArray::init( const PdfArray& widths )
         m_widthsCID.push_back( std::vector<double>() );
 
         // First CID value.
-        m_firstCID.back() = static_cast<pdf_cid>( widths[i].GetNumber() );
+        m_firstCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );
         ++i;
 
         // Read array of widths.
@@ -225,7 +250,7 @@ void PdfeFontCID::HWidthsArray::init( const PdfArray& widths )
         }
         // Read width for a range of CIDs.
         else {
-            m_lastCID.back() = static_cast<pdf_cid>( widths[i].GetNumber() );
+            m_lastCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );
             ++i;
             m_widthsCID.back().push_back( static_cast<double>( widths[i].GetNumber() )  );
             ++i;

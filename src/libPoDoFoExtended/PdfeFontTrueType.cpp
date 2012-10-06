@@ -58,8 +58,8 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     }
 
     // First and last characters.
-    m_firstCID = static_cast<pdf_cid>( pFChar->GetNumber() );
-    m_lastCID = static_cast<pdf_cid>( pLChar->GetNumber() );
+    m_firstCID = static_cast<pdfe_cid>( pFChar->GetNumber() );
+    m_lastCID = static_cast<pdfe_cid>( pLChar->GetNumber() );
 
     // Font descriptor.
     m_fontDescriptor.init( pDescriptor );
@@ -102,7 +102,7 @@ void PdfeFontTrueType::initSpaceCharacters()
 
     // Find CIDs which correspond to the space character.
     QChar qcharSpace( ' ' );
-    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
         if( this->toUnicode( c ) == qcharSpace ) {
             m_spaceCharacters.push_back( c );
         }
@@ -148,14 +148,14 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     }
 
     // Construct the map CID to GID.
-    std::vector<pdf_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
+    std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
                                                           dynamic_cast<PdfDifferenceEncoding*>( m_encoding ) );
 
     // Get glyph bounding box.
-    pdf_gid glyphIdx;
+    pdfe_gid glyphIdx;
     PdfRect glyphBBox;
 
-    for( pdf_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
         glyphIdx = mapCIDToGID[c-m_firstCID];
         if( glyphIdx ) {
             // Load glyph.
@@ -212,7 +212,7 @@ PdfeCIDString PdfeFontTrueType::toCIDString( const PdfString& str ) const
     }
     return cidstr;
 }
-double PdfeFontTrueType::width( pdf_cid c, bool useFParams ) const
+double PdfeFontTrueType::width( pdfe_cid c, bool useFParams ) const
 {
     double width;
     if( c >= m_firstCID && c <= m_lastCID ) {
@@ -229,7 +229,7 @@ double PdfeFontTrueType::width( pdf_cid c, bool useFParams ) const
     }
     return width;
 }
-PdfRect PdfeFontTrueType::bbox( pdf_cid c, bool useFParams ) const
+PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
 {
     //return PdfeFont::bbox( c, useFParams );
 
@@ -252,14 +252,14 @@ PdfRect PdfeFontTrueType::bbox( pdf_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdf_cid c ) const
+PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdfe_cid c ) const
 {
     // TODO: unicode map.
 
     if( m_encoding ) {
         // Get UTF16 code from PdfEncoding object.
         pdf_utf16be ucode = m_encoding->GetCharCode( c );
-        ucode = PDF_UTF16_BE_LE( ucode );
+        ucode = PDFE_UTF16BE_TO_HBO( ucode );
         return ucode;
     }
     else {
@@ -267,7 +267,7 @@ PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdf_cid c ) const
         return 0;
     }
 }
-PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdf_cid c ) const
+PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdfe_cid c ) const
 {
     // Does the character belongs to the space vector ?
     for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {

@@ -80,26 +80,26 @@ public:
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Width of the character.
      */
-    virtual double width( pdf_cid c, bool useFParams ) const;
+    virtual double width( pdfe_cid c, bool useFParams ) const;
 
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
-    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
+    virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
      * \return Unicode character code
      */
-    virtual PoDoFo::pdf_utf16be toUnicode( pdf_cid c ) const;
+    virtual PoDoFo::pdf_utf16be toUnicode( pdfe_cid c ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
-    virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const;
+    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
 
 protected:
     // Members.
@@ -107,9 +107,9 @@ protected:
     PoDoFo::PdfName  m_baseFont;
 
     /// First character defined in font's width array.
-    pdf_cid  m_firstCID;
+    pdfe_cid  m_firstCID;
     /// Last character defined in font's width array.
-    pdf_cid  m_lastCID;
+    pdfe_cid  m_lastCID;
     /// Array of character widths.
     std::vector<double>  m_widthsCID;
 
@@ -125,7 +125,7 @@ protected:
     bool  m_encodingOwned;
 
     /// Vector of space characters.
-    std::vector<pdf_cid>  m_spaceCharacters;
+    std::vector<pdfe_cid>  m_spaceCharacters;
 };
 
 }
