@@ -139,17 +139,17 @@ public:
          */
         PoDoFo::PdfRect bbox() const;
 
-        /** Sort horizontally two blocks.
+        /** Horizontally compare two blocks.
          * \param block1 First block.
          * \param block2 Second block.
          */
-        static bool horizontalSort( const Block& block1, const Block& block2 );
+        static bool horizontalComp( const Block& block1, const Block& block2 );
 
-        /** Sort horizontally two block (use pointers).
+        /** Horizontally compare two block (use pointers).
          * \param block1 Pointer to the first block.
          * \param block2 Pointer to the second block.
          */
-        static bool horizontalSortPtr( Block* pBlock1, Block* pBlock2 );
+        static bool horizontalCompPtr( Block* pBlock1, Block* pBlock2 );
 
     protected:
         /// Pointer to the parent line.

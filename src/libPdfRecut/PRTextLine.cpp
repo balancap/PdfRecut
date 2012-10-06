@@ -242,7 +242,7 @@ std::vector<PRTextLine::Block*> PRTextLine::horizontalBlocks( double hDistance )
     }
 
     // Horizontal sort of blocks.
-    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalSortPtr );
+    std::sort( hBlocks.begin(), hBlocks.end(), Block::horizontalCompPtr );
 
     // Merge blocks.
     std::vector<Block*>::iterator lIt, rIt;
@@ -294,7 +294,7 @@ std::list<PRTextLine::Block> PRTextLine::horizontalBlocksList(double hDistance) 
     }
 
     // Horizontal sort of blocks.
-    hBlocksList.sort( Block::horizontalSort );
+    hBlocksList.sort( Block::horizontalComp );
 
     // Merge blocks.
     std::list<Block>::iterator lIt, rIt;
@@ -528,11 +528,11 @@ PdfRect PRTextLine::Block::bbox() const
 {
     return m_bbox;
 }
-bool PRTextLine::Block::horizontalSort( const PRTextLine::Block& block1, const PRTextLine::Block& block2 )
+bool PRTextLine::Block::horizontalComp( const PRTextLine::Block& block1, const PRTextLine::Block& block2 )
 {
     return ( block1.m_bbox.GetLeft() < block2.m_bbox.GetLeft() );
 }
-bool PRTextLine::Block::horizontalSortPtr( PRTextLine::Block* pBlock1, PRTextLine::Block* pBlock2 )
+bool PRTextLine::Block::horizontalCompPtr( PRTextLine::Block* pBlock1, PRTextLine::Block* pBlock2 )
 {
     return (  pBlock1->m_bbox.GetLeft() < pBlock2->m_bbox.GetLeft() );
 }

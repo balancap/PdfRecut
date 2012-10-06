@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 #include "PRTextPageStructure.h"
-#include "PRMiscUtils.h"
+#include "PdfeUtils.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>
@@ -51,10 +51,10 @@ PRTextPageStructure::~PRTextPageStructure()
 void PRTextPageStructure::clearContent()
 {
     // Delete groups of words.
-    std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), DeleteFunctor<PRTextGroupWords>() );
+    std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), delete_ptr_fctor<PRTextGroupWords>() );
 
     // Delete text lines.
-    std::for_each( m_pTextLines.begin(), m_pTextLines.end(), DeleteFunctor<PRTextLine>() );
+    std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRTextLine>() );
 }
 
 void PRTextPageStructure::detectGroupsWords()
@@ -612,7 +612,7 @@ std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pL
         pLines.back()->clearEmptySubgroups();
     }
     // Delete blocks.
-    std::for_each( hBlocks.begin(), hBlocks.end(), DeleteFunctor<PRTextLine::Block>() );
+    std::for_each( hBlocks.begin(), hBlocks.end(), delete_ptr_fctor<PRTextLine::Block>() );
 
     return pLines;
 }
