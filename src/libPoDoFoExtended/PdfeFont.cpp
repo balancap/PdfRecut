@@ -26,6 +26,29 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
+
+std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length )
+{
+    std::vector<pdfe_utf16>  utf16vec;
+    utf16vec.reserve( length / 2 );
+
+    const pdfe_utf16* pchar = reinterpret_cast<const pdfe_utf16*>( pstr );
+    for( size_t i = 0 ; i < length; i+=2 ) {
+        utf16vec.push_back( PDFE_UTF16BE_TO_HBO( *pchar ) );
+        ++pchar;
+    }
+    return utf16vec;
+}
+QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec )
+{
+    const ushort* putf16 = reinterpret_cast<const ushort*>( &utf16vec[0] );
+    return QString::fromUtf16( putf16, utf16vec.size() );
+}
+
+
+//**********************************************************//
+//                          PdfeFont                        //
+//**********************************************************//
 PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary )
 {
     this->init();
@@ -65,7 +88,7 @@ double PdfeFont::width( const PdfeCIDString& str ) const
 {
     double width = 0;
     for( size_t i = 0 ; i < str.length() ; ++i ) {
-        pdf_cid c = str[i];
+        pdfe_cid c = str[i];
         width += this->width( c, false );
 
         // Space character 32: add word spacing.
@@ -99,7 +122,7 @@ QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
 }
 
 // Default implementation for character bounding box.
-PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
+PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
 {
     // Font BBox for default height.
     PdfRect fontBBox = this->fontBBox();
@@ -126,7 +149,7 @@ PoDoFo::PdfRect PdfeFont::bbox( pdf_cid c, bool useFParams ) const
     return cbbox;
 }
 
-void PdfeFont::cidToName( PdfEncoding* pEncoding, pdf_cid c, PdfName& cname )
+void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
 {
     // No encoding...
     if( !pEncoding ) {
@@ -149,13 +172,13 @@ void PdfeFont::cidToName( PdfEncoding* pEncoding, pdf_cid c, PdfName& cname )
     cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
 }
 
-std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
-                                            pdf_cid firstCID,
-                                            pdf_cid lastCID,
+std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
+                                            pdfe_cid firstCID,
+                                            pdfe_cid lastCID,
                                             PdfDifferenceEncoding* pDiffEncoding ) const
 {
     // Initialize the vector.
-    std::vector<pdf_gid> vectGID( lastCID - firstCID+1, 0 );
+    std::vector<pdfe_gid> vectGID( lastCID - firstCID+1, 0 );
 
     // Set a CharMap: keep the default one if selected.
     if( !face->charmap ) {
@@ -164,13 +187,13 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
 
     // Get the glyph index of every character.
     PdfName cname;
-    pdf_gid glyph_idx;
+    pdfe_gid glyph_idx;
     pdf_utf16be ucode;
 
-    for( pdf_cid c = firstCID ; c <= lastCID ; ++c ) {
+    for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
         // Try to obtain the CID name from its unicode code.
         ucode = this->toUnicode( c );
-        cname = PdfDifferenceEncoding::UnicodeIDToName( PDF_UTF16_BE_LE( ucode ) );
+        cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_TO_HBO( ucode ) );
 
         // Glyph index from the glyph name.
         glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
@@ -208,7 +231,7 @@ std::vector<pdf_gid> PdfeFont::mapCIDToGID( FT_Face face,
     return vectGID;
 }
 int PdfeFont::glyphBBox(FT_Face face,
-                         pdf_gid glyphIdx,
+                         pdfe_gid glyphIdx,
                          const PdfRect& fontBBox,
                          PdfRect* pGlyphBBox) const
 {

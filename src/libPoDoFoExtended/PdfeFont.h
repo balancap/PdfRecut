@@ -44,26 +44,33 @@ class PdfArray;
 
 namespace PoDoFoExtended {
 
-/** PDF Character Identifier (CID) type.
- */
-typedef PoDoFo::pdf_uint16  pdf_cid;
+/// PDF Character Identifier (CID) type.
+typedef PoDoFo::pdf_uint16  pdfe_cid;
+/// PDF Glyph Identifier (CID) type.
+typedef unsigned int  pdfe_gid;
 
-/** PDF Glyph Identifier (CID) type.
- */
-typedef unsigned int  pdf_gid;
+/// UTF16 character. Host byte order is assumed when this type is used (use pdf_utf16be otherwise).
+typedef PoDoFo::pdf_uint16  pdfe_utf16;
 
-/** Macro that convert UTF16 Big Endian to Little Endian when necessary.
+/** Convert a single byte string to a vector of UTF16 character.
+ * The string is supposed to be encoded in UTF16BE.
+ */
+std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length );
+
+/** Convert a vector of UTF16 character to a unicode QString.
+ */
+QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec );
+
+/// Pdf CID String. To be improve ?
+typedef std::basic_string<pdfe_cid>  PdfeCIDString;
+
+/** Macro that convert UTF16 Big Endian to host byte order.
  */
 #ifdef PODOFO_IS_LITTLE_ENDIAN
-#define PDF_UTF16_BE_LE(c) ( ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 ) )
+#define PDFE_UTF16BE_TO_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )
 #else
-#define PDF_UTF16_BE_LE(c) ( c )
+#define PDFE_UTF16BE_TO_HBO(c) ( c )
 #endif
-
-/** Pdf CID String. To be improve ?
- */
-typedef std::basic_string<pdf_cid>  PdfeCIDString;
-
 
 namespace PdfeFontType {
 /** Enumeration of the different types of font allowed in the PDF Reference.
@@ -174,26 +181,26 @@ public:
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Width of the character.
      */
-    virtual double width( pdf_cid c, bool useFParams ) const = 0;
+    virtual double width( pdfe_cid c, bool useFParams ) const = 0;
 
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
-    virtual PoDoFo::PdfRect bbox( pdf_cid c, bool useFParams ) const;
+    virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
 
     /** Convert a character to its unicode code..
      * \param  c Character identifier (CID).
      * \return Unicode character code
      */
-    virtual PoDoFo::pdf_utf16be toUnicode( pdf_cid c ) const = 0;
+    virtual PoDoFo::pdf_utf16be toUnicode( pdfe_cid c ) const = 0;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
-    virtual PdfeFontSpace::Enum isSpace( pdf_cid c ) const = 0;
+    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const = 0;
 
 protected:
     /** Get a character name from a CID using a PdfEncoding.
@@ -202,7 +209,7 @@ protected:
      * \param cname Reference to the name to set.
      */
     void cidToName(PoDoFo::PdfEncoding* pEncoding,
-                   pdf_cid c,
+                   pdfe_cid c,
                    PoDoFo::PdfName& cname );
 
     /** Construct a CID to GID map.
@@ -212,9 +219,9 @@ protected:
      * \param pDiffEncoding Difference encoding object (if existing, NULL else).
      * \return Vector of corresponding GID.
      */
-    std::vector<pdf_gid> mapCIDToGID( FT_Face face,
-                                      pdf_cid firstCID,
-                                      pdf_cid lastCID,
+    std::vector<pdfe_gid> mapCIDToGID( FT_Face face,
+                                      pdfe_cid firstCID,
+                                      pdfe_cid lastCID,
                                       PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
 
     /** Obtain the bounding box of a glyph.
@@ -225,7 +232,7 @@ protected:
      * \return Error code.
      */
     int glyphBBox( FT_Face face,
-                   pdf_gid glyphIdx,
+                   pdfe_gid glyphIdx,
                    const PoDoFo::PdfRect& fontBBox,
                    PoDoFo::PdfRect* pGlyphBBox ) const;
 
