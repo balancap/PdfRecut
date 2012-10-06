@@ -68,19 +68,23 @@ public:
      */
     PdfeCMap();
     /** Construction from using predefined CMap.
+     * \param cmapName Name of the predefined CMap.
      */
     PdfeCMap( const PoDoFo::PdfName& cmapName );
     /** Construction from an embedded CMap (represented in a PdfStream).
+     * \param pCMapObj Pointer to the PdfObject which contains the data stream.
      */
-    PdfeCMap( PoDoFo::PdfObject* cmapStream );
+    PdfeCMap( PoDoFo::PdfObject* pCMapObj );
 
     /** Init members to default values.
      */
     void init();
     /** Initialize from a predefined CMap.
+     * \param cmapName Name of the predefined CMap.
      */
     void init( const PoDoFo::PdfName& cmapName );
     /** Initialize from an embedded CMap (represented in a PdfStream).
+     * \param pCMapObj Pointer to the PdfObject which contains the data stream.
      */
     void init( PoDoFo::PdfObject* pCMapObj );
 
@@ -117,32 +121,32 @@ private:
                        long nbRanges );
 
 public:
-    /** Nested class: represent a code value that is used in a CMap.
+    /** Nested class: represent a character code as used in a CMap.
      */
-    class CodeValue : public std::vector<PoDoFo::pdf_uint8>
+    class CharCode : public std::vector<PoDoFo::pdf_uint8>
     {
     public:
         /** Empty constructor.
          */
-        CodeValue();
+        CharCode();
         /** Create a code from a PoDoFo::PdfVariant
          * \param variant Must be a PdfString representing the code.
          */
-        CodeValue( const PoDoFo::PdfVariant& variant );
+        CharCode( const PoDoFo::PdfVariant& variant );
         /** Create a code from an array of char.
          * \param pstr Pointer to a char string.
          * \param length Number of characters to consider.
          */
-        CodeValue( const char* pstr, size_t length );
+        CharCode( const char* pstr, size_t length );
 
         /** Copy constructor.
          * \param rhs Object to copy.
          */
-        CodeValue( const CodeValue& rhs );
+        CharCode( const CharCode& rhs );
         /** Assignment operator.
          * \param rhs Object to copy.
          */
-        CodeValue& operator=( const CodeValue& rhs );
+        CharCode& operator=( const CharCode& rhs );
 
         /** Initialize a code from an array of char.
          * \param pstr Pointer to a char string.
@@ -154,20 +158,20 @@ public:
          * \param rhs Code to compare to.
          * \return this >= rhs ?
          */
-        bool greater( const CodeValue& rhs ) const;
+        bool greater( const CharCode& rhs ) const;
 
         /** Is (this) strictly smaller than another code value.
          * \param rhs Code to compare to.
          * \return this <= rhs ?
          */
-        bool smaller( const CodeValue& rhs ) const;
+        bool smaller( const CharCode& rhs ) const;
 
         /** Compare two code value using the weak order.
          * \param lhs First code.
          * \param rhs Second code.
          * \return lhs < rhs.
          */
-        static bool compare( const CodeValue& lhs, const CodeValue& rhs );
+        static bool compare( const CharCode& lhs, const CharCode& rhs );
     };
 
     /** Nested class: represent a code space range used in a CMap.
@@ -182,37 +186,37 @@ public:
          * \param lBound Lower bound value.
          * \param uBound Upper bound value.
          */
-        CodeSpaceRange( const CodeValue& lBound, const CodeValue& uBound );
+        CodeSpaceRange( const CharCode& lBound, const CharCode& uBound );
 
         /** Is a code value inside the range.
          * \param code Code to consider.
          * \return Code inside the range?
          */
-        bool inside( const CodeValue& code ) const;
+        bool inside( const CharCode& code ) const;
 
         /** Index of a code in the code space range.
          * \param code Code to consider.
          * \return Index of the code inside the range. -1 if not inside.
          */
-        long index( const CodeValue& code ) const;
+        long index( const CharCode& code ) const;
 
         /** Next code in the range. This function goes through
          * the range to return every successive values inside.
          * \param reset Reset to the lower bound.
          * \return Next value in the range, beginning at the lower bound.
          */
-        CodeValue nextCode( bool reset ) const;
+        CharCode nextCode( bool reset ) const;
 
         /** Get the lower bound of the range.
          * \return Lower bound.
          */
-        CodeValue lowerBound() const {
+        CharCode lowerBound() const {
             return m_lowerBound;
         }
         /** Get the upper bound of the range.
          * \return Upper bound.
          */
-        CodeValue upperBound() const {
+        CharCode upperBound() const {
             return m_upperBound;
         }
         /** Get the size of code used for this range.
@@ -231,12 +235,12 @@ public:
 
     private:
         /// Lower bound.
-        CodeValue  m_lowerBound;
+        CharCode  m_lowerBound;
         /// Upper bound.
-        CodeValue  m_upperBound;
+        CharCode  m_upperBound;
 
         /// Cache code.
-        mutable CodeValue  m_cacheCode;
+        mutable CharCode  m_cacheCode;
     };
 
     /** Nested class: represent a bfrange used in a CMap.
@@ -267,14 +271,14 @@ public:
          * \param code Code to consider.
          * \return Code inside the bfrange?
          */
-        bool inside( const CodeValue& code ) const;
+        bool inside( const CharCode& code ) const;
 
-        /** Convert a code to an utf16 vector.
+        /** Convert a code to a unicode QString.
          * The code must belong to the bfrange.
          * \param code Code to convert.
-         * \return Vector containing utf16 characters.
+         * \return Unicode QString.
          */
-        std::vector<pdfe_utf16> toUTF16( const CodeValue& code ) const;
+        QString toUnicode( const CharCode& code ) const;
 
     private:
         /// Space range of characters codes.
@@ -309,18 +313,18 @@ public:
          * \param code Code to consider.
          * \return Code ==  bfchar.
          */
-        bool equal( const CodeValue& code ) const;
+        bool equal( const CharCode& code ) const;
 
-        /** Convert a code to an utf16 vector.
+        /** Convert a code to a unicode QString.
          * The code must be equal to the bfchar.
          * \param code Code to convert.
-         * \return Vector containing utf16 characters.
+         * \return Unicode QString.
          */
-        std::vector<pdfe_utf16> toUTF16( const CodeValue& code ) const;
+        QString toUnicode( const CharCode& code ) const;
 
     private:
         /// Code of the character.
-        CodeValue  m_codeChar;
+        CharCode  m_codeChar;
         /// UTF16 value.
         std::vector<pdfe_utf16>  m_utf16Value;
     };
@@ -332,19 +336,24 @@ public:
      */
     PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
 
+    /** Convert a code representing a character to a unicode QString using the CMap.
+     * \param code Code for a character.
+     * \return  Unicode QString corresponding.
+     */
+    QString toUnicode( const CharCode& code ) const;
+
     /** Convert a simple string to a unicode QString using the CMap.
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return  Unicode QString corresponding.
      */
     QString toUnicode( const PoDoFo::PdfString& str ) const;
 
-private:
-    /** Convert a code representing a character to a unicode QString using the CMap.
-     * \param code Code for a character.
-     * \return  Unicode QString corresponding.
+    /** Does the CMap has an empty code space range?
+     * \return Answer!
      */
-    QString toUnicode( const CodeValue& code ) const;
-
+    bool emptyCodeSpaceRange() const {
+        return m_codeSpaceRanges.size();
+    }
 
 private:
     /// CMap name.

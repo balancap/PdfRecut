@@ -71,10 +71,10 @@ PdfeCMap::PdfeCMap( const PdfName& cmapName ) :
 {
     this->init( cmapName );
 }
-PdfeCMap::PdfeCMap( PdfObject* cmapStream ) :
+PdfeCMap::PdfeCMap(PdfObject* pCMapObj ) :
     m_baseCMap( NULL )
 {
-    this->init( cmapStream );
+    this->init( pCMapObj );
 }
 PdfeCMap::~PdfeCMap()
 {
@@ -94,6 +94,7 @@ void PdfeCMap::init()
     // Clear vectors.
     m_codeSpaceRanges.clear();
     m_bfRanges.clear();
+    m_bfChars.clear();
 }
 void PdfeCMap::init( const PdfName& cmapName )
 {
@@ -229,8 +230,8 @@ void PdfeCMap::loadCodeSpaceRange( PdfContentsTokenizer& tokenizer, long nbRange
             tokenizer.ReadNext( eType, pKeyword, uVariant );
 
             // Lower and upper bounds.
-            PdfeCMap::CodeValue lBound( lVariant );
-            PdfeCMap::CodeValue uBound( uVariant );
+            PdfeCMap::CharCode lBound( lVariant );
+            PdfeCMap::CharCode uBound( uVariant );
 
             // Add range to the vector.
             m_codeSpaceRanges.push_back( PdfeCMap::CodeSpaceRange( lBound, uBound ) );
@@ -343,7 +344,7 @@ QString PdfeCMap::toUnicode( const PdfString& str ) const
     // Loop on str characters.
     while( index < strLen ) {
         // Find a code that could correspond to first chars in the string.
-        PdfeCMap::CodeValue code;
+        PdfeCMap::CharCode code;
         size_t codeLen;
         bool inside = false;
 
@@ -366,7 +367,6 @@ QString PdfeCMap::toUnicode( const PdfString& str ) const
         if( inside ) {
             // Unicode QString for the code.
             ustr += this->toUnicode( code );
-
             pstr += codeLen;
             index += codeLen;
         }
@@ -378,18 +378,18 @@ QString PdfeCMap::toUnicode( const PdfString& str ) const
     }
     return ustr;
 }
-QString PdfeCMap::toUnicode( const PdfeCMap::CodeValue& code ) const
+QString PdfeCMap::toUnicode( const PdfeCMap::CharCode& code ) const
 {
-    // Look inside bfchars.
-    for( long i = long(m_bfChars.size())-1 ; i >= 0 ; ++i ) {
+    // Look inside bfchars. Decreasing order in case multiple references.
+    for( long i = long(m_bfChars.size())-1 ; i >= 0 ; --i ) {
         if( m_bfChars[i].equal( code ) ) {
-            return UTF16VecToQString( m_bfChars[i].toUTF16( code ) );
+            return m_bfChars[i].toUnicode( code );
         }
     }
     // Look inside bfranges.
-    for( long i = long(m_bfRanges.size())-1 ; i >= 0 ; ++i ) {
+    for( long i = long(m_bfRanges.size())-1 ; i >= 0 ; --i ) {
         if( m_bfRanges[i].inside( code ) ) {
-            return UTF16VecToQString( m_bfRanges[i].toUTF16( code ) );
+            return m_bfRanges[i].toUnicode( code );
         }
     }
 
@@ -400,11 +400,11 @@ QString PdfeCMap::toUnicode( const PdfeCMap::CodeValue& code ) const
 //**********************************************************//
 //                    PdfCMap::CodeValue                    //
 //**********************************************************//
-PdfeCMap::CodeValue::CodeValue() :
+PdfeCMap::CharCode::CharCode() :
     std::vector<pdf_uint8>()
 {
 }
-PdfeCMap::CodeValue::CodeValue( const PdfVariant& variant )
+PdfeCMap::CharCode::CharCode( const PdfVariant& variant )
 {
     // Variant must be a string.
     if( variant.IsString() || variant.IsHexString() ) {
@@ -417,22 +417,22 @@ PdfeCMap::CodeValue::CodeValue( const PdfVariant& variant )
         this->clear();
     }
 }
-PdfeCMap::CodeValue::CodeValue( const char* pstr, size_t length )
+PdfeCMap::CharCode::CharCode( const char* pstr, size_t length )
 {
     this->init( pstr, length );
 }
 
-PdfeCMap::CodeValue::CodeValue( const PdfeCMap::CodeValue& rhs ) :
+PdfeCMap::CharCode::CharCode( const PdfeCMap::CharCode& rhs ) :
     std::vector<pdf_uint8>( rhs )
 {
 }
-PdfeCMap::CodeValue& PdfeCMap::CodeValue::operator=( const PdfeCMap::CodeValue& rhs )
+PdfeCMap::CharCode& PdfeCMap::CharCode::operator=( const PdfeCMap::CharCode& rhs )
 {
     static_cast< std::vector<pdf_uint8>* >(this)->operator =( rhs );
     return *this;
 }
 
-void PdfeCMap::CodeValue::init(const char *pstr, size_t length)
+void PdfeCMap::CharCode::init(const char *pstr, size_t length)
 {
     this->resize( length );
     const pdf_uint8* pval = reinterpret_cast<const pdf_uint8*>( pstr );
@@ -442,7 +442,7 @@ void PdfeCMap::CodeValue::init(const char *pstr, size_t length)
     }
 }
 
-bool PdfeCMap::CodeValue::greater( const PdfeCMap::CodeValue& rhs ) const
+bool PdfeCMap::CharCode::greater( const PdfeCMap::CharCode& rhs ) const
 {
     // First check size.
     if( this->size() != rhs.size() ) {
@@ -456,7 +456,7 @@ bool PdfeCMap::CodeValue::greater( const PdfeCMap::CodeValue& rhs ) const
     }
     return true;
 }
-bool PdfeCMap::CodeValue::smaller( const PdfeCMap::CodeValue& rhs ) const
+bool PdfeCMap::CharCode::smaller( const PdfeCMap::CharCode& rhs ) const
 {
     // First check size.
     if( this->size() != rhs.size() ) {
@@ -471,8 +471,8 @@ bool PdfeCMap::CodeValue::smaller( const PdfeCMap::CodeValue& rhs ) const
     return true;
 }
 
-bool PdfeCMap::CodeValue::compare( const PdfeCMap::CodeValue& lhs,
-                                   const PdfeCMap::CodeValue& rhs )
+bool PdfeCMap::CharCode::compare( const PdfeCMap::CharCode& lhs,
+                                   const PdfeCMap::CharCode& rhs )
 {
     // First check size.
     if( lhs.size() != rhs.size() ) {
@@ -495,8 +495,8 @@ PdfeCMap::CodeSpaceRange::CodeSpaceRange() :
     m_lowerBound(), m_upperBound()
 {
 }
-PdfeCMap::CodeSpaceRange::CodeSpaceRange( const PdfeCMap::CodeValue& lBound,
-                                          const PdfeCMap::CodeValue& uBound )
+PdfeCMap::CodeSpaceRange::CodeSpaceRange( const PdfeCMap::CharCode& lBound,
+                                          const PdfeCMap::CharCode& uBound )
 {
     // Perform some check on inputs...
     m_lowerBound.resize( std::min( lBound.size(), uBound.size() ) );
@@ -507,7 +507,7 @@ PdfeCMap::CodeSpaceRange::CodeSpaceRange( const PdfeCMap::CodeValue& lBound,
     }
 }
 
-bool PdfeCMap::CodeSpaceRange::inside( const PdfeCMap::CodeValue& code ) const
+bool PdfeCMap::CodeSpaceRange::inside( const PdfeCMap::CharCode& code ) const
 {
     // Should have the same size.
     if( code.size() != m_lowerBound.size() ) {
@@ -515,7 +515,7 @@ bool PdfeCMap::CodeSpaceRange::inside( const PdfeCMap::CodeValue& code ) const
     }
     return ( code.smaller( m_upperBound ) && code.greater( m_lowerBound ) );
 }
-long PdfeCMap::CodeSpaceRange::index( const PdfeCMap::CodeValue& code ) const
+long PdfeCMap::CodeSpaceRange::index( const PdfeCMap::CharCode& code ) const
 {
     bool inside = this->inside( code );
     if( !inside ) {
@@ -531,7 +531,7 @@ long PdfeCMap::CodeSpaceRange::index( const PdfeCMap::CodeValue& code ) const
     }
     return index;
 }
-PdfeCMap::CodeValue PdfeCMap::CodeSpaceRange::nextCode( bool reset ) const
+PdfeCMap::CharCode PdfeCMap::CodeSpaceRange::nextCode( bool reset ) const
 {
     // Reset the mutable cache value.
     if( reset || m_cacheCode.size() == 0 || m_cacheCode.size() != m_lowerBound.size() ) {
@@ -540,7 +540,7 @@ PdfeCMap::CodeValue PdfeCMap::CodeSpaceRange::nextCode( bool reset ) const
     }
 
     // Increment the cache code.
-    CodeValue::iterator it( m_cacheCode.end() );
+    CharCode::iterator it( m_cacheCode.end() );
     long i = m_cacheCode.size()-1;
     while( i >= 0  ) {
         // Can we increment the current byte ?
@@ -561,7 +561,7 @@ PdfeCMap::CodeValue PdfeCMap::CodeSpaceRange::nextCode( bool reset ) const
 bool PdfeCMap::CodeSpaceRange::compare( const PdfeCMap::CodeSpaceRange& lhs,
                                         const PdfeCMap::CodeSpaceRange& rhs )
 {
-    return ( PdfeCMap::CodeValue::compare( lhs.m_lowerBound,
+    return ( PdfeCMap::CharCode::compare( lhs.m_lowerBound,
                                            rhs.m_lowerBound ) );
 }
 
@@ -596,11 +596,12 @@ PdfeCMap::BFRange::BFRange( const PdfVariant& lBound,
         }
     }
 }
-bool PdfeCMap::BFRange::inside( const PdfeCMap::CodeValue& code ) const
+bool PdfeCMap::BFRange::inside( const PdfeCMap::CharCode& code ) const
 {
     return m_codeSpaceRange.inside( code );
 }
-std::vector<pdfe_utf16> PdfeCMap::BFRange::toUTF16( const PdfeCMap::CodeValue& code ) const
+
+QString PdfeCMap::BFRange::toUnicode( const PdfeCMap::CharCode& code ) const
 {
     // Find the index of the code inside the range.
     long index = m_codeSpaceRange.index( code );
@@ -619,7 +620,8 @@ std::vector<pdfe_utf16> PdfeCMap::BFRange::toUTF16( const PdfeCMap::CodeValue& c
             utf16vec.back() += index;
         }
     }
-    return utf16vec;
+    // Convert to QString.
+    return UTF16VecToQString( utf16vec );
 }
 
 //**********************************************************//
@@ -639,20 +641,20 @@ PdfeCMap::BFChar::BFChar( const PdfVariant& code, const PdfVariant& value ) :
         m_utf16Value = UTF16BEStrToUTF16Vec( strVal.GetString(), strVal.GetLength() );
     }
 }
-bool PdfeCMap::BFChar::equal( const PdfeCMap::CodeValue& code ) const
+bool PdfeCMap::BFChar::equal( const PdfeCMap::CharCode& code ) const
 {
     return ( m_codeChar == code );
 }
 
-std::vector<pdfe_utf16> PdfeCMap::BFChar::toUTF16( const PdfeCMap::CodeValue& code ) const
+QString PdfeCMap::BFChar::toUnicode( const PdfeCMap::CharCode& code ) const
 {
     if( this->equal( code ) ) {
-        // Utf16 vector.
-        return m_utf16Value;
+        // UTF16 vector converted to QString.
+        return UTF16VecToQString( m_utf16Value );
     }
     else {
-        // Empty component
-        return std::vector<pdfe_utf16>();
+        // Empty string
+        return QString();
     }
 }
 
