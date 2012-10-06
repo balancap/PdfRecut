@@ -22,7 +22,8 @@ SOURCES += \
     PdfePath.cpp \
     PdfeResources.cpp \
     PdfeStreamTokenizer.cpp \
-    PdfeCanvasAnalysis.cpp
+    PdfeCanvasAnalysis.cpp \
+    PdfeUtils.cpp
 
 HEADERS += \
     PdfeFont.h \
@@ -40,7 +41,8 @@ HEADERS += \
     PdfeSemaphore.h \
     PdfeResources.h \
     PdfeStreamTokenizer.h \
-    PdfeCanvasAnalysis.h
+    PdfeCanvasAnalysis.h \
+    PdfeUtils.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

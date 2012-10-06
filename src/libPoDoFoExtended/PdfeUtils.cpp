@@ -18,28 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef PRMISCUTILS_H
-#define PRMISCUTILS_H
+#include "PdfeUtils.h"
 
-#include <cstdlib>
-#include <functional>
-
-// File defining misc classes that can be useful...
-namespace PdfRecut {
-
-/** Delete functional object. Delete the object and set the pointer to NULL.
- * Example : std::for_each( foobar.begin(), fooabr.end(), DeleteFunctor<int>() );
- * See also Boost delete_ptr; C++11 std::default_delete.
- */
-template<class T>
-struct DeleteFunctor : public std::unary_function<T*,void>
-{
-    void operator()( T*& ptr ) {
-        delete ptr;
-        ptr = NULL;
-    }
-};
+namespace PoDoFoExtended {
 
 }
-
-#endif // PRMISCUTILS_H
