@@ -109,15 +109,17 @@ double PdfeFont::width( const PoDoFo::PdfString& str ) const
 
 QString PdfeFont::toUnicode( const PdfeCIDString& str ) const
 {
+    // Default implementation.
     QString ustr;
     ustr.reserve( str.length() );
     for( size_t i = 0 ; i < str.length() ; ++i ) {
-        ustr.push_back( QChar( this->toUnicode( str[i] ) ) );
+        ustr += this->toUnicode( str[i] );
     }
     return ustr;
 }
 QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
 {
+    // Default implementation.
     return this->toUnicode( this->toCIDString( str ) );
 }
 
@@ -192,11 +194,15 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
 
     for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
         // Try to obtain the CID name from its unicode code.
-        ucode = this->toUnicode( c );
-        cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_TO_HBO( ucode ) );
+        QString ustr = this->toUnicode( c );
+        if( ustr.length() == 1 ) {
+            // Character UTF16BE
+            ucode = ustr[0].unicode();
+            cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_TO_HBO( ucode ) );
 
-        // Glyph index from the glyph name.
-        glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
+            // Glyph index from the glyph name.
+            glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
+        }
 
         // Difference encoding: try to see if the character belongs to the difference map.
         if( pDiffEncoding ) {

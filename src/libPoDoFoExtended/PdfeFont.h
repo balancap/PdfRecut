@@ -76,7 +76,7 @@ namespace PdfeFontType {
 /** Enumeration of the different types of font allowed in the PDF Reference.
  */
 enum Enum {
-    Type0,
+    Type0 = 0,
     Type1,
     Type3,
     TrueType,
@@ -88,7 +88,7 @@ namespace PdfeFontSubType {
 /** Enumeration of the different subtypes of font allowed in the PDF Reference.
  */
 enum Enum {
-    Type0,
+    Type0 = 0,
     Type1,
     MMType1,
     Type3,
@@ -190,11 +190,11 @@ public:
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
 
-    /** Convert a character to its unicode code..
+    /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
-     * \return Unicode character code
+     * \return Unicode QString representing the character.
      */
-    virtual PoDoFo::pdf_utf16be toUnicode( pdfe_cid c ) const = 0;
+    virtual QString toUnicode( pdfe_cid c ) const = 0;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).

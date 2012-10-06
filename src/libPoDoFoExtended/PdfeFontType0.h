@@ -88,11 +88,17 @@ public:
      */
     virtual double width( pdfe_cid c, bool useFParams ) const;
 
-    /** Convert a character to its unicode code..
+    /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
-     * \return Unicode character code
+     * \return Unicode QString representing the character.
      */
-    virtual PoDoFo::pdf_utf16be toUnicode( pdfe_cid c ) const;
+    virtual QString toUnicode( pdfe_cid c ) const;
+
+    /** Convert a simple string to unicode.
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return Unicode QString corresponding.
+     */
+    virtual QString toUnicode( const PoDoFo::PdfString& str ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
@@ -106,6 +112,8 @@ protected:
     PoDoFo::PdfName  m_baseFont;
     /// CMap encoding of the font.
     PdfeCMap  m_encodingCMap;
+    /// Unicode CMap.
+    PdfeCMap  m_unicodeCMap;
 
     /// Descendant CID font.
     PdfeFontCID*  m_fontCID;

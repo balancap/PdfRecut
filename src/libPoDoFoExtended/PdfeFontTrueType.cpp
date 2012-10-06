@@ -252,7 +252,7 @@ PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdfe_cid c ) const
+QString PdfeFontTrueType::toUnicode( pdfe_cid c ) const
 {
     // TODO: unicode map.
 
@@ -260,11 +260,11 @@ PoDoFo::pdf_utf16be PdfeFontTrueType::toUnicode( pdfe_cid c ) const
         // Get UTF16 code from PdfEncoding object.
         pdf_utf16be ucode = m_encoding->GetCharCode( c );
         ucode = PDFE_UTF16BE_TO_HBO( ucode );
-        return ucode;
+        return QString::fromUtf16( &ucode, 1 );
     }
     else {
-        // Default empty character.
-        return 0;
+        // Default empty string.
+        return QString();
     }
 }
 PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdfe_cid c ) const
