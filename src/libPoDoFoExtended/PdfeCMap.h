@@ -20,7 +20,7 @@
 #ifndef PDFCMAP_H
 #define PDFCMAP_H
 
-#include "PdfeFont.h"
+#include "PdfeTypes.h"
 
 #include "podofo/base/PdfName.h"
 #include "podofo/base/PdfContentsTokenizer.h"
@@ -119,8 +119,69 @@ private:
      */
     void loadBFRanges( PoDoFo::PdfContentsTokenizer& tokenizer,
                        long nbRanges );
+public:
+    class CharCode;
+    class CodeSpaceRange;
+    class BFRange;
+    class BFChar;
 
 public:
+    /** Convert a simple string to a CID string using the CMap.
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return CID String corresponding.
+     */
+    PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
+
+    /** Retrieve the characters codes which are mapped to a given CID by the CMap.
+     * \param c CID to match.
+     * \return Vector of corresponding char codes.
+     */
+    std::vector<CharCode> toCharCode( pdfe_cid c ) const;
+
+    /** Convert a code representing a character to a unicode QString using the CMap.
+     * \param code Code for a character.
+     * \return  Unicode QString corresponding.
+     */
+    QString toUnicode( const CharCode& code ) const;
+
+    /** Convert a simple string to a unicode QString using the CMap.
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return  Unicode QString corresponding.
+     */
+    QString toUnicode( const PoDoFo::PdfString& str ) const;
+
+    /** Does the CMap has an empty code space range?
+     * \return Answer!
+     */
+    bool emptyCodeSpaceRange() const {
+        return ( m_codeSpaceRanges.size() == 0 );
+    }
+
+private:
+    /// CMap name.
+    PoDoFo::PdfName  m_name;
+    /// CMap CIDSystemInfo.
+    PdfeCIDSystemInfo  m_CIDSystemInfo;
+
+    /// Writting mode: 0 (horizontal), 1 (vertical).
+    bool  m_wmode;
+    /// Is the CMap simply the identity.
+    bool  m_identity;
+
+    /// Code space ranges.
+    std::vector<CodeSpaceRange>  m_codeSpaceRanges;
+    /// BFChars.
+    std::vector<BFChar>  m_bfChars;
+    /// BFRanges.
+    std::vector<BFRange>  m_bfRanges;
+
+    /// CMap used in addition to defined this one (owned).
+    PdfeCMap*  m_baseCMap;
+
+public:
+    //**********************************************************//
+    //                   Public nested classes                  //
+    //**********************************************************//
     /** Nested class: represent a character code as used in a CMap.
      */
     class CharCode : public std::vector<PoDoFo::pdf_uint8>
@@ -132,12 +193,20 @@ public:
         /** Create a code from a PoDoFo::PdfVariant
          * \param variant Must be a PdfString representing the code.
          */
-        CharCode( const PoDoFo::PdfVariant& variant );
+        explicit CharCode( const PoDoFo::PdfVariant& variant );
+        /** Create a code from a one byte integer.
+         * \param val Input value (pdf_uint8).
+         */
+        explicit CharCode( PoDoFo::pdf_uint8 val );
+        /** Create a code from a two bytes integer.
+         * \param val Input value (pdf_uint16).
+         */
+        explicit CharCode( PoDoFo::pdf_uint16 val );
         /** Create a code from an array of char.
          * \param pstr Pointer to a char string.
          * \param length Number of characters to consider.
          */
-        CharCode( const char* pstr, size_t length );
+        explicit CharCode( const char* pstr, size_t length );
 
         /** Copy constructor.
          * \param rhs Object to copy.
@@ -148,6 +217,14 @@ public:
          */
         CharCode& operator=( const CharCode& rhs );
 
+        /** Initialize a code from a one byte integer.
+         * \param val Input value (pdf_uint8).
+         */
+        void init( PoDoFo::pdf_uint8 val );
+        /** Initialize a code from a two bytes integer.
+         * \param val Input value (pdf_uint16).
+         */
+        void init( PoDoFo::pdf_uint16 val );
         /** Initialize a code from an array of char.
          * \param pstr Pointer to a char string.
          * \param length Number of characters to consider.
@@ -328,53 +405,6 @@ public:
         /// UTF16 value.
         std::vector<pdfe_utf16>  m_utf16Value;
     };
-
-public:
-    /** Convert a simple string to a CID string using the CMap.
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return CID String corresponding.
-     */
-    PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
-
-    /** Convert a code representing a character to a unicode QString using the CMap.
-     * \param code Code for a character.
-     * \return  Unicode QString corresponding.
-     */
-    QString toUnicode( const CharCode& code ) const;
-
-    /** Convert a simple string to a unicode QString using the CMap.
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return  Unicode QString corresponding.
-     */
-    QString toUnicode( const PoDoFo::PdfString& str ) const;
-
-    /** Does the CMap has an empty code space range?
-     * \return Answer!
-     */
-    bool emptyCodeSpaceRange() const {
-        return m_codeSpaceRanges.size();
-    }
-
-private:
-    /// CMap name.
-    PoDoFo::PdfName  m_name;
-    /// CMap CIDSystemInfo.
-    PdfeCIDSystemInfo  m_CIDSystemInfo;
-
-    /// Writting mode: 0 (horizontal), 1 (vertical).
-    bool  m_wmode;
-    /// Is the CMap simply the identity.
-    bool  m_identity;
-
-    /// Code space ranges.
-    std::vector<CodeSpaceRange>  m_codeSpaceRanges;
-    /// BFChars.
-    std::vector<BFChar>  m_bfChars;
-    /// BFRanges.
-    std::vector<BFRange>  m_bfRanges;
-
-    /// CMap used in addition to defined this one (owned).
-    PdfeCMap*  m_baseCMap;
 };
 
 }

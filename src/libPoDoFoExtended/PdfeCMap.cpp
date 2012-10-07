@@ -307,21 +307,36 @@ PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
 
         cidstr.reserve( length / 2 );
         for( long i = 0 ; i < length-1 ; i += 2 ) {
-
             // Read character (Litte endian: need to invert bytes).
             c = *pValue;
-#ifdef PODOFO_IS_LITTLE_ENDIAN
-            c = ( (c & 0xff) << 8 ) | ( (c & 0xff00) >> 8 );
-#endif
-            cidstr.push_back( c );
-
+            cidstr.push_back( PDFE_UTF16BE_TO_HBO( c ) );
             ++pValue;
         }
         return cidstr;
     }
+    // Classic encoding CMap.
+    else {
+        // TODO !
+    }
 
-    // Otherwise: TODO !
     return cidstr;
+}
+std::vector<PdfeCMap::CharCode> PdfeCMap::toCharCode( pdfe_cid c ) const
+{
+    std::vector<CharCode> charCodes;
+
+    // Identity CMap
+    if( m_identity ) {
+        // Simply create the corresponding code (revert to bytes to BE).
+        c  = PDFE_UTF16BE_TO_HBO( c );
+        charCodes.push_back( CharCode( c ) );
+        return charCodes;
+    }
+    // Classic encoding CMap.
+    else {
+        // TODO !
+    }
+    return charCodes;
 }
 
 QString PdfeCMap::toUnicode( const PdfString& str ) const
@@ -363,7 +378,6 @@ QString PdfeCMap::toUnicode( const PdfString& str ) const
                 break;
             }
         }
-
         if( inside ) {
             // Unicode QString for the code.
             ustr += this->toUnicode( code );
@@ -417,6 +431,15 @@ PdfeCMap::CharCode::CharCode( const PdfVariant& variant )
         this->clear();
     }
 }
+
+PdfeCMap::CharCode::CharCode( pdf_uint8 val )
+{
+    this->init( val );
+}
+PdfeCMap::CharCode::CharCode( pdf_uint16 val )
+{
+    this->init( val );
+}
 PdfeCMap::CharCode::CharCode( const char* pstr, size_t length )
 {
     this->init( pstr, length );
@@ -432,7 +455,20 @@ PdfeCMap::CharCode& PdfeCMap::CharCode::operator=( const PdfeCMap::CharCode& rhs
     return *this;
 }
 
-void PdfeCMap::CharCode::init(const char *pstr, size_t length)
+void PdfeCMap::CharCode::init( pdf_uint8 val )
+{
+    this->resize( 1 );
+    this->at( 0 ) = val;
+}
+void PdfeCMap::CharCode::init( pdf_uint16 val )
+{
+    this->resize( 2 );
+    const pdf_uint8* pval = reinterpret_cast<const pdf_uint8*>( &val );
+    this->at( 0 ) = *pval;
+    ++pval;
+    this->at( 1 ) = *pval;
+}
+void PdfeCMap::CharCode::init( const char* pstr, size_t length )
 {
     this->resize( length );
     const pdf_uint8* pval = reinterpret_cast<const pdf_uint8*>( pstr );
@@ -574,7 +610,7 @@ PdfeCMap::BFRange::BFRange()
 PdfeCMap::BFRange::BFRange( const PdfVariant& lBound,
                             const PdfVariant& rBound,
                             const PdfVariant& values ) :
-    m_codeSpaceRange( lBound, rBound )
+    m_codeSpaceRange( CharCode( lBound ), CharCode( rBound ) )
 {
     // Values: can be an array or a single value.
     if( values.IsString() || values.IsHexString() ) {
