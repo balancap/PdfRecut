@@ -11,8 +11,9 @@ CONFIG += staticlib
 DEFINES += LIBPODOFOEXTENDED_LIBRARY
 
 SOURCES += \
-    PdfeFont.cpp \
+    PdfeTypes.cpp \
     PdfeFontDescriptor.cpp \
+    PdfeFont.cpp \
     PdfeFontType0.cpp \
     PdfeFontType1.cpp \
     PdfeFontType3.cpp \
@@ -26,9 +27,9 @@ SOURCES += \
     PdfeUtils.cpp
 
 HEADERS += \
-    PdfeFont.h \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
+    PdfeFont.h \
     PdfeFontType0.h \
     PdfeFontType1.h \
     PdfeFontType3.h \

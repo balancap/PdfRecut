@@ -71,7 +71,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
     if( pEncoding ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
 
         // According to PoDoFo implementation.
         m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
@@ -97,7 +97,7 @@ void PdfeFontType1::init()
     m_widthsCID.clear();
     m_bboxCID.clear();
 
-    m_encoding = NULL;
+    m_pEncoding = NULL;
     m_encodingOwned = false;
     m_spaceCharacters.clear();
 }
@@ -132,32 +132,32 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     // Create associate encoding object.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
     if( pEncoding ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
 
         // According to PoDoFo implementation.
         m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
     }
     else if( !pMetrics->IsSymbol() ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() );
         m_encodingOwned = false;
     }
     else if( strcmp( m_baseFont.GetName().c_str(), "Symbol" ) == 0 ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalSymbolEncodingInstance() );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalSymbolEncodingInstance() );
         m_encodingOwned = false;
     }
     else if( strcmp( m_baseFont.GetName().c_str(), "ZapfDingbats" ) == 0 ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() );
         m_encodingOwned = false;
     }
 
     // Construct widths array using the font encoding.
-    m_firstCID = m_encoding->GetFirstChar();
-    m_lastCID = m_encoding->GetLastChar();
+    m_firstCID = m_pEncoding->GetFirstChar();
+    m_lastCID = m_pEncoding->GetLastChar();
 
     pdf_utf16be ucode;
     double widthCID;
     for( int i = m_firstCID ; i <= m_lastCID ; ++i ) {
-        ucode = m_encoding->GetCharCode( i );
+        ucode = m_pEncoding->GetCharCode( i );
 
         // Dumb bug in PoDoFo: why bytes are inverted in GetCharCode but not UnicodeCharWidth ???
         ucode = PDFE_UTF16BE_TO_HBO( ucode );
@@ -225,7 +225,7 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
 
     // Construct the map CID to GID.
     std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
-                                                          dynamic_cast<PdfDifferenceEncoding*>( m_encoding ) );
+                                                          dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding ) );
 
     // Get glyph bounding box.
     pdfe_gid glyphIdx;
@@ -254,7 +254,7 @@ PdfeFontType1::~PdfeFontType1()
 {
     // Delete encoding object if necessary.
     if( m_encodingOwned ) {
-        delete m_encoding;
+        delete m_pEncoding;
     }
 }
 
@@ -329,9 +329,9 @@ QString PdfeFontType1::toUnicode( pdfe_cid c ) const
 {
     // TODO: unicode map.
 
-    if( m_encoding ) {
+    if( m_pEncoding ) {
         // Get UTF16 code from PdfEncoding object.
-        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
         ucode = PDFE_UTF16BE_TO_HBO( ucode );
         return QString::fromUtf16( &ucode, 1 );
     }

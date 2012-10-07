@@ -26,26 +26,6 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-
-std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length )
-{
-    std::vector<pdfe_utf16>  utf16vec;
-    utf16vec.reserve( length / 2 );
-
-    const pdfe_utf16* pchar = reinterpret_cast<const pdfe_utf16*>( pstr );
-    for( size_t i = 0 ; i < length; i+=2 ) {
-        utf16vec.push_back( PDFE_UTF16BE_TO_HBO( *pchar ) );
-        ++pchar;
-    }
-    return utf16vec;
-}
-QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec )
-{
-    const ushort* putf16 = reinterpret_cast<const ushort*>( &utf16vec[0] );
-    return QString::fromUtf16( putf16, utf16vec.size() );
-}
-
-
 //**********************************************************//
 //                          PdfeFont                        //
 //**********************************************************//

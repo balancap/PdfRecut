@@ -67,7 +67,7 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
     if( pEncoding ) {
-        m_encoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
 
         // According to PoDoFo implementation.
         m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
@@ -92,7 +92,7 @@ void PdfeFontTrueType::init()
     m_lastCID = 0;
     m_widthsCID.clear();
 
-    m_encoding = NULL;
+    m_pEncoding = NULL;
     m_encodingOwned = false;
 
 }
@@ -149,7 +149,7 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 
     // Construct the map CID to GID.
     std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
-                                                          dynamic_cast<PdfDifferenceEncoding*>( m_encoding ) );
+                                                          dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding ) );
 
     // Get glyph bounding box.
     pdfe_gid glyphIdx;
@@ -178,7 +178,7 @@ PdfeFontTrueType::~PdfeFontTrueType()
 {
     // Delete encoding object if necessary.
     if( m_encodingOwned ) {
-        delete m_encoding;
+        delete m_pEncoding;
     }
 }
 
@@ -256,9 +256,9 @@ QString PdfeFontTrueType::toUnicode( pdfe_cid c ) const
 {
     // TODO: unicode map.
 
-    if( m_encoding ) {
+    if( m_pEncoding ) {
         // Get UTF16 code from PdfEncoding object.
-        pdf_utf16be ucode = m_encoding->GetCharCode( c );
+        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
         ucode = PDFE_UTF16BE_TO_HBO( ucode );
         return QString::fromUtf16( &ucode, 1 );
     }

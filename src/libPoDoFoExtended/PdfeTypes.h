@@ -42,6 +42,39 @@
 class PdfeVector;
 class PdfeORect;
 
+//**********************************************************//
+//                       CID/GID/UTF16                      //
+//**********************************************************//
+/// PDF Character Identifier (CID) type.
+typedef PoDoFo::pdf_uint16  pdfe_cid;
+/// PDF Glyph Identifier (CID) type.
+typedef unsigned int  pdfe_gid;
+/// UTF16 character. Host byte order is assumed when this type is used (use pdf_utf16be otherwise).
+typedef PoDoFo::pdf_uint16  pdfe_utf16;
+
+/// Pdf CID String. To be improve ?
+typedef std::basic_string<pdfe_cid>  PdfeCIDString;
+
+/** Macro that convert UTF16 Big Endian to host byte order.
+ */
+#ifdef PODOFO_IS_LITTLE_ENDIAN
+#define PDFE_UTF16BE_TO_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )
+#else
+#define PDFE_UTF16BE_TO_HBO(c) ( c )
+#endif
+
+/** Convert a single byte string to a vector of UTF16 character.
+ * The string is supposed to be encoded in UTF16BE.
+ */
+std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length );
+
+/** Convert a vector of UTF16 character to a unicode QString.
+ */
+QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec );
+
+//**********************************************************//
+//                        PdfeMatrix                        //
+//**********************************************************//
 /** Transformation matrix used in graphics state.
  */
 class PdfeMatrix : public vmml::mat3d
@@ -105,6 +138,9 @@ public:
     PdfeORect map( const PdfeORect& rect ) const;
 };
 
+//**********************************************************//
+//                        PdfeVector                        //
+//**********************************************************//
 /** Position vector 1x3 representing a position in a page,
  * in a given coordinate system.
  */
@@ -224,6 +260,9 @@ public:
     }
 };
 
+//**********************************************************//
+//                        PdfeORect                         //
+//**********************************************************//
 /** Oriented rectangle: characterize by bottom-left coordinates, direction, width and height.
  */
 class PdfeORect
@@ -371,21 +410,7 @@ public:
      * Else, return a rough approximation.
      * \return Corresponding PdfRect.
      */
-    PoDoFo::PdfRect toPdfRect( bool bbox = false ) const {
-        if( bbox ) {
-            // Compute bounding box coordinates.
-            double left = std::min( leftBottomX(), std::min( leftTopX(), std::min( rightBottomX(), rightTopX() ) ) );
-            double right = std::max( leftBottomX(), std::max( leftTopX(), std::max( rightBottomX(), rightTopX() ) ) );
-            double bottom = std::min( leftBottomY(), std::min( leftTopY(), std::min( rightBottomY(), rightTopY() ) ) );
-            double top = std::max( leftBottomY(), std::max( leftTopY(), std::max( rightBottomY(), rightTopY() ) ) );
-
-            return PoDoFo::PdfRect( left, bottom, right-left, top-bottom );
-        }
-        else {
-            // Very deep approximation !
-            return PoDoFo::PdfRect( m_leftBottom(0), m_leftBottom(1), m_width, m_height );
-        }
-    }
+    PoDoFo::PdfRect toPdfRect( bool bbox = false ) const;
 
 public:
     /** Compute the minimal distance between two PdfORect (roughly the Hausdorff distance).
@@ -448,228 +473,6 @@ private:
     /// Height of the rectangle.
     double m_height;
 };
-
-//**********************************************************//
-//                         PdfeVector                       //
-//**********************************************************//
-
-//**********************************************************//
-//                         PdfeMatrix                       //
-//**********************************************************//
-inline PdfeVector PdfeMatrix::map( const PdfeVector& vect ) const
-{
-    PdfeVector mapVect;
-    mapVect(0) = this->at(0,0) * vect(0) + this->at(1,0) * vect(1) + this->at(2,0);
-    mapVect(1) = this->at(0,1) * vect(0) + this->at(1,1) * vect(1) + this->at(2,1);
-    mapVect(2) = 1.0;
-    return mapVect;
-}
-inline PdfeORect PdfeMatrix::map( const PdfeORect& rect ) const
-{
-    PdfeORect mapRect;
-    PdfeVector tmpVect1, tmpVect2;
-    double tmpVal;
-
-    // Map left bottom point.
-    mapRect.setLeftBottom( this->map( rect.leftBottom() ) );
-
-    // Set direction and width: only apply the 2x2 transformation matrix.
-    tmpVect2 = rect.direction();
-    tmpVect1(0) = this->at(0,0) * tmpVect2(0) + this->at(1,0) * tmpVect2(1);
-    tmpVect1(1) = this->at(0,1) * tmpVect2(0) + this->at(1,1) * tmpVect2(1);
-    tmpVect1(2) = 1.0;
-    tmpVal = tmpVect1.norm2();
-
-    mapRect.setDirection( tmpVect1 );
-    mapRect.setWidth( rect.width() * tmpVal );
-
-    // Set height (slight approximation...).
-    tmpVect1(0) = this->at(0,0) * -tmpVect2(1) + this->at(1,0) * tmpVect2(0);
-    tmpVect1(1) = this->at(0,1) * -tmpVect2(1) + this->at(1,1) * tmpVect2(0);
-    tmpVect1(2) = 1.0;
-    tmpVect2 = mapRect.direction();
-    tmpVal = tmpVect1(0) * -tmpVect2(1) + tmpVect1(1) * tmpVect2(0);
-
-    double height = rect.height() * tmpVal;
-    if( height < 0.0 ) {
-        // Negative height: modify left bottom point so that the height becomes positive.
-        mapRect.setLeftBottom( mapRect.leftBottom() + mapRect.direction().rotate90() * height );
-        mapRect.setHeight( -height );
-    }
-    else {
-        mapRect.setHeight( height );
-    }
-
-    return mapRect;
-}
-//**********************************************************//
-//                         PdfeORect                        //
-//**********************************************************//
-inline PdfeMatrix PdfeORect::localTransMatrix()
-{
-    PdfeMatrix transMat;
-    transMat(0,0) = m_direction(0);      transMat(0,1) = -m_direction(1);
-    transMat(1,0) = m_direction(1);      transMat(1,1) = m_direction(0);
-    transMat(2,0) = -m_leftBottom(0) * m_direction(0) - m_leftBottom(1) * m_direction(1);
-    transMat(2,1) =  m_leftBottom(0) * m_direction(1) - m_leftBottom(1) * m_direction(0);
-    return transMat;
-}
-
-inline double PdfeORect::minDistance( const PdfeORect& rect1, const PdfeORect& rect2 )
-{
-    PdfeVector point;
-    double dist = std::numeric_limits<double>::max();
-
-    point = rect1.leftBottom() - rect2.leftBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.rightBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.leftTop();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.rightTop();
-    dist = std::min( dist, point.norm2() );
-
-    point = rect1.rightBottom() - rect2.leftBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.rightBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.leftTop();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.rightTop();
-    dist = std::min( dist, point.norm2() );
-
-    point = rect1.leftTop() - rect2.leftBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.rightBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.leftTop();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.rightTop();
-    dist = std::min( dist, point.norm2() );
-
-    point = rect1.rightTop() - rect2.leftBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.rightBottom();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.leftTop();
-    dist = std::min( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.rightTop();
-    dist = std::min( dist, point.norm2() );
-
-    return dist;
-}
-inline double PdfeORect::minDistance( const PdfeORect& rect, const PdfeVector& point )
-{
-    PdfeVector point0;
-    double dist = std::numeric_limits<double>::max();
-
-    point0 = point - rect.leftBottom();
-    dist = std::min( dist, point0.norm2() );
-    point0 = point - rect.rightBottom();
-    dist = std::min( dist, point0.norm2() );
-    point0 = point - rect.leftTop();
-    dist = std::min( dist, point0.norm2() );
-    point0 = point - rect.rightTop();
-    dist = std::min( dist, point0.norm2() );
-
-    return dist;
-}
-
-inline double PdfeORect::maxDistance( const PdfeORect& rect1, const PdfeORect& rect2 )
-{
-    PdfeVector point;
-    double dist = 0;
-
-    point = rect1.leftBottom() - rect2.leftBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.rightBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.leftTop();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftBottom() - rect2.rightTop();
-    dist = std::max( dist, point.norm2() );
-
-    point = rect1.rightBottom() - rect2.leftBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.rightBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.leftTop();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightBottom() - rect2.rightTop();
-    dist = std::max( dist, point.norm2() );
-
-    point = rect1.leftTop() - rect2.leftBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.rightBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.leftTop();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.leftTop() - rect2.rightTop();
-    dist = std::max( dist, point.norm2() );
-
-    point = rect1.rightTop() - rect2.leftBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.rightBottom();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.leftTop();
-    dist = std::max( dist, point.norm2() );
-    point = rect1.rightTop() - rect2.rightTop();
-    dist = std::max( dist, point.norm2() );
-
-    return dist;
-}
-inline double PdfeORect::maxDistance( const PdfeORect& rect, const PdfeVector& point )
-{
-    PdfeVector point0;
-    double dist = 0;
-
-    point0 = point - rect.leftBottom();
-    dist = std::max( dist, point0.norm2() );
-    point0 = point - rect.rightBottom();
-    dist = std::max( dist, point0.norm2() );
-    point0 = point - rect.leftTop();
-    dist = std::max( dist, point0.norm2() );
-    point0 = point - rect.rightTop();
-    dist = std::max( dist, point0.norm2() );
-
-    return dist;
-}
-
-inline PoDoFo::PdfRect PdfeORect::intersection(const PoDoFo::PdfRect& lhs,
-                                               const PoDoFo::PdfRect& rhs )
-{
-    double left = std::max( lhs.GetLeft(), rhs.GetLeft() );
-    double bottom = std::max( lhs.GetBottom(), rhs.GetBottom() );
-    double right = std::min( lhs.GetLeft() + lhs.GetWidth(),
-                             rhs.GetLeft() + rhs.GetWidth() );
-    double top = std::min( lhs.GetBottom() + lhs.GetHeight(),
-                           rhs.GetBottom() + rhs.GetHeight() );
-
-    return PoDoFo::PdfRect( left, bottom,
-                            std::max( 0.0, right - left ),
-                            std::max( 0.0, top - bottom ) );
-}
-inline PoDoFo::PdfRect PdfeORect::reunion(const PoDoFo::PdfRect &lhs, const PoDoFo::PdfRect &rhs)
-{
-    double left = std::min( lhs.GetLeft(), rhs.GetLeft() );
-    double bottom = std::min( lhs.GetBottom(), rhs.GetBottom() );
-    double right = std::max( lhs.GetLeft() + lhs.GetWidth(),
-                             rhs.GetLeft() + rhs.GetWidth() );
-    double top = std::max( lhs.GetBottom() + lhs.GetHeight(),
-                           rhs.GetBottom() + rhs.GetHeight() );
-
-    return PoDoFo::PdfRect( left, bottom,
-                            right - left,
-                            top - bottom );
-}
-inline bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
-{
-    return ( rect2.GetLeft() >= rect1.GetLeft() &&
-             rect2.GetBottom() >= rect1.GetBottom() &&
-             rect2.GetLeft() + rect2.GetWidth() <= rect1.GetLeft() + rect1.GetWidth() &&
-             rect2.GetBottom() + rect2.GetHeight() <= rect1.GetBottom() + rect1.GetHeight() );
-}
-
 
 //}
 

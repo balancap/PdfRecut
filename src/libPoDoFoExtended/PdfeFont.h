@@ -24,6 +24,7 @@
 #include <podofo/doc/PdfFontCache.h>
 #include <podofo/base/PdfRect.h>
 
+#include "PdfeTypes.h"
 #include "PdfeFontDescriptor.h"
 
 #include <ft2build.h>
@@ -43,34 +44,6 @@ class PdfArray;
 }
 
 namespace PoDoFoExtended {
-
-/// PDF Character Identifier (CID) type.
-typedef PoDoFo::pdf_uint16  pdfe_cid;
-/// PDF Glyph Identifier (CID) type.
-typedef unsigned int  pdfe_gid;
-
-/// UTF16 character. Host byte order is assumed when this type is used (use pdf_utf16be otherwise).
-typedef PoDoFo::pdf_uint16  pdfe_utf16;
-
-/** Convert a single byte string to a vector of UTF16 character.
- * The string is supposed to be encoded in UTF16BE.
- */
-std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length );
-
-/** Convert a vector of UTF16 character to a unicode QString.
- */
-QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec );
-
-/// Pdf CID String. To be improve ?
-typedef std::basic_string<pdfe_cid>  PdfeCIDString;
-
-/** Macro that convert UTF16 Big Endian to host byte order.
- */
-#ifdef PODOFO_IS_LITTLE_ENDIAN
-#define PDFE_UTF16BE_TO_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )
-#else
-#define PDFE_UTF16BE_TO_HBO(c) ( c )
-#endif
 
 namespace PdfeFontType {
 /** Enumeration of the different types of font allowed in the PDF Reference.

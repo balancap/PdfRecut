@@ -120,7 +120,7 @@ protected:
     PdfeFontDescriptor  m_fontDescriptor;
 
     /// Font encoding.
-    PoDoFo::PdfEncoding*  m_encoding;
+    PoDoFo::PdfEncoding*  m_pEncoding;
     /// Does the object owns the encoding ?
     bool  m_encodingOwned;
 
