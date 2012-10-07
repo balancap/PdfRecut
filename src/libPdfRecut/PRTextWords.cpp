@@ -271,9 +271,11 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 //        std::cout << bufstr << std::endl;
 //        qDebug() << pFont->toUnicode( str );
 //    }
-    if( pFont->type() ==  PdfeFontType::Type0 ) {
-        qDebug() << pFont->type() << " : " << pFont->toUnicode( str );
-    }
+    //if( pFont->type() ==  PdfeFontType::Type0 )
+//    {
+//        QString ustr = pFont->toUnicode( str );
+//        qDebug() << pFont->type() << " : " << ustr << " / " << ustr.length();
+//    }
 
     // Text parameters.
     double fontSize = m_textState.fontSize;

@@ -21,7 +21,6 @@
 #define PDFEFONTTRUETYPE_H
 
 #include "PdfeFont.h"
-#include "PdfeFontDescriptor.h"
 
 namespace PoDoFoExtended {
 
@@ -103,7 +102,7 @@ public:
 
 protected:
     // Members.
-    /// The PostScript name of the font.
+    /// The PostScript name of the font (retrieved from font descriptor).
     PoDoFo::PdfName  m_baseFont;
 
     /// First character defined in font's width array.
@@ -118,14 +117,6 @@ protected:
 
     /// Font descriptor.
     PdfeFontDescriptor  m_fontDescriptor;
-
-    /// Font encoding.
-    PoDoFo::PdfEncoding*  m_pEncoding;
-    /// Does the object owns the encoding ?
-    bool  m_encodingOwned;
-
-    /// Vector of space characters.
-    std::vector<pdfe_cid>  m_spaceCharacters;
 };
 
 }

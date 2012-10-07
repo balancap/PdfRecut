@@ -46,9 +46,6 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 1 font." );
     }
 
-    // Base font (required).
-    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
-
     // Need the following entries in the dictionary.
     PdfObject* pFChar = pFont->GetIndirectKey( "FirstChar" );
     PdfObject* pLChar = pFont->GetIndirectKey( "LastChar" );
@@ -67,17 +64,15 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Font descriptor.
     m_fontDescriptor.init( pDescriptor );
+    m_baseFont = m_fontDescriptor.fontName();
 
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
-    if( pEncoding ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+    this->initEncoding( pEncoding );
 
-        // According to PoDoFo implementation.
-        m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
-    }
-
-    // TODO: unicode CMap.
+    // Unicode CMap.
+    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+    this->initUnicodeCMap( pUnicodeCMap );
 
     // Space characters vector.
     this->initSpaceCharacters();
@@ -96,13 +91,12 @@ void PdfeFontType1::init()
     m_lastCID = 0;
     m_widthsCID.clear();
     m_bboxCID.clear();
-
-    m_pEncoding = NULL;
-    m_encodingOwned = false;
-    m_spaceCharacters.clear();
 }
 void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 {
+    // Read base font (required for standard font!).
+    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
+
     // Get PoDoFo Metrics object and set metrics paramters.
     PdfFontMetricsBase14* pMetrics = PODOFO_Base14FontDef_FindBuiltinData( m_baseFont.GetName().c_str() );
     pMetrics->SetFontSize( 1.0 );
@@ -110,6 +104,7 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     pMetrics->SetFontCharSpace( 0.0 );
 
     // Can retrieve: widths, symbol, ascent, descent, xHeight, capHeight, BBox.
+    m_fontDescriptor.setFontName( m_baseFont );
     m_fontDescriptor.setAscent( pMetrics->GetAscent() );
     m_fontDescriptor.setDescent( pMetrics->GetDescent() );
     m_fontDescriptor.setCapHeight( pMetrics->GetCapHeight() );
@@ -132,10 +127,7 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     // Create associate encoding object.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
     if( pEncoding ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
-
-        // According to PoDoFo implementation.
-        m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
+        this->initEncoding( pEncoding );
     }
     else if( !pMetrics->IsSymbol() ) {
         m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() );
@@ -149,6 +141,10 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() );
         m_encodingOwned = false;
     }
+
+    // Unicode CMap.
+    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+    this->initUnicodeCMap( pUnicodeCMap );
 
     // Construct widths array using the font encoding.
     m_firstCID = m_pEncoding->GetFirstChar();
@@ -166,8 +162,6 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         m_widthsCID.push_back( widthCID );
         m_bboxCID.push_back( PdfRect( 0, 0, widthCID, fontBBox[3].GetReal() ) );
     }
-
-    // TODO: unicode CMap.
 
     // Space characters vector.
     this->initSpaceCharacters();

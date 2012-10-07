@@ -45,7 +45,11 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Base font (required).
     m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
 
-    // Read encoding CMap.
+    // TMP...
+    const_cast<PdfeFontDescriptor&>( m_fontCID->fontDescriptor() ).setFontName( m_baseFont );
+
+
+    // Encoding CMap.
     PdfObject* pEncodingCMap = pFont->GetIndirectKey( "Encoding" );
     if( pEncodingCMap->IsName() ) {
         m_encodingCMap.init( pEncodingCMap->GetName() );
@@ -54,58 +58,31 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         m_encodingCMap.init( pEncodingCMap );
     }
 
-    // Get descendant CID font.
+    // Unicode CMap.
+    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+    this->initUnicodeCMap( pUnicodeCMap );
+
+    // Initialize descendant CID font.
     const PdfArray& descendantFonts  = pFont->GetIndirectKey( "DescendantFonts" )->GetArray();
     PdfObject* pDFont = pFont->GetOwner()->GetObject( descendantFonts[0].GetReference() );
     m_fontCID->init( pDFont );
-
-    // TODO: unicode CMap.
-    this->initUnicodeCMap( pFont );
-
 }
 void PdfeFontType0::init()
 {
     // Initialize members to default values.
     m_baseFont = PdfName();
     m_encodingCMap.init();
-    m_unicodeCMap.init();
 
     if( !m_fontCID ) {
         m_fontCID =  new PdfeFontCID();
     }
     m_fontCID->init();
 }
-
 void PdfeFontType0::initSpaceCharacters()
 {
     m_spaceCharacters.clear();
 
     // TODO: use unicode CMap.
-}
-void PdfeFontType0::initUnicodeCMap( PdfObject* pFont )
-{
-    PdfObject* pUCMap = pFont->GetIndirectKey( "ToUnicode" );
-
-    // Unicode entry exists!
-    if( pUCMap && pUCMap->HasStream() ) {
-        std::string path( "./cmaps/" );
-        path += m_baseFont.GetName();
-        path += ".txt";
-
-        PdfOutputDevice outFile( path.c_str() );
-
-        PdfMemStream* pStream = dynamic_cast<PdfMemStream*>( pUCMap->GetStream() );
-        pStream->Uncompress();
-        pStream->Write( &outFile );
-
-        // Create CMap
-        std::cout << m_baseFont.GetName() << std::endl;
-        //PdfeCMap unicodeCMap( pUCMap );
-
-        m_unicodeCMap.init( pUCMap );
-    }
-
-
 }
 
 PdfeFontType0::~PdfeFontType0()
@@ -156,7 +133,8 @@ QString PdfeFontType0::toUnicode( pdfe_cid c ) const
 
 QString PdfeFontType0::toUnicode( const PdfString& str ) const
 {
-    // Convert using CMap unicode. Return empty string if the CMap is itself empty.
+    // Convert using CMap unicode (No other choice!).
+    // Return empty string if the CMap is itself empty.
     return m_unicodeCMap.toUnicode( str );
 }
 PdfeFontSpace::Enum PdfeFontType0::isSpace( pdfe_cid c ) const

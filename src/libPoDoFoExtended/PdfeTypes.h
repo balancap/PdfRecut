@@ -55,7 +55,7 @@ typedef PoDoFo::pdf_uint16  pdfe_utf16;
 /// Pdf CID String. To be improve ?
 typedef std::basic_string<pdfe_cid>  PdfeCIDString;
 
-/** Macro that convert UTF16 Big Endian to host byte order.
+/** Macro that convert UTF16 Big Endian to host byte order (or conversely).
  */
 #ifdef PODOFO_IS_LITTLE_ENDIAN
 #define PDFE_UTF16BE_TO_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )

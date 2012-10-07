@@ -25,6 +25,7 @@
 #include <podofo/base/PdfRect.h>
 
 #include "PdfeTypes.h"
+#include "PdfeCMap.h"
 #include "PdfeFontDescriptor.h"
 
 #include <ft2build.h>
@@ -122,14 +123,16 @@ public:
 
     /** Convert a CID string to unicode.
      * \param str CID string to convert.
+     * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString corresponding.
      */
-    virtual QString toUnicode( const PdfeCIDString& str ) const;
+    virtual QString toUnicode( const PdfeCIDString& str, bool useUCMap = true ) const;
     /** Convert a simple string to unicode.
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString corresponding.
      */
-    virtual QString toUnicode( const PoDoFo::PdfString& str ) const;
+    virtual QString toUnicode( const PoDoFo::PdfString& str, bool useUCMap = true ) const;
 
 public:
     // Virtual functions to reimplement in derived classes.
@@ -176,6 +179,15 @@ public:
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const = 0;
 
 protected:
+    /** Initialize PdfEncoding of a PdfeFont.
+     * \param Pointer to the object where is defined the encoding.
+     */
+    void initEncoding( PoDoFo::PdfObject* pEncodingObj );
+    /** Initialize unicode CMap of a PdfeFont.
+     * \param Pointer to the object where is defined the CMap.
+     */
+    void initUnicodeCMap( PoDoFo::PdfObject* pUCMapObj );
+
     /** Get a character name from a CID using a PdfEncoding.
      * \param pEncoding Pointer to the encoding.
      * \param c CID of the character.
@@ -193,9 +205,9 @@ protected:
      * \return Vector of corresponding GID.
      */
     std::vector<pdfe_gid> mapCIDToGID( FT_Face face,
-                                      pdfe_cid firstCID,
-                                      pdfe_cid lastCID,
-                                      PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
+                                       pdfe_cid firstCID,
+                                       pdfe_cid lastCID,
+                                       PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
 
     /** Obtain the bounding box of a glyph.
      * \param face Freetype face object.
@@ -240,8 +252,19 @@ protected:
     /// Font size (default: 1.0).
     double  m_fontSize;
 
+    // Common members shared by all fonts.
     /// FreeType library.
     FT_Library  m_ftLibrary;
+
+    /// Font encoding.
+    PoDoFo::PdfEncoding*  m_pEncoding;
+    /// Does the object owns the encoding ?
+    bool  m_encodingOwned;
+    /// Unicode CMap.
+    PdfeCMap  m_unicodeCMap;
+
+    /// Vector of space characters.
+    std::vector<pdfe_cid>  m_spaceCharacters;
 
 public:
     //**********************************************************//

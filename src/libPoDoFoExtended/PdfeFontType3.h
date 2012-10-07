@@ -20,9 +20,7 @@
 #ifndef PDFEFONTTYPE3_H
 #define PDFEFONTTYPE3_H
 
-#include "PdfeTypes.h"
 #include "PdfeFont.h"
-#include "PdfeFontDescriptor.h"
 #include "PdfeCanvasAnalysis.h"
 
 #include "podofo/base/PdfCanvas.h"
@@ -124,14 +122,6 @@ protected:
 
     /// Font descriptor.
     PdfeFontDescriptor  m_fontDescriptor;
-
-    /// Font encoding.
-    PoDoFo::PdfEncoding*  m_pEncoding;
-    /// Does the object owns the encoding ?
-    bool  m_encodingOwned;
-
-    /// Vector of space characters.
-    std::vector<pdfe_cid>  m_spaceCharacters;
 
     /// Vector of type 3 glyphs.
     std::vector<PdfeGlyphType3>  m_glyphs;

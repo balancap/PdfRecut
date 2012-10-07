@@ -58,7 +58,12 @@ void PdfeFont::init()
     m_wordSpace = 0.0;
     m_hScale = 0.0;
 
+    // Common elements shared by fonts.
     m_ftLibrary = NULL;
+    m_pEncoding = NULL;
+    m_encodingOwned = false;
+    m_unicodeCMap.init();
+    m_spaceCharacters.clear();
 }
 PdfeFont::~PdfeFont()
 {
@@ -87,7 +92,7 @@ double PdfeFont::width( const PoDoFo::PdfString& str ) const
     return this->width( this->toCIDString( str ) );
 }
 
-QString PdfeFont::toUnicode( const PdfeCIDString& str ) const
+QString PdfeFont::toUnicode( const PdfeCIDString& str , bool useUCMap ) const
 {
     // Default implementation.
     QString ustr;
@@ -97,10 +102,19 @@ QString PdfeFont::toUnicode( const PdfeCIDString& str ) const
     }
     return ustr;
 }
-QString PdfeFont::toUnicode( const PoDoFo::PdfString& str ) const
+QString PdfeFont::toUnicode( const PoDoFo::PdfString& str , bool useUCMap ) const
 {
-    // Default implementation.
-    return this->toUnicode( this->toCIDString( str ) );
+    QString ustr;
+
+    // Not empty unicode CMap : directly try this way.
+    if( !m_unicodeCMap.emptyCodeSpaceRange() ) {
+         ustr = m_unicodeCMap.toUnicode( str );
+    }
+    // No result: try the default way, using encoding (not for Type 0 fonts)...
+    if( !ustr.length() && this->type() != PdfeFontType::Type0 ) {
+        ustr = this->toUnicode( this->toCIDString( str ) );
+    }
+    return ustr;
 }
 
 // Default implementation for character bounding box.
@@ -117,18 +131,48 @@ PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
     double height = fontBBox.GetHeight();
 
     // Apply font parameters.
+    PdfRect cbbox( 0.0, bottom, width, height );
     if( useFParams ) {
-        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
+    }
+    return cbbox;
+}
 
-        bottom = bottom * m_fontSize;
-        height = height * m_fontSize;
+void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
+{
+    // Create encoding if necessary.
+    if( pEncodingObj ) {
+        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncodingObj ) );
 
-        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace * ( m_hScale / 100. );
+        // According to PoDoFo implementation.
+        m_encodingOwned = !pEncodingObj->IsName() || ( pEncodingObj->IsName() && (pEncodingObj->GetName() == PdfName("Identity-H")) );
+    }
+}
+void PdfeFont::initUnicodeCMap( PdfObject* pUCMapObj )
+{
+    // Read unicode CMap (must have a stream!).
+    if( pUCMapObj && pUCMapObj->HasStream() ) {
+        // Initialize CMap object.
+        m_unicodeCMap.init( pUCMapObj );
+
+        // Save CMap (Debug...)
+        std::string path( "./cmaps/" );
+        path += this->fontDescriptor().fontName().GetName();
+        path += ".txt";
+
+        PdfOutputDevice outFile( path.c_str() );
+        PdfMemStream* pStream = dynamic_cast<PdfMemStream*>( pUCMapObj->GetStream() );
+        pStream->Uncompress();
+        pStream->Write( &outFile );
+
+        std::cout << this->fontDescriptor().fontName().GetName().length() << " : "
+                  << this->fontDescriptor().fontName().GetName() << " / "
+                  << this->type() << std::endl;
+
+        if( ! this->fontDescriptor().fontName().GetName().length() ) {
+            std::cout << "mmm" << std::endl;
         }
     }
-    PdfRect cbbox( 0.0, bottom, width, height );
-    return cbbox;
 }
 
 void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
@@ -155,9 +199,9 @@ void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
 }
 
 std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
-                                            pdfe_cid firstCID,
-                                            pdfe_cid lastCID,
-                                            PdfDifferenceEncoding* pDiffEncoding ) const
+                                             pdfe_cid firstCID,
+                                             pdfe_cid lastCID,
+                                             PdfDifferenceEncoding* pDiffEncoding ) const
 {
     // Initialize the vector.
     std::vector<pdfe_gid> vectGID( lastCID - firstCID+1, 0 );
@@ -173,6 +217,8 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
     pdf_utf16be ucode;
 
     for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
+        glyph_idx = 0;
+
         // Try to obtain the CID name from its unicode code.
         QString ustr = this->toUnicode( c );
         if( ustr.length() == 1 ) {
@@ -217,11 +263,11 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
     return vectGID;
 }
 int PdfeFont::glyphBBox(FT_Face face,
-                         pdfe_gid glyphIdx,
-                         const PdfRect& fontBBox,
-                         PdfRect* pGlyphBBox) const
+                        pdfe_gid glyphIdx,
+                        const PdfRect& fontBBox,
+                        PdfRect* pGlyphBBox) const
 {
-    // Tru to load the glyph.
+    // Try to load the glyph.
     int error = FT_Load_Glyph( face, glyphIdx, FT_LOAD_NO_SCALE );
     if( error ) {
         return error;
@@ -269,5 +315,6 @@ void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
     bbox.SetBottom( bbox.GetBottom() * m_fontSize );
     bbox.SetHeight( bbox.GetHeight() * m_fontSize );
 }
+
 
 }

@@ -81,18 +81,18 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         m_widthsCID.resize( m_lastCID - m_firstCID + 1, 1000. );
     }
 
-    // Font descriptor.
+    // Font descriptor (required in Tagged documents).
     PdfObject* pDescriptor = pFont->GetIndirectKey( "FontDescriptor" );
     if( pDescriptor ) {
         m_fontDescriptor.init( pDescriptor );
     }
 
-    // Font encoding. Should be a difference encoding.
-    m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
-    // According to PoDoFo implementation.
-    m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
+    // Font encoding.
+    this->initEncoding( pEncoding );
 
-    // TODO: unicode CMap.
+    // Unicode CMap.
+    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+    this->initUnicodeCMap( pUnicodeCMap );
 
     // Space characters vector.
     this->initSpaceCharacters();
@@ -112,9 +112,6 @@ void PdfeFontType3::init()
     m_firstCID = 1;
     m_lastCID = 0;
     m_widthsCID.clear();
-
-    m_pEncoding = NULL;
-    m_encodingOwned = false;
 
     m_mapCIDToGID.clear();
     m_glyphs.clear();

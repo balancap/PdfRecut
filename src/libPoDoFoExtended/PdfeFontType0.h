@@ -21,8 +21,6 @@
 #define PDFEFONTTYPE0_H
 
 #include "PdfeFont.h"
-#include "PdfeCMap.h"
-#include "PdfeFontDescriptor.h"
 
 namespace PoDoFoExtended {
 
@@ -57,11 +55,6 @@ protected:
     /** Initialize the vector of space characters.
      */
     void initSpaceCharacters();
-
-    /** Initialize Unicode CMap.
-     * \param pFont Font object.
-     */
-    void initUnicodeCMap( PoDoFo::PdfObject* pFont );
 
 public:
     // Virtual functions reimplemented.
@@ -112,14 +105,9 @@ protected:
     PoDoFo::PdfName  m_baseFont;
     /// CMap encoding of the font.
     PdfeCMap  m_encodingCMap;
-    /// Unicode CMap.
-    PdfeCMap  m_unicodeCMap;
 
     /// Descendant CID font.
     PdfeFontCID*  m_fontCID;
-
-    /// Vector of space characters.
-    std::vector<pdfe_cid>  m_spaceCharacters;
 };
 
 //**********************************************************//
@@ -155,6 +143,15 @@ public:
      */
     double width( pdfe_cid c ) const;
 
+    /** The vector that define first CID of each group.
+     * \return Constant reference to a vector of CID.
+     */
+    const std::vector<pdfe_cid> firstCIDs() const;
+    /** The vector that define last CID of each group.
+     * \return Constant reference to a vector of CID.
+     */
+    const std::vector<pdfe_cid> lastCIDs() const;
+
 protected:
     /** Private class that represents an array of glyph's horizontal width.
      */
@@ -187,6 +184,15 @@ protected:
          */
         double width( pdfe_cid c ) const;
 
+        /** The vector that define first CID of each group.
+         * \return Constant reference to a vector of CID.
+         */
+        const std::vector<pdfe_cid> firstCIDs() const;
+        /** The vector that define last CID of each group.
+         * \return Constant reference to a vector of CID.
+         */
+        const std::vector<pdfe_cid> lastCIDs() const;
+
     private:
         /// Vector containing first CID of each group.
         std::vector<pdfe_cid>  m_firstCID;
@@ -205,7 +211,7 @@ protected:
     PdfeFontType::Enum  m_type;
     /// Font subtype.
     PdfeFontSubType::Enum  m_subtype;
-    /// The PostScript name of the font.
+    /// The PostScript name of the font (retrieved from font descriptor).
     PoDoFo::PdfName  m_baseFont;
 
     /// CIDSystemInfo (character collection).
@@ -228,6 +234,15 @@ inline double PdfeFontCID::width( pdfe_cid c ) const
 {
     return m_hWidths.width( c ) / 1000.;
 }
+inline const std::vector<pdfe_cid> PdfeFontCID::firstCIDs() const
+{
+    return m_hWidths.firstCIDs();
+}
+inline const std::vector<pdfe_cid> PdfeFontCID::lastCIDs() const
+{
+    return m_hWidths.lastCIDs();
+}
+
 
 //**********************************************************//
 //                 PdfeFontCID::HWidthsArray                //
@@ -257,7 +272,14 @@ inline double PdfeFontCID::HWidthsArray::defaultWidth() const
 {
     return m_defaultWidth;
 }
-
+inline const std::vector<pdfe_cid> PdfeFontCID::HWidthsArray::firstCIDs() const
+{
+    return m_firstCID;
+}
+inline const std::vector<pdfe_cid> PdfeFontCID::HWidthsArray::lastCIDs() const
+{
+    return m_lastCID;
+}
 
 }
 

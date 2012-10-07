@@ -43,9 +43,6 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a TrueType font." );
     }
 
-    // Base font (required).
-    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
-
     // Need the following entries in the dictionary.
     PdfObject* pFChar = pFont->GetIndirectKey( "FirstChar" );
     PdfObject* pLChar = pFont->GetIndirectKey( "LastChar" );
@@ -63,17 +60,15 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
 
     // Font descriptor.
     m_fontDescriptor.init( pDescriptor );
+    m_baseFont = m_fontDescriptor.fontName();
 
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
-    if( pEncoding ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingObjectFactory::CreateEncoding( pEncoding ) );
+    this->initEncoding( pEncoding );
 
-        // According to PoDoFo implementation.
-        m_encodingOwned = !pEncoding->IsName() || ( pEncoding->IsName() && (pEncoding->GetName() == PdfName("Identity-H")) );
-    }
-
-    // TODO: unicode CMap.
+    // Unicode CMap.
+    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+    this->initUnicodeCMap( pUnicodeCMap );
 
     // Space characters vector.
     this->initSpaceCharacters();
@@ -91,10 +86,6 @@ void PdfeFontTrueType::init()
     m_firstCID = 1;
     m_lastCID = 0;
     m_widthsCID.clear();
-
-    m_pEncoding = NULL;
-    m_encodingOwned = false;
-
 }
 void PdfeFontTrueType::initSpaceCharacters()
 {
