@@ -180,21 +180,6 @@ PdfRect PdfeFontType3::fontBBox() const
     // Return the bounding box of the oriented rectangle.
     return fontBBox.toPdfRect( true );
 }
-
-PdfeCIDString PdfeFontType3::toCIDString( const PdfString& str ) const
-{
-    // PDF String data.
-    const char* pstr = str.GetString();
-    size_t length = str.GetLength();
-
-    // Perform a simple copy.
-    PdfeCIDString cidstr;
-    cidstr.resize( length, 0 );
-    for( size_t i = 0 ; i < length ; ++i ) {
-        cidstr[i] = static_cast<unsigned char>( pstr[i] );
-    }
-    return cidstr;
-}
 double PdfeFontType3::width( pdfe_cid c, bool useFParams ) const
 {
     double width;
@@ -248,21 +233,7 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-QString PdfeFontType3::toUnicode( pdfe_cid c ) const
-{
-    // TODO: unicode map.
 
-    if( m_pEncoding ) {
-        // Get UTF16 code from PdfEncoding object.
-        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
-        ucode = PDFE_UTF16BE_TO_HBO( ucode );
-        return QString::fromUtf16( &ucode, 1 );
-    }
-    else {
-        // Default empty string.
-        return QString();
-    }
-}
 PdfeFontSpace::Enum PdfeFontType3::isSpace( pdfe_cid c ) const
 {
     // Does the character belongs to the space vector ?

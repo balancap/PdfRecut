@@ -125,18 +125,25 @@ double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
     }
     return width;
 }
-QString PdfeFontType0::toUnicode( pdfe_cid c ) const
+
+QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
 {
-    // TODO: unicode map.
-    return QString();
+    QString ustr;
+
+    // Not empty unicode CMap : directly try this way (if allowed).
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
+        // Create PdfeCMap::CharCodes from CID (might be multiple codes for with the same CID).
+        std::vector<PdfeCMap::CharCode> charCodes = m_encodingCMap.toCharCode( c );
+
+        // Convert CharCode to unicode (use randomly the first one in the list...).
+        if( charCodes.size() ) {
+            ustr = m_unicodeCMap.toUnicode( charCodes[0] );
+        }
+    }
+    // Might be empty...
+    return ustr;
 }
 
-QString PdfeFontType0::toUnicode( const PdfString& str ) const
-{
-    // Convert using CMap unicode (No other choice!).
-    // Return empty string if the CMap is itself empty.
-    return m_unicodeCMap.toUnicode( str );
-}
 PdfeFontSpace::Enum PdfeFontType0::isSpace( pdfe_cid c ) const
 {
     return PdfeFontSpace::None;

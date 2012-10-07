@@ -94,11 +94,11 @@ double PdfeFont::width( const PoDoFo::PdfString& str ) const
 
 QString PdfeFont::toUnicode( const PdfeCIDString& str , bool useUCMap ) const
 {
-    // Default implementation.
+    // Default implementation: get the unicode string of every CID in the string..
     QString ustr;
     ustr.reserve( str.length() );
     for( size_t i = 0 ; i < str.length() ; ++i ) {
-        ustr += this->toUnicode( str[i] );
+        ustr += this->toUnicode( str[i], useUCMap );
     }
     return ustr;
 }
@@ -106,18 +106,56 @@ QString PdfeFont::toUnicode( const PoDoFo::PdfString& str , bool useUCMap ) cons
 {
     QString ustr;
 
-    // Not empty unicode CMap : directly try this way.
-    if( !m_unicodeCMap.emptyCodeSpaceRange() ) {
+    // Not empty unicode CMap : directly try this way (if allowed).
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
          ustr = m_unicodeCMap.toUnicode( str );
     }
-    // No result: try the default way, using encoding (not for Type 0 fonts)...
+    // No result: try using Pdf encoding (not for Type 0 fonts). No need to retry CMap.
     if( !ustr.length() && this->type() != PdfeFontType::Type0 ) {
-        ustr = this->toUnicode( this->toCIDString( str ) );
+        ustr = this->toUnicode( this->toCIDString( str ), false );
     }
     return ustr;
 }
 
-// Default implementation for character bounding box.
+// Default implementation for simple fonts (Type 1, TrueType and Type 3).
+QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
+{
+    QString ustr;
+
+    // Not empty unicode CMap : directly try this way (if allowed).
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
+        // Create PdfeCMap::CharCode from CID.
+        pdf_uint16 code = PDFE_UTF16BE_TO_HBO( c );
+        PdfeCMap::CharCode charCode( code );
+        // Convert to unicode.
+        ustr = m_unicodeCMap.toUnicode( charCode );
+    }
+    // No result: Pdf encoding (not for Type 0 fonts).
+    if( m_pEncoding && !ustr.length() && this->type() != PdfeFontType::Type0 ) {
+        // Get UTF16 code from PdfEncoding object.
+        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
+        ucode = PDFE_UTF16BE_TO_HBO( ucode );
+        return QString::fromUtf16( &ucode, 1 );
+    }
+    // Might be empty...
+    return ustr;
+}
+// Default implementation for simple fonts (Type 1, TrueType and Type 3).
+PdfeCIDString PdfeFont::toCIDString( const PdfString& str ) const
+{
+    // PDF String data.
+    const char* pstr = str.GetString();
+    size_t length = str.GetLength();
+
+    // Perform a simple copy of string bytes.
+    PdfeCIDString cidstr;
+    cidstr.resize( length, 0 );
+    for( size_t i = 0 ; i < length ; ++i ) {
+        cidstr[i] = static_cast<unsigned char>( pstr[i] );
+    }
+    return cidstr;
+}
+// Default simple implementation using font bounding box.
 PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
 {
     // Font BBox for default height.

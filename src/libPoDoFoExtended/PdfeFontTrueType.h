@@ -68,12 +68,6 @@ public:
      */
     virtual PoDoFo::PdfRect fontBBox() const;
 
-    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return CID String corresponding.
-     */
-    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
-
     /** Get the width of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
@@ -87,12 +81,6 @@ public:
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
-
-    /** Convert a character to a unicode QString.
-     * \param  c Character identifier (CID).
-     * \return Unicode QString representing the character.
-     */
-    virtual QString toUnicode( pdfe_cid c ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).

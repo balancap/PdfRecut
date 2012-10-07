@@ -83,15 +83,10 @@ public:
 
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
+     * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString representing the character.
      */
-    virtual QString toUnicode( pdfe_cid c ) const;
-
-    /** Convert a simple string to unicode.
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return Unicode QString corresponding.
-     */
-    virtual QString toUnicode( const PoDoFo::PdfString& str ) const;
+    virtual QString toUnicode( pdfe_cid c, bool useUCMap = true ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).

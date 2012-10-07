@@ -150,7 +150,7 @@ public:
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
      */
-    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const = 0;
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
 
     /** Get the width of a character.
      * \param c Character identifier (CID).
@@ -168,9 +168,10 @@ public:
 
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
+     * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString representing the character.
      */
-    virtual QString toUnicode( pdfe_cid c ) const = 0;
+    virtual QString toUnicode( pdfe_cid c, bool useUCMap = true ) const;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
