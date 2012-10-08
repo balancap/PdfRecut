@@ -31,6 +31,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <QByteArray>
 #include <QString>
 #include <QDebug>
 
@@ -188,7 +189,12 @@ protected:
      * \param Pointer to the object where is defined the CMap.
      */
     void initUnicodeCMap( PoDoFo::PdfObject* pUCMapObj );
+    /** Initialize FreeType face object.
+     * \param fontDescriptor Font descriptor containing font name and/or embedded font program.
+     */
+    void initFTFace( const PdfeFontDescriptor& fontDescriptor );
 
+protected:
     /** Get a character name from a CID using a PdfEncoding.
      * \param pEncoding Pointer to the encoding.
      * \param c CID of the character.
@@ -205,22 +211,10 @@ protected:
      * \param pDiffEncoding Difference encoding object (if existing, NULL else).
      * \return Vector of corresponding GID.
      */
-    std::vector<pdfe_gid> mapCIDToGID( FT_Face face,
+    std::vector<pdfe_gid> mapCIDToGID( FT_Face ftFace,
                                        pdfe_cid firstCID,
                                        pdfe_cid lastCID,
                                        PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
-
-    /** Obtain the bounding box of a glyph.
-     * \param face Freetype face object.
-     * \param glyph_idx Glyph index.
-     * \param fontBBox Font bounding box.
-     * \param pGlyphBBox Pointer to the bounding box to set.
-     * \return Error code.
-     */
-    int glyphBBox( FT_Face face,
-                   pdfe_gid glyphIdx,
-                   const PoDoFo::PdfRect& fontBBox,
-                   PoDoFo::PdfRect* pGlyphBBox ) const;
 
     /** Apply font parameter to a character width.
      * \param Reference to the width to modify.
@@ -236,7 +230,17 @@ protected:
     void applyFontParameters( PoDoFo::PdfRect& bbox,
                               bool space32 ) const;
 
-
+public:
+    // Static functions used as interface with FreeType library.
+    /** Obtain the bounding box of a glyph, using FreeType.
+     * \param ftFace Freetype face object.
+     * \param glyph_idx Glyph index.
+     * \param fontBBox Font bounding box.
+     * \return Bounding box of the glyph (set to zero if anything wrong happened).
+     */
+    static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
+                                        pdfe_gid glyph_idx,
+                                        const PoDoFo::PdfRect& fontBBox );
 protected:
     // Members
     /// Font type.
@@ -256,6 +260,10 @@ protected:
     // Common members shared by all fonts.
     /// FreeType library.
     FT_Library  m_ftLibrary;
+    /// FreeType Face object (represent a font).
+    FT_Face  m_ftFace;
+    /// FreeType Face data.
+    QByteArray  m_ftFaceData;
 
     /// Font encoding.
     PoDoFo::PdfEncoding*  m_pEncoding;

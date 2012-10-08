@@ -64,7 +64,7 @@ public:
 
     /** Get the font program, stored in a buffer.
      * \param pBuffer Pointer of the buffer which will contain the font program. Owned by the user.
-     * \param pLength Pointet to the length of the buffer.
+     * \param pLength Pointer to the length of the buffer.
      */
     void fontProgram( char** pBuffer, long* pLength ) const;
 
@@ -174,7 +174,6 @@ protected:
     double  m_missingWidth;
 
     PdfeFontEmbedded  m_fontEmbedded;
-
     PoDoFo::PdfString   m_charSet;
 
 public:
@@ -218,7 +217,7 @@ public:
     double missingWidth() const                 {  return m_missingWidth;  }
     void setMissingWidth( double missingWidth ) {  m_missingWidth = missingWidth;  }
 
-    PdfeFontEmbedded fontEmbedded() const       {  return m_fontEmbedded;  }
+    const PdfeFontEmbedded& fontEmbedded() const       {  return m_fontEmbedded;  }
 };
 
 //**********************************************************//

@@ -70,6 +70,9 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
 
+    // FreeType font face.
+    this->initFTFace( m_fontDescriptor );
+
     // Space characters vector.
     this->initSpaceCharacters();
 
@@ -118,40 +121,19 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
         m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
     }
 
-    // For embedded fonts: try to get bottom and height using the font program and FreeType library.
-    char* buffer;
-    long length;
-    PdfeFontEmbedded fontEmbedded = this->fontDescriptor().fontEmbedded();
-    fontEmbedded.fontProgram( &buffer, &length );
-    if( !buffer ) {
-        // No font program found...
-        return;
-    }
-
-    // Load FreeType face from buffer.
-    int error;
-    FT_Face face;
-    error = FT_New_Memory_Face( m_ftLibrary, reinterpret_cast<unsigned char*>( buffer ),
-                                length, 0, &face );
-    if( error ) {
-        // Can not load: return...
-        return;
-    }
-
     // Construct the map CID to GID.
-    std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( face, m_firstCID, m_lastCID,
-                                                          dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding ) );
+    std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( m_ftFace,
+                                                           m_firstCID, m_lastCID,
+                                                           dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding ) );
+
 
     // Get glyph bounding box.
-    pdfe_gid glyphIdx;
-    PdfRect glyphBBox;
-
     for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        glyphIdx = mapCIDToGID[c-m_firstCID];
-        if( glyphIdx ) {
-            // Load glyph.
-            error = this->glyphBBox( face, glyphIdx, fontBBox, &glyphBBox );
-            if( !error ) {
+        // Glyph ID.
+        pdfe_gid glyph_idx = mapCIDToGID[c - m_firstCID];
+        if( glyph_idx ) {
+            PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, glyph_idx, fontBBox );
+            if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
                 //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
                 //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
                 m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
@@ -159,10 +141,6 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
             }
         }
     }
-
-    // Free face object and font file buffer.
-    FT_Done_Face( face );
-    free( buffer );
 }
 
 PdfeFontTrueType::~PdfeFontTrueType()

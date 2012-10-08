@@ -260,7 +260,6 @@ protected:
     std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
 
     // Cache data for the line.
-
     /// Transformation matrix (into page coordinates). Related to the bounding box.
     PdfeMatrix  m_transMatrix;
     /// Line bounding box.
@@ -285,7 +284,6 @@ inline const PRTextGroupWords::Subgroup& PRTextLine::subgroup( size_t idx ) cons
 //**********************************************************//
 //                  Inline PRTextLine::Block                //
 //**********************************************************//
-
 inline PRTextLine* PRTextLine::Block::line() const
 {
     return m_pLine;

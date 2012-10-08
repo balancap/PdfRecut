@@ -66,6 +66,9 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     const PdfArray& descendantFonts  = pFont->GetIndirectKey( "DescendantFonts" )->GetArray();
     PdfObject* pDFont = pFont->GetOwner()->GetObject( descendantFonts[0].GetReference() );
     m_fontCID->init( pDFont );
+
+    // FreeType font face.
+    this->initFTFace( m_fontCID->fontDescriptor() );
 }
 void PdfeFontType0::init()
 {

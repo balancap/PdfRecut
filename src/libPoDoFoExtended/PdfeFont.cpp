@@ -29,7 +29,9 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                          PdfeFont                        //
 //**********************************************************//
-PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary )
+PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary ) :
+    m_ftLibrary( NULL ), m_ftFace( NULL ),
+    m_pEncoding( NULL ), m_encodingOwned( false )
 {
     this->init();
 
@@ -43,11 +45,18 @@ PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary )
     else {
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
-
     m_ftLibrary = ftLibrary;
 }
 void PdfeFont::init()
 {
+    // Destroy objects if necessary.
+    if( m_pEncoding && m_encodingOwned ) {
+        delete m_pEncoding;
+    }
+    if( m_ftFace ) {
+        FT_Done_Face( m_ftFace );
+    }
+
     // Font Type and Subtype.
     m_type = PdfeFontType::Unknown;
     m_subtype = PdfeFontSubType::Unknown;
@@ -60,6 +69,8 @@ void PdfeFont::init()
 
     // Common elements shared by fonts.
     m_ftLibrary = NULL;
+    m_ftFace = NULL;
+    m_ftFaceData.clear();
     m_pEncoding = NULL;
     m_encodingOwned = false;
     m_unicodeCMap.init();
@@ -67,6 +78,10 @@ void PdfeFont::init()
 }
 PdfeFont::~PdfeFont()
 {
+    // Destroy FT_Face if necessary.
+    if( m_ftFace ) {
+        FT_Done_Face( m_ftFace );
+    }
 }
 
 double PdfeFont::width( const PdfeCIDString& str ) const
@@ -176,6 +191,7 @@ PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
+
 void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
 {
     // Create encoding if necessary.
@@ -212,6 +228,46 @@ void PdfeFont::initUnicodeCMap( PdfObject* pUCMapObj )
         }
     }
 }
+void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
+{
+    // Embedded font program.
+    if( fontDescriptor.fontEmbedded().fontFile() ) {
+        // Copy font program in a buffer.
+        char* pBuffer;
+        long length;
+        fontDescriptor.fontEmbedded().fontProgram( &pBuffer, &length );
+        if( !pBuffer ) {
+            // No font program found...
+            m_ftFace = NULL;
+            m_ftFaceData.clear();
+            return;
+        }
+
+        // Copy data into the member buffer.
+        m_ftFaceData.clear();
+        m_ftFaceData.append( pBuffer, length );
+        free( pBuffer );
+
+        // Load FreeType face from data buffer.
+        int error;
+        error = FT_New_Memory_Face( m_ftLibrary,
+                                    reinterpret_cast<unsigned char*>( m_ftFaceData.data() ),
+                                    m_ftFaceData.size(), 0,
+                                    &m_ftFace );
+        if( error ) {
+            // Can not load: return...
+            m_ftFace = NULL;
+            m_ftFaceData.clear();
+            return;
+        }
+    }
+    // Font program not embedded in the PDF: try to load on the host system.
+    else {
+        // TODO.
+        m_ftFace = NULL;
+        m_ftFaceData.clear();
+    }
+}
 
 void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
 {
@@ -235,18 +291,21 @@ void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
     ucode = pEncoding->GetCharCode( c );
     cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
 }
-
-std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
-                                             pdfe_cid firstCID,
-                                             pdfe_cid lastCID,
+std::vector<pdfe_gid> PdfeFont::mapCIDToGID(FT_Face ftFace,
+                                             pdfe_cid firstCID, pdfe_cid lastCID,
                                              PdfDifferenceEncoding* pDiffEncoding ) const
 {
     // Initialize the vector.
     std::vector<pdfe_gid> vectGID( lastCID - firstCID+1, 0 );
 
+    // No FreeType face loaded: return null vector.
+    if( !ftFace ) {
+        return vectGID;
+    }
+
     // Set a CharMap: keep the default one if selected.
-    if( !face->charmap ) {
-        FT_Set_Charmap( face, face->charmaps[0] );
+    if( !ftFace->charmap ) {
+        FT_Set_Charmap( ftFace, ftFace->charmaps[0] );
     }
 
     // Get the glyph index of every character.
@@ -265,7 +324,7 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
             cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_TO_HBO( ucode ) );
 
             // Glyph index from the glyph name.
-            glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
+            glyph_idx = FT_Get_Name_Index( ftFace, const_cast<char*>( cname.GetName().c_str() ) );
         }
 
         // Difference encoding: try to see if the character belongs to the difference map.
@@ -274,21 +333,21 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
 
             if( differences.Contains( c, cname, ucode ) ) {
                 // Find the glyph index from its name.
-                glyph_idx = FT_Get_Name_Index( face, const_cast<char*>( cname.GetName().c_str() ) );
+                glyph_idx = FT_Get_Name_Index( ftFace, const_cast<char*>( cname.GetName().c_str() ) );
             }
         }
 
         // No glyph index yet: try using the character code and the different charmaps.
         if( !glyph_idx ) {
-            for( int n = 0; n < face->num_charmaps && !glyph_idx ; n++ )
+            for( int n = 0; n < ftFace->num_charmaps && !glyph_idx ; n++ )
             {
-                FT_Set_Charmap( face, face->charmaps[n] );
+                FT_Set_Charmap( ftFace, ftFace->charmaps[n] );
 
                 if( ucode ) {
-                    glyph_idx = FT_Get_Char_Index( face, ucode );
+                    glyph_idx = FT_Get_Char_Index( ftFace, ucode );
                 }
                 if( !glyph_idx ) {
-                    glyph_idx = FT_Get_Char_Index( face, c );
+                    glyph_idx = FT_Get_Char_Index( ftFace, c );
                 }
             }
         }
@@ -299,39 +358,6 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID( FT_Face face,
         }
     }
     return vectGID;
-}
-int PdfeFont::glyphBBox(FT_Face face,
-                        pdfe_gid glyphIdx,
-                        const PdfRect& fontBBox,
-                        PdfRect* pGlyphBBox) const
-{
-    // Try to load the glyph.
-    int error = FT_Load_Glyph( face, glyphIdx, FT_LOAD_NO_SCALE );
-    if( error ) {
-        return error;
-    }
-    // Get bounding box, computed using the outline of the glyph.
-//    FT_BBox glyph_bbox;
-//    error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
-//    double bottom = glyph_bbox.yMin;
-//    double top = glyph_bbox.yMax;
-
-    // Compute bottom and top using glyph metrics.
-    FT_Glyph_Metrics metrics = face->glyph->metrics;
-    double bottom = static_cast<double>( metrics.horiBearingY - metrics.height );
-    double top = static_cast<double>( metrics.horiBearingY );
-
-    // Perform some corrections using font bounding box.
-    bottom = std::max( fontBBox.GetBottom(), bottom );
-    top = std::min( fontBBox.GetHeight()+fontBBox.GetBottom(), top );
-
-    // Set the bounding box of the glyph.
-    pGlyphBBox->SetLeft( 0.0 );
-    pGlyphBBox->SetWidth( metrics.horiAdvance );
-    pGlyphBBox->SetBottom( bottom );
-    pGlyphBBox->SetHeight( top-bottom );
-
-    return 0;
 }
 
 void PdfeFont::applyFontParameters( double& width, bool space32 ) const
@@ -354,5 +380,44 @@ void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
     bbox.SetHeight( bbox.GetHeight() * m_fontSize );
 }
 
+PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect& fontBBox )
+{
+    // Glyph bounding box.
+    PdfRect glyphBBox( 0, 0, 0, 0 );
+
+    // Try to load the glyph.
+    int error = FT_Load_Glyph( ftFace, glyph_idx, FT_LOAD_NO_SCALE );
+    if( error ) {
+        return glyphBBox;
+    }
+    // Get bounding box, computed using the outline of the glyph.
+//    FT_BBox glyph_bbox;
+//    error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
+//    double bottom = glyph_bbox.yMin;
+//    double top = glyph_bbox.yMax;
+
+    // Get bounding box using glyph metrics.
+    FT_Glyph_Metrics metrics = ftFace->glyph->metrics;
+    double left = double( metrics.horiBearingX );
+    double right = double( metrics.horiBearingX + metrics.width );
+    double bottom = double( metrics.horiBearingY - metrics.height );
+    double top = double( metrics.horiBearingY );
+
+    // Perform some corrections using font bounding box.
+    if( fontBBox.GetWidth() > 0  && fontBBox.GetHeight() > 0 ) {
+        left = std::max( fontBBox.GetLeft(), left );
+        right = std::min( fontBBox.GetLeft()+fontBBox.GetWidth(), right );
+        bottom = std::max( fontBBox.GetBottom(), bottom );
+        top = std::min( fontBBox.GetBottom()+fontBBox.GetHeight(), top );
+    }
+
+    // Set glyph bounding box.
+    glyphBBox.SetLeft( left );
+    glyphBBox.SetWidth( right-left );
+    glyphBBox.SetBottom( bottom );
+    glyphBBox.SetHeight( top-bottom );
+
+    return glyphBBox;
+}
 
 }
