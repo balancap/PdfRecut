@@ -63,7 +63,7 @@ protected:
     void initGlyphs( const PoDoFo::PdfObject* pFont );
 
 public:
-    // Virtual functions reimplemented.
+    // Implementation of PdfeFont interface.
     /** Get the descriptor object corresponding to the font.
      * \return Constant reference to a PdfeFontDescriptor object.
      */
@@ -73,6 +73,14 @@ public:
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const;
+
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return CID String corresponding.
+     */
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
+        return this->PdfeFont::toCIDString( str );
+    }
 
     /** Get the width of a character.
      * \param c Character identifier (CID).
@@ -88,11 +96,25 @@ public:
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
 
+    /** Convert a character to a unicode QString.
+     * \param  c Character identifier (CID).
+     * \param useUCMap Try to use the unicode CMap to convert.
+     * \return Unicode QString representing the character.
+     */
+    virtual QString toUnicode( pdfe_cid c, bool useUCMap = true ) const {
+        return this->PdfeFont::toUnicode( c, useUCMap );
+    }
+
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
+
+    /** Get default height used for space characters of the font.
+     * \return Space height.
+     */
+    virtual double spaceHeight() const;
 
 protected:
     // Members.

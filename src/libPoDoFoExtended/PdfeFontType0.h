@@ -57,7 +57,7 @@ protected:
     void initSpaceCharacters();
 
 public:
-    // PdfeFont
+    // Implementation of PdfeFont interface.
     /** Get the descriptor object corresponding to the font.
      * \return Constant reference to a PdfeFontDescriptor object.
      */
@@ -100,6 +100,11 @@ public:
      * \return Classification of the character.
      */
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
+
+    /** Get default height used for space characters of the font.
+     * \return Space height.
+     */
+    virtual double spaceHeight() const;
 
 protected:
     // Members.
@@ -164,6 +169,11 @@ public:
      * \return Constant reference to a vector of CID.
      */
     const std::vector<pdfe_cid> lastCIDs() const;
+
+    /** Get default height used for space characters of the font.
+     * \return Space height.
+     */
+    double spaceHeight() const;
 
 protected:
     /** Private class that represents an array of glyph's horizontal
@@ -273,6 +283,11 @@ inline const std::vector<pdfe_cid> PdfeFontCID::firstCIDs() const
 inline const std::vector<pdfe_cid> PdfeFontCID::lastCIDs() const
 {
     return m_hBBoxes.lastCIDs();
+}
+inline double PdfeFontCID::spaceHeight() const
+{
+    // Default value: 300.
+    return 300.;
 }
 
 

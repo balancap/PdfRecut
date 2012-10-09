@@ -250,6 +250,31 @@ PdfeFontSpace::Enum PdfeFontType3::isSpace( pdfe_cid c ) const
     return PdfeFontSpace::None;
 }
 
+double PdfeFontType3::spaceHeight() const
+{
+    // Compute mean width.
+    size_t nbCID = 0;
+    double spaceHeight = 0;
+
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        if( m_widthsCID[c - m_firstCID] > 0) {
+            spaceHeight += m_widthsCID[c - m_firstCID];
+            ++nbCID;
+        }
+    }
+    if( spaceHeight > 0 ) {
+        spaceHeight = spaceHeight / nbCID;
+    }
+    else {
+        spaceHeight = m_fontBBox.GetHeight();
+    }
+
+    // Divide by a constant factor: chose 2!
+    spaceHeight = spaceHeight / 2.0;
+
+    return spaceHeight;
+}
+
 //**********************************************************//
 //                      PdfeGlyphType3                      //
 //**********************************************************//

@@ -158,10 +158,13 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
     // Might be empty...
     return ustr;
 }
-
 PdfeFontSpace::Enum PdfeFontType0::isSpace( pdfe_cid c ) const
 {
     return PdfeFontSpace::None;
+}
+double PdfeFontType0::spaceHeight() const
+{
+    return m_fontCID->spaceHeight();
 }
 
 //**********************************************************//

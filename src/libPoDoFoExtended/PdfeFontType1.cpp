@@ -69,17 +69,14 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
     this->initEncoding( pEncoding );
-
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
+    // Space characters.
+    this->initSpaceCharacters();
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );
-
-    // Space characters vector.
-    this->initSpaceCharacters();
-
     // Characters bounding box.
     this->initCharactersBBox( pFont );
 }
@@ -144,10 +141,11 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() );
         m_encodingOwned = false;
     }
-
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
+    // Space characters.
+    this->initSpaceCharacters();
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );
@@ -169,8 +167,6 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         m_bboxCID.push_back( PdfRect( 0, 0, widthCID, fontBBox[3].GetReal() ) );
     }
 
-    // Space characters vector.
-    this->initSpaceCharacters();
 }
 void PdfeFontType1::initSpaceCharacters()
 {
@@ -210,16 +206,23 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
 
     // Get glyph bounding box.
     for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        // Glyph ID.
-        pdfe_gid glyph_idx = mapCIDToGID[c - m_firstCID];
-        if( glyph_idx ) {
-            PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, glyph_idx, fontBBox );
-            if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
-                //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
-                m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
-                m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
+        // Not a space character.
+        if( this->isSpace( c ) == PdfeFontSpace::None ) {
+            // Glyph ID.
+            pdfe_gid glyph_idx = mapCIDToGID[c - m_firstCID];
+            if( glyph_idx ) {
+                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, glyph_idx, fontBBox );
+                if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
+                    //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
+                    //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
+                    m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
+                    m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
+                }
             }
+        }
+        else {
+            m_bboxCID[c - m_firstCID].SetBottom( 0.0 );
+            m_bboxCID[c - m_firstCID].SetHeight( this->spaceHeight() );
         }
     }
 }

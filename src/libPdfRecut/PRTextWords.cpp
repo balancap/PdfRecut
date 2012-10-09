@@ -330,6 +330,7 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
             }
             bottom = 0.0;
             top = this->SpaceHeight;
+            top = pFont->spaceHeight();
             type = PRTextWordType::Space;
         }
         // Read classic word.
