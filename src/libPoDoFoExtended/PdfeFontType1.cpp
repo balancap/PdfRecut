@@ -73,7 +73,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
     // Space characters.
-    this->initSpaceCharacters();
+    this->initSpaceCharacters( m_firstCID, m_lastCID, true );
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );
@@ -144,8 +144,6 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
-    // Space characters.
-    this->initSpaceCharacters();
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );
@@ -167,18 +165,8 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         m_bboxCID.push_back( PdfRect( 0, 0, widthCID, fontBBox[3].GetReal() ) );
     }
 
-}
-void PdfeFontType1::initSpaceCharacters()
-{
-    m_spaceCharacters.clear();
-
-    // Find CIDs which correspond to the space character.
-    QChar qcharSpace( ' ' );
-    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        if( this->toUnicode( c ) == qcharSpace ) {
-            m_spaceCharacters.push_back( c );
-        }
-    }
+    // Space characters.
+    this->initSpaceCharacters( m_firstCID, m_lastCID, true );
 }
 void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
 {
@@ -286,22 +274,6 @@ PdfRect PdfeFontType1::bbox( pdfe_cid c, bool useFParams ) const
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return cbbox;
-}
-
-PdfeFontSpace::Enum PdfeFontType1::isSpace( pdfe_cid c ) const
-{
-    // Does the character belongs to the space vector ?
-    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
-        if( c == m_spaceCharacters[i] ) {
-            if( c == 32 ) {
-                return PdfeFontSpace::Code32;
-            }
-            else {
-                return PdfeFontSpace::Other;
-            }
-        }
-    }
-    return PdfeFontSpace::None;
 }
 
 }

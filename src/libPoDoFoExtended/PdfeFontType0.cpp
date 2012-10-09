@@ -72,6 +72,13 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Characters bounding box.
     m_fontCID->initCharactersBBox( m_ftFace );
+
+    // Space characters.
+    const std::vector<pdfe_cid>& firstCIDs = m_fontCID->firstCIDs();
+    const std::vector<pdfe_cid>& lastCIDs = m_fontCID->lastCIDs();
+    for( size_t i = 0 ; i < firstCIDs.size() ; ++i ) {
+        this->initSpaceCharacters( firstCIDs[i], lastCIDs[i], i == 0 );
+    }
 }
 void PdfeFontType0::init()
 {
@@ -83,12 +90,6 @@ void PdfeFontType0::init()
         m_fontCID =  new PdfeFontCID();
     }
     m_fontCID->init();
-}
-void PdfeFontType0::initSpaceCharacters()
-{
-    m_spaceCharacters.clear();
-
-    // TODO: use unicode CMap.
 }
 
 PdfeFontType0::~PdfeFontType0()
@@ -157,10 +158,6 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
     }
     // Might be empty...
     return ustr;
-}
-PdfeFontSpace::Enum PdfeFontType0::isSpace( pdfe_cid c ) const
-{
-    return PdfeFontSpace::None;
 }
 double PdfeFontType0::spaceHeight() const
 {

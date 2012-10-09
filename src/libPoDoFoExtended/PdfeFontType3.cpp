@@ -89,13 +89,12 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Font encoding.
     this->initEncoding( pEncoding );
-
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
 
     // Space characters vector.
-    this->initSpaceCharacters();
+    this->initSpaceCharacters( m_firstCID, m_lastCID, true );
 
     // Glyph vectors.
     this->initGlyphs( pFont );
@@ -115,18 +114,6 @@ void PdfeFontType3::init()
 
     m_mapCIDToGID.clear();
     m_glyphs.clear();
-}
-void PdfeFontType3::initSpaceCharacters()
-{
-    m_spaceCharacters.clear();
-
-    // Find CIDs which correspond to the space character.
-    QChar qcharSpace( ' ' );
-    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        if( this->toUnicode( c ) == qcharSpace ) {
-            m_spaceCharacters.push_back( c );
-        }
-    }
 }
 void PdfeFontType3::initGlyphs( const PdfObject* pFont )
 {
@@ -234,22 +221,6 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
-PdfeFontSpace::Enum PdfeFontType3::isSpace( pdfe_cid c ) const
-{
-    // Does the character belongs to the space vector ?
-    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
-        if( c == m_spaceCharacters[i] ) {
-            if( c == 32 ) {
-                return PdfeFontSpace::Code32;
-            }
-            else {
-                return PdfeFontSpace::Other;
-            }
-        }
-    }
-    return PdfeFontSpace::None;
-}
-
 double PdfeFontType3::spaceHeight() const
 {
     // Compute mean width.
@@ -269,8 +240,8 @@ double PdfeFontType3::spaceHeight() const
         spaceHeight = m_fontBBox.GetHeight();
     }
 
-    // Divide by a constant factor: chose 2!
-    spaceHeight = spaceHeight / 2.0;
+    // Multiply by a constant factor.
+    spaceHeight = spaceHeight * 0.8;
 
     return spaceHeight;
 }

@@ -54,10 +54,7 @@ protected:
      */
     PdfeFontType3();
 
-    /** Initialize the vector of space characters.
-     */
-    void initSpaceCharacters();
-    /** Initialize the vector of glyphs and their bounding box.
+   /** Initialize the vector of glyphs and their bounding box.
      * \param pFont Pointer to the object where is defined the type 3 font.
      */
     void initGlyphs( const PoDoFo::PdfObject* pFont );
@@ -109,7 +106,9 @@ public:
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
-    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
+    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const {
+        return this->PdfeFont::isSpace( c );
+    }
 
     /** Get default height used for space characters of the font.
      * \return Space height.

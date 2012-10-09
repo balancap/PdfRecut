@@ -277,6 +277,7 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 //        qDebug() << pFont->type() << " : " << ustr << " / " << ustr.length();
 //    }
 
+
     // Text parameters.
     double fontSize = m_textState.fontSize;
     double charSpace = m_textState.charSpace / fontSize;

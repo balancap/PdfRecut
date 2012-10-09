@@ -198,6 +198,12 @@ protected:
      * \param fontDescriptor Font descriptor containing font name and/or embedded font program.
      */
     void initFTFace( const PdfeFontDescriptor& fontDescriptor );
+    /** Initialize the list of space characters for the font.
+     * \param firstCID First CID to consider.
+     * \param lastCID Last CID to consider.
+     * \param clearContents Clear existing contents.
+     */
+    void initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents = true );
 
 protected:
     /** Get a character name from a CID using a PdfEncoding.
@@ -246,6 +252,14 @@ public:
     static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
                                         pdfe_gid glyph_idx,
                                         const PoDoFo::PdfRect& fontBBox );
+
+protected:
+    /** Static function that return what are considered as space characters.
+     * \return Constant reference to a vector of QChar containing space characters.
+     * By convention the first one is the classic space.
+     */
+    static const std::vector<QChar>& spaceCharacters();
+
 protected:
     // Members
     /// Font type.
@@ -277,8 +291,8 @@ protected:
     /// Unicode CMap.
     PdfeCMap  m_unicodeCMap;
 
-    /// Vector of space characters.
-    std::vector<pdfe_cid>  m_spaceCharacters;
+    /// Vector of space characters (pair of CID and space type).
+    std::vector< std::pair<pdfe_cid,PdfeFontSpace::Enum> >  m_spaceCharacters;
 
 public:
     //**********************************************************//

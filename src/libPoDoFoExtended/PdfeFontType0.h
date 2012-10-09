@@ -52,10 +52,6 @@ protected:
      */
     PdfeFontType0() { }
 
-    /** Initialize the vector of space characters.
-     */
-    void initSpaceCharacters();
-
 public:
     // Implementation of PdfeFont interface.
     /** Get the descriptor object corresponding to the font.
@@ -99,7 +95,9 @@ public:
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
-    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const;
+    virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const {
+        return this->PdfeFont::isSpace( c );
+    }
 
     /** Get default height used for space characters of the font.
      * \return Space height.
@@ -164,11 +162,11 @@ public:
     /** The vector that define first CID of each group.
      * \return Constant reference to a vector of CID.
      */
-    const std::vector<pdfe_cid> firstCIDs() const;
+    const std::vector<pdfe_cid>& firstCIDs() const;
     /** The vector that define last CID of each group.
      * \return Constant reference to a vector of CID.
      */
-    const std::vector<pdfe_cid> lastCIDs() const;
+    const std::vector<pdfe_cid>& lastCIDs() const;
 
     /** Get default height used for space characters of the font.
      * \return Space height.
@@ -228,11 +226,11 @@ protected:
         /** The vector that define first CID of each group.
          * \return Constant reference to a vector of CID.
          */
-        const std::vector<pdfe_cid> firstCIDs() const;
+        const std::vector<pdfe_cid>& firstCIDs() const;
         /** The vector that define last CID of each group.
          * \return Constant reference to a vector of CID.
          */
-        const std::vector<pdfe_cid> lastCIDs() const;
+        const std::vector<pdfe_cid>& lastCIDs() const;
 
     private:
         /// Vector containing first CID of each group.
@@ -276,18 +274,18 @@ inline double PdfeFontCID::width( pdfe_cid c ) const
 {
     return m_hBBoxes.width( c ) / 1000.;
 }
-inline const std::vector<pdfe_cid> PdfeFontCID::firstCIDs() const
+inline const std::vector<pdfe_cid>& PdfeFontCID::firstCIDs() const
 {
     return m_hBBoxes.firstCIDs();
 }
-inline const std::vector<pdfe_cid> PdfeFontCID::lastCIDs() const
+inline const std::vector<pdfe_cid>& PdfeFontCID::lastCIDs() const
 {
     return m_hBBoxes.lastCIDs();
 }
 inline double PdfeFontCID::spaceHeight() const
 {
     // Default value: 300.
-    return 300.;
+    return 500. / 1000.;
 }
 
 
@@ -324,11 +322,11 @@ inline PoDoFo::PdfRect PdfeFontCID::HBBoxArray::defaultBBox() const
 {
     return m_defaultBBox;
 }
-inline const std::vector<pdfe_cid> PdfeFontCID::HBBoxArray::firstCIDs() const
+inline const std::vector<pdfe_cid>& PdfeFontCID::HBBoxArray::firstCIDs() const
 {
     return m_firstCID;
 }
-inline const std::vector<pdfe_cid> PdfeFontCID::HBBoxArray::lastCIDs() const
+inline const std::vector<pdfe_cid>& PdfeFontCID::HBBoxArray::lastCIDs() const
 {
     return m_lastCID;
 }

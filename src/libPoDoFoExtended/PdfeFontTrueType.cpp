@@ -69,7 +69,7 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
     // Space characters vector.
-    this->initSpaceCharacters();
+    this->initSpaceCharacters( m_firstCID, m_lastCID, true );
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );
@@ -86,18 +86,6 @@ void PdfeFontTrueType::init()
     m_firstCID = 1;
     m_lastCID = 0;
     m_widthsCID.clear();
-}
-void PdfeFontTrueType::initSpaceCharacters()
-{
-    m_spaceCharacters.clear();
-
-    // Find CIDs which correspond to the space character.
-    QChar qcharSpace( ' ' );
-    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        if( this->toUnicode( c ) == qcharSpace ) {
-            m_spaceCharacters.push_back( c );
-        }
-    }
 }
 void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 {
@@ -209,22 +197,6 @@ PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return cbbox;
-}
-
-PdfeFontSpace::Enum PdfeFontTrueType::isSpace( pdfe_cid c ) const
-{
-    // Does the character belongs to the space vector ?
-    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
-        if( c == m_spaceCharacters[i] ) {
-            if( c == 32 ) {
-                return PdfeFontSpace::Code32;
-            }
-            else {
-                return PdfeFontSpace::Other;
-            }
-        }
-    }
-    return PdfeFontSpace::None;
 }
 
 }

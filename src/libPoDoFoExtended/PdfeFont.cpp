@@ -190,7 +190,17 @@ PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-
+// Default implementation.
+PdfeFontSpace::Enum PdfeFont::isSpace( pdfe_cid c ) const
+{
+    // Does the character belongs to the space characters vector ?
+    for( size_t i = 0 ; i < m_spaceCharacters.size() ; ++i ) {
+        if( c == m_spaceCharacters[i].first ) {
+            return m_spaceCharacters[i].second;
+        }
+    }
+    return PdfeFontSpace::None;
+}
 
 void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
 {
@@ -266,6 +276,42 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
         // TODO.
         m_ftFace = NULL;
         m_ftFaceData.clear();
+    }
+}
+void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents )
+{
+    // Clear content if necessary.
+    if( clearContents ) {
+        m_spaceCharacters.clear();
+    }
+
+    // Get the vector of predefined space characters.
+    const std::vector<QChar>& spaceChars = PdfeFont::spaceCharacters();
+
+    // Check CID for spaces.
+    for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
+        QString ustr = this->toUnicode( c );
+
+        // Specific case of the code 32 space character.
+        if( ustr.length() == 1 && ustr[0] == spaceChars[0] &&
+            this->type() != PdfeFontType::Type0 ) {
+            m_spaceCharacters.push_back(
+                        std::pair<pdfe_cid,PdfeFontSpace::Enum>( c, PdfeFontSpace::Code32 ) );
+        }
+        else {
+            bool isSpaceChar = true;
+            // Check every QChar in the string is a space.
+            for( int j = 0 ; j < ustr.length() ; ++j ) {
+                if( std::find( spaceChars.begin(), spaceChars.end(), ustr[j] ) == spaceChars.end() ) {
+                    isSpaceChar = false;
+                    break;
+                }
+            }
+            if( isSpaceChar ) {
+                m_spaceCharacters.push_back(
+                            std::pair<pdfe_cid,PdfeFontSpace::Enum>( c, PdfeFontSpace::Other ) );
+            }
+        }
     }
 }
 
@@ -418,6 +464,18 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
     glyphBBox.SetHeight( top-bottom );
 
     return glyphBBox;
+}
+
+const std::vector<QChar>& PdfeFont::spaceCharacters()
+{
+    // Static variable containing elements.
+    static std::vector<QChar> spaceChars;
+
+    // Insert characters in the vector if empty (should happen once).
+    if( !spaceChars.size() ) {
+        spaceChars.push_back( QChar( ' ' ) );
+    }
+    return spaceChars;
 }
 
 }
