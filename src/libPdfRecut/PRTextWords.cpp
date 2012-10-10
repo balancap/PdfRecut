@@ -272,10 +272,11 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 //        qDebug() << pFont->toUnicode( str );
 //    }
     //if( pFont->type() ==  PdfeFontType::Type0 )
-//    {
-//        QString ustr = pFont->toUnicode( str );
-//        qDebug() << pFont->type() << " : " << ustr << " / " << ustr.length();
-//    }
+    {
+        QString ustr = pFont->toUnicode( str );
+        qDebug() << pFont->type() << " : " << ustr << " / "
+                 << ustr.at(0).unicode() << " // ";
+    }
 
 
     // Text parameters.

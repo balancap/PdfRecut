@@ -151,7 +151,7 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
         // Create PdfeCMap::CharCodes from CID (might be multiple codes for with the same CID).
         std::vector<PdfeCMap::CharCode> charCodes = m_encodingCMap.toCharCode( c );
 
-        // Convert CharCode to unicode (use randomly the first one in the list...).
+        // Convert CharCode to unicode (use arbitrarly the first one in the list...).
         if( charCodes.size() ) {
             ustr = m_unicodeCMap.toUnicode( charCodes[0] );
         }

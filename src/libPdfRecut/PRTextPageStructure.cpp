@@ -663,9 +663,14 @@ void PRTextPageStructure::renderTextGroupsWords()
     // Rendering parameters.
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
-    renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+
+    renderParameters.textPB.drawPen = new QPen( Qt::blue );
+    renderParameters.textSpacePB.drawPen = new QPen( Qt::blue );
+    renderParameters.textPDFTranslationPB.drawPen = new QPen( Qt::blue );
+
     m_renderParameters = renderParameters;
 
     // Draw groups of words.
@@ -675,9 +680,13 @@ void PRTextPageStructure::renderTextGroupsWords()
         groupColor.setHsv( idx % 360, 255, 220 );
         groupColorSpace.setHsv( idx % 360, 100, 255 );
 
-        m_renderParameters.textPB.fillBrush->setColor( groupColor );
-        m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
-        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
+//        m_renderParameters.textPB.fillBrush->setColor( groupColor );
+//        m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
+//        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
+
+        m_renderParameters.textPB.drawPen->setColor( groupColor );
+        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
+        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
 
         this->textDrawGroupWords( *m_pGroupsWords[idx] );
 //        this->textDrawMainSubgroups( *m_pGroupsWords[idx] );

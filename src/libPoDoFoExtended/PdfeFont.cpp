@@ -139,10 +139,12 @@ QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
 
     // Not empty unicode CMap : directly try this way (if allowed).
     if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
-        // Create PdfeCMap::CharCode from CID.
-        pdf_uint16 code = PDFE_UTF16BE_TO_HBO( c );
-        PdfeCMap::CharCode charCode( code );
-        // Convert to unicode.
+        //pdf_uint16 code = PDFE_UTF16BE_TO_HBO( c );
+        //PdfeCMap::CharCode charCode( code );
+
+        // Create PdfeCMap::CharCode from CID (convert it back to pdf_uint8).
+        pdf_uint8 uint8_c( c ) ;
+        PdfeCMap::CharCode charCode( uint8_c );
         ustr = m_unicodeCMap.toUnicode( charCode );
     }
     // No result: Pdf encoding (not for Type 0 fonts).
@@ -291,6 +293,7 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
     // Check CID for spaces.
     for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
         QString ustr = this->toUnicode( c );
+        qDebug() << ustr << " / " << ustr.length();
 
         // Specific case of the code 32 space character.
         if( ustr.length() == 1 && ustr[0] == spaceChars[0] &&
@@ -298,7 +301,7 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
             m_spaceCharacters.push_back(
                         std::pair<pdfe_cid,PdfeFontSpace::Enum>( c, PdfeFontSpace::Code32 ) );
         }
-        else {
+        else if( ustr.length() ) {
             bool isSpaceChar = true;
             // Check every QChar in the string is a space.
             for( int j = 0 ; j < ustr.length() ; ++j ) {
@@ -473,7 +476,10 @@ const std::vector<QChar>& PdfeFont::spaceCharacters()
 
     // Insert characters in the vector if empty (should happen once).
     if( !spaceChars.size() ) {
-        spaceChars.push_back( QChar( ' ' ) );
+        spaceChars.push_back( QChar( 0x0020 ) );    // Space
+        spaceChars.push_back( QChar( 0x0009 ) );    // Tabular
+        spaceChars.push_back( QChar( 0x000d ) );    // Carriage return
+        spaceChars.push_back( QChar( 0x00a0 ) );    // No break space
     }
     return spaceChars;
 }
