@@ -33,6 +33,8 @@
 
 #include <QByteArray>
 #include <QString>
+#include <QImage>
+
 #include <QDebug>
 
 #include <iostream>
@@ -81,9 +83,6 @@ enum Enum {
     Code32,     // Single byte 32 space.
     Other       // Other kind of space character (not single byte, tabular, ...).
 };
-
-/// BE-UTF16 code for the classic space character.
-static const PoDoFo::pdf_utf16be UTF16Code = 0x2000;
 }
 
 /** Class that represent a generic PDF Font. Extend and improve the class define in PoDoFo.
@@ -242,16 +241,40 @@ protected:
                               bool space32 ) const;
 
 public:
+    /** Simple structure that gathers data of a rendered glyph.
+     */
+    struct GlyphImage
+    {
+        /// QIMage containing rendered glyph.
+        QImage  image;
+        /// Transformation matrix from bitmap coordinates to font coordinates.
+        PdfeMatrix  transMatrix;
+    };
+
+public:
     // Static functions used as interface with FreeType library.
     /** Obtain the bounding box of a glyph, using FreeType.
      * \param ftFace Freetype face object.
      * \param glyph_idx Glyph index.
      * \param fontBBox Font bounding box.
-     * \return Bounding box of the glyph (set to zero if anything wrong happened).
+     * \return Bounding box of the glyph (in 1000 units scale).
+     * Set to zero if anything wrong happened.
      */
     static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
                                         pdfe_gid glyph_idx,
                                         const PoDoFo::PdfRect& fontBBox );
+
+    /** Render a glyph using FreeType.
+     * \param ftFace Freetype face object.
+     * \param glyph_idx Glyph index.
+     * \param charHeight Size chosen for the glyph.
+     * \param resolution Resolution in dpi.
+     * \return GlyphImage containing the rendered glyph.
+     */
+    static GlyphImage ftGlyphRender( FT_Face ftFace,
+                                     pdfe_gid glyph_idx ,
+                                     unsigned int charHeight,
+                                     long resolution );
 
 protected:
     /** Static function that return what are considered as space characters.

@@ -32,7 +32,7 @@ std::vector<pdfe_utf16> UTF16BEStrToUTF16Vec( const char* pstr, size_t length )
 
     const pdfe_utf16* pchar = reinterpret_cast<const pdfe_utf16*>( pstr );
     for( size_t i = 0 ; i < length; i+=2 ) {
-        utf16vec.push_back( PDFE_UTF16BE_TO_HBO( *pchar ) );
+        utf16vec.push_back( PDFE_UTF16BE_HBO( *pchar ) );
         ++pchar;
     }
     return utf16vec;

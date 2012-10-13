@@ -309,7 +309,7 @@ PdfeCIDString PdfeCMap::toCIDString( const PoDoFo::PdfString& str ) const
         for( long i = 0 ; i < length-1 ; i += 2 ) {
             // Read character (Litte endian: need to invert bytes).
             c = *pValue;
-            cidstr.push_back( PDFE_UTF16BE_TO_HBO( c ) );
+            cidstr.push_back( PDFE_UTF16BE_HBO( c ) );
             ++pValue;
         }
         return cidstr;
@@ -328,7 +328,7 @@ std::vector<PdfeCMap::CharCode> PdfeCMap::toCharCode( pdfe_cid c ) const
     // Identity CMap
     if( m_identity ) {
         // Simply create the corresponding code (revert to bytes to BE).
-        c  = PDFE_UTF16BE_TO_HBO( c );
+        c  = PDFE_UTF16BE_HBO( c );
         charCodes.push_back( CharCode( c ) );
         return charCodes;
     }

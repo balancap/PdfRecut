@@ -139,7 +139,7 @@ QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
 
     // Not empty unicode CMap : directly try this way (if allowed).
     if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
-        //pdf_uint16 code = PDFE_UTF16BE_TO_HBO( c );
+        //pdf_uint16 code = PDFE_UTF16BE_HBO( c );
         //PdfeCMap::CharCode charCode( code );
 
         // Create PdfeCMap::CharCode from CID (convert it back to pdf_uint8).
@@ -151,7 +151,7 @@ QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
     if( m_pEncoding && !ustr.length() && this->type() != PdfeFontType::Type0 ) {
         // Get UTF16 code from PdfEncoding object.
         pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
-        ucode = PDFE_UTF16BE_TO_HBO( ucode );
+        ucode = PDFE_UTF16BE_HBO( ucode );
         return QString::fromUtf16( &ucode, 1 );
     }
     // Might be empty...
@@ -293,7 +293,6 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
     // Check CID for spaces.
     for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
         QString ustr = this->toUnicode( c );
-        qDebug() << ustr << " / " << ustr.length();
 
         // Specific case of the code 32 space character.
         if( ustr.length() == 1 && ustr[0] == spaceChars[0] &&
@@ -370,7 +369,7 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID(FT_Face ftFace,
         if( ustr.length() == 1 ) {
             // Character UTF16BE
             ucode = ustr[0].unicode();
-            cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_TO_HBO( ucode ) );
+            cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_HBO( ucode ) );
 
             // Glyph index from the glyph name.
             glyph_idx = FT_Get_Name_Index( ftFace, const_cast<char*>( cname.GetName().c_str() ) );
@@ -391,9 +390,8 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID(FT_Face ftFace,
             for( int n = 0; n < ftFace->num_charmaps && !glyph_idx ; n++ )
             {
                 FT_Set_Charmap( ftFace, ftFace->charmaps[n] );
-
                 if( ucode ) {
-                    glyph_idx = FT_Get_Char_Index( ftFace, ucode );
+                    glyph_idx = FT_Get_Char_Index( ftFace, PDFE_UTF16BE_HBO( ucode ) );
                 }
                 if( !glyph_idx ) {
                     glyph_idx = FT_Get_Char_Index( ftFace, c );
@@ -404,6 +402,12 @@ std::vector<pdfe_gid> PdfeFont::mapCIDToGID(FT_Face ftFace,
         // Set glyph index if found.
         if( glyph_idx ) {
             vectGID[ c - firstCID ] = glyph_idx;
+
+            // Test Glyph rendering.
+            GlyphImage glyphImg = PdfeFont::ftGlyphRender( m_ftFace, glyph_idx, 100, 100 );
+            QString filename = QString("./glyphs/%1_CID%2.png").arg(ulong(this)).arg( c, 3, 10, QLatin1Char('0') );
+            glyphImg.image.save( filename );
+
         }
     }
     return vectGID;
@@ -445,12 +449,16 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
 //    double bottom = glyph_bbox.yMin;
 //    double top = glyph_bbox.yMax;
 
-    // Get bounding box using glyph metrics.
+    // Scaling factor due to face units per EM.
+    double scaling = 1000. / double( ftFace->units_per_EM );
+
+    // Get bounding box using glyph metrics, in 1000 scale font units.
     FT_Glyph_Metrics metrics = ftFace->glyph->metrics;
-    double left = double( metrics.horiBearingX );
-    double right = double( metrics.horiBearingX + metrics.width );
-    double bottom = double( metrics.horiBearingY - metrics.height );
-    double top = double( metrics.horiBearingY );
+    double left = double( metrics.horiBearingX ) * scaling;
+    double right = double( metrics.horiBearingX + metrics.width ) * scaling;
+    double bottom = double( metrics.horiBearingY - metrics.height ) * scaling;
+    double top = double( metrics.horiBearingY ) * scaling;
+    //double advance = double( metrics.horiAdvance ) * scaling;
 
     // Perform some corrections using font bounding box.
     if( fontBBox.GetWidth() > 0  && fontBBox.GetHeight() > 0 ) {
@@ -467,6 +475,53 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
     glyphBBox.SetHeight( top-bottom );
 
     return glyphBBox;
+}
+
+PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx,
+                                              unsigned int charHeight, long resolution )
+{
+    // Static color table (always the same!).
+    static QVector<QRgb> colorTable;
+    if( !colorTable.size() ) {
+        for( int i = 0 ; i < 256 ; ++i ) {
+            colorTable << qRgba(0, 0, 0, i);
+        }
+    }
+
+    // Set character size.
+    int error = FT_Set_Char_Size( ftFace,
+                                  0, charHeight * 64,
+                                  0, resolution );
+
+    // Error : return empty image.
+    if( error ) {
+        return GlyphImage();
+    }
+
+    // Load glyph and render it.
+    error = FT_Load_Glyph( ftFace, glyph_idx, FT_LOAD_DEFAULT);
+    if( error ) {
+        return GlyphImage();
+    }
+    error = FT_Render_Glyph( ftFace->glyph, FT_RENDER_MODE_NORMAL);
+    if( error ) {
+        return GlyphImage();
+    }
+
+    // Create QImage from the glyph bitmap.
+    GlyphImage glyph;
+    glyph.image = QImage( ftFace->glyph->bitmap.buffer,
+                       ftFace->glyph->bitmap.width,
+                       ftFace->glyph->bitmap.rows,
+                       ftFace->glyph->bitmap.pitch,
+                       QImage::Format_Indexed8 );
+    glyph.image.setColorTable(colorTable);
+
+    // TODO: set transformation matrix.
+    // pixel_size = point_size * resolution / 72
+    // pixel_coord = grid_coord * pixel_size / EM_size
+
+    return glyph;
 }
 
 const std::vector<QChar>& PdfeFont::spaceCharacters()

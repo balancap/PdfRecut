@@ -158,7 +158,7 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         ucode = m_pEncoding->GetCharCode( i );
 
         // Dumb bug in PoDoFo: why bytes are inverted in GetCharCode but not UnicodeCharWidth ???
-        ucode = PDFE_UTF16BE_TO_HBO( ucode );
+        ucode = PDFE_UTF16BE_HBO( ucode );
 
         widthCID = pMetrics->UnicodeCharWidth( ucode ) * 1000.0;
         m_widthsCID.push_back( widthCID );

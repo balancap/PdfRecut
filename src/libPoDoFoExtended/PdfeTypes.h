@@ -58,9 +58,9 @@ typedef std::basic_string<pdfe_cid>  PdfeCIDString;
 /** Macro that convert UTF16 Big Endian to host byte order (or conversely).
  */
 #ifdef PODOFO_IS_LITTLE_ENDIAN
-#define PDFE_UTF16BE_TO_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )
+#define PDFE_UTF16BE_HBO(c) ( ( ( (c) & 0xff) << 8 ) | ( ( (c) & 0xff00) >> 8 ) )
 #else
-#define PDFE_UTF16BE_TO_HBO(c) ( c )
+#define PDFE_UTF16BE_HBO(c) ( c )
 #endif
 
 /** Convert a single byte string to a vector of UTF16 character.
