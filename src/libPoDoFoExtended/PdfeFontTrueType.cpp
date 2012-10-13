@@ -106,20 +106,14 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
         m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
     }
 
-    // Construct the map CID to GID.
-    std::vector<pdfe_gid> mapCIDToGID = this->mapCIDToGID( m_ftFace,
-                                                           m_firstCID, m_lastCID,
-                                                           dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding ) );
-
-
     // Get glyph bounding box.
     for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
         // Not a space character.
         if( this->isSpace( c ) == PdfeFontSpace::None ) {
             // Glyph ID.
-            pdfe_gid glyph_idx = mapCIDToGID[c - m_firstCID];
-            if( glyph_idx ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, glyph_idx, fontBBox );
+            pdfe_gid gid = this->fromCIDToGID( c );
+            if( gid ) {
+                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
                     //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
                     //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );

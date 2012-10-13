@@ -205,26 +205,19 @@ protected:
     void initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents = true );
 
 protected:
-    /** Get a character name from a CID using a PdfEncoding.
-     * \param pEncoding Pointer to the encoding.
+    /** Get a character name from its CID. First try using the font encoding and then the unicode code.
+     * Needs the encoding object to be initialized.
      * \param c CID of the character.
-     * \param cname Reference to the name to set.
+     * \return Name of the character. Empty if no name found.
      */
-    void cidToName(PoDoFo::PdfEncoding* pEncoding,
-                   pdfe_cid c,
-                   PoDoFo::PdfName& cname );
+    PoDoFo::PdfName fromCIDToName( pdfe_cid c ) const;
 
-    /** Construct a CID to GID map.
-     * \param face Freetype face object.
-     * \param firstCID CID of the first character to consider.
-     * \param lastCID CID of the last character to consider.
-     * \param pDiffEncoding Difference encoding object (if existing, NULL else).
-     * \return Vector of corresponding GID.
+    /** Convert a character CID to the corresponding glyph GID.
+     * Need the freetype face, unicode CMap and encoding to be initialized.
+     * \param c Character CID;
+     * \return Glyph GID. 0 if not found.
      */
-    std::vector<pdfe_gid> mapCIDToGID( FT_Face ftFace,
-                                       pdfe_cid firstCID,
-                                       pdfe_cid lastCID,
-                                       PoDoFo::PdfDifferenceEncoding* pDiffEncoding ) const;
+    pdfe_gid fromCIDToGID( pdfe_cid c ) const;
 
     /** Apply font parameter to a character width.
      * \param Reference to the width to modify.

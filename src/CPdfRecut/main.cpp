@@ -162,7 +162,7 @@ void proceedFile( QString filePath )
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
-    for( int i = 0 ; i < std::min(1,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
+    for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
 
 //        PRRenderPage renderPage( &document, i );

@@ -135,7 +135,7 @@ void PdfeFontType3::initGlyphs( const PdfObject* pFont )
     PdfObject* pGlyph;
     for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
         // Get character name and search it in CharProcs.
-        PdfeFont::cidToName( m_pEncoding, c, cname );
+        cname = this->fromCIDToName( c );
         pGlyph = pCharProcs->GetIndirectKey( cname );
 
         // If found, set GID to c-m_firstCID+1 and create glyph.

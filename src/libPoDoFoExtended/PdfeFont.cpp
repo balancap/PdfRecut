@@ -222,22 +222,14 @@ void PdfeFont::initUnicodeCMap( PdfObject* pUCMapObj )
         m_unicodeCMap.init( pUCMapObj );
 
         // Save CMap (Debug...)
-        std::string path( "./cmaps/" );
-        path += this->fontDescriptor().fontName().GetName();
-        path += ".txt";
+//        std::string path( "./cmaps/" );
+//        path += this->fontDescriptor().fontName().GetName();
+//        path += ".txt";
 
-        PdfOutputDevice outFile( path.c_str() );
-        PdfMemStream* pStream = dynamic_cast<PdfMemStream*>( pUCMapObj->GetStream() );
-        pStream->Uncompress();
-        pStream->Write( &outFile );
-
-        std::cout << this->fontDescriptor().fontName().GetName().length() << " : "
-                  << this->fontDescriptor().fontName().GetName() << " / "
-                  << this->type() << std::endl;
-
-        if( ! this->fontDescriptor().fontName().GetName().length() ) {
-            std::cout << "mmm" << std::endl;
-        }
+//        PdfOutputDevice outFile( path.c_str() );
+//        PdfMemStream* pStream = dynamic_cast<PdfMemStream*>( pUCMapObj->GetStream() );
+//        pStream->Uncompress();
+//        pStream->Write( &outFile );
     }
 }
 void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
@@ -317,100 +309,79 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
     }
 }
 
-void PdfeFont::cidToName( PdfEncoding* pEncoding, pdfe_cid c, PdfName& cname )
+PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
 {
-    // No encoding...
-    if( !pEncoding ) {
-        cname = PdfName();
-    }
+    PdfName cname;
     pdf_utf16be ucode;
 
-    // First try using difference encoding.
-    PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( pEncoding );
+    // Is the font encoding a difference encoding?
+    PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding );
     if( pDiffEncoding ) {
         const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
         if( differences.Contains( c, cname, ucode ) ) {
             // Name found!
-            return;
+            return cname;
         }
     }
+    // Else: try using the unicode code of c.
+    QString ustr = this->toUnicode( c, true );
+    if( ustr.length() == 1 ) {
+        ucode = ustr[0].unicode();
+        ucode = PDFE_UTF16BE_HBO( ucode );
+        cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
 
-    // Classic encoding: try using the char code (UTF16) and the map unicode<->name.
-    ucode = pEncoding->GetCharCode( c );
-    cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
+        // Check the name does no correspond to default PoDoFo construction.
+        QString defName = QString("uni%1").arg( ucode, 4, 16, QLatin1Char('0') );
+        if( defName.toStdString() != cname.GetName() ) {
+            return cname;
+        }
+    }
+    return PdfName();
 }
-std::vector<pdfe_gid> PdfeFont::mapCIDToGID(FT_Face ftFace,
-                                             pdfe_cid firstCID, pdfe_cid lastCID,
-                                             PdfDifferenceEncoding* pDiffEncoding ) const
+pdfe_gid PdfeFont::fromCIDToGID( pdfe_cid c ) const
 {
-    // Initialize the vector.
-    std::vector<pdfe_gid> vectGID( lastCID - firstCID+1, 0 );
-
-    // No FreeType face loaded: return null vector.
-    if( !ftFace ) {
-        return vectGID;
+    // No FreeType face loaded: return 0 GID.
+    if( !m_ftFace ) {
+        return 0;
     }
 
     // Set a CharMap: keep the default one if selected.
-    if( !ftFace->charmap ) {
-        FT_Set_Charmap( ftFace, ftFace->charmaps[0] );
+    if( !m_ftFace->charmap ) {
+        FT_Set_Charmap( m_ftFace, m_ftFace->charmaps[0] );
     }
 
-    // Get the glyph index of every character.
+    // Get the glyph index of the character.
     PdfName cname;
-    pdfe_gid glyph_idx;
-    pdf_utf16be ucode;
+    pdf_utf16be ucode( 0 );
+    pdfe_gid gid( 0 );
 
-    for( pdfe_cid c = firstCID ; c <= lastCID ; ++c ) {
-        glyph_idx = 0;
-
-        // Try to obtain the CID name from its unicode code.
-        QString ustr = this->toUnicode( c );
-        if( ustr.length() == 1 ) {
-            // Character UTF16BE
-            ucode = ustr[0].unicode();
-            cname = PdfDifferenceEncoding::UnicodeIDToName( PDFE_UTF16BE_HBO( ucode ) );
-
-            // Glyph index from the glyph name.
-            glyph_idx = FT_Get_Name_Index( ftFace, const_cast<char*>( cname.GetName().c_str() ) );
-        }
-
-        // Difference encoding: try to see if the character belongs to the difference map.
-        if( pDiffEncoding ) {
-            const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
-
-            if( differences.Contains( c, cname, ucode ) ) {
-                // Find the glyph index from its name.
-                glyph_idx = FT_Get_Name_Index( ftFace, const_cast<char*>( cname.GetName().c_str() ) );
-            }
-        }
-
-        // No glyph index yet: try using the character code and the different charmaps.
-        if( !glyph_idx ) {
-            for( int n = 0; n < ftFace->num_charmaps && !glyph_idx ; n++ )
-            {
-                FT_Set_Charmap( ftFace, ftFace->charmaps[n] );
-                if( ucode ) {
-                    glyph_idx = FT_Get_Char_Index( ftFace, PDFE_UTF16BE_HBO( ucode ) );
-                }
-                if( !glyph_idx ) {
-                    glyph_idx = FT_Get_Char_Index( ftFace, c );
-                }
-            }
-        }
-
-        // Set glyph index if found.
-        if( glyph_idx ) {
-            vectGID[ c - firstCID ] = glyph_idx;
-
-            // Test Glyph rendering.
-            GlyphImage glyphImg = PdfeFont::ftGlyphRender( m_ftFace, glyph_idx, 100, 100 );
-            QString filename = QString("./glyphs/%1_CID%2.png").arg(ulong(this)).arg( c, 3, 10, QLatin1Char('0') );
-            glyphImg.image.save( filename );
-
+    // First try using the character name, obtain from its CID.
+    cname = this->fromCIDToName( c );
+    if( cname.GetLength() ) {
+        gid = FT_Get_Name_Index( m_ftFace, const_cast<char*>( cname.GetName().c_str() ) );
+        if( gid ) {
+            return gid;
         }
     }
-    return vectGID;
+
+    // Unicode of the character.
+    QString ustr = this->toUnicode( c );
+    if( ustr.length() == 1 ) {
+        ucode = ustr[0].unicode();
+    }
+    // No glyph index yet: try using the character code and the different charmaps.
+    for( int n = 0; n < m_ftFace->num_charmaps && !gid ; n++ ) {
+        FT_Set_Charmap( m_ftFace, m_ftFace->charmaps[n] );
+        // Unicode first...
+        if( ucode ) {
+            gid = FT_Get_Char_Index( m_ftFace, PDFE_UTF16BE_HBO( ucode ) );
+        }
+        // Also try character code.
+        if( !gid ) {
+            gid = FT_Get_Char_Index( m_ftFace, c );
+        }
+    }
+    return gid;
 }
 
 void PdfeFont::applyFontParameters( double& width, bool space32 ) const
