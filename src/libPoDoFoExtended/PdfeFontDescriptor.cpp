@@ -20,6 +20,7 @@
 #include "PdfeFontDescriptor.h"
 #include "podofo/podofo.h"
 
+#include <QRegExp>
 #include <QDebug>
 
 using namespace PoDoFo;
@@ -63,7 +64,7 @@ void PdfeFontEmbedded::setFontFiles( PoDoFo::PdfObject* fontFile,
     m_fontFile2 = fontFile2;
     m_fontFile3 = fontFile3;
 }
-void PdfeFontEmbedded::fontProgram( char** pBuffer, long* pLength ) const
+void PdfeFontEmbedded::copyFontProgram( char** pBuffer, long* pLength ) const
 {
     // Get font file.
     PoDoFo::PdfObject* fontFile = this->fontFile();
@@ -92,31 +93,34 @@ PdfeFontDescriptor::PdfeFontDescriptor( PdfObject* pFontDesc )
     // Read values in the PdfObject.
     this->init( pFontDesc );
 }
-PdfeFontDescriptor::PdfeFontDescriptor( const PdfeFontDescriptor& fontDesc )
+PdfeFontDescriptor::PdfeFontDescriptor( const PdfeFontDescriptor& rhs )
 {
     this->init();
 
-    m_fontName = fontDesc.m_fontName;
-    m_fontFamily = fontDesc.m_fontFamily;
-    m_fontStretch = fontDesc.m_fontStretch;
-    m_fontBBox = fontDesc.m_fontBBox;
+    m_fontName = rhs.m_fontName;
+    m_fontNameShort = rhs.m_fontNameShort;
+    m_subsetFont = rhs.m_subsetFont;
 
-    m_fontWeight = fontDesc.m_fontWeight;
-    m_flags = fontDesc.m_flags;
-    m_italicAngle = fontDesc.m_italicAngle;
+    m_fontFamily = rhs.m_fontFamily;
+    m_fontStretch = rhs.m_fontStretch;
+    m_fontBBox = rhs.m_fontBBox;
 
-    m_ascent = fontDesc.m_ascent;
-    m_descent = fontDesc.m_descent;
-    m_leading = fontDesc.m_leading;
-    m_capHeight = fontDesc.m_capHeight;
-    m_xHeight = fontDesc.m_xHeight;
-    m_stemV = fontDesc.m_stemV;
-    m_stemH = fontDesc.m_stemH;
-    m_avgWidth = fontDesc.m_avgWidth;
-    m_maxWidth = fontDesc.m_maxWidth;
-    m_missingWidth = fontDesc.m_missingWidth;
+    m_fontWeight = rhs.m_fontWeight;
+    m_flags = rhs.m_flags;
+    m_italicAngle = rhs.m_italicAngle;
 
-    m_fontEmbedded = fontDesc.m_fontEmbedded;
+    m_ascent = rhs.m_ascent;
+    m_descent = rhs.m_descent;
+    m_leading = rhs.m_leading;
+    m_capHeight = rhs.m_capHeight;
+    m_xHeight = rhs.m_xHeight;
+    m_stemV = rhs.m_stemV;
+    m_stemH = rhs.m_stemH;
+    m_avgWidth = rhs.m_avgWidth;
+    m_maxWidth = rhs.m_maxWidth;
+    m_missingWidth = rhs.m_missingWidth;
+
+    m_fontEmbedded = rhs.m_fontEmbedded;
 
     // TODO: CharSet and CID Keys.
     m_charSet = PdfString();
@@ -125,7 +129,8 @@ PdfeFontDescriptor::PdfeFontDescriptor( const PdfeFontDescriptor& fontDesc )
 void PdfeFontDescriptor::init()
 {
     // Default values.
-    m_fontName = PdfName();
+    this->setFontName( PdfName() );
+
     m_fontFamily = PdfString();
     m_fontStretch = PdfName();
     m_fontBBox = PdfRect( 0.0, 0.0, 0.0, 0.0 );
@@ -166,10 +171,9 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
     this->init();
 
     // Read keys in the dictionary.
-    PdfObject* pObj;
-    m_fontName = pFontDesc->GetIndirectKey( "FontName" )->GetName();
+    this->setFontName( pFontDesc->GetIndirectKey( "FontName" )->GetName() );
 
-    pObj = pFontDesc->GetIndirectKey( "FontFamily" );
+    PdfObject* pObj = pFontDesc->GetIndirectKey( "FontFamily" );
     if( pObj ) {
         m_fontFamily = pObj->GetString();
     }
@@ -183,20 +187,22 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
         m_fontBBox = PdfRect( pObj->GetArray() );
     }
 
-    m_fontWeight = static_cast<pdf_uint32>( pFontDesc->GetDictionary().GetKeyAsLong( "FontWeight", 400L ) );
-    m_flags = static_cast<pdf_uint32>( pFontDesc->GetDictionary().GetKeyAsLong( "Flags", 0 ) );
-    m_italicAngle = static_cast<pdf_int32>( pFontDesc->GetDictionary().GetKeyAsLong( "ItalicAngle", 0 ) );
+    const PdfDictionary& pFontDescDict = pFontDesc->GetDictionary();
 
-    m_ascent = pFontDesc->GetDictionary().GetKeyAsReal( "Ascent", 0.0 );
-    m_descent = pFontDesc->GetDictionary().GetKeyAsReal( "Descent", 0.0 );
-    m_leading = pFontDesc->GetDictionary().GetKeyAsReal( "Leading", 0.0 );
-    m_capHeight = pFontDesc->GetDictionary().GetKeyAsReal( "CapHeight", 0.0 );
-    m_xHeight = pFontDesc->GetDictionary().GetKeyAsReal( "XHeight", 0.0 );
-    m_stemV = pFontDesc->GetDictionary().GetKeyAsReal( "StemV", 0.0 );
-    m_stemH = pFontDesc->GetDictionary().GetKeyAsReal( "StemH", 0.0 );
-    m_avgWidth = pFontDesc->GetDictionary().GetKeyAsReal( "AvgWidth", 0.0 );
-    m_maxWidth = pFontDesc->GetDictionary().GetKeyAsReal( "MaxWidth", 0.0 );
-    m_missingWidth = pFontDesc->GetDictionary().GetKeyAsReal( "MissingWidth", 0.0 );
+    m_fontWeight = static_cast<pdf_uint32>( pFontDescDict.GetKeyAsLong( "FontWeight", 400L ) );
+    m_flags = static_cast<pdf_uint32>( pFontDescDict.GetKeyAsLong( "Flags", 0 ) );
+    m_italicAngle = static_cast<pdf_int32>( pFontDescDict.GetKeyAsLong( "ItalicAngle", 0 ) );
+
+    m_ascent = pFontDescDict.GetKeyAsReal( "Ascent", 0.0 );
+    m_descent = pFontDescDict.GetKeyAsReal( "Descent", 0.0 );
+    m_leading = pFontDescDict.GetKeyAsReal( "Leading", 0.0 );
+    m_capHeight = pFontDescDict.GetKeyAsReal( "CapHeight", 0.0 );
+    m_xHeight = pFontDescDict.GetKeyAsReal( "XHeight", 0.0 );
+    m_stemV = pFontDescDict.GetKeyAsReal( "StemV", 0.0 );
+    m_stemH = pFontDescDict.GetKeyAsReal( "StemH", 0.0 );
+    m_avgWidth = pFontDescDict.GetKeyAsReal( "AvgWidth", 0.0 );
+    m_maxWidth = pFontDescDict.GetKeyAsReal( "MaxWidth", 0.0 );
+    m_missingWidth = pFontDescDict.GetKeyAsReal( "MissingWidth", 0.0 );
 
     // Read FontFiles
     m_fontEmbedded.setFontFiles( pFontDesc->GetIndirectKey( "FontFile" ),
@@ -210,9 +216,11 @@ void PdfeFontDescriptor::resetKey( PdfeFontDescriptor::Key key )
     // Reset to default value
     switch( key ) {
     case FontName:
-        m_fontName = PdfName();         break;
+        this->setFontName( PdfName() );
+        break;
     case FontFamily:
-        m_fontFamily = PdfString();     break;
+        m_fontFamily = PdfString();
+        break;
     case FontStretch:
         m_fontStretch = PdfName();      break;
     case FontBBox:
@@ -248,5 +256,31 @@ void PdfeFontDescriptor::resetKey( PdfeFontDescriptor::Key key )
     // TODO: FontFiles, CharSet and CID Keys.
 }
 
+PdfName PdfeFontDescriptor::fontName( bool subsetPrefix ) const
+{
+    if( subsetPrefix ) {
+        return m_fontName;
+    }
+    else {
+        return m_fontNameShort;
+    }
+}
+void PdfeFontDescriptor::setFontName( const PdfName& fontName )
+{
+    std::string sname = fontName.GetName();
+
+    // Name correspond to a subset font?
+    QRegExp rx( "^[A-Z]{6}\\+.*$" );
+    m_subsetFont = rx.exactMatch( sname.c_str() );
+
+    // Remove prefix for short name.
+    m_fontName = fontName;
+    if( m_subsetFont ) {
+        m_fontNameShort = sname.substr( 7 );
+    }
+    else {
+        m_fontNameShort = fontName;
+    }
+}
 
 }

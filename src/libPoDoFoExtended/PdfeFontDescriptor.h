@@ -56,17 +56,17 @@ public:
      */
     PoDoFo::PdfObject* fontFile( size_t idx = 0 ) const;
 
-    /** Set font file objects.
+    /** Set font file objects (as set in a font descriptor).
      */
     void setFontFiles( PoDoFo::PdfObject* fontFile,
                        PoDoFo::PdfObject* fontFile2,
                        PoDoFo::PdfObject* fontFile3 );
 
-    /** Get the font program, stored in a buffer.
+    /** Get a copy of the font program, stored in a buffer.
      * \param pBuffer Pointer of the buffer which will contain the font program. Owned by the user.
      * \param pLength Pointer to the length of the buffer.
      */
-    void fontProgram( char** pBuffer, long* pLength ) const;
+    void copyFontProgram( char** pBuffer, long* pLength ) const;
 
 protected:
     /// FontFile object no1.
@@ -153,7 +153,13 @@ public:
 
 protected:
     // Members corresponding to keys.
+    /// Font full name.
     PoDoFo::PdfName     m_fontName;
+    /// Font short name (without subset prefix).
+    PoDoFo::PdfName     m_fontNameShort;
+    /// Is it a subset font?
+    bool     m_subsetFont;
+
     PoDoFo::PdfString   m_fontFamily;
     PoDoFo::PdfName     m_fontStretch;
     PoDoFo::PdfRect     m_fontBBox;
@@ -180,8 +186,10 @@ public:
     //**********************************************************//
     //                     Getters / Setters                    //
     //**********************************************************//
-    PoDoFo::PdfName fontName() const                    {  return m_fontName;  }
-    void setFontName( const PoDoFo::PdfName& fontName ) {  m_fontName = fontName;  }
+    PoDoFo::PdfName fontName( bool subsetPrefix = true ) const;
+    void setFontName( const PoDoFo::PdfName& fontName );
+    bool isSubsetFont() const;
+
     PoDoFo::PdfString fontFamily() const                    {  return m_fontFamily;  }
     void fontFamily( const PoDoFo::PdfString& fontFamily )  {  m_fontFamily = fontFamily;  }
     PoDoFo::PdfName fontStretch() const                         {  return m_fontStretch;  }
@@ -223,6 +231,9 @@ public:
 //**********************************************************//
 //                     Getters / Setters                    //
 //**********************************************************//
+inline bool PdfeFontDescriptor::isSubsetFont() const {
+    return m_subsetFont;
+}
 
 }
 

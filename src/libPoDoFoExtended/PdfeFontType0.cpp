@@ -45,10 +45,6 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Base font (required).
     m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
 
-    // TMP...
-    const_cast<PdfeFontDescriptor&>( m_fontCID->fontDescriptor() ).setFontName( m_baseFont );
-
-
     // Encoding CMap.
     PdfObject* pEncodingCMap = pFont->GetIndirectKey( "Encoding" );
     if( pEncodingCMap->IsName() ) {

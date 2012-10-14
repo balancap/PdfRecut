@@ -241,7 +241,7 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
         // Copy font program in a buffer.
         char* pBuffer;
         long length;
-        fontDescriptor.fontEmbedded().fontProgram( &pBuffer, &length );
+        fontDescriptor.fontEmbedded().copyFontProgram( &pBuffer, &length );
         if( !pBuffer ) {
             // No font program found...
             m_ftFace = NULL;
@@ -312,11 +312,14 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
 }
 void PdfeFont::initLogInformation()
 {
-    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName().GetName().c_str(), 30 ).toAscii().constData()
+    size_t MaxNameLength = 25;
+
+    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), MaxNameLength ).toAscii().constData()
+                << QString( "Subset (%1) ;" ).arg( this->fontDescriptor().isSubsetFont() ).toAscii().constData()
                 << QString( "Type (%1,%2) ;" ).arg( this->type() ).arg( this->subtype() ).toAscii().constData()
                 << QString( "Encoding (%1) ;" ).arg( bool( m_pEncoding ) ).toAscii().constData()
-                << QString( "Unicode CMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) ).toAscii().constData()
-                << QString( "Embedded font program (%1)." ).arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) ).toAscii().constData();
+                << QString( "UCMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) ).toAscii().constData()
+                << QString( "Embedded Font (%1)." ).arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) ).toAscii().constData();
 }
 
 PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
