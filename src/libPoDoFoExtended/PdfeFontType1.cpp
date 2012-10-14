@@ -79,6 +79,9 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     this->initFTFace( m_fontDescriptor );
     // Characters bounding box.
     this->initCharactersBBox( pFont );
+
+    // Log font information.
+    this->initLogInformation();
 }
 void PdfeFontType1::init()
 {
@@ -167,6 +170,9 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 
     // Space characters.
     this->initSpaceCharacters( m_firstCID, m_lastCID, true );
+
+    // Log font information.
+    this->initLogInformation();
 }
 void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
 {

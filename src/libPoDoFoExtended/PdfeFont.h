@@ -204,6 +204,10 @@ protected:
      */
     void initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents = true );
 
+    /** Log the initialization of PdfeFont object, and corresponding font information.
+     */
+    void initLogInformation();
+
 protected:
     /** Get a character name from its CID. First try using the font encoding and then the unicode code.
      * Needs the encoding object to be initialized.

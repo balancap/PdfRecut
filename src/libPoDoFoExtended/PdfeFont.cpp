@@ -20,6 +20,8 @@
 #include "PdfeFont.h"
 #include "podofo/podofo.h"
 
+#include <QsLog/QsLog.h>
+
 #include FT_BBOX_H
 
 using namespace PoDoFo;
@@ -307,6 +309,14 @@ void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool cl
             }
         }
     }
+}
+void PdfeFont::initLogInformation()
+{
+    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName().GetName().c_str(), 30 ).toAscii().constData()
+                << QString( "Type (%1,%2) ;" ).arg( this->type() ).arg( this->subtype() ).toAscii().constData()
+                << QString( "Encoding (%1) ;" ).arg( bool( m_pEncoding ) ).toAscii().constData()
+                << QString( "Unicode CMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) ).toAscii().constData()
+                << QString( "Embedded font program (%1)." ).arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) ).toAscii().constData();
 }
 
 PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const

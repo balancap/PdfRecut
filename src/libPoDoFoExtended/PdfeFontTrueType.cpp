@@ -75,6 +75,9 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     this->initFTFace( m_fontDescriptor );
     // Characters bounding box.
     this->initCharactersBBox( pFont );
+
+    // Log font information.
+    this->initLogInformation();
 }
 void PdfeFontTrueType::init()
 {

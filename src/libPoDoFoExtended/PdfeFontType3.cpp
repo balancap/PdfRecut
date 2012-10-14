@@ -98,6 +98,9 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Glyph vectors.
     this->initGlyphs( pFont );
+
+    // Log font information.
+    this->initLogInformation();
 }
 void PdfeFontType3::init()
 {

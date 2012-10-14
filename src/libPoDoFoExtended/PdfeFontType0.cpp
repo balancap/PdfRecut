@@ -79,6 +79,9 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     for( size_t i = 0 ; i < firstCIDs.size() ; ++i ) {
         this->initSpaceCharacters( firstCIDs[i], lastCIDs[i], i == 0 );
     }
+
+    // Log font information.
+    this->initLogInformation();
 }
 void PdfeFontType0::init()
 {

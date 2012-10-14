@@ -119,25 +119,25 @@ void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
 
 void proceedFile( QString filePath )
 {
+    // Init the logging mechanism
+    // TODO: allow finer level selections, depending on the destination.
+    // TODO: add more format options to QsLog.
+    QsLogging::Logger& logger = QsLogging::Logger::instance();
+    logger.setLoggingLevel( QsLogging::TraceLevel );
+
+    const QString sLogPath( "./log.txt" );
+    QsLogging::DestinationPtr fileDestination( QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
+    QsLogging::DestinationPtr debugDestination( QsLogging::DestinationFactory::MakeDebugOutputDestination() );
+
+    logger.addDestination( debugDestination.get() );
+    logger.addDestination( fileDestination.get() );
+
     // Document objects.
     PRDocument document( 0, filePath );
     PRDocumentLayout docLayout;
 
     QTime timeTask;
     timeTask.start();
-
-    // init the logging mechanism
-    QsLogging::Logger& logger = QsLogging::Logger::instance();
-    logger.setLoggingLevel(QsLogging::TraceLevel);
-    const QString sLogPath( "./log.txt" );
-    QsLogging::DestinationPtr fileDestination(
-       QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
-    QsLogging::DestinationPtr debugDestination(
-       QsLogging::DestinationFactory::MakeDebugOutputDestination() );
-    logger.addDestination(debugDestination.get());
-    logger.addDestination(fileDestination.get());
-
-    QLOG_INFO() << "test";
 
     // File info
     QFileInfo infoFile( filePath );
