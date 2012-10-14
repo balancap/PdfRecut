@@ -27,6 +27,8 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
+QDir PdfeFontType1::Standard14FontsPath;
+
 PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary )
 {
@@ -149,7 +151,8 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     this->initUnicodeCMap( pUnicodeCMap );
 
     // FreeType font face.
-    this->initFTFace( m_fontDescriptor );
+    QString filename = filenameStandard14Font( m_baseFont.GetName() );
+    this->initFTFace( filename );
 
     // Construct widths array using the font encoding.
     m_firstCID = m_pEncoding->GetFirstChar();
@@ -157,8 +160,8 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 
     pdf_utf16be ucode;
     double widthCID;
-    for( int i = m_firstCID ; i <= m_lastCID ; ++i ) {
-        ucode = m_pEncoding->GetCharCode( i );
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        ucode = m_pEncoding->GetCharCode( c );
 
         // Dumb bug in PoDoFo: why bytes are inverted in GetCharCode but not UnicodeCharWidth ???
         ucode = PDFE_UTF16BE_HBO( ucode );
@@ -166,6 +169,23 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
         widthCID = pMetrics->UnicodeCharWidth( ucode ) * 1000.0;
         m_widthsCID.push_back( widthCID );
         m_bboxCID.push_back( PdfRect( 0, 0, widthCID, fontBBox[3].GetReal() ) );
+
+        // Get bounding box from FTFace.
+        if( this->isSpace( c ) == PdfeFontSpace::None ) {
+            // Glyph ID.
+            pdfe_gid gid = this->fromCIDToGID( c );
+            if( gid ) {
+                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
+                if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
+                    m_bboxCID.back().SetBottom( glyphBBox.GetBottom() );
+                    m_bboxCID.back().SetHeight( glyphBBox.GetHeight() );
+                }
+            }
+        }
+        else {
+            m_bboxCID[c - m_firstCID].SetBottom( 0.0 );
+            m_bboxCID[c - m_firstCID].SetHeight( this->spaceHeight() );
+        }
     }
 
     // Space characters.
@@ -275,6 +295,55 @@ PdfRect PdfeFontType1::bbox( pdfe_cid c, bool useFParams ) const
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return cbbox;
+}
+
+QString PdfeFontType1::filenameStandard14Font( const std::string& fontName )
+{
+    // Standard font filename.
+    QString filename;
+    if( fontName == "Times-Roman" ) {
+        filename = "NimbusRomNo9L-Regu.cff";
+    }
+    else if( fontName == "Times-Bold" ) {
+        filename = "NimbusRomNo9L-Medi.cff";
+    }
+    else if( fontName == "Times-Italic" ) {
+        filename = "NimbusRomNo9L-ReguItal.cff";
+    }
+    else if( fontName == "Times-BoldItalic" ) {
+        filename = "NimbusRomNo9L-MediItal.cff";
+    }
+    else if( fontName == "Helvetica" ) {
+        filename = "NimbusSanL-Regu.cff";
+    }
+    else if( fontName == "Helvetica-Bold" ) {
+        filename = "NimbusSanL-Bold.cff";
+    }
+    else if( fontName == "Helvetica-Oblique" ) {
+        filename = "NimbusSanL-ReguItal.cff";
+    }
+    else if( fontName == "Helvetica-BoldOblique" ) {
+        filename = "NimbusSanL-BoldItal.cff";
+    }
+    else if( fontName == "Courier" ) {
+        filename = "NimbusMonL-Regu.cff";
+    }
+    else if( fontName == "Courier-Bold" ) {
+        filename = "NimbusMonL-Bold.cff";
+    }
+    else if( fontName == "Courier-Oblique" ) {
+        filename = "NimbusMonL-ReguObli.cff";
+    }
+    else if( fontName == "Courier-BoldOblique" ) {
+        filename = "NimbusMonL-BoldObli.cff";
+    }
+    else if( fontName == "Symbol" ) {
+        filename = "StandardSymL.cff";
+    }
+    else if( fontName == "ZapfDingbats" ) {
+        filename = "Dingbats.cff";
+    }
+    return Standard14FontsPath.absoluteFilePath( filename );
 }
 
 }

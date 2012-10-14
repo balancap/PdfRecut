@@ -197,6 +197,11 @@ protected:
      * \param fontDescriptor Font descriptor containing font name and/or embedded font program.
      */
     void initFTFace( const PdfeFontDescriptor& fontDescriptor );
+    /** Initialize FreeType face object.
+     * \param filename Filename of the font to load..
+     */
+    void initFTFace( QString filename );
+
     /** Initialize the list of space characters for the font.
      * \param firstCID First CID to consider.
      * \param lastCID Last CID to consider.

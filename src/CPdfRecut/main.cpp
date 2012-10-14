@@ -27,8 +27,12 @@
 #include "PRRenderPage.h"
 #include "PRTextPageStructure.h"
 
+#include "PdfeFontType1.h"
+
 #include <podofo/podofo.h>
+
 #include <QtCore>
+#include <QApplication>
 
 #include <iostream>
 #include <string>
@@ -119,19 +123,6 @@ void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
 
 void proceedFile( QString filePath )
 {
-    // Init the logging mechanism
-    // TODO: allow finer level selections, depending on the destination.
-    // TODO: add more format options to QsLog.
-    QsLogging::Logger& logger = QsLogging::Logger::instance();
-    logger.setLoggingLevel( QsLogging::TraceLevel );
-
-    const QString sLogPath( "./log.txt" );
-    QsLogging::DestinationPtr fileDestination( QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
-    QsLogging::DestinationPtr debugDestination( QsLogging::DestinationFactory::MakeDebugOutputDestination() );
-
-    logger.addDestination( debugDestination.get() );
-    logger.addDestination( fileDestination.get() );
-
     // Document objects.
     PRDocument document( 0, filePath );
     PRDocumentLayout docLayout;
@@ -214,10 +205,27 @@ void proceedDir( QString dirPath )
 
 int main( int argc, char *argv[] )
 {
-    QCoreApplication a(argc, argv);
+    QApplication a(argc, argv);
 
+    // Disable PoDoFo log and debug messages.
     PdfError::EnableLogging( false );
     PdfError::EnableDebug( false );
+
+    // Init the logging mechanism
+    // TODO: allow finer level selections, depending on the destination.
+    // TODO: add more format options to QsLog.
+    QsLogging::Logger& logger = QsLogging::Logger::instance();
+    logger.setLoggingLevel( QsLogging::TraceLevel );
+
+    const QString sLogPath( "./log.txt" );
+    QsLogging::DestinationPtr fileDestination( QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
+    QsLogging::DestinationPtr debugDestination( QsLogging::DestinationFactory::MakeDebugOutputDestination() );
+
+    logger.addDestination( debugDestination.get() );
+    logger.addDestination( fileDestination.get() );
+
+    // Set Standard Type 1 fonts path.
+    PoDoFoExtended::PdfeFontType1::Standard14FontsPath.setPath( "./standard14fonts" );
 
     if( argc != 2 ) {
         cout << "Input: file or directory to proceed..." << endl;
@@ -225,10 +233,12 @@ int main( int argc, char *argv[] )
     }
 
     QString pathIn = QCoreApplication::arguments().at( 1 );
-    if( QFileInfo( pathIn ).isDir() )
+    if( QFileInfo( pathIn ).isDir() ) {
         proceedDir( pathIn );
-    else
+    }
+    else {
         proceedFile( pathIn );
+    }
 
     /*
     // Graphic state stack

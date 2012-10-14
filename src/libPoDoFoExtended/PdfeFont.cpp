@@ -22,6 +22,8 @@
 
 #include <QsLog/QsLog.h>
 
+#include <QFont>
+
 #include FT_BBOX_H
 
 using namespace PoDoFo;
@@ -270,10 +272,43 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
     // Font program not embedded in the PDF: try to load on the host system.
     else {
         // TODO.
+        // See: http://lists.trolltech.com/qt-interest/2008-03/thread00445-0.html
         m_ftFace = NULL;
         m_ftFaceData.clear();
+
+//#ifdef Q_WS_X11
+//        std::string sfontname = fontDescriptor.fontName( false ).GetName();
+//        QFont qfont( sfontname.c_str() );
+//        qDebug() << sfontname.c_str() << ":"
+//                 << qfont.exactMatch() << "/"
+//                 << qfont.key();
+
+//        std::string sfontname2 = "Times";
+//        QFont qfont2( sfontname2.c_str(),  10, QFont::Bold);
+//        qDebug() << sfontname2.c_str() << ":"
+//                 << qfont2.exactMatch() << "/"
+//                 << qfont2.key();
+//#endif
+
     }
 }
+void PdfeFont::initFTFace( QString filename )
+{
+    // Load FreeType face from data buffer.
+    int error;
+    m_ftFaceData.clear();
+    error = FT_New_Face( m_ftLibrary,
+                         filename.toLocal8Bit().constData(),
+                         0,
+                         &m_ftFace );
+
+    if( error ) {
+        // Can not load: return...
+        m_ftFace = NULL;
+        return;
+    }
+}
+
 void PdfeFont::initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents )
 {
     // Clear content if necessary.
@@ -324,7 +359,7 @@ void PdfeFont::initLogInformation()
                    .toAscii().constData()
                 << QString( "UCMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) )
                    .toAscii().constData()
-                << QString( "Font program (%1,%2)." ).arg( bool( m_ftFaceData.size() ) )
+                << QString( "Font program (%1,%2)." ).arg( bool( m_ftFace ) || this->type() == PdfeFontType::Type3 )
                    .arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) )
                    .toAscii().constData();
 }

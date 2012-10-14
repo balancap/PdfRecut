@@ -22,6 +22,8 @@
 
 #include "PdfeFont.h"
 
+#include <QDir>
+
 namespace PoDoFo {
 struct PODOFO_CharData;
 }
@@ -118,6 +120,17 @@ public:
     virtual double spaceHeight() const {
         return 500. / 1000.;    // Default chose for Type 1 font.
     }
+
+protected:
+    /** Get filename of a standard 14 font.
+     * \param fontName Name of the standard font.
+     * \return Filename of the font file (empty if not found).
+     */
+    static QString filenameStandard14Font( const std::string& fontName );
+
+public:
+    /// Path for standard 14 fonts.
+    static QDir Standard14FontsPath;
 
 protected:
     // Members.

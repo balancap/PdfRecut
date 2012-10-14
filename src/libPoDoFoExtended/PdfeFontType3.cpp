@@ -175,7 +175,7 @@ double PdfeFontType3::width( pdfe_cid c, bool useFParams ) const
     double width;
     if( c >= m_firstCID && c <= m_lastCID ) {
         // Assume the letter is a square...
-        width = m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ];
+        width = m_widthsCID[ c - m_firstCID ];
         PdfeVector cVect( width, 0.0 );
         cVect = cVect * m_fontMatrix;
         width = cVect(0);
@@ -196,7 +196,7 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
     PdfRect cbbox;
     if( c >= m_firstCID && c <= m_lastCID && m_mapCIDToGID[c-m_firstCID] ) {
         // Get glyph bounding box.
-        cbbox = m_glyphs[c-m_firstCID].bbox();
+        cbbox = m_glyphs[c - m_firstCID].bbox();
 
         // Empty glyph bbox: call default implementation.
         if( cbbox.GetHeight() == 0 ) {
@@ -205,7 +205,7 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
 
         // Modify left and width accordingly to char width.
         cbbox.SetLeft( 0.0 );
-        cbbox.SetWidth( m_widthsCID[c-m_firstCID] );
+        cbbox.SetWidth( m_widthsCID[c - m_firstCID] );
 
         // Apply font transformation to char bbox.
         PdfeORect oBBox( cbbox );
