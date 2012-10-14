@@ -36,17 +36,14 @@ class PdfString;
 
 namespace PoDoFoExtended {
 
-/** Structure that contains the different informations of CIDSystemInfo.
+//**********************************************************//
+//                      PdfeCIDSystemInfo                   //
+//**********************************************************//
+/** Class that contains the different informations of CIDSystemInfo.
  */
 struct PdfeCIDSystemInfo
 {
-    /// Issuer of the character collection (i.e. Adobe).
-    std::string registery;
-    /// Name of the character collection within the specified registry (i.e. Japan1).
-    std::string ordering;
-    /// Supplement number of the character collection.
-    int supplement;
-
+public:
     /** Default constructor.
      */
     PdfeCIDSystemInfo();
@@ -57,8 +54,30 @@ struct PdfeCIDSystemInfo
      * \param cidSysInfoObj PoDoFo object containing CID system info.
      */
     void init( PoDoFo::PdfObject* cidSysInfoObj );
+
+public:
+    // Getters.
+    const std::string& registery() const    {   return m_registery; }
+    const std::string& ordering() const     {   return m_ordering; }
+    int supplement() const                  {   return m_supplement; }
+
+    // Setters.
+    void setRegistery( const std::string& rhs )     {   m_registery = rhs;  }
+    void setOrdering( const std::string& rhs )      {   m_ordering = rhs;  }
+    void setSupplement( int rhs )                   {   m_supplement = rhs;  }
+
+private:
+    /// Issuer of the character collection (i.e. Adobe).
+    std::string  m_registery;
+    /// Name of the character collection within the specified registry (i.e. Japan1).
+    std::string  m_ordering;
+    /// Supplement number of the character collection.
+    int  m_supplement;
 };
 
+//**********************************************************//
+//                          PdfCMap                         //
+//**********************************************************//
 /** Class used to represent and handle a CMap as described in the PDF reference.
  */
 class PdfeCMap

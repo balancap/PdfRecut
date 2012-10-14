@@ -188,24 +188,25 @@ public:
     //**********************************************************//
     PoDoFo::PdfName fontName( bool subsetPrefix = true ) const;
     void setFontName( const PoDoFo::PdfName& fontName );
-    bool isSubsetFont() const;
 
-    PoDoFo::PdfString fontFamily() const                    {  return m_fontFamily;  }
-    void fontFamily( const PoDoFo::PdfString& fontFamily )  {  m_fontFamily = fontFamily;  }
+    bool isSubsetFont() const       {   return m_subsetFont; }
+
+    PoDoFo::PdfString fontFamily() const                        {  return m_fontFamily;  }
+    void fontFamily( const PoDoFo::PdfString& fontFamily )      {  m_fontFamily = fontFamily;  }
     PoDoFo::PdfName fontStretch() const                         {  return m_fontStretch;  }
     void setFontStretch( const PoDoFo::PdfName& fontStretch )   {  m_fontStretch = fontStretch;  }
-    PoDoFo::PdfRect fontBBox() const                       {  return m_fontBBox;  }
-    void setFontBBox( const PoDoFo::PdfRect& fontBBox )    {  m_fontBBox = fontBBox;  }
+    PoDoFo::PdfRect fontBBox() const                            {  return m_fontBBox;  }
+    void setFontBBox( const PoDoFo::PdfRect& fontBBox )         {  m_fontBBox = fontBBox;  }
 
-    PoDoFo::pdf_uint32 fontWeight() const               {  return m_fontWeight;  }
-    void setFontWeight( PoDoFo::pdf_uint32 fontWeight ) {  m_fontWeight = fontWeight;  }
-    PoDoFo::pdf_uint32 flags() const            {  return m_flags;  }
-    void setFlags( PoDoFo::pdf_uint32 flags )   {  m_flags = flags;  }
+    PoDoFo::pdf_uint32 fontWeight() const                   {  return m_fontWeight;  }
+    void setFontWeight( PoDoFo::pdf_uint32 fontWeight )     {  m_fontWeight = fontWeight;  }
+    PoDoFo::pdf_uint32 flags() const                        {  return m_flags;  }
+    void setFlags( PoDoFo::pdf_uint32 flags )               {  m_flags = flags;  }
     PoDoFo::pdf_int32 italicAngle() const                   {  return m_italicAngle;  }
     void setItalicAngle( PoDoFo::pdf_int32 italicAngle )    {  m_italicAngle = italicAngle;  }
 
-    double ascent() const           {  return m_ascent;  }
-    void setAscent( double ascent ) {  m_ascent = ascent;  }
+    double ascent() const               {  return m_ascent;  }
+    void setAscent( double ascent )     {  m_ascent = ascent;  }
     double descent() const              {  return m_descent;  }
     void setDescent( double descent )   {  m_descent = descent;  }
     double leading() const              {  return m_leading;  }
@@ -214,10 +215,10 @@ public:
     void setCapHeight( double capHeight )   {  m_capHeight = capHeight;  }
     double xHeight() const              {  return m_xHeight;  }
     void setXHeight( double xHeight )   {  m_xHeight = xHeight;  }
-    double stemV() const            {  return m_stemV;  }
-    void setStemV( double stemV )   {  m_stemV = stemV;  }
-    double stemH() const            {  return m_stemH;  }
-    void setStemH( double stemH )   {  m_stemH = stemH;  }
+    double stemV() const                {  return m_stemV;  }
+    void setStemV( double stemV )       {  m_stemV = stemV;  }
+    double stemH() const                {  return m_stemH;  }
+    void setStemH( double stemH )       {  m_stemH = stemH;  }
     double avgWidth() const             {  return m_avgWidth;  }
     void setAvgWidth( double avgWidth ) {  m_avgWidth = avgWidth;  }
     double maxWidth() const             {  return m_maxWidth;  }
@@ -225,15 +226,12 @@ public:
     double missingWidth() const                 {  return m_missingWidth;  }
     void setMissingWidth( double missingWidth ) {  m_missingWidth = missingWidth;  }
 
-    const PdfeFontEmbedded& fontEmbedded() const       {  return m_fontEmbedded;  }
+    const PdfeFontEmbedded& fontEmbedded() const    {  return m_fontEmbedded;  }
 };
 
 //**********************************************************//
 //                     Getters / Setters                    //
 //**********************************************************//
-inline bool PdfeFontDescriptor::isSubsetFont() const {
-    return m_subsetFont;
-}
 
 }
 

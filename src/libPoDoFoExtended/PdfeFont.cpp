@@ -314,12 +314,19 @@ void PdfeFont::initLogInformation()
 {
     size_t MaxNameLength = 25;
 
-    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), MaxNameLength ).toAscii().constData()
-                << QString( "Subset (%1) ;" ).arg( this->fontDescriptor().isSubsetFont() ).toAscii().constData()
-                << QString( "Type (%1,%2) ;" ).arg( this->type() ).arg( this->subtype() ).toAscii().constData()
-                << QString( "Encoding (%1) ;" ).arg( bool( m_pEncoding ) ).toAscii().constData()
-                << QString( "UCMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) ).toAscii().constData()
-                << QString( "Embedded Font (%1)." ).arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) ).toAscii().constData();
+    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), MaxNameLength )
+                   .toAscii().constData()
+                << QString( "Subset (%1) ;" ).arg( this->fontDescriptor().isSubsetFont() )
+                   .toAscii().constData()
+                << QString( "Type (%1,%2) ;" ).arg( this->type() ).arg( this->subtype() )
+                   .toAscii().constData()
+                << QString( "Encoding (%1) ;" ).arg( bool( m_pEncoding ) )
+                   .toAscii().constData()
+                << QString( "UCMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) )
+                   .toAscii().constData()
+                << QString( "Font program (%1,%2)." ).arg( bool( m_ftFaceData.size() ) )
+                   .arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) )
+                   .toAscii().constData();
 }
 
 PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const

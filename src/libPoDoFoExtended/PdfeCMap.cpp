@@ -33,9 +33,9 @@ PdfeCIDSystemInfo::PdfeCIDSystemInfo()
 }
 void PdfeCIDSystemInfo::init()
 {
-    registery.clear();
-    ordering.clear();
-    supplement = 0;
+    m_registery.clear();
+    m_ordering.clear();
+    m_supplement = 0;
 }
 void PdfeCIDSystemInfo::init( PdfObject* cidSysInfoObj )
 {
@@ -46,15 +46,15 @@ void PdfeCIDSystemInfo::init( PdfObject* cidSysInfoObj )
 
     tmpObj = cidSysInfoObj->GetIndirectKey( "Registry" );
     if( tmpObj && tmpObj->IsString() ) {
-        registery = tmpObj->GetString().GetString();
+        m_registery = tmpObj->GetString().GetString();
     }
     tmpObj = cidSysInfoObj->GetIndirectKey( "Ordering" );
     if( tmpObj && tmpObj->IsString() ) {
-        ordering = tmpObj->GetString().GetString();
+        m_ordering = tmpObj->GetString().GetString();
     }
     tmpObj = cidSysInfoObj->GetIndirectKey( "Supplement" );
     if( tmpObj && tmpObj->IsNumber() ) {
-        supplement = tmpObj->GetNumber();
+        m_supplement = tmpObj->GetNumber();
     }
 }
 
@@ -205,14 +205,9 @@ void PdfeCMap::loadContent( const char *pBuffer, long length )
 //            std::cout << eType << " : " << pKeyword << std::endl;
         }
         else if( eType == ePdfContentsType_Variant ) {
-            // Kee variant buffered.
+            // Variant buffered.
             bufVariant = variant;
-
-//            std::string strData;
-//            variant.ToString( strData );
-//            std::cout << eType << " : " << strData << std::endl;
         }
-
     }
 }
 void PdfeCMap::loadCodeSpaceRange( PdfContentsTokenizer& tokenizer, long nbRanges )
