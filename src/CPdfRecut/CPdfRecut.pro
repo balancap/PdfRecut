@@ -13,11 +13,15 @@ TEMPLATE = app
 
 SOURCES += main.cpp
 
+##################################################################
+##                            3rdparty                          ##
+##################################################################
+include( $$PWD/../3rdparty/QsLog/QsLog.pri )
+INCLUDEPATH += $$PWD/../3rdparty
 
 ##################################################################
 ##                       libPoDoFoExtended                      ##
 ##################################################################
-INCLUDEPATH += $$PWD/../3rdparty
 INCLUDEPATH += $$PWD/../libPoDoFoExtended
 DEPENDPATH += $$PWD/../libPoDoFoExtended
 

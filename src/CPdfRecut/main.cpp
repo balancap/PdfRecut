@@ -18,6 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QsLog/QsLog.h>
+#include <QsLog/QsLogDest.h>
+
 #include "PRDocument.h"
 #include "PRDocumentLayout.h"
 #include "PRDocumentTools.h"
@@ -122,6 +125,19 @@ void proceedFile( QString filePath )
 
     QTime timeTask;
     timeTask.start();
+
+    // init the logging mechanism
+    QsLogging::Logger& logger = QsLogging::Logger::instance();
+    logger.setLoggingLevel(QsLogging::TraceLevel);
+    const QString sLogPath( "./log.txt" );
+    QsLogging::DestinationPtr fileDestination(
+       QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
+    QsLogging::DestinationPtr debugDestination(
+       QsLogging::DestinationFactory::MakeDebugOutputDestination() );
+    logger.addDestination(debugDestination.get());
+    logger.addDestination(fileDestination.get());
+
+    QLOG_INFO() << "test";
 
     // File info
     QFileInfo infoFile( filePath );
