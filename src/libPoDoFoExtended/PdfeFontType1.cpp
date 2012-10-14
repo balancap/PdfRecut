@@ -48,6 +48,12 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 1 font." );
     }
 
+    // Standard 14 font.
+    if( PdfeFontType1::IsStandard14Font( pFont ) ) {
+        this->initStandard14Font( pFont );
+        return;
+    }
+
     // Need the following entries in the dictionary.
     PdfObject* pFChar = pFont->GetIndirectKey( "FirstChar" );
     PdfObject* pLChar = pFont->GetIndirectKey( "LastChar" );
@@ -56,8 +62,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // If does not exist: must be a 14 standard font.
     if( !( pFChar && pLChar && pWidths && pDescriptor ) ) {
-        this->initStandard14Font( pFont );
-        return;
+        PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
 
     // First and last characters.
@@ -96,6 +101,45 @@ void PdfeFontType1::init()
     m_lastCID = 0;
     m_widthsCID.clear();
     m_bboxCID.clear();
+}
+void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
+{
+    // Font bounding box used for default height.
+    PdfRect fontBBox = m_fontDescriptor.fontBBox();
+
+    // First read characters widths given in font object and set default bbox.
+    PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
+    const PdfArray&  widthsA = pWidths->GetArray();
+
+    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0 ) );
+    for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
+        m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
+        m_bboxCID[i].SetHeight( fontBBox.GetHeight() + fontBBox.GetBottom() );
+    }
+    // Check the size for coherence.
+    if( m_bboxCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
+        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
+    }
+
+     // Get glyph bounding box.
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        // Not a space character.
+        if( this->isSpace( c ) == PdfeFontSpace::None ) {
+            // Glyph ID.
+            pdfe_gid gid = this->fromCIDToGID( c );
+            if( gid ) {
+                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
+                if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
+                    m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
+                    m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
+                }
+            }
+        }
+        else {
+            m_bboxCID[c - m_firstCID].SetBottom( 0.0 );
+            m_bboxCID[c - m_firstCID].SetHeight( this->spaceHeight() );
+        }
+    }
 }
 void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 {
@@ -194,47 +238,6 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     // Log font information.
     this->initLogInformation();
 }
-void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
-{
-    // Font bounding box used for default height.
-    PdfRect fontBBox = m_fontDescriptor.fontBBox();
-
-    // First read characters widths given in font object and set default bbox.
-    PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
-    const PdfArray&  widthsA = pWidths->GetArray();
-
-    m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0 ) );
-    for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
-        m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
-        m_bboxCID[i].SetHeight( fontBBox.GetHeight() + fontBBox.GetBottom() );
-    }
-    // Check the size for coherence.
-    if( m_bboxCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
-        m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
-    }
-
-     // Get glyph bounding box.
-    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        // Not a space character.
-        if( this->isSpace( c ) == PdfeFontSpace::None ) {
-            // Glyph ID.
-            pdfe_gid gid = this->fromCIDToGID( c );
-            if( gid ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
-                if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                    //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
-                    //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
-                    m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
-                    m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
-                }
-            }
-        }
-        else {
-            m_bboxCID[c - m_firstCID].SetBottom( 0.0 );
-            m_bboxCID[c - m_firstCID].SetHeight( this->spaceHeight() );
-        }
-    }
-}
 
 PdfeFontType1::~PdfeFontType1()
 {
@@ -297,6 +300,33 @@ PdfRect PdfeFontType1::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
+bool PdfeFontType1::IsStandard14Font( PdfObject* pFont )
+{
+    // No font name...
+    if( !pFont || !pFont->GetIndirectKey( "BaseFont" ) ) {
+        return false;
+    }
+
+    // Read font name.
+    std::string fontName = pFont->GetIndirectKey( "BaseFont" )->GetName().GetName();
+    bool standard14font =
+            fontName == "Times-Roman" ||
+            fontName == "Times-Bold" ||
+            fontName == "Times-Italic" ||
+            fontName == "Times-BoldItalic" ||
+            fontName == "Helvetica" ||
+            fontName == "Helvetica-Bold" ||
+            fontName == "Helvetica-Oblique" ||
+            fontName == "Helvetica-BoldOblique" ||
+            fontName == "Courier" ||
+            fontName == "Courier-Bold" ||
+            fontName == "Courier-Oblique" ||
+            fontName == "Courier-BoldOblique" ||
+            fontName == "Symbol" ||
+            fontName == "ZapfDingbats";
+
+    return standard14font;
+}
 QString PdfeFontType1::filenameStandard14Font( const std::string& fontName )
 {
     // Standard font filename.

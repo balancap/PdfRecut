@@ -53,15 +53,15 @@ protected:
      */
     PdfeFontType1() { }
 
-    /** Initialize the font as one of the 14 standard font.
-     * \param pFont Pointer to the object where is defined the standard type 1 font.
-     */
-    void initStandard14Font( const PoDoFo::PdfObject* pFont );
-
     /** Initialize the size of characters according to the font object.
      * \param pFont Pointer to the object where is defined the type 1 font.
      */
     void initCharactersBBox( const PoDoFo::PdfObject* pFont );
+
+    /** Initialize the font as one of the 14 standard font.
+     * \param pFont Pointer to the object where is defined the standard type 1 font.
+     */
+    void initStandard14Font( const PoDoFo::PdfObject* pFont );
 
 public:
     // Implementation of PdfeFont interface.
@@ -122,6 +122,12 @@ public:
     }
 
 protected:
+    /** Is a font object a standard 14 font?
+     * \param pFont Font object.
+     * \return Answer!.
+     */
+    static bool IsStandard14Font( PoDoFo::PdfObject* pFont );
+
     /** Get filename of a standard 14 font.
      * \param fontName Name of the standard font.
      * \return Filename of the font file (empty if not found).
