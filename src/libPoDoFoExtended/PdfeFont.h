@@ -189,7 +189,13 @@ protected:
      * \param Pointer to the object where is defined the encoding.
      */
     void initEncoding( PoDoFo::PdfObject* pEncodingObj );
-    /** Initialize unicode CMap of a PdfeFont.
+    /** Initialize PdfEncoding.
+     * \param Pointer to the PoDoFo encoding.
+     * \param owned Is the encoding owned by the PdfeFont object.
+     */
+    void initEncoding( PoDoFo::PdfEncoding* pEncoding,
+                       bool owned );
+   /** Initialize unicode CMap of a PdfeFont.
      * \param Pointer to the object where is defined the CMap.
      */
     void initUnicodeCMap( PoDoFo::PdfObject* pUCMapObj );
@@ -285,7 +291,7 @@ protected:
      */
     static const std::vector<QChar>& spaceCharacters();
 
-protected:
+private:
     // Members
     /// Font type.
     PdfeFontType::Enum  m_type;
@@ -319,14 +325,23 @@ protected:
     /// Vector of space characters (pair of CID and space type).
     std::vector< std::pair<pdfe_cid,PdfeFontSpace::Enum> >  m_spaceCharacters;
 
+protected:
+    // Protected Getters.
+    /// Get font face object.
+    FT_Face ftFace() const      {   return m_ftFace;   }
+    /// Get encoding object pointer.
+    const PoDoFo::PdfEncoding* pEncoding() const   {   return m_pEncoding; }
+    /// Get unicode CMap pointer.
+    const PdfeCMap* pUnicodeCMap() const    {   return &m_unicodeCMap;  }
+
 public:
     //**********************************************************//
     //                     Getters / Setters                    //
     //**********************************************************//
     PdfeFontType::Enum type() const             {  return m_type;  }
     void setType( PdfeFontType::Enum type )     {  m_type = type;  }
-    PdfeFontSubType::Enum subtype() const           {  return m_subtype;  }
-    void setType( PdfeFontSubType::Enum subtype )   {  m_subtype = subtype;  }
+    PdfeFontSubType::Enum subtype() const               {  return m_subtype;  }
+    void setSubtype( PdfeFontSubType::Enum subtype )    {  m_subtype = subtype;  }
 
     double charSpace() const                {  return m_charSpace;  }
     void setCharSpace( double charSpace )   {  m_charSpace = charSpace;  }

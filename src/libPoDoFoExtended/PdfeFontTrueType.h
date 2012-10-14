@@ -110,7 +110,7 @@ public:
         return 500. / 1000.;    // Default chose for TrueType font.
     }
 
-protected:
+private:
     // Members.
     /// The PostScript name of the font (retrieved from font descriptor).
     PoDoFo::PdfName  m_baseFont;

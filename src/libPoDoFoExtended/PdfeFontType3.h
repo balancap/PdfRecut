@@ -115,7 +115,7 @@ public:
      */
     virtual double spaceHeight() const;
 
-protected:
+private:
     // Members.
     /// Font BBox.
     PoDoFo::PdfRect  m_fontBBox;

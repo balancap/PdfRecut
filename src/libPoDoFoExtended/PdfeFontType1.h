@@ -138,7 +138,7 @@ public:
     /// Path for standard 14 fonts.
     static QDir Standard14FontsPath;
 
-protected:
+private:
     // Members.
     /// The PostScript name of the font (retrieved from font descriptor).
     PoDoFo::PdfName  m_baseFont;

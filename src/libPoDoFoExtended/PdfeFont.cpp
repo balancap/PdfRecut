@@ -75,8 +75,10 @@ void PdfeFont::init()
     m_ftLibrary = NULL;
     m_ftFace = NULL;
     m_ftFaceData.clear();
+
     m_pEncoding = NULL;
     m_encodingOwned = false;
+
     m_unicodeCMap.init();
     m_spaceCharacters.clear();
 }
@@ -85,6 +87,10 @@ PdfeFont::~PdfeFont()
     // Destroy FT_Face if necessary.
     if( m_ftFace ) {
         FT_Done_Face( m_ftFace );
+    }
+    // Delete encoding object if necessary.
+    if( m_encodingOwned ) {
+        delete m_pEncoding;
     }
 }
 
@@ -217,6 +223,11 @@ void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
         // According to PoDoFo implementation.
         m_encodingOwned = !pEncodingObj->IsName() || ( pEncodingObj->IsName() && (pEncodingObj->GetName() == PdfName("Identity-H")) );
     }
+}
+void PdfeFont::initEncoding( PdfEncoding* pEncoding, bool owned )
+{
+    m_pEncoding = pEncoding;
+    m_encodingOwned = owned && pEncoding;
 }
 void PdfeFont::initUnicodeCMap( PdfObject* pUCMapObj )
 {

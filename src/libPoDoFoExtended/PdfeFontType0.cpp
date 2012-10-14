@@ -35,8 +35,8 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Subtype of the font.
     const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
     if( subtype == PdfName( "Type0" ) ) {
-        m_type = PdfeFontType::Type0;
-        m_subtype = PdfeFontSubType::Type0;
+        this->setType( PdfeFontType::Type0 );
+        this->setSubtype( PdfeFontSubType::Type0 );
     }
     else {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 0 font." );
@@ -67,7 +67,7 @@ PdfeFontType0::PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     this->initFTFace( m_fontCID->fontDescriptor() );
 
     // Characters bounding box.
-    m_fontCID->initCharactersBBox( m_ftFace );
+    m_fontCID->initCharactersBBox( this->ftFace() );
 
     // Space characters.
     const std::vector<pdfe_cid>& firstCIDs = m_fontCID->firstCIDs();
@@ -124,9 +124,9 @@ double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
 
     // Apply font parameters.
     if( useFParams ) {
-        width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+        width = ( width * fontSize() + charSpace() ) * ( hScale() / 100. );
         if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace * ( m_hScale / 100. );
+            width += wordSpace() * ( hScale() / 100. );
         }
     }
     return width;
@@ -146,13 +146,13 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
     QString ustr;
 
     // Not empty unicode CMap : directly try this way (if allowed).
-    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
+    if( !pUnicodeCMap()->emptyCodeSpaceRange() && useUCMap ) {
         // Create PdfeCMap::CharCodes from CID (might be multiple codes for with the same CID).
         std::vector<PdfeCMap::CharCode> charCodes = m_encodingCMap.toCharCode( c );
 
         // Convert CharCode to unicode (use arbitrarly the first one in the list...).
         if( charCodes.size() ) {
-            ustr = m_unicodeCMap.toUnicode( charCodes[0] );
+            ustr = pUnicodeCMap()->toUnicode( charCodes[0] );
         }
     }
     // Might be empty...

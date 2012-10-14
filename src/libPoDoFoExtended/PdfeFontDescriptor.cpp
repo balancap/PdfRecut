@@ -20,6 +20,8 @@
 #include "PdfeFontDescriptor.h"
 #include "podofo/podofo.h"
 
+#include <QsLog/QsLog.h>
+
 #include <QRegExp>
 #include <QDebug>
 
@@ -164,7 +166,7 @@ void PdfeFontDescriptor::init( PdfObject* pFontDesc )
         }
     }
     else {
-        qWarning() << "No key \'type\' in the PDF font descriptor:" << pFontDesc << ".";
+        QLOG_WARN() << "No key \'type\' in the PDF font descriptor:" << pFontDesc;
     }
 
     // Default values.

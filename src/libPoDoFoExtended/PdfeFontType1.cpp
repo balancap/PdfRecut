@@ -37,12 +37,12 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Subtype of the font.
     const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
     if( subtype == PdfName( "Type1" ) ) {
-        m_type = PdfeFontType::Type1;
-        m_subtype = PdfeFontSubType::Type1;
+        this->setType( PdfeFontType::Type1 );
+        this->setSubtype( PdfeFontSubType::Type1 );
     }
     else if( subtype == PdfName( "MMType1" ) ) {
-        m_type = PdfeFontType::Type1;
-        m_subtype = PdfeFontSubType::MMType1;
+        this->setType( PdfeFontType::Type1 );
+        this->setSubtype( PdfeFontSubType::MMType1 );
     }
     else {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 1 font." );
@@ -128,7 +128,7 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
             // Glyph ID.
             pdfe_gid gid = this->fromCIDToGID( c );
             if( gid ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
+                PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid, fontBBox );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
                     m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
                     m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
@@ -174,21 +174,21 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     m_fontDescriptor.setXHeight( 500. );
 
     // Create associate encoding object.
-    PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
-    if( pEncoding ) {
-        this->initEncoding( pEncoding );
+    PdfObject* pEncodingObj = pFont->GetIndirectKey( "Encoding" );
+    if( pEncodingObj ) {
+        this->initEncoding( pEncodingObj );
     }
     else if( !pMetrics->IsSymbol() ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() );
-        m_encodingOwned = false;
+        this->initEncoding( const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() ),
+                            false );
     }
     else if( strcmp( m_baseFont.GetName().c_str(), "Symbol" ) == 0 ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalSymbolEncodingInstance() );
-        m_encodingOwned = false;
+        this->initEncoding( const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalSymbolEncodingInstance() ),
+                            false );
     }
     else if( strcmp( m_baseFont.GetName().c_str(), "ZapfDingbats" ) == 0 ) {
-        m_pEncoding = const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() );
-        m_encodingOwned = false;
+        this->initEncoding( const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalZapfDingbatsEncodingInstance() ),
+                            false );
     }
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
@@ -199,13 +199,13 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     this->initFTFace( filename );
 
     // Construct widths array using the font encoding.
-    m_firstCID = m_pEncoding->GetFirstChar();
-    m_lastCID = m_pEncoding->GetLastChar();
+    m_firstCID = pEncoding()->GetFirstChar();
+    m_lastCID = pEncoding()->GetLastChar();
 
     pdf_utf16be ucode;
     double widthCID;
     for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        ucode = m_pEncoding->GetCharCode( c );
+        ucode = pEncoding()->GetCharCode( c );
 
         // Dumb bug in PoDoFo: why bytes are inverted in GetCharCode but not UnicodeCharWidth ???
         ucode = PDFE_UTF16BE_HBO( ucode );
@@ -219,7 +219,7 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
             // Glyph ID.
             pdfe_gid gid = this->fromCIDToGID( c );
             if( gid ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
+                PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid, fontBBox );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
                     m_bboxCID.back().SetBottom( glyphBBox.GetBottom() );
                     m_bboxCID.back().SetHeight( glyphBBox.GetHeight() );
@@ -241,10 +241,6 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
 
 PdfeFontType1::~PdfeFontType1()
 {
-    // Delete encoding object if necessary.
-    if( m_encodingOwned ) {
-        delete m_pEncoding;
-    }
 }
 
 const PdfeFontDescriptor& PdfeFontType1::fontDescriptor() const

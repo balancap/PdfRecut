@@ -104,7 +104,7 @@ public:
      */
     virtual double spaceHeight() const;
 
-protected:
+private:
     // Members.
     /// The PostScript name of the font.
     PoDoFo::PdfName  m_baseFont;
@@ -245,7 +245,7 @@ protected:
         PoDoFo::PdfRect  m_defaultBBox;
     };
 
-protected:
+private:
     // Members for a CID font.
     /// Font type.
     PdfeFontType::Enum  m_type;

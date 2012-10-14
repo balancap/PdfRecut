@@ -35,8 +35,8 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Subtype of the font.
     const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
     if( subtype == PdfName( "Type3" ) ) {
-        m_type = PdfeFontType::Type3;
-        m_subtype = PdfeFontSubType::Type3;
+        this->setType( PdfeFontType::Type3 );
+        this->setSubtype( PdfeFontSubType::Type3 );
     }
     else {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 3 font." );
@@ -151,10 +151,6 @@ void PdfeFontType3::initGlyphs( const PdfObject* pFont )
 
 PdfeFontType3::~PdfeFontType3()
 {
-    // Delete encoding object if necessary.
-    if( m_encodingOwned ) {
-        delete m_pEncoding;
-    }
 }
 
 const PdfeFontDescriptor& PdfeFontType3::fontDescriptor() const

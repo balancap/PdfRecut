@@ -36,8 +36,8 @@ PdfeFontTrueType::PdfeFontTrueType( PoDoFo::PdfObject* pFont, FT_Library ftLibra
     // Subtype of the font.
     const PdfName& subtype = pFont->GetIndirectKey( PdfName::KeySubtype )->GetName();
     if( subtype == PdfName( "TrueType" ) ) {
-        m_type = PdfeFontType::TrueType;
-        m_subtype = PdfeFontSubType::TrueType;
+        this->setType( PdfeFontType::TrueType );
+        this->setSubtype( PdfeFontSubType::TrueType );
     }
     else {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a TrueType font." );
@@ -116,10 +116,8 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
             // Glyph ID.
             pdfe_gid gid = this->fromCIDToGID( c );
             if( gid ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( m_ftFace, gid, fontBBox );
+                PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid, fontBBox );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                    //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
-                    //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
                     m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
                     m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
                 }
@@ -134,10 +132,6 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 
 PdfeFontTrueType::~PdfeFontTrueType()
 {
-    // Delete encoding object if necessary.
-    if( m_encodingOwned ) {
-        delete m_pEncoding;
-    }
 }
 
 const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
