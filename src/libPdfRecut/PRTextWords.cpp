@@ -267,12 +267,13 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     PdfeCIDString cidstr = pFont->toCIDString( str );
     std::string bufstr = str.GetString();
 
-//    if( pFont->type() ==  PdfeFontType::Type0 )
+    //if( pFont->type() ==  PdfeFontType::Type0 )
 //    {
 //        QString ustr = pFont->toUnicode( str );
-//        qDebug() << pFont->type() <
+//        qDebug() << pFont->type()
 //                 << " : " << ustr << " / "
-//                 << ustr.at(0).unicode();
+//                 << cidstr[0] << " / "
+//                 << cidstr[4];
 //    }
 
 

@@ -151,7 +151,7 @@ public:
      */
     void resetKey( PdfeFontDescriptor::Key key );
 
-protected:
+private:
     // Members corresponding to keys.
     /// Font full name.
     PoDoFo::PdfName     m_fontName;

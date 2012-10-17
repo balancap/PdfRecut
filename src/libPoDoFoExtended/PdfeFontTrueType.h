@@ -89,10 +89,13 @@ public:
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
+     * \param firstTryEncoding First try to use the Pdf encoding.
      * \return Unicode QString representing the character.
      */
-    virtual QString toUnicode( pdfe_cid c, bool useUCMap = true ) const {
-        return this->PdfeFont::toUnicode( c, useUCMap );
+    virtual QString toUnicode( pdfe_cid c,
+                               bool useUCMap = true,
+                               bool firstTryEncoding = false ) const {
+        return this->PdfeFont::toUnicode( c, useUCMap, firstTryEncoding );
     }
 
     /** Is a CID character a white space character.
@@ -107,8 +110,15 @@ public:
      * \return Space height.
      */
     virtual double spaceHeight() const {
-        return 500. / 1000.;    // Default chose for TrueType font.
+        return 500. / 1000.;    // Default choice for TrueType font.
     }
+
+    /** Convert a character CID to the corresponding glyph GID.
+     * Need the freetype face, unicode CMap and encoding to be initialized.
+     * \param c Character CID;
+     * \return Glyph GID. 0 if not found.
+     */
+    virtual pdfe_gid fromCIDToGID( pdfe_cid c ) const;
 
 private:
     // Members.

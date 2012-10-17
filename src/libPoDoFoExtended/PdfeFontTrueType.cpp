@@ -17,6 +17,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include "PdfeEncoding.h"
 #include "PdfeFontTrueType.h"
 #include "podofo/podofo.h"
 
@@ -188,6 +189,76 @@ PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return cbbox;
+}
+pdfe_gid PdfeFontTrueType::fromCIDToGID( pdfe_cid c ) const
+{
+    // No FreeType face loaded: return 0 GID.
+    if( !ftFace() ) {
+        return 0;
+    }
+    // Symbolic font?
+    bool symbolic = this->fontDescriptor().flags() & PdfeFontDescriptor::FlagSymbolic;
+    pdfe_gid gid( 0 );
+
+    // The font has an encoding and is not symbolic.
+    if( this->pEncoding() && !symbolic ) {
+        // Unicode charmap.
+        if( this->ftCharmapIndex( FTCharmap31 ) != -1 ) {
+            // Set charmap.
+            FT_Set_Charmap( ftFace(), ftFace()->charmaps[ ftCharmapIndex( FTCharmap31 ) ] );
+
+            QString ustr;
+            pdf_utf16be ucode( 0 );
+
+            // Unicode of the character (first try using pdf encoding).
+            ustr = this->toUnicode( c, true, true );
+            if( ustr.length() == 1 ) {
+                ucode = ustr[0].unicode();
+                gid = this->ftGIDFromCharCode( PDFE_UTF16BE_HBO( ucode ), false );
+                if( gid ) {
+                    return gid;
+                }
+            }
+        }
+        // Mac Roman encoding.
+        if( this->ftCharmapIndex( FTCharmap10 ) != -1 ) {
+            // Set charmap.
+            FT_Set_Charmap( ftFace(), ftFace()->charmaps[ ftCharmapIndex( FTCharmap10 ) ] );
+
+            // Convert character name to code using Mac Roman encoding.
+            PdfName cname = this->fromCIDToName( c );
+            int codeMR = PdfeEncoding::FromNameToCode( cname.GetName(), PdfeEncodingType::MacRoman );
+            if( codeMR != -1 ) {
+                gid = this->ftGIDFromCharCode( codeMR, false );
+                if( gid ) {
+                    return gid;
+                }
+            }
+        }
+    }
+    else {
+        // (3,0) charmap subtable.
+        if( this->ftCharmapIndex( FTCharmap30 ) != -1 ) {
+            // Set charmap.
+            FT_Set_Charmap( ftFace(), ftFace()->charmaps[ ftCharmapIndex( FTCharmap30 ) ] );
+            gid = this->ftGIDFromCharCode( c, true );
+            if( gid ) {
+                return gid;
+            }
+        }
+        // (1,0) charmap subtable.
+        if( this->ftCharmapIndex( FTCharmap10 ) != -1 ) {
+            // Set charmap.
+            FT_Set_Charmap( ftFace(), ftFace()->charmaps[ ftCharmapIndex( FTCharmap10 ) ] );
+            gid = this->ftGIDFromCharCode( c, true );
+            if( gid ) {
+                return gid;
+            }
+        }
+    }
+    // Last try: get the glyph index of the character from its name.
+    PdfName cname = this->fromCIDToName( c );
+    return this->ftGIDFromName( cname );
 }
 
 }

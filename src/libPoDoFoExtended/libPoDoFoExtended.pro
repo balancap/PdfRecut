@@ -13,6 +13,7 @@ DEFINES += LIBPODOFOEXTENDED_LIBRARY
 SOURCES += \
     PdfeTypes.cpp \
     PdfeFontDescriptor.cpp \
+    PdfeEncoding.cpp \
     PdfeFont.cpp \
     PdfeFontType0.cpp \
     PdfeFontType1.cpp \
@@ -29,6 +30,7 @@ SOURCES += \
 HEADERS += \
     PdfeTypes.h \
     PdfeFontDescriptor.h \
+    PdfeEncoding.h \
     PdfeFont.h \
     PdfeFontType0.h \
     PdfeFontType1.h \

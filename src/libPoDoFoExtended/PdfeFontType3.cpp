@@ -244,6 +244,10 @@ double PdfeFontType3::spaceHeight() const
 
     return spaceHeight;
 }
+pdfe_gid PdfeFontType3::fromCIDToGID(pdfe_cid c) const
+{
+    return ( c + 1 );
+}
 
 //**********************************************************//
 //                      PdfeGlyphType3                      //
@@ -294,6 +298,12 @@ void PdfeGlyphType3::computeBBox()
 void PdfeGlyphType3::fPathPainting( const PdfeStreamState& streamState,
                                     const PdfePath& currentPath )
 {
+    // TODO: implement the computation of cbox.
+//    std::cout << this << " / " << streamState.gOperator.name << " : ";
+//    std::copy( streamState.gOperands.begin(),
+//               streamState.gOperands.end(),
+//               std::ostream_iterator<std::string>( std::cout, " " ) );
+//    std::cout << std::endl;
 }
 void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
 {
@@ -314,13 +324,6 @@ void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
 
 void PdfeGlyphType3::fUnknown( const PdfeStreamState& streamState )
 {
-    // TODO: implement the computation of cbox.
-
-//    std::cout << this << " / " << streamState.gOperator.name << " : ";
-//    std::copy( streamState.gOperands.begin(),
-//               streamState.gOperands.end(),
-//               std::ostream_iterator<std::string>( std::cout, " " ) );
-//    std::cout << std::endl;
 }
 
 //**********************************************//

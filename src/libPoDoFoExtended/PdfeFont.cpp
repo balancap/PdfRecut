@@ -75,6 +75,7 @@ void PdfeFont::init()
     m_ftLibrary = NULL;
     m_ftFace = NULL;
     m_ftFaceData.clear();
+    m_ftCharmapsIdx.resize( 3, -1 );
 
     m_pEncoding = NULL;
     m_encodingOwned = false;
@@ -117,38 +118,38 @@ double PdfeFont::width( const PoDoFo::PdfString& str ) const
     return this->width( this->toCIDString( str ) );
 }
 
-QString PdfeFont::toUnicode( const PdfeCIDString& str , bool useUCMap ) const
+QString PdfeFont::toUnicode(const PdfeCIDString& str, bool useUCMap, bool firstTryEncoding ) const
 {
     // Default implementation: get the unicode string of every CID in the string..
     QString ustr;
     ustr.reserve( str.length() );
     for( size_t i = 0 ; i < str.length() ; ++i ) {
-        ustr += this->toUnicode( str[i], useUCMap );
+        ustr += this->toUnicode( str[i], useUCMap, firstTryEncoding );
     }
     return ustr;
 }
-QString PdfeFont::toUnicode( const PoDoFo::PdfString& str , bool useUCMap ) const
+QString PdfeFont::toUnicode(const PoDoFo::PdfString& str, bool useUCMap , bool firstTryEncoding ) const
 {
     QString ustr;
 
     // Not empty unicode CMap : directly try this way (if allowed).
-    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap && !firstTryEncoding ) {
          ustr = m_unicodeCMap.toUnicode( str );
     }
     // No result: try using Pdf encoding (not for Type 0 fonts). No need to retry CMap.
     if( !ustr.length() && this->type() != PdfeFontType::Type0 ) {
-        ustr = this->toUnicode( this->toCIDString( str ), false );
+        ustr = this->toUnicode( this->toCIDString( str ), useUCMap, firstTryEncoding );
     }
     return ustr;
 }
 
 // Default implementation for simple fonts (Type 1, TrueType and Type 3).
-QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
+QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
 {
     QString ustr;
 
     // Not empty unicode CMap : directly try this way (if allowed).
-    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap ) {
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUCMap && !firstTryEncoding ) {
         //pdf_uint16 code = PDFE_UTF16BE_HBO( c );
         //PdfeCMap::CharCode charCode( code );
 
@@ -164,6 +165,13 @@ QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap ) const
         ucode = PDFE_UTF16BE_HBO( ucode );
         return QString::fromUtf16( &ucode, 1 );
     }
+    // Unicode CMap at the end...
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && !ustr.length() && useUCMap && firstTryEncoding ) {
+        pdf_uint8 uint8_c( c ) ;
+        PdfeCMap::CharCode charCode( uint8_c );
+        ustr = m_unicodeCMap.toUnicode( charCode );
+    }
+
     // Might be empty...
     return ustr;
 }
@@ -214,6 +222,50 @@ PdfeFontSpace::Enum PdfeFont::isSpace( pdfe_cid c ) const
     return PdfeFontSpace::None;
 }
 
+PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
+{
+    PdfName cname;
+    pdf_utf16be ucode;
+
+    // Is the font encoding a difference encoding?
+    PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding );
+    if( pDiffEncoding ) {
+        const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
+        if( differences.Contains( c, cname, ucode ) ) {
+            // Name found!
+            return cname;
+        }
+    }
+    // Try using Pdf encoding and the UnicodeToName map.
+    if( m_pEncoding ) {
+        pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
+        cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
+
+        // Check the name does no correspond to default PoDoFo construction.
+        QString defName = QString("uni%1").arg( ucode, 4, 16, QLatin1Char('0') );
+        if( defName.toStdString() != cname.GetName() ) {
+            return cname;
+        }
+    }
+    // Try using unicode CMap.
+    if( !m_unicodeCMap.emptyCodeSpaceRange() ) {
+        QString ustr = this->toUnicode( c, true );
+        if( ustr.length() == 1 ) {
+            ucode = ustr[0].unicode();
+            ucode = PDFE_UTF16BE_HBO( ucode );
+            cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
+
+            // Check the name does no correspond to default PoDoFo construction.
+            QString defName = QString("uni%1").arg( ucode, 4, 16, QLatin1Char('0') );
+            if( defName.toStdString() != cname.GetName() ) {
+                return cname;
+            }
+        }
+    }
+    // No name found...
+    return PdfName();
+}
+
 void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
 {
     // Create encoding if necessary.
@@ -222,6 +274,10 @@ void PdfeFont::initEncoding( PoDoFo::PdfObject* pEncodingObj )
 
         // According to PoDoFo implementation.
         m_encodingOwned = !pEncodingObj->IsName() || ( pEncodingObj->IsName() && (pEncodingObj->GetName() == PdfName("Identity-H")) );
+    }
+    else {
+        m_pEncoding = NULL;
+        m_encodingOwned = false;
     }
 }
 void PdfeFont::initEncoding( PdfEncoding* pEncoding, bool owned )
@@ -277,6 +333,7 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
             // Can not load: return...
             m_ftFace = NULL;
             m_ftFaceData.clear();
+            this->initFTFaceCharmaps();
             return;
         }
     }
@@ -300,8 +357,9 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
 //                 << qfont2.exactMatch() << "/"
 //                 << qfont2.key();
 //#endif
-
     }
+    // Find charmaps.
+    this->initFTFaceCharmaps();
 }
 void PdfeFont::initFTFace( QString filename )
 {
@@ -316,7 +374,30 @@ void PdfeFont::initFTFace( QString filename )
     if( error ) {
         // Can not load: return...
         m_ftFace = NULL;
+        this->initFTFaceCharmaps();
         return;
+    }
+    this->initFTFaceCharmaps();
+}
+void PdfeFont::initFTFaceCharmaps()
+{
+    m_ftCharmapsIdx.resize( 3, -1 );
+    if( !m_ftFace ) {
+        return;
+    }
+
+    // Find charmaps...
+    for( int i = 0 ; i < m_ftFace->num_charmaps ; i++ ) {
+        FT_CharMap charmap = m_ftFace->charmaps[i];
+        if( charmap->platform_id == 1 && charmap->encoding_id == 0 ) {
+            m_ftCharmapsIdx[ FTCharmap10 ] = i;
+        }
+        else if( charmap->platform_id == 3 && charmap->encoding_id == 0 ) {
+            m_ftCharmapsIdx[ FTCharmap30 ] = i;
+        }
+        else if( charmap->platform_id == 3 && charmap->encoding_id == 1 ) {
+            m_ftCharmapsIdx[ FTCharmap31 ] = i;
+        }
     }
 }
 
@@ -375,81 +456,6 @@ void PdfeFont::initLogInformation()
                    .toAscii().constData();
 }
 
-PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
-{
-    PdfName cname;
-    pdf_utf16be ucode;
-
-    // Is the font encoding a difference encoding?
-    PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding );
-    if( pDiffEncoding ) {
-        const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
-        if( differences.Contains( c, cname, ucode ) ) {
-            // Name found!
-            return cname;
-        }
-    }
-    // Else: try using the unicode code of c.
-    QString ustr = this->toUnicode( c, true );
-    if( ustr.length() == 1 ) {
-        ucode = ustr[0].unicode();
-        ucode = PDFE_UTF16BE_HBO( ucode );
-        cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
-
-        // Check the name does no correspond to default PoDoFo construction.
-        QString defName = QString("uni%1").arg( ucode, 4, 16, QLatin1Char('0') );
-        if( defName.toStdString() != cname.GetName() ) {
-            return cname;
-        }
-    }
-    return PdfName();
-}
-pdfe_gid PdfeFont::fromCIDToGID( pdfe_cid c ) const
-{
-    // No FreeType face loaded: return 0 GID.
-    if( !m_ftFace ) {
-        return 0;
-    }
-
-    // Set a CharMap: keep the default one if selected.
-    if( !m_ftFace->charmap ) {
-        FT_Set_Charmap( m_ftFace, m_ftFace->charmaps[0] );
-    }
-
-    // Get the glyph index of the character.
-    PdfName cname;
-    pdf_utf16be ucode( 0 );
-    pdfe_gid gid( 0 );
-
-    // First try using the character name, obtain from its CID.
-    cname = this->fromCIDToName( c );
-    if( cname.GetLength() ) {
-        gid = FT_Get_Name_Index( m_ftFace, const_cast<char*>( cname.GetName().c_str() ) );
-        if( gid ) {
-            return gid;
-        }
-    }
-
-    // Unicode of the character.
-    QString ustr = this->toUnicode( c );
-    if( ustr.length() == 1 ) {
-        ucode = ustr[0].unicode();
-    }
-    // No glyph index yet: try using the character code and the different charmaps.
-    for( int n = 0; n < m_ftFace->num_charmaps && !gid ; n++ ) {
-        FT_Set_Charmap( m_ftFace, m_ftFace->charmaps[n] );
-        // Unicode first...
-        if( ucode ) {
-            gid = FT_Get_Char_Index( m_ftFace, PDFE_UTF16BE_HBO( ucode ) );
-        }
-        // Also try character code.
-        if( !gid ) {
-            gid = FT_Get_Char_Index( m_ftFace, c );
-        }
-    }
-    return gid;
-}
-
 void PdfeFont::applyFontParameters( double& width, bool space32 ) const
 {
     // Apply font parameters.
@@ -470,6 +476,7 @@ void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
     bbox.SetHeight( bbox.GetHeight() * m_fontSize );
 }
 
+// Static functions used as interface with FreeType library.
 PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect& fontBBox )
 {
     // Glyph bounding box.
@@ -480,12 +487,6 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
     if( error ) {
         return glyphBBox;
     }
-    // Get bounding box, computed using the outline of the glyph.
-//    FT_BBox glyph_bbox;
-//    error = FT_Outline_Get_BBox( &face->glyph->outline, &glyph_bbox );
-//    double bottom = glyph_bbox.yMin;
-//    double top = glyph_bbox.yMax;
-
     // Scaling factor due to face units per EM.
     double scaling = 1000. / double( ftFace->units_per_EM );
 
@@ -495,7 +496,15 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
     double right = double( metrics.horiBearingX + metrics.width ) * scaling;
     double bottom = double( metrics.horiBearingY - metrics.height ) * scaling;
     double top = double( metrics.horiBearingY ) * scaling;
-    //double advance = double( metrics.horiAdvance ) * scaling;
+//    double advance = double( metrics.horiAdvance ) * scaling;
+
+    // Get bounding box, computed using the outline of the glyph.
+//    FT_BBox glyph_bbox;
+//    error = FT_Outline_Get_BBox( &ftFace->glyph->outline, &glyph_bbox );
+//    double left = double( glyph_bbox.xMin ) * scaling;
+//    double right = double( glyph_bbox.xMax ) * scaling;
+//    double bottom = double( glyph_bbox.yMin ) * scaling;
+//    double top = double( glyph_bbox.yMax ) * scaling;
 
     // Perform some corrections using font bounding box.
     if( fontBBox.GetWidth() > 0  && fontBBox.GetHeight() > 0 ) {
@@ -513,7 +522,6 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
 
     return glyphBBox;
 }
-
 PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx,
                                               unsigned int charHeight, long resolution )
 {
@@ -559,6 +567,37 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx
     // pixel_coord = grid_coord * pixel_size / EM_size
 
     return glyph;
+}
+
+pdfe_gid PdfeFont::ftGIDFromCharCode( pdfe_cid charCode, bool charmap30 ) const
+{
+    pdfe_gid gid( 0 );
+    gid = FT_Get_Char_Index( m_ftFace , charCode );
+
+    // In case of TrueType font + (3,0) CMap.
+    if( !gid && charmap30 ) {
+        gid = FT_Get_Char_Index( m_ftFace, 0xf000 + charCode );
+        if( !gid ) {
+            gid = FT_Get_Char_Index( m_ftFace, 0xf100 + charCode );
+        }
+        if( !gid ) {
+            gid = FT_Get_Char_Index( m_ftFace, 0xf200 + charCode );
+        }
+    }
+    // Tweak from MuPDF...
+    // some chinese fonts only ship the similarly looking 0x2026.
+    if( !gid && charCode == 0x22ef ) {
+        gid = FT_Get_Char_Index( m_ftFace, 0x2026 );
+    }
+    return gid;
+}
+pdfe_gid PdfeFont::ftGIDFromName( const PdfName& charName ) const
+{
+    pdfe_gid gid( 0 );
+    if( charName.GetLength() ) {
+        gid = FT_Get_Name_Index( m_ftFace, const_cast<char*>( charName.GetName().c_str() ) );
+    }
+    return gid;
 }
 
 const std::vector<QChar>& PdfeFont::spaceCharacters()

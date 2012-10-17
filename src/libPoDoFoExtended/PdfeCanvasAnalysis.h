@@ -138,7 +138,7 @@ protected:
      */
     void readValue( const std::string& str, double& value );
 
-protected:
+private:
     /// Istringstream used in conversion string -> number.
     std::istringstream  m_iStrStream;
 };

@@ -295,6 +295,17 @@ PdfRect PdfeFontType1::bbox( pdfe_cid c, bool useFParams ) const
     }
     return cbbox;
 }
+pdfe_gid PdfeFontType1::fromCIDToGID( pdfe_cid c ) const
+{
+    // No FreeType face loaded: return 0 GID.
+    if( !ftFace() ) {
+        return 0;
+    }
+    // Get the glyph index of the character from its name.
+    PdfName cname = this->fromCIDToName( c );
+    return this->ftGIDFromName( cname );
+}
+
 
 bool PdfeFontType1::IsStandard14Font( PdfObject* pFont )
 {

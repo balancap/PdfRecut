@@ -126,13 +126,17 @@ public:
      * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString corresponding.
      */
-    virtual QString toUnicode( const PdfeCIDString& str, bool useUCMap = true ) const;
+    virtual QString toUnicode( const PdfeCIDString& str,
+                               bool useUCMap = true,
+                               bool firstTryEncoding = false ) const;
     /** Convert a simple string to unicode.
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \param useUCMap Try to use the unicode CMap to convert.
      * \return Unicode QString corresponding.
      */
-    virtual QString toUnicode( const PoDoFo::PdfString& str, bool useUCMap = true ) const;
+    virtual QString toUnicode( const PoDoFo::PdfString& str,
+                               bool useUCMap = true,
+                               bool firstTryEncoding = false ) const;
 
 public:
     // Virtual functions to reimplement in derived classes.
@@ -169,9 +173,12 @@ public:
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
+     * \param firstTryEncoding First try to use the Pdf encoding.
      * \return Unicode QString representing the character.
      */
-    virtual QString toUnicode( pdfe_cid c, bool useUCMap = true ) const = 0;
+    virtual QString toUnicode( pdfe_cid c,
+                               bool useUCMap = true,
+                               bool firstTryEncoding = false ) const = 0;
 
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
@@ -183,6 +190,22 @@ public:
      * \return Space height.
      */
     virtual double spaceHeight() const = 0;
+
+    /** Convert a character CID to the corresponding glyph GID.
+     * Need the freetype face, unicode CMap and encoding to be initialized.
+     * \param c Character CID;
+     * \return Glyph GID. 0 if not found.
+     */
+    virtual pdfe_gid fromCIDToGID( pdfe_cid c ) const = 0;
+
+public:
+    /** Get a character name from its CID.
+     * Default implementation first try using the font encoding and then the unicode code.
+     * Needs the encoding object to be initialized.
+     * \param c CID of the character.
+     * \return Name of the character. Empty if no name found.
+     */
+    PoDoFo::PdfName fromCIDToName( pdfe_cid c ) const;
 
 protected:
     /** Initialize PdfEncoding of a PdfeFont.
@@ -207,6 +230,9 @@ protected:
      * \param filename Filename of the font to load..
      */
     void initFTFace( QString filename );
+    /** Initialize FreeType face charmaps indexes.
+     */
+    void initFTFaceCharmaps();
 
     /** Initialize the list of space characters for the font.
      * \param firstCID First CID to consider.
@@ -220,19 +246,7 @@ protected:
     void initLogInformation();
 
 protected:
-    /** Get a character name from its CID. First try using the font encoding and then the unicode code.
-     * Needs the encoding object to be initialized.
-     * \param c CID of the character.
-     * \return Name of the character. Empty if no name found.
-     */
-    PoDoFo::PdfName fromCIDToName( pdfe_cid c ) const;
 
-    /** Convert a character CID to the corresponding glyph GID.
-     * Need the freetype face, unicode CMap and encoding to be initialized.
-     * \param c Character CID;
-     * \return Glyph GID. 0 if not found.
-     */
-    pdfe_gid fromCIDToGID( pdfe_cid c ) const;
 
     /** Apply font parameter to a character width.
      * \param Reference to the width to modify.
@@ -283,6 +297,31 @@ public:
                                      pdfe_gid glyph_idx ,
                                      unsigned int charHeight,
                                      long resolution );
+protected:
+    //Interface with FreeType library.
+    /** Retrieve the GID corresponding to a given character code.
+     * Basically call FT_Get_Char_Index + few tweaks.
+     * \param charCode Character code.
+     * \param charmap30 Is charmap (3,0) used?
+     * \return GID of the character. O if not found.
+     */
+    pdfe_gid ftGIDFromCharCode(pdfe_cid charCode , bool charmap30 = false ) const;
+
+    /** Retrieve the GID corresponding to a given character code.
+     * Basically call FT_Get_Name_Index.
+     * \param charName Character name.
+     * \return GID of the character. O if not found.
+     */
+    pdfe_gid ftGIDFromName( const PoDoFo::PdfName& charName ) const;
+
+    /** FreeType charmaps that can be present in a FT face.
+     * List: (1,0), (3,0) and (3,1) charmaps.
+     */
+    enum FTCharmap {
+        FTCharmap10 = 0,
+        FTCharmap30,
+        FTCharmap31
+    };
 
 protected:
     /** Static function that return what are considered as space characters.
@@ -290,6 +329,8 @@ protected:
      * By convention the first one is the classic space.
      */
     static const std::vector<QChar>& spaceCharacters();
+
+
 
 private:
     // Members
@@ -314,6 +355,9 @@ private:
     FT_Face  m_ftFace;
     /// FreeType Face data.
     QByteArray  m_ftFaceData;
+    /// Index of the charmaps (1,0), (3,0) and (3,1) in FT face.
+    /// -1 if it does exist in FreeType face.
+    std::vector<int>  m_ftCharmapsIdx;
 
     /// Font encoding.
     PoDoFo::PdfEncoding*  m_pEncoding;
@@ -328,11 +372,13 @@ private:
 protected:
     // Protected Getters.
     /// Get font face object.
-    FT_Face ftFace() const      {   return m_ftFace;   }
+    FT_Face ftFace() const                      {   return m_ftFace;   }
+    /// Get charmap index.
+    int ftCharmapIndex( FTCharmap cmapType ) const  {   return m_ftCharmapsIdx[cmapType];   }
     /// Get encoding object pointer.
-    const PoDoFo::PdfEncoding* pEncoding() const   {   return m_pEncoding; }
+    const PoDoFo::PdfEncoding* pEncoding() const    {   return m_pEncoding; }
     /// Get unicode CMap pointer.
-    const PdfeCMap* pUnicodeCMap() const    {   return &m_unicodeCMap;  }
+    const PdfeCMap* pUnicodeCMap() const        {   return &m_unicodeCMap;  }
 
 public:
     //**********************************************************//

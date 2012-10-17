@@ -141,7 +141,7 @@ PdfRect PdfeFontType0::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
-QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
+QString PdfeFontType0::toUnicode(pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
 {
     QString ustr;
 
@@ -161,6 +161,11 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap ) const
 double PdfeFontType0::spaceHeight() const
 {
     return m_fontCID->spaceHeight();
+}
+pdfe_gid PdfeFontType0::fromCIDToGID(pdfe_cid c) const
+{
+    // TODO: improve implementation using mapCIDToGID.
+    return c;
 }
 
 //**********************************************************//

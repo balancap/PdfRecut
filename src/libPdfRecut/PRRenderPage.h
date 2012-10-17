@@ -228,29 +228,6 @@ public:
     virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
-    /** Convert Image coordinates to Page coordinates.
-     * \param imgCoord Coordinates of a pixel in the image.
-     * \return Coordinates in the page of the pixel center.
-     */
-    PdfeVector fromImagetoPageCoord( const QPoint& imgCoord );
-
-    /** Convert Page coordinates to Image coordinates.
-     * \param pageCoord Coordinates in the page of a point.
-     * return Coordinates of the pixel which contains the point in the image.
-     */
-    QPoint fromPagetoImageCoord( const PdfeVector& pageCoord );
-
-    /** Convert Image rectangle to page coordinates.
-     * \param imgRect Rectangle in image coordinates.
-     * \return Rectangle in page coordinates.
-     */
-    PoDoFo::PdfRect fromImagetoPageCoord( const QRect& imgRect );
-
-    /** Convert Page rectangle to image coordinates.
-     * \param pageRect Rectangle in page coordinates.
-     * \return Rectangle in image coordinates.
-     */
-    QRect fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect );
 
 protected:
     /** Read a group of words from a pdf stream state.
@@ -316,42 +293,6 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline PdfeVector PRRenderPage::fromImagetoPageCoord( const QPoint& imgCoord )
-{
-    PdfeVector pageCoord;
-    pageCoord(0) = ( imgCoord.x() + 0.5 ) / m_renderParameters.resolution + m_pageRect.GetLeft();
-    pageCoord(1) = ( m_pageImage->height() - 0.5 - imgCoord.y() ) / m_renderParameters.resolution + m_pageRect.GetBottom();
-
-    return pageCoord;
-}
-inline QPoint PRRenderPage::fromPagetoImageCoord( const PdfeVector& pageCoord )
-{
-    QPoint imgCoord;
-    imgCoord.rx() = floor( ( pageCoord(0) - m_pageRect.GetLeft() ) * m_renderParameters.resolution );
-    imgCoord.ry() = floor( ( m_pageRect.GetHeight() - pageCoord(1) + m_pageRect.GetLeft() ) * m_renderParameters.resolution );
-
-    return imgCoord;
-}
-inline PoDoFo::PdfRect PRRenderPage::fromImagetoPageCoord( const QRect& imgRect )
-{
-    PoDoFo::PdfRect pageRect;
-    pageRect.SetLeft( ( imgRect.x() + 0.5 ) / m_renderParameters.resolution + m_pageRect.GetLeft() );
-    pageRect.SetBottom( ( m_pageImage->height() - 0.5 - imgRect.y() ) / m_renderParameters.resolution + m_pageRect.GetBottom() );
-    pageRect.SetWidth( imgRect.width() / m_renderParameters.resolution );
-    pageRect.SetHeight( imgRect.height() / m_renderParameters.resolution );
-
-    return pageRect;
-}
-inline QRect PRRenderPage::fromPagetoImageCoord( const PoDoFo::PdfRect& pageRect )
-{
-    QRect imgRect;
-    imgRect.setLeft( floor( ( pageRect.GetLeft() - m_pageRect.GetLeft() ) * m_renderParameters.resolution ) );
-    imgRect.setTop( floor( ( m_pageRect.GetHeight() - pageRect.GetBottom() + m_pageRect.GetLeft() ) * m_renderParameters.resolution ) );
-    imgRect.setWidth( pageRect.GetWidth() * m_renderParameters.resolution );
-    imgRect.setHeight( pageRect.GetHeight() * m_renderParameters.resolution );
-
-    return imgRect;
-}
 
 }
 
