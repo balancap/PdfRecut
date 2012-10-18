@@ -33,6 +33,8 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                          PdfeFont                        //
 //**********************************************************//
+QDir PdfeFont::Standard14FontsDir;
+
 PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary ) :
     m_ftLibrary( NULL ), m_ftFace( NULL ),
     m_pEncoding( NULL ), m_encodingOwned( false )
@@ -305,6 +307,8 @@ void PdfeFont::initUnicodeCMap( PdfObject* pUCMapObj )
 }
 void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
 {
+    PdfeFont14Standard::Enum stdFont14 = PdfeFont::isStandard14Font( fontDescriptor.fontName( false ).GetName() );
+
     // Embedded font program.
     if( fontDescriptor.fontEmbedded().fontFile() ) {
         // Copy font program in a buffer.
@@ -322,20 +326,10 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
         m_ftFaceData.clear();
         m_ftFaceData.append( pBuffer, length );
         free( pBuffer );
-
-        // Load FreeType face from data buffer.
-        int error;
-        error = FT_New_Memory_Face( m_ftLibrary,
-                                    reinterpret_cast<unsigned char*>( m_ftFaceData.data() ),
-                                    m_ftFaceData.size(), 0,
-                                    &m_ftFace );
-        if( error ) {
-            // Can not load: return...
-            m_ftFace = NULL;
-            m_ftFaceData.clear();
-            this->initFTFaceCharmaps();
-            return;
-        }
+    }
+    // Standard font.
+    else if( stdFont14 != PdfeFont14Standard::None ) {
+        m_ftFaceData = PdfeFont::standard14FontData( stdFont14 );
     }
     // Font program not embedded in the PDF: try to load on the host system.
     else {
@@ -357,6 +351,20 @@ void PdfeFont::initFTFace( const PdfeFontDescriptor& fontDescriptor )
 //                 << qfont2.exactMatch() << "/"
 //                 << qfont2.key();
 //#endif
+    }
+    // Load FreeType face from data buffer.
+    int error;
+    unsigned char* pData = reinterpret_cast<unsigned char*>( const_cast<char*>( m_ftFaceData.constData() ) );
+    error = FT_New_Memory_Face( m_ftLibrary,
+                                pData,
+                                m_ftFaceData.size(), 0,
+                                &m_ftFace );
+    if( error ) {
+        // Can not load: return...
+        m_ftFace = NULL;
+        m_ftFaceData.clear();
+        this->initFTFaceCharmaps();
+        return;
     }
     // Find charmaps.
     this->initFTFaceCharmaps();
@@ -598,6 +606,124 @@ pdfe_gid PdfeFont::ftGIDFromName( const PdfName& charName ) const
         gid = FT_Get_Name_Index( m_ftFace, const_cast<char*>( charName.GetName().c_str() ) );
     }
     return gid;
+}
+
+PdfeFont14Standard::Enum PdfeFont::isStandard14Font( const std::string& fontName )
+{
+    // Known names for standard 14 fonts.
+    static const char* std14FontNames[][10] =
+    {
+        { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
+            "TimesNewRomanPS", NULL },
+        { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
+            "TimesNewRomanPS-Bold", "TimesNewRoman-Bold", NULL },
+        { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
+            "TimesNewRomanPS-Italic", "TimesNewRoman-Italic", NULL },
+        { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
+            "TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
+            "TimesNewRoman-BoldItalic", NULL },
+        { "Helvetica", "ArialMT", "Arial", NULL },
+        { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
+            "Helvetica,Bold", NULL },
+        { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
+            "Helvetica,Italic", "Helvetica-Italic", NULL },
+        { "Helvetica-BoldOblique", "Arial-BoldItalicMT",
+            "Arial,BoldItalic", "Arial-BoldItalic",
+            "Helvetica,BoldItalic", "Helvetica-BoldItalic", NULL },
+        { "Courier", "CourierNew", "CourierNewPSMT", NULL },
+        { "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
+            "CourierNewPS-BoldMT", "CourierNew-Bold", NULL },
+        { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
+            "CourierNewPS-ItalicMT", "CourierNew-Italic", NULL },
+        { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
+            "CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", NULL },
+        { "Symbol", "Symbol,Italic", "Symbol,Bold", "Symbol,BoldItalic",
+            "SymbolMT", "SymbolMT,Italic", "SymbolMT,Bold", "SymbolMT,BoldItalic", NULL },
+        { "ZapfDingbats", NULL }
+    };
+
+    // Find the font name in the list.
+    for( int i = 0 ; i <= 14 ; ++i ) {
+        for( int j = 0 ; std14FontNames[i][j] ; ++j ) {
+            if( fontName == std14FontNames[i][j] ) {
+                return PdfeFont14Standard::Enum( i );
+            }
+        }
+    }
+    return PdfeFont14Standard::None;
+}
+QString PdfeFont::standard14FontPath( PdfeFont14Standard::Enum stdFontType )
+{
+    // Filename.
+    QString filename;
+    switch( stdFontType )
+    {
+    case PdfeFont14Standard::TimesRoman:
+        filename = "NimbusRomNo9L-Regu.cff";
+        break;
+    case PdfeFont14Standard::TimesBold:
+        filename = "NimbusRomNo9L-Medi.cff";
+        break;
+    case PdfeFont14Standard::TimesItalic:
+        filename = "NimbusRomNo9L-ReguItal.cff";
+        break;
+    case PdfeFont14Standard::TimesBoldItalic:
+        filename = "NimbusRomNo9L-MediItal.cff";
+        break;
+    case PdfeFont14Standard::Helvetica:
+        filename = "NimbusSanL-Regu.cff";
+        break;
+    case PdfeFont14Standard::HelveticaBold:
+        filename = "NimbusSanL-Bold.cff";
+        break;
+    case PdfeFont14Standard::HelveticaOblique:
+        filename = "NimbusSanL-ReguItal.cff";
+        break;
+    case PdfeFont14Standard::HelveticaBoldOblique:
+        filename = "NimbusSanL-BoldItal.cff";
+        break;
+    case PdfeFont14Standard::Courier:
+        filename = "NimbusMonL-Regu.cff";
+        break;
+    case PdfeFont14Standard::CourierBold:
+        filename = "NimbusMonL-Bold.cff";
+        break;
+    case PdfeFont14Standard::CourierOblique:
+        filename = "NimbusMonL-ReguObli.cff";
+        break;
+    case PdfeFont14Standard::CourierBoldOblique:
+        filename = "NimbusMonL-BoldObli.cff";
+        break;
+    case PdfeFont14Standard::Symbol:
+        filename = "StandardSymL.cff";
+        break;
+    case PdfeFont14Standard::ZapfDingbats:
+        filename = "Dingbats.cff";
+        break;
+    case PdfeFont14Standard::None:
+        return QString();
+    }
+    return Standard14FontsDir.absoluteFilePath( filename );
+}
+QByteArray PdfeFont::standard14FontData( PdfeFont14Standard::Enum stdFontType )
+{
+    // Static data vector.
+    static std::vector<QByteArray> stdFontsData( 14, QByteArray() );
+
+    // Data already loaded...
+    if( stdFontsData[ stdFontType ].size() ) {
+        return stdFontsData[ stdFontType ];
+    }
+
+    // Else: load file.
+    QString fontpath = PdfeFont::standard14FontPath( stdFontType );
+    QFile fontfile( fontpath );
+    if (!fontfile.open( QIODevice::ReadOnly ) ) {
+        return QByteArray();
+    }
+    stdFontsData[ stdFontType ] = fontfile.readAll();
+    fontfile.close();
+    return stdFontsData[ stdFontType ];
 }
 
 const std::vector<QChar>& PdfeFont::spaceCharacters()

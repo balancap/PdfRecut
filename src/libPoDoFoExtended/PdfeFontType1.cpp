@@ -27,8 +27,6 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-QDir PdfeFontType1::Standard14FontsPath;
-
 PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     PdfeFont( pFont, ftLibrary )
 {
@@ -48,8 +46,17 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "The PdfObject is not a Type 1 font." );
     }
 
-    // Standard 14 font.
-    if( PdfeFontType1::IsStandard14Font( pFont ) ) {
+    // Read base font (required for standard font!).
+    PdfObject* pFontName = pFont->GetIndirectKey( "BaseFont" );
+    if( pFontName ) {
+        m_baseFont = pFontName->GetName();
+    }
+    else {
+        m_baseFont = PdfName();
+    }
+
+    // Standard 14 font?
+    if( pFontName && ( PdfeFont::isStandard14Font( m_baseFont.GetName() ) != PdfeFont14Standard::None ) ) {
         this->initStandard14Font( pFont );
         return;
     }
@@ -195,8 +202,7 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     this->initUnicodeCMap( pUnicodeCMap );
 
     // FreeType font face.
-    QString filename = filenameStandard14Font( m_baseFont.GetName() );
-    this->initFTFace( filename );
+    this->initFTFace( m_fontDescriptor );
 
     // Construct widths array using the font encoding.
     m_firstCID = pEncoding()->GetFirstChar();
@@ -304,83 +310,6 @@ pdfe_gid PdfeFontType1::fromCIDToGID( pdfe_cid c ) const
     // Get the glyph index of the character from its name.
     PdfName cname = this->fromCIDToName( c );
     return this->ftGIDFromName( cname );
-}
-
-
-bool PdfeFontType1::IsStandard14Font( PdfObject* pFont )
-{
-    // No font name...
-    if( !pFont || !pFont->GetIndirectKey( "BaseFont" ) ) {
-        return false;
-    }
-
-    // Read font name.
-    std::string fontName = pFont->GetIndirectKey( "BaseFont" )->GetName().GetName();
-    bool standard14font =
-            fontName == "Times-Roman" ||
-            fontName == "Times-Bold" ||
-            fontName == "Times-Italic" ||
-            fontName == "Times-BoldItalic" ||
-            fontName == "Helvetica" ||
-            fontName == "Helvetica-Bold" ||
-            fontName == "Helvetica-Oblique" ||
-            fontName == "Helvetica-BoldOblique" ||
-            fontName == "Courier" ||
-            fontName == "Courier-Bold" ||
-            fontName == "Courier-Oblique" ||
-            fontName == "Courier-BoldOblique" ||
-            fontName == "Symbol" ||
-            fontName == "ZapfDingbats";
-
-    return standard14font;
-}
-QString PdfeFontType1::filenameStandard14Font( const std::string& fontName )
-{
-    // Standard font filename.
-    QString filename;
-    if( fontName == "Times-Roman" ) {
-        filename = "NimbusRomNo9L-Regu.cff";
-    }
-    else if( fontName == "Times-Bold" ) {
-        filename = "NimbusRomNo9L-Medi.cff";
-    }
-    else if( fontName == "Times-Italic" ) {
-        filename = "NimbusRomNo9L-ReguItal.cff";
-    }
-    else if( fontName == "Times-BoldItalic" ) {
-        filename = "NimbusRomNo9L-MediItal.cff";
-    }
-    else if( fontName == "Helvetica" ) {
-        filename = "NimbusSanL-Regu.cff";
-    }
-    else if( fontName == "Helvetica-Bold" ) {
-        filename = "NimbusSanL-Bold.cff";
-    }
-    else if( fontName == "Helvetica-Oblique" ) {
-        filename = "NimbusSanL-ReguItal.cff";
-    }
-    else if( fontName == "Helvetica-BoldOblique" ) {
-        filename = "NimbusSanL-BoldItal.cff";
-    }
-    else if( fontName == "Courier" ) {
-        filename = "NimbusMonL-Regu.cff";
-    }
-    else if( fontName == "Courier-Bold" ) {
-        filename = "NimbusMonL-Bold.cff";
-    }
-    else if( fontName == "Courier-Oblique" ) {
-        filename = "NimbusMonL-ReguObli.cff";
-    }
-    else if( fontName == "Courier-BoldOblique" ) {
-        filename = "NimbusMonL-BoldObli.cff";
-    }
-    else if( fontName == "Symbol" ) {
-        filename = "StandardSymL.cff";
-    }
-    else if( fontName == "ZapfDingbats" ) {
-        filename = "Dingbats.cff";
-    }
-    return Standard14FontsPath.absoluteFilePath( filename );
 }
 
 }

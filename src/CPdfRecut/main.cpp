@@ -225,7 +225,7 @@ int main( int argc, char *argv[] )
     logger.addDestination( fileDestination.get() );
 
     // Set Standard Type 1 fonts path.
-    PoDoFoExtended::PdfeFontType1::Standard14FontsPath.setPath( "./standard14fonts" );
+    PoDoFoExtended::PdfeFont::Standard14FontsDir.setPath( "./standard14fonts" );
 
     if( argc != 2 ) {
         cout << "Input: file or directory to proceed..." << endl;

@@ -34,6 +34,7 @@
 #include <QByteArray>
 #include <QString>
 #include <QImage>
+#include <QDir>
 
 #include <QDebug>
 
@@ -82,6 +83,27 @@ enum Enum {
     None = 0,   // Not a space character.
     Code32,     // Single byte 32 space.
     Other       // Other kind of space character (not single byte, tabular, ...).
+};
+}
+namespace PdfeFont14Standard {
+/** Enumeration of the 14 standard fonts.
+ */
+enum Enum {
+    TimesRoman = 0,
+    TimesBold,
+    TimesItalic,
+    TimesBoldItalic,
+    Helvetica,
+    HelveticaBold,
+    HelveticaOblique,
+    HelveticaBoldOblique,
+    Courier,
+    CourierBold,
+    CourierOblique,
+    CourierBoldOblique,
+    Symbol,
+    ZapfDingbats,
+    None
 };
 }
 
@@ -246,8 +268,6 @@ protected:
     void initLogInformation();
 
 protected:
-
-
     /** Apply font parameter to a character width.
      * \param Reference to the width to modify.
      * \param space32 Is the character a 32 type space?
@@ -299,6 +319,15 @@ public:
                                      long resolution );
 protected:
     //Interface with FreeType library.
+    /** FreeType charmaps that can be present in a FT face.
+     * List: (1,0), (3,0) and (3,1) charmaps.
+     */
+    enum FTCharmap {
+        FTCharmap10 = 0,
+        FTCharmap30,
+        FTCharmap31
+    };
+
     /** Retrieve the GID corresponding to a given character code.
      * Basically call FT_Get_Char_Index + few tweaks.
      * \param charCode Character code.
@@ -314,23 +343,33 @@ protected:
      */
     pdfe_gid ftGIDFromName( const PoDoFo::PdfName& charName ) const;
 
-    /** FreeType charmaps that can be present in a FT face.
-     * List: (1,0), (3,0) and (3,1) charmaps.
-     */
-    enum FTCharmap {
-        FTCharmap10 = 0,
-        FTCharmap30,
-        FTCharmap31
-    };
+
+public:
+    /// Directory where are stored standard 14 fonts files.
+    static QDir Standard14FontsDir;
 
 protected:
+    /** Does a font name corresponds to the name of a standard 14 font?
+     * \param pFont Font object.
+     * \return PdfeFont14Standard value. None if it is not.
+     */
+    static PdfeFont14Standard::Enum isStandard14Font( const std::string& fontName );
+    /** Get the path (and filename) of a standard 14 font.
+     * \param stdFontType Type of the standard font.
+     * \return Path of the font file (empty if not found).
+     */
+    static QString standard14FontPath( PdfeFont14Standard::Enum stdFontType );
+    /** Get the data of a standard 14 font.
+     * \param stdFontType Type of the standard font.
+     * \return QByteArray containing data (COW implies that no data is copied twice).
+     */
+    static QByteArray standard14FontData( PdfeFont14Standard::Enum stdFontType );
+
     /** Static function that return what are considered as space characters.
      * \return Constant reference to a vector of QChar containing space characters.
-     * By convention the first one is the classic space.
+     * By convention the first one is the classic space 0x0020.
      */
     static const std::vector<QChar>& spaceCharacters();
-
-
 
 private:
     // Members

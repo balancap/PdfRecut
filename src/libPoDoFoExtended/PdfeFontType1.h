@@ -131,23 +131,6 @@ public:
      */
     virtual pdfe_gid fromCIDToGID( pdfe_cid c ) const;
 
-protected:
-    /** Is a font object a standard 14 font?
-     * \param pFont Font object.
-     * \return Answer!.
-     */
-    static bool IsStandard14Font( PoDoFo::PdfObject* pFont );
-
-    /** Get filename of a standard 14 font.
-     * \param fontName Name of the standard font.
-     * \return Filename of the font file (empty if not found).
-     */
-    static QString filenameStandard14Font( const std::string& fontName );
-
-public:
-    /// Path for standard 14 fonts.
-    static QDir Standard14FontsPath;
-
 private:
     // Members.
     /// The PostScript name of the font (retrieved from font descriptor).
