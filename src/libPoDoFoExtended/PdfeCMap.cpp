@@ -18,7 +18,11 @@
  ***************************************************************************/
 
 #include "PdfeCMap.h"
+#include "PdfeUtils.h"
+
 #include "podofo/podofo.h"
+
+#include <boost/shared_ptr.hpp>
 
 using namespace PoDoFo;
 
@@ -155,12 +159,11 @@ void PdfeCMap::init( PdfObject* pCMapObj )
         long length;
         pCMapObj->GetStream()->GetFilteredCopy( &pBuffer, &length );
 
-        // TODO: boost::shared_ptr...
+        // Boost pointer that holds buffer which is automatically freed.
+        boost::shared_ptr<char> spBuffer( pBuffer, free_ptr_fctor<char>() );
 
         // Load content from buffer.
-        this->loadContent( pBuffer, length );
-
-        free( pBuffer );
+        this->loadContent( spBuffer.get(), length );
     }
 }
 

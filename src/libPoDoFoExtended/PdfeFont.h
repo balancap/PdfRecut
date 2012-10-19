@@ -423,19 +423,21 @@ public:
     //**********************************************************//
     //                     Getters / Setters                    //
     //**********************************************************//
-    PdfeFontType::Enum type() const             {  return m_type;  }
-    void setType( PdfeFontType::Enum type )     {  m_type = type;  }
-    PdfeFontSubType::Enum subtype() const               {  return m_subtype;  }
+    PdfeFontType::Enum type() const             {  return m_type;       }
+    PdfeFontSubType::Enum subtype() const       {  return m_subtype;    }
+
+    void setType( PdfeFontType::Enum type )             {  m_type = type;  }
     void setSubtype( PdfeFontSubType::Enum subtype )    {  m_subtype = subtype;  }
 
-    double charSpace() const                {  return m_charSpace;  }
+    double charSpace() const    {  return m_charSpace;  }
+    double wordSpace() const    {  return m_wordSpace;  }
+    double hScale() const       {  return m_hScale;     }
+    double fontSize() const     {  return m_fontSize;   }
+
     void setCharSpace( double charSpace )   {  m_charSpace = charSpace;  }
-    double wordSpace() const                {  return m_wordSpace;  }
     void setWordSpace( double wordSpace )   {  m_wordSpace = wordSpace;  }
-    double hScale() const               {  return m_hScale;  }
-    void setHScale( double hScale )     {  m_hScale = hScale;  }
-    double fontSize() const             {  return m_fontSize;  }
-    void setFontSize( double fontSize ) {  m_fontSize = fontSize;  }
+    void setHScale( double hScale )         {  m_hScale = hScale;  }
+    void setFontSize( double fontSize )     {  m_fontSize = fontSize;  }
 };
 
 }

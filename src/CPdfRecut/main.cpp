@@ -224,7 +224,7 @@ int main( int argc, char *argv[] )
     logger.addDestination( debugDestination.get() );
     logger.addDestination( fileDestination.get() );
 
-    // Set Standard Type 1 fonts path.
+    // Set Standard 14 fonts path.
     PoDoFoExtended::PdfeFont::Standard14FontsDir.setPath( "./standard14fonts" );
 
     if( argc != 2 ) {
