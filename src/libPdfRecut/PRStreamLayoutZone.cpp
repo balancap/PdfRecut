@@ -194,56 +194,54 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamState& streamState,
 
     // Draw subpaths kept in the vector.
     m_bufStream.str( "" );
-    for( size_t i = 0 ; i < subpaths.size() ; i++ )
-    {
+    for( size_t i = 0 ; i < subpaths.size() ; i++ ) {
         // Points in the subpath.
-        for( size_t j = 0 ; j < subpaths[i].points.size() ; j++ )
-        {
+        for( size_t j = 0 ; j < subpaths[i].nbPoints() ; j++ ) {
             // Distinction between different painting operators.
-            if( subpaths[i].opPoints[j] == "m" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
+            if( subpaths[i].pointOp(j) == PdfePathOperators::m ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
                 m_bufStream << "m\n";
             }
-            else if( subpaths[i].opPoints[j] == "l" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::l ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
                 m_bufStream << "l\n";
             }
-            else if( subpaths[i].opPoints[j] == "c" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
-                m_bufStream << subpaths[i].points[j+1](0) << " ";
-                m_bufStream << subpaths[i].points[j+1](1) << " ";
-                m_bufStream << subpaths[i].points[j+2](0) << " ";
-                m_bufStream << subpaths[i].points[j+2](1) << " ";
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::c ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+2)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+2)(1) << " ";
                 m_bufStream << "c\n";
                 j+=2;
             }
-            else if( subpaths[i].opPoints[j] == "v" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
-                m_bufStream << subpaths[i].points[j+1](0) << " ";
-                m_bufStream << subpaths[i].points[j+1](1) << " ";
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::v ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
                 m_bufStream << "v\n";
                 j+=1;
             }
-            else if( subpaths[i].opPoints[j] == "y" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
-                m_bufStream << subpaths[i].points[j+1](0) << " ";
-                m_bufStream << subpaths[i].points[j+1](1) << " ";
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::y ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
                 m_bufStream << "y\n";
                 j+=1;
             }
-            else if( subpaths[i].opPoints[j] == "h" ) {
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::h ) {
                 m_bufStream << "h\n";
             }
-            else if( subpaths[i].opPoints[j] == "re" ) {
-                m_bufStream << subpaths[i].points[j](0) << " ";
-                m_bufStream << subpaths[i].points[j](1) << " ";
-                m_bufStream << ( subpaths[i].points[j+2](0)-subpaths[i].points[j](0) ) << " ";
-                m_bufStream << ( subpaths[i].points[j+2](1)-subpaths[i].points[j](1) ) << " ";
+            else if( subpaths[i].pointOp(j) == PdfePathOperators::re ) {
+                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
+                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+                m_bufStream << ( subpaths[i].pointCoord(j+2)(0)-subpaths[i].pointCoord(j)(0) ) << " ";
+                m_bufStream << ( subpaths[i].pointCoord(j+2)(1)-subpaths[i].pointCoord(j)(1) ) << " ";
                 m_bufStream << "re\n";
                 j+=4;
             }
@@ -442,7 +440,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
         PdfePath pathII;
         pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
-        PdfeSubPath& subpathII = pathII.subpaths().back();
+        PdfeSubPath subpathII = pathII.subpaths().back();
         subpathII.applyTransMatrix( gState.transMat );
 
         bool inZone = subpathII.intersectZone( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
@@ -480,7 +478,7 @@ void PRStreamLayoutZone::fXObjects( const PdfeStreamState& streamState )
         PdfePath pathImg;
         pathImg.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
-        PdfeSubPath& subpathImg = pathImg.subpaths().back();
+        PdfeSubPath subpathImg = pathImg.subpaths().back();
         subpathImg.applyTransMatrix( gState.transMat );
 
         bool inZone = subpathImg.intersectZone( m_zone.zoneIn, m_parameters.imageStrictlyInside );

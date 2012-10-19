@@ -28,52 +28,55 @@
 
 namespace PoDoFoExtended {
 
-/** Structure representing a PDF subpath.
- */
-struct PdfeSubPath
+namespace PdfePathOperators
 {
-    /// Points which composed the path.
-    std::vector<PdfeVector> points;
-    /// Vector which identifies the constructor operator used for each point in the path.
-    std::vector<std::string> opPoints;
+/// Enum of operators used to define a PDF path.
+enum Enum
+{
+    m = 0,  // move
+    l,      // line
+    c,      // Bézier c
+    v,      // Bézier v
+    y,      // Bézier y
+    h,      // close
+    re      // rectangle
+};
+}
 
-    /// Is the subpath closed.
-    bool closed;
-
+/** Class representing a PDF subpath.
+ */
+class PdfeSubPath
+{
+public:
     /** Default constructor: create empty subpath.
      */
-    PdfeSubPath() {
-        this->init();
-    }
+    PdfeSubPath();
+
     /** Initialize to an empty subpath.
      */
-    void init() {
-        points.clear();
-        opPoints.clear();
-        closed = false;
-    }
+    void init();
 
-    /** Append a point to the path.
-     * \param point Point to append.
+    /** Append a point to the subpath.
+     * \param coord Coordinates of the point to append.
      * \param op Construction operator corresponding.
      */
-    void appendPoint( const PdfeVector& point, const std::string& op ) {
-        points.push_back( point );
-        opPoints.push_back( op );
-    }
-    /** Is subpath empty ?
-     * \return Is empty ?
-     */
-    bool isEmpty() {
-        return ( points.size() == 0 );
-    }
+    void appendPoint( const PdfeVector& coord, PdfePathOperators::Enum op );
 
+    /** Modify a point of the subpath.
+     * \param coord Coordinates of the point to append.
+     * \param op Construction operator corresponding.
+     * \param idx Index of the point to modify.
+     */
+    void setPoint( size_t idx, const PdfeVector& coord, PdfePathOperators::Enum op );
+
+public:
+    // Transformation on subpath.
     /** Evaluate if the subpath path intersects a given zone.
      * \param zone Rectangle representing the zone.
      * \param strictInclusion Evaluate if the subpath is stricly inside the zone.
      */
     bool intersectZone( const PoDoFo::PdfRect& zone,
-                        bool strictInclusion = false );
+                        bool strictInclusion = false ) const;
 
     /** Evaluate if a rectangle path intersects a zone.
      * \param path Rectangle path.
@@ -100,7 +103,34 @@ struct PdfeSubPath
      * \param transMat Transformation matrix.
      */
     void applyTransMatrix( const PdfeMatrix& transMat );
+
+public:
+    // Getters.
+    /// Is the subpath closed ?
+    bool isClosed() const   {   return m_closed; }
+    /// Is subpath empty ?
+    bool isEmpty() const    {   return ( m_coordPoints.size() == 0 );  }
+
+    /// Number of points in the subpath.
+    size_t nbPoints() const {   return m_coordPoints.size();    }
+    /// Get a point coordinates.
+    const PdfeVector& pointCoord( size_t idx ) const    {   return m_coordPoints.at( idx );  }
+    /// Get a point operator.
+    PdfePathOperators::Enum pointOp( size_t idx ) const {   return m_opPoints.at( idx );  }
+
+    /// Close a subpath.
+    void close()    {   m_closed = true;    }
+
+private:
+    /// Coordinates of points which composed the subpath.
+    std::vector<PdfeVector>  m_coordPoints;
+    /// Vector which identifies the constructor operator used for each point in the path.
+    std::vector<PdfePathOperators::Enum>  m_opPoints;
+
+    /// Is the subpath closed.
+    bool  m_closed;
 };
+
 
 /** Class representing a PDF path.
  */
@@ -188,17 +218,18 @@ public:
     //**********************************************************//
     //                       Getters/Setters                    //
     //**********************************************************//
-    /** Get a reference to the subpaths vector.
-     * \return Reference to an std::vector of PdfeSubPath.
-     */
-    std::vector<PdfeSubPath>& subpaths() {
-        return m_subpaths;
-    }
-    /** Get a constant reference to the subpaths vector.
+    /** Get a constant reference to subpaths that compose the PdfePath.
      * \return Constant reference to an std::vector of PdfeSubPath.
      */
     const std::vector<PdfeSubPath>& subpaths() const {
         return m_subpaths;
+    }
+    /** Set a subpaths of the PdfePath.
+     * \param idx Index of the subpath to modify.
+     * \param subpath New subpath.
+     */
+    void setSubPath( size_t idx, const PdfeSubPath& subpath ) {
+        m_subpaths.at( idx ) = subpath;
     }
 
     /** Get clipping path operator.
@@ -214,14 +245,21 @@ public:
      */
     void setClippingPathOp( const std::string& op );
 
-protected:
-    /** Get current subpath. Append a new one if the last in the list
+public:
+    /** Get the operator name.
+     * \param op PDF path operator.
+     * \return Name of the operator (string).
+     */
+    static const char* OperatorName( PdfePathOperators::Enum op );
+
+private:
+    /** Get the current subpath. Append a new one if the last in the list
      * is closed.
      * \return Reference to the current subpath in the path.
      */
-    PdfeSubPath& getCurrentSubPath();
+    PdfeSubPath& currentSubPath();
 
-protected:
+private:
     /// Subpaths vector.
     std::vector<PdfeSubPath>  m_subpaths;
 
@@ -245,8 +283,8 @@ inline void PdfeSubPath::reduceToZone( PdfeVector& point, const PoDoFo::PdfRect&
 inline void PdfeSubPath::applyTransMatrix( const PdfeMatrix& transMat )
 {
     // Modify points in the subpath.
-    for( size_t j = 0 ; j < points.size() ; j++ ) {
-        points[j] = points[j] * transMat;
+    for( size_t j = 0 ; j < m_coordPoints.size() ; j++ ) {
+        m_coordPoints[j] = m_coordPoints[j] * transMat;
     }
 }
 
