@@ -19,6 +19,9 @@
  ***************************************************************************/
 
 #include "PRTextWords.h"
+#include "PRDocument.h"
+
+#include "PdfeCanvasAnalysis.h"
 
 #include <podofo/podofo.h>
 #include <limits>
@@ -85,6 +88,20 @@ PRTextGroupWords::PRTextGroupWords()
 {
     this->init();
 }
+PRTextGroupWords::PRTextGroupWords( const PdfVariant& variant,
+                                    const PdfeMatrix& transMatrix,
+                                    const PdfeTextState& textState,
+                                    PdfeFont* pFont )
+{
+    this->init( variant, transMatrix, textState, pFont );
+}
+
+PRTextGroupWords::PRTextGroupWords( PRDocument* document,
+                                    const PoDoFoExtended::PdfeStreamState& streamState )
+{
+    this->init( document, streamState );
+}
+
 void PRTextGroupWords::init()
 {
     // Initialize members to default values.
@@ -99,11 +116,48 @@ void PRTextGroupWords::init()
     m_words.clear();
     m_mainSubgroups.clear();
 }
+void PRTextGroupWords::init( const PdfVariant& variant,
+                             const PdfeMatrix& transMatrix,
+                             const PdfeTextState& textState, PdfeFont* pFont )
+{
+    this->init();
+    this->readPdfVariant( variant, transMatrix, textState, pFont );
+}
+
+void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStreamState& streamState )
+{
+    // Initialize to empty.
+    this->init();
+
+    // Check it is a text showing operator.
+    if( streamState.gOperator.cat != ePdfGCategory_TextShowing ) {
+        return;
+    }
+
+    // Simpler references.
+    const std::vector<std::string>& gOperands = streamState.gOperands;
+    const PdfeGraphicsState& gState = streamState.gStates.back();
+
+    // Get variant from string.
+    PdfVariant variant;
+    PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
+    tokenizer.GetNextVariant( variant, NULL );
+
+    // Get font metrics.
+    PdfeFont* pFont = document->fontCache( gState.textState.fontRef );
+
+    // Read group of words.
+    this->readPdfVariant( variant,
+                          streamState.gStates.back().transMat,
+                          streamState.gStates.back().textState,
+                          pFont );
+
+}
 
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
                                        const PdfeMatrix& transMatrix,
                                        const PdfeTextState& textState,
-                                       PdfeFont *pFont )
+                                       PdfeFont* pFont )
 {
     // Set transformation matrix and textstate.
     m_transMatrix = transMatrix;
@@ -128,7 +182,7 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
                 // Read pdf space.
                 PRTextWord textWord( PRTextWordType::PDFTranslation,
                                      1,
-                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, this->SpaceHeight ),
+                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, pFont->spaceHeight() ),
                                      0.0 );
 
                 m_words.push_back( textWord );
@@ -138,128 +192,6 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
     // Construct subgroups vector.
     this->buildMainSubGroups();
 }
-
-void PRTextGroupWords::appendWord( const PRTextWord& word )
-{
-    // Append the word to the vector.
-    m_words.push_back( word );
-
-    // Construct subgroups vector.
-    this->buildMainSubGroups();
-}
-
-double PRTextGroupWords::width( bool leadTrailSpaces ) const
-{
-    // Width of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.width( leadTrailSpaces );
-}
-double PRTextGroupWords::height() const
-{
-    // Height of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.height();
-}
-
-size_t PRTextGroupWords::length( bool countSpaces ) const
-{
-    // Length of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.length( countSpaces );
-}
-
-PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
-{
-    // Compute text rendering matrix.
-    PdfeMatrix tmpMat, textMat;
-    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
-    //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
-    tmpMat(1,1) = m_textState.fontSize;
-    tmpMat(2,1) = m_textState.rise;
-    textMat = tmpMat * m_textState.transMat * m_transMatrix;
-
-    return textMat;
-}
-
-PdfeORect PRTextGroupWords::bbox(bool pageCoords,
-                                 bool leadTrailSpaces,
-                                 bool useBottomCoord ) const
-{
-    // Bounding box of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
-}
-
-double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
-{
-    PdfeORect grp1BBox, grp2BBox;
-    double dist = std::numeric_limits<double>::max();
-
-    // Inverse Transformation matrix of the first group.
-    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
-
-    // Loop on subgroups of the second one.
-    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
-        // Subgroup bounding box.
-        const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
-
-        // Subgroups of the first one.
-        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
-            const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( false, true, true );
-
-            dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
-        }
-    }
-    return dist;
-}
-
-double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
-{
-    PdfeORect grp1BBox, grp2BBox;
-    double dist = 0.0;
-
-    // Inverse Transformation matrix of the first group.
-    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
-
-    // Loop on subgroups of the second one.
-    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
-        // Subgroup bounding box.
-        const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
-
-        // Subgroups of the first one.
-        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
-            const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( false, true, true );
-
-            dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
-        }
-    }
-    return dist;
-}
-void PRTextGroupWords::addTextLine( PRTextLine* pLine )
-{
-    std::vector<PRTextLine*>::iterator it;
-    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-
-    // Add if not found.
-    if( it == m_pTextLines.end() ) {
-        m_pTextLines.push_back( pLine );
-    }
-}
-void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
-{
-    std::vector<PRTextLine*>::iterator it;
-    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-
-    // Remove if found.
-    if( it != m_pTextLines.end() ) {
-        m_pTextLines.erase( it );
-    }
-}
-
 void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                       PoDoFoExtended::PdfeFont* pFont )
 {
@@ -383,6 +315,137 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                            PdfRect( 0.0, 0.0, charSpace, this->SpaceHeight ),
                                            0.0 ) );
         }
+    }
+}
+
+void PRTextGroupWords::appendWord( const PRTextWord& word )
+{
+    // Append the word to the vector.
+    m_words.push_back( word );
+
+    // Construct subgroups vector.
+    this->buildMainSubGroups();
+}
+
+double PRTextGroupWords::width( bool leadTrailSpaces ) const
+{
+    // Width of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.width( leadTrailSpaces );
+}
+double PRTextGroupWords::height() const
+{
+    // Height of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.height();
+}
+
+size_t PRTextGroupWords::length( bool countSpaces ) const
+{
+    // Length of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.length( countSpaces );
+}
+
+PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
+{
+    // Compute text rendering matrix.
+    PdfeMatrix tmpMat, textMat;
+    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
+    //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
+    tmpMat(1,1) = m_textState.fontSize;
+    tmpMat(2,1) = m_textState.rise;
+    textMat = tmpMat * m_textState.transMat * m_transMatrix;
+
+    return textMat;
+}
+
+PdfeORect PRTextGroupWords::bbox(bool pageCoords,
+                                 bool leadTrailSpaces,
+                                 bool useBottomCoord ) const
+{
+    // Bounding box of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
+}
+PdfeVector PRTextGroupWords::displacement() const
+{
+    PdfeVector textDispl;
+
+    // Compute displacement. TODO: vertical component.
+    textDispl(0) = this->width( true ) * m_textState.fontSize * ( m_textState.hScale / 100. );
+    textDispl(1) = 0.0;
+
+    return textDispl;
+}
+
+double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
+{
+    PdfeORect grp1BBox, grp2BBox;
+    double dist = std::numeric_limits<double>::max();
+
+    // Inverse Transformation matrix of the first group.
+    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
+
+    // Loop on subgroups of the second one.
+    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
+        // Subgroup bounding box.
+        const Subgroup& subGrp2 = group.mSubgroup( j );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
+
+        // Subgroups of the first one.
+        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
+            const Subgroup& subGrp1 = this->mSubgroup( i );
+            grp1BBox = subGrp1.bbox( false, true, true );
+
+            dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
+        }
+    }
+    return dist;
+}
+
+double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
+{
+    PdfeORect grp1BBox, grp2BBox;
+    double dist = 0.0;
+
+    // Inverse Transformation matrix of the first group.
+    PdfeMatrix grp1TransMat = this->getGlobalTransMatrix().inverse();
+
+    // Loop on subgroups of the second one.
+    for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
+        // Subgroup bounding box.
+        const Subgroup& subGrp2 = group.mSubgroup( j );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
+
+        // Subgroups of the first one.
+        for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
+            const Subgroup& subGrp1 = this->mSubgroup( i );
+            grp1BBox = subGrp1.bbox( false, true, true );
+
+            dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
+        }
+    }
+    return dist;
+}
+void PRTextGroupWords::addTextLine( PRTextLine* pLine )
+{
+    std::vector<PRTextLine*>::iterator it;
+    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+
+    // Add if not found.
+    if( it == m_pTextLines.end() ) {
+        m_pTextLines.push_back( pLine );
+    }
+}
+void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
+{
+    std::vector<PRTextLine*>::iterator it;
+    it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+
+    // Remove if found.
+    if( it != m_pTextLines.end() ) {
+        m_pTextLines.erase( it );
     }
 }
 
