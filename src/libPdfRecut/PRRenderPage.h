@@ -166,25 +166,25 @@ public:
      */
     virtual ~PRRenderPage();
 
-    /** Render the page, using given parameters.
+    /** Initialize the rendering of the page, with a given resolution.
+     * \param resolution Resolution to use for the rendering.
+     */
+    void initRendering( double resolution );
+    /** Clear rendering components (image and painter).
+     */
+    void clearRendering();
+
+    /** Render the page, using given rendering parameters.
      * \param parameters Structure containing resolution and painting parameters.
      */
-    void renderPage( const PRRenderParameters& parameters );
+    void render( const PRRenderParameters& parameters );
 
-    /** Get rendering image.
-     * \return Image pointer.
+    /** Get rendered image of the page.
+     * \return Image.
      */
-    QImage* getRenderImage();
+    QImage image();
 
-    /** Clear image and painter.
-     */
-    void clearPageImage();
-
-    /** Save page image into a file.
-     * \param filename File where to save the page.
-     */
-    void saveToFile( const QString& filename );
-
+protected:
     virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
 
     virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
@@ -204,7 +204,7 @@ public:
 
     virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    virtual void fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
+    virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
     virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
 
@@ -229,27 +229,35 @@ public:
                            PoDoFo::PdfXObject* form ) {}
 
 
-protected:
-    /** Read a group of words from a pdf stream state.
-     * \param streamState Stream state to consider.
-     * \return Group of words read.
+public:
+    // Specific drawing functions.
+    /** Draw a PdfeORect on the page.
+     * \param orect Oriented rectangle to draw.
+     * \param penBrush Pen/Brush to use for rendering.
      */
-    PRTextGroupWords textReadGroupWords( const PoDoFoExtended::PdfeStreamState& streamState );
+    void drawPdfeORect( const PdfeORect& orect,
+                        const PRRenderParameters::PRPenBrush& penBrush );
 
-    /** Draw a group of words on the pdf image painter.
-     * \param groupWords Words to draw.
+    /** Draw a group of words on the PDF on the page.
+     * \param groupWords Group of words to draw.
+     * \param parameters Rendering parameters to use.
      */
-    void textDrawGroupWords( const PRTextGroupWords& groupWords );
+    void textDrawGroupWords( const PRTextGroupWords& groupWords,
+                             const PRRenderParameters& parameters );
 
     /** Draw a subgroup of words on the pdf image painter.
      * \param subgroup Subgroup of words to draw.
+     * \param parameters Rendering parameters to use.
      */
-    void textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup );
+    void textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup,
+                                const PRRenderParameters& parameters );
 
-    /** Update text transformation matrix. if necessary.
-     * \param streamState Current tream state to consider.
+    /** Draw main subgroups of a PRTextGroupWords.
+     * \param subgroup Group of words to consider.
+     * \param parameters Rendering parameters to use.
      */
-    void textUpdateTransMatrix( const PoDoFoExtended::PdfeStreamState& streamState );
+    void textDrawMainSubgroups( const PRTextGroupWords& groupWords,
+                                const PRRenderParameters& parameters );
 
 protected:
     /** Test function on images.
@@ -283,11 +291,6 @@ protected:
      * In particular, invert y-axis coordinate.
      */
     PdfeMatrix  m_pageImgTrans;
-    /// Text transform.
-    PdfeMatrix  m_textMatrix;
-
-    /// Number of text groups read.
-    long  m_nbTextGroups;
 };
 
 //**********************************************************//

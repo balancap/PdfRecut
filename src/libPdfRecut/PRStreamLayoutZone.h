@@ -73,7 +73,7 @@ public:
 
     void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
 
-    void fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
+    PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
     void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
 

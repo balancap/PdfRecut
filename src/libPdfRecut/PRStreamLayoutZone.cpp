@@ -317,7 +317,7 @@ void PRStreamLayoutZone::fTextPositioning( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState )
+PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -349,6 +349,8 @@ void PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState )
         }
         m_streamOut->Append( m_bufStream.str() );
     }
+    // TODO: return correct displacement.
+    return PdfeVector();
 }
 
 void PRStreamLayoutZone::fType3Fonts( const PdfeStreamState& streamState )

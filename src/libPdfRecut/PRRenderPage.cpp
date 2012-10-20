@@ -18,7 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-
 #include "PRRenderPage.h"
 
 #include <podofo/podofo.h>
@@ -109,11 +108,8 @@ PRRenderPage::~PRRenderPage()
     delete m_pageImage;
 }
 
-void PRRenderPage::renderPage( const PRRenderParameters & parameters )
+void PRRenderPage::initRendering( double resolution )
 {
-    // Render parameters.
-    m_renderParameters = parameters;
-
     // Get crop and media boxes and set painted box.
     PdfRect mediaBox = m_page->GetMediaBox();
     PdfRect cropBox = m_page->GetCropBox();
@@ -124,8 +120,8 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
 
     // Create associated image.
     delete m_pageImage;
-    m_pageImage = new QImage( int( m_pageRect.GetWidth() * parameters.resolution ),
-                              int( m_pageRect.GetHeight() * parameters.resolution ),
+    m_pageImage = new QImage( int( m_pageRect.GetWidth() * resolution ),
+                              int( m_pageRect.GetHeight() * resolution ),
                               QImage::Format_RGB32 );
     m_pageImage->fill( QColor( Qt::white ).rgb() );
 
@@ -136,10 +132,24 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
 
     // Transform from page space to image space.
     m_pageImgTrans.init();
-    m_pageImgTrans(0,0) = parameters.resolution;
-    m_pageImgTrans(1,1) = -parameters.resolution;
-    m_pageImgTrans(2,0) = -m_pageRect.GetLeft() * parameters.resolution;
-    m_pageImgTrans(2,1) = (m_pageRect.GetBottom() + m_pageRect.GetHeight()) * parameters.resolution;
+    m_pageImgTrans(0,0) = resolution;
+    m_pageImgTrans(1,1) = -resolution;
+    m_pageImgTrans(2,0) = -m_pageRect.GetLeft() * resolution;
+    m_pageImgTrans(2,1) = ( m_pageRect.GetBottom() + m_pageRect.GetHeight() ) * resolution;
+}
+void PRRenderPage::clearRendering()
+{
+    delete m_pageImage;
+    delete m_pagePainter;
+}
+
+void PRRenderPage::render( const PRRenderParameters& parameters )
+{
+    // Initialize image and painter.
+    this->initRendering( parameters.resolution );
+
+    // Render parameters.
+    m_renderParameters = parameters;
 
     // Initial clipping path.
     m_clippingPathStack.push_back( QPainterPath() );
@@ -150,31 +160,22 @@ void PRRenderPage::renderPage( const PRRenderParameters & parameters )
         m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
         m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
     }
-    m_nbTextGroups = 0;
 
     // Perform the analysis and draw.
     this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
-
-    //m_pagePainter->end();
 }
-
-QImage *PRRenderPage::getRenderImage()
+QImage PRRenderPage::image()
 {
-    return m_pageImage;
-}
-void PRRenderPage::clearPageImage()
-{
-    delete m_pageImage;
-    delete m_pagePainter;
-}
-
-void PRRenderPage::saveToFile( const QString& filename )
-{
-    m_pageImage->save( filename );
+    if( m_pageImage ) {
+        return *m_pageImage;
+    }
+    else {
+        return QImage();
+    }
 }
 
+// Reimplement PdfeCanvasAnalysis interface.
 void PRRenderPage::fGeneralGState( const PdfeStreamState& streamState ) { }
-
 void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
 {
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -260,31 +261,23 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
 }
 
 void PRRenderPage::fTextObjects( const PdfeStreamState& streamState ) { }
-
 void PRRenderPage::fTextState( const PdfeStreamState& streamState ) { }
+void PRRenderPage::fTextPositioning( const PdfeStreamState& streamState ) { }
 
-void PRRenderPage::fTextPositioning( const PdfeStreamState& streamState )
+PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
 {
-    // Update text transformation matrix.
-    this->textUpdateTransMatrix( streamState );
-}
-
-void PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
-{
-    // Update text transformation matrix.
-    this->textUpdateTransMatrix( streamState );
-
-    // Read the group of words.
-    PRTextGroupWords groupWords = this->textReadGroupWords( streamState );
+    // Create the group of words.
+    PRTextGroupWords groupWords( m_document, streamState );
 
     // Draw the group of words.
-    this->textDrawGroupWords( groupWords );
+    this->textDrawGroupWords( groupWords, m_renderParameters );
+
+    // Return text displacement.
+    return groupWords.displacement();
 }
 
 void PRRenderPage::fType3Fonts( const PdfeStreamState& streamState ) { }
-
 void PRRenderPage::fColor( const PdfeStreamState& streamState ) { }
-
 void PRRenderPage::fShadingPatterns( const PdfeStreamState& streamState ) { }
 
 void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
@@ -361,58 +354,46 @@ void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
                                           bbox[3].GetReal()-bbox[1].GetReal() ) );
     }
 }
-
 void PRRenderPage::fMarkedContents( const PdfeStreamState& streamState ) { }
-
 void PRRenderPage::fCompatibility( const PdfeStreamState& streamState ) { }
 
-
-PRTextGroupWords PRRenderPage::textReadGroupWords( const PdfeStreamState& streamState )
+//**********************************************************//
+//                 Drawing member functions                 //
+//**********************************************************//
+void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRRenderParameters::PRPenBrush& penBrush )
 {
-    // Simpler references.
-    const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    // No image or painter...
+    if( !m_pageImage || !m_pagePainter ) {
+        return;
+    }
 
-    PdfeTextState textState = streamState.gStates.back().textState;
-    textState.transMat = m_textMatrix;
+    // Basic transformation matrix.
+    m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
 
-    // Get variant from string.
-    PdfVariant variant;
-    PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
-    tokenizer.GetNextVariant( variant, NULL );
+    // Create polygon corresponding to the oriented rectangle.
+    QPolygonF polygon;
+    polygon << orect.leftBottom().toQPoint();
+    polygon << orect.rightBottom().toQPoint();
+    polygon << orect.rightTop().toQPoint();
+    polygon << orect.leftTop().toQPoint();
 
-    // Get font metrics.
-    PdfeFont* pFont = m_document->fontCache( gState.textState.fontRef );
-
-    // Read group of words.
-    PRTextGroupWords groupWords;
-    groupWords.readPdfVariant( variant,
-                               streamState.gStates.back().transMat,
-                               textState,
-                               pFont );
-    groupWords.setGroupIndex( m_nbTextGroups );
-
-    // Increment the number of group of words.
-    ++m_nbTextGroups;
-
-    // Update text transform matrix.
-    PdfeMatrix tmpMat;
-    tmpMat(2,0) = groupWords.width( true ) * textState.fontSize * ( textState.hScale / 100. );
-    m_textMatrix = tmpMat * m_textMatrix;
-
-    return groupWords;
+    // Draw polygon using the given Pen/Brush.
+    penBrush.applyToPainter( m_pagePainter );
+    m_pagePainter->drawPolygon( polygon );
 }
-
-void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords )
+void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords,
+                                       const PRRenderParameters& parameters )
 {
     // Render the complete subgroup.
-    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords, true ) );
+    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords, true ), parameters );
 }
-void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup )
+void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup,
+                                          const PRRenderParameters& parameters )
 {
-    // Nothing to draw...
+    // Nothing to draw or can not draw...
     PRTextGroupWords* pGroup = subgroup.group();
-    if( !pGroup || !pGroup->nbWords() ) {
+    if( !m_pageImage || !m_pagePainter ||
+        !pGroup || !pGroup->nbWords() ) {
         return;
     }
 
@@ -423,20 +404,18 @@ void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subg
 
     // Paint words.
     double widthStr = 0;
-    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i )
-    {
+    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
         const PRTextWord& word = pGroup->word( i );
-
         // Set pen & brush
         if( word.type() == PRTextWordType::Classic ) {
-            m_renderParameters.textPB.applyToPainter( m_pagePainter );
+            parameters.textPB.applyToPainter( m_pagePainter );
         }
         else if( word.type() == PRTextWordType::Space ) {
-            m_renderParameters.textSpacePB.applyToPainter( m_pagePainter );
+            parameters.textSpacePB.applyToPainter( m_pagePainter );
         }
         else if( word.type() == PRTextWordType::PDFTranslation ||
                  word.type() == PRTextWordType::PDFTranslationCS ) {
-            m_renderParameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
+            parameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if it is inside the subgroup and the width is positive !
         PdfRect bbox = word.bbox( false, true );
@@ -446,16 +425,29 @@ void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subg
         widthStr += word.width( true );
     }
 }
-
-void PRRenderPage::textUpdateTransMatrix( const PdfeStreamState& streamState )
+void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
+                                          const PRRenderParameters& parameters )
 {
-    // Text positioning operator or showing operator (quote or double quote).
-    if( streamState.gOperator.cat == ePdfGCategory_TextPositioning ||
-        ( streamState.gOperator.cat == ePdfGCategory_TextShowing &&
-          ( streamState.gOperator.code == ePdfGOperator_DoubleQuote || streamState.gOperator.code == ePdfGOperator_Quote ) ) )
+    // Nothing to draw...
+    if( !m_pageImage || !m_pagePainter || !groupWords.nbWords() ) {
+        return;
+    }
+
+    // Compute text rendering matrix.
+    PdfeMatrix textMat;
+    textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
+    m_pagePainter->setTransform( textMat.toQTransform() );
+
+    // Paint subgroups: only text is considered in these subgroups.
+    for( size_t i = 0 ; i < groupWords.nbMSubgroups() ; i++ )
     {
-        // Reset text transform matrix.
-        m_textMatrix = streamState.gStates.back().textState.transMat;
+        // Set pen & brush
+        parameters.textPB.applyToPainter( m_pagePainter );
+
+        // Paint word, if the width is positive !
+        PdfeORect bbox = groupWords.mSubgroup(i).bbox( false, true, true );
+        PdfeVector lb = bbox.leftBottom();
+        m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
     }
 }
 

@@ -165,24 +165,28 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderParameters renderParams;
-    renderParams.resolution = 3.0;
+    renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
     for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
-        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
-
-//        PRRenderPage renderPage( &document, i );
-//        renderPage.renderPage( renderParams );
-//        renderPage.saveToFile( filename );
-
+        // Text and render page objects.
+        PRRenderPage renderPage( &document, i );
         PRTextPageStructure textPage( &document, i );
+
+        // Analyse page text
         textPage.detectGroupsWords();
 //        textPage.detectLines();
 
-        textPage.renderTextGroupsWords();
-//        textPage.renderTextLines();
-        textPage.saveToFile( filename );
+        // Render some elements.
+        renderPage.initRendering( renderParams.resolution );
+        textPage.renderTextGroupsWords( renderPage );
+//        textPage.renderTextLines( renderPage );
+//        renderPage.render( renderParams );
+
+        // Save image to file.
+        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
+        renderPage.image().save( filename );
     }
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 }

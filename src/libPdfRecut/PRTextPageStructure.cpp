@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "PRTextPageStructure.h"
+#include "PRRenderPage.h"
 #include "PdfeUtils.h"
 
 #include <podofo/podofo.h>
@@ -36,7 +37,10 @@ namespace PdfRecut {
 
 PRTextPageStructure::PRTextPageStructure( PRDocument* document,
                                           long pageIndex ) :
-    PRRenderPage( document, pageIndex )
+    PdfeCanvasAnalysis(),
+    m_document( document ),
+    m_page( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    m_pageIndex( pageIndex )
 {
     // Clear vectors content.
     m_pGroupsWords.clear();
@@ -52,6 +56,7 @@ void PRTextPageStructure::clearContent()
 {
     // Delete groups of words.
     std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), delete_ptr_fctor<PRTextGroupWords>() );
+    m_nbTextGroups = 0;
 
     // Delete text lines.
     std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRTextLine>() );
@@ -59,34 +64,11 @@ void PRTextPageStructure::clearContent()
 
 void PRTextPageStructure::detectGroupsWords()
 {
-    // Set rendering parameters to empty.
-    PRRenderParameters renderParameters;
-    renderParameters.initToEmpty();
-    renderParameters.resolution = 1.05;
-
     // Clear content.
     this->clearContent();
 
-    // Analyse the page.
-    this->renderPage( renderParameters );
-}
-void PRTextPageStructure::fTextShowing( const PdfeStreamState& streamState )
-{
-    // Update text transformation matrix.
-    this->textUpdateTransMatrix( streamState );
-
-    // Read the group of words.
-    PRTextGroupWords* pGroup = new PRTextGroupWords( this->textReadGroupWords( streamState ) );
-
-    // Empty group -> trash !
-    if( !pGroup->nbWords() ) {
-        delete pGroup;
-        return;
-    }
-    //group.setGroupIndex( m_groupsWords.size() );  // Already set by PRRenderPage.
-    pGroup->setPageIndex( m_pageIndex );
-
-    m_pGroupsWords.push_back( pGroup );
+    // Analyse page content.
+    this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
 }
 
 void PRTextPageStructure::detectLines()
@@ -655,10 +637,29 @@ PRTextLine* PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*
     return pBaseLine;
 }
 
-//**********************************************************//
-//                      Drawing routines                    //
-//**********************************************************//
-void PRTextPageStructure::renderTextGroupsWords()
+// Reimplement PdfeCanvasAnalysis interface.
+PdfeVector PRTextPageStructure::fTextShowing( const PdfeStreamState& streamState )
+{
+    // Read the group of words.
+    PRTextGroupWords* pGroup = new PRTextGroupWords( m_document, streamState );
+    pGroup->setGroupIndex( m_nbTextGroups );
+    pGroup->setPageIndex( m_pageIndex );
+    ++m_nbTextGroups;
+
+    // Empty group -> trash !
+    if( !pGroup->nbWords() ) {
+        delete pGroup;
+        return PdfeVector();
+    }
+    // Append to the vector of text groups.
+    m_pGroupsWords.push_back( pGroup );
+
+    // Return text displacement.
+    return pGroup->displacement();
+}
+
+// Rendering routines.
+void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 {
     // Rendering parameters.
     PRRenderParameters renderParameters;
@@ -671,29 +672,29 @@ void PRTextPageStructure::renderTextGroupsWords()
 //    renderParameters.textSpacePB.drawPen = new QPen( Qt::blue );
 //    renderParameters.textPDFTranslationPB.drawPen = new QPen( Qt::blue );
 
-    m_renderParameters = renderParameters;
-
-    // Draw groups of words.
     QColor groupColor;
     QColor groupColorSpace;
+
+    // Draw groups of words.
     for( size_t idx = 0 ; idx < m_pGroupsWords.size() ; ++idx ) {
+        // Group color.
         groupColor.setHsv( idx % 360, 255, 220 );
         groupColorSpace.setHsv( idx % 360, 100, 255 );
 
-        m_renderParameters.textPB.fillBrush->setColor( groupColor );
-        m_renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
-        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
-
+        // Modify rendering colors.
+        renderParameters.textPB.fillBrush->setColor( groupColor );
+        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
+        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 //        m_renderParameters.textPB.drawPen->setColor( groupColor );
 //        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
 //        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
 
-        this->textDrawGroupWords( *m_pGroupsWords[idx] );
-//        this->textDrawMainSubgroups( *m_pGroupsWords[idx] );
-//        this->textDrawPdfeORect( m_pGroupsWords[idx]->bbox() );
+        // Draw the group on the page.
+        renderPage.textDrawGroupWords( *m_pGroupsWords[idx], renderParameters );
+//        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }
-void PRTextPageStructure::renderTextLines()
+void PRTextPageStructure::renderTextLines(PRRenderPage &renderPage)
 {
     // Words rendering parameters.
     PRRenderParameters renderParameters;
@@ -701,32 +702,37 @@ void PRTextPageStructure::renderTextLines()
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
 //    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
-    m_renderParameters = renderParameters;
 
     // Line rendering pen.
     PRRenderParameters::PRPenBrush linePen;
     linePen.drawPen = new QPen( Qt::blue );
     //linePen.drawPen->setWidthF( 2.0 );
 
-    // Draw lines
     QColor lineColorWord, lineColorSpace, lineColorBBox;
 
+    // Draw lines
     for( size_t idx = 0 ; idx < m_pTextLines.size() ; ++idx ) {
+        PRTextLine* pline = m_pTextLines[idx];
+
+        // Set line colors.
         lineColorWord.setHsv( idx*36 % 360, 255, 255 );
         lineColorSpace.setHsv( idx*36 % 360, 100, 255 );
         lineColorBBox.setHsv( idx*36 % 360, 255, 200 );
 
-        m_renderParameters.textPB.fillBrush->setColor( lineColorWord );
-        m_renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
-//        m_renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
+        // Modify rendering parameters.
+        renderParameters.textPB.fillBrush->setColor( lineColorWord );
+        renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
+//        renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
         linePen.drawPen->setColor( lineColorBBox );
 
-        if( m_pTextLines[idx] ) {
-            // Line words.
-            this->textDrawLineWords( *m_pTextLines[idx] );
+        if( pline ) {
+            // Subgroups of words inside the line.
+            for( size_t idx = 0 ; idx < pline->nbSubgroups() ; ++idx ) {
+                renderPage.textDrawSubgroupWords( pline->subgroup( idx ), renderParameters );
+            }
 
             // Line bounding box.
-            this->textDrawPdfeORect( m_pTextLines[idx]->bbox( true, false, true ), linePen );
+            renderPage.drawPdfeORect( pline->bbox( true, false, true ), linePen );
 
             // Line blocks.
 //            std::vector<PRTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );
@@ -738,63 +744,5 @@ void PRTextPageStructure::renderTextLines()
         }
     }
 }
-void PRTextPageStructure::textDrawPdfeORect( const PdfeORect& orect,
-                                             const PRRenderParameters::PRPenBrush& penBrush )
-{
-    // Compute text rendering matrix.
-    m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
-
-    // Create polygon.
-    QPolygonF polygon;
-    PdfeVector point = orect.leftBottom();
-    polygon << point.toQPoint();
-
-    point = point + orect.direction() * orect.width();
-    polygon << point.toQPoint();
-
-    point = point + orect.direction().rotate90() * orect.height();
-    polygon << point.toQPoint();
-
-    point = orect.leftBottom() + orect.direction().rotate90() * orect.height();
-    polygon << point.toQPoint();
-
-    penBrush.applyToPainter( m_pagePainter );
-    m_pagePainter->drawPolygon( polygon );
-}
-
-void PRTextPageStructure::textDrawMainSubgroups( const PRTextGroupWords& groupWords )
-{
-    // Nothing to draw...
-    if( !groupWords.nbWords() ) {
-        return;
-    }
-
-    // Compute text rendering matrix.
-    PdfeMatrix textMat;
-    textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
-    m_pagePainter->setTransform( textMat.toQTransform() );
-
-    // Paint subgroups.
-    for( size_t i = 0 ; i < groupWords.nbMSubgroups() ; i++ )
-    {
-        // Set pen & brush
-        m_renderParameters.textPB.applyToPainter( m_pagePainter );
-
-        // Paint word, if the width is positive !
-        PdfeORect bbox = groupWords.mSubgroup(i).bbox( false, true, true );
-        PdfeVector lb = bbox.leftBottom();
-        m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
-    }
-}
-
-void PRTextPageStructure::textDrawLineWords( const PRTextLine& line )
-{
-    // Draw the subgroups of words that belong to the line.
-    for( size_t idx = 0 ; idx < line.nbSubgroups() ; ++idx ) {
-        this->textDrawSubgroupWords( line.subgroup( idx ) );
-//        this->textDrawMainSubgroups( *line.subgroup( idx ).group() );
-    }
-}
-
 
 }
