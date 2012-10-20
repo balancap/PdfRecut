@@ -47,8 +47,8 @@ PdfeCanvasAnalysis::~PdfeCanvasAnalysis()
 }
 
 void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
-                                        const PdfeGraphicsState& initialGState,
-                                        const PdfeResources& initialResources )
+                                          const PdfeGraphicsState& initialGState,
+                                          const PdfeResources& initialResources )
 {
     //Stream tokenizer and associated variables.
     PdfeStreamTokenizer tokenizer( canvas );
@@ -273,8 +273,14 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-1], gState.textState.charSpace );
                     this->readValue( gOperands[nbvars-2], gState.textState.wordSpace );
                 }
-                // Call category function.
-                this->fTextShowing( streamState );
+                // Call category function: return text displacement vector.
+                PdfeVector textDispl = this->fTextShowing( streamState );
+
+                // Update text transformation matrix using the vector.
+                tmpMat.init();
+                tmpMat(2,0) = textDispl(0);
+                tmpMat(2,1) = textDispl(1);
+                gState.textState.transMat = tmpMat * gState.textState.transMat;
             }
             else if( gOperator.cat == ePdfGCategory_Color )
             {

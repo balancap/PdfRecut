@@ -26,7 +26,7 @@ using namespace PoDoFo;
 namespace PoDoFoExtended {
 
 //**********************************************************//
-//                   PdfeSubPath functions                  //
+//                        PdfeSubPath                       //
 //**********************************************************//
 PdfeSubPath::PdfeSubPath()
 {
@@ -63,16 +63,14 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
     for( size_t i = 0 ; i < m_coordPoints.size() ; i++ )
     {
         // Only check center with strict inclusion
-        if( strictInclusion )
-        {
+        if( strictInclusion ) {
             strictCenter = strictCenter &&
                            m_coordPoints[i](0) >= zone.GetLeft() &&
                            m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
                            m_coordPoints[i](1) >= zone.GetBottom() &&
                            m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight();
         }
-        else
-        {
+        else {
             // Where is the current point / zone.
             if( m_coordPoints[i](0) <= zone.GetLeft() &&
                     m_coordPoints[i](1) <= zone.GetBottom() )
@@ -125,8 +123,7 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& path,
                                  const PoDoFo::PdfRect& zone,
                                  bool strictInclusion )
 {
-    if( strictInclusion )
-    {
+    if( strictInclusion ) {
         // Strict inclusion: all points in the zone.
         strictInclusion = ( path.GetLeft() >= zone.GetLeft() ) &&
                 ( path.GetBottom() >= zone.GetBottom() ) &&
@@ -134,8 +131,7 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& path,
                 ( path.GetBottom()+path.GetHeight() <= zone.GetBottom()+zone.GetHeight() );
         return strictInclusion;
     }
-    else
-    {
+    else {
         bool left(false), right(false), bottom(false), top(false), center(false);
 
         // Evaluate the intersection with the different part of the zone.
@@ -223,7 +219,7 @@ void PdfeSubPath::reduceToZone( const PoDoFo::PdfRect& zone )
 }
 
 //**********************************************************//
-//                     PdfePath functions                   //
+//                          PdfePath                        //
 //**********************************************************//
 PdfePath::PdfePath()
 {
@@ -460,7 +456,5 @@ const char *PdfePath::OperatorName( PdfePathOperators::Enum op )
     };
     return operatorsName[ op ];
 }
-
-
 
 }

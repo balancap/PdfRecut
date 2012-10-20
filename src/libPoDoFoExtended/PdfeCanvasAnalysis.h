@@ -73,6 +73,7 @@ public:
      */
     virtual ~PdfeCanvasAnalysis();
 
+protected:
     /** Analyse the content stream of a canvas.
      * \param canvas Canvas to analyse.
      * \param initialGState Initial graphics state to use.
@@ -82,6 +83,7 @@ public:
                           const PdfeGraphicsState& initialGState,
                           const PdfeResources& initialResources );
 
+    // PdfeCanvasAnalysis interface.
     virtual void fGeneralGState( const PdfeStreamState& streamState ) = 0;
 
     virtual void fSpecialGState( const PdfeStreamState& streamState ) = 0;
@@ -101,7 +103,7 @@ public:
 
     virtual void fTextPositioning( const PdfeStreamState& streamState ) = 0;
 
-    virtual void fTextShowing( const PdfeStreamState& streamState ) = 0;
+    virtual PdfeVector fTextShowing( const PdfeStreamState& streamState ) = 0;
 
     virtual void fType3Fonts( const PdfeStreamState& streamState ) = 0;
 

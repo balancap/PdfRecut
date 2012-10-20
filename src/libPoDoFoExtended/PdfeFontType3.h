@@ -180,7 +180,7 @@ protected:
      */
     void computeBBox();
 
-public:
+protected:
     // Reimplement PdfeCanvasAnalysis interface.
     virtual void fGeneralGState( const PdfeStreamState& streamState ) { }
 
@@ -201,7 +201,7 @@ public:
 
     virtual void fTextPositioning( const PdfeStreamState& streamState ) { }
 
-    virtual void fTextShowing( const PdfeStreamState& streamState ) { }
+    virtual PdfeVector fTextShowing( const PdfeStreamState& streamState ) { return PdfeVector(); }
 
     virtual void fType3Fonts( const PdfeStreamState& streamState );
 
@@ -228,11 +228,8 @@ public:
 public:
     // Reimplement PdfCanvas interface.
     virtual PoDoFo::PdfObject* GetContents() const;
-
     virtual PoDoFo::PdfObject* GetContentsForAppending() const;
-
     virtual PoDoFo::PdfObject* GetResources() const;
-
     virtual const PoDoFo::PdfRect GetPageSize() const;
 
 protected:
