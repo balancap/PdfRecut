@@ -294,29 +294,34 @@ public:
     };
 
 public:
-    // Static functions used as interface with FreeType library.
+    // Functions used as interface with FreeType library.
     /** Obtain the bounding box of a glyph, using FreeType.
      * \param ftFace Freetype face object.
-     * \param glyph_idx Glyph index.
+     * \param gid Glyph index.
      * \param fontBBox Font bounding box.
      * \return Bounding box of the glyph (in 1000 units scale).
      * Set to zero if anything wrong happened.
      */
     static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
-                                        pdfe_gid glyph_idx,
+                                        pdfe_gid gid,
                                         const PoDoFo::PdfRect& fontBBox );
 
+    /** Obtain the bounding box of a glyph, using FreeType (not static).
+     * \param gid Glyph index.
+     * \return Bounding box of the glyph (in 1000 units scale).
+     * Set to zero if anything wrong happened.
+     */
+    PoDoFo::PdfRect ftGlyphBBox( pdfe_gid gid );
+
     /** Render a glyph using FreeType.
-     * \param ftFace Freetype face object.
-     * \param glyph_idx Glyph index.
+     * \param gid Glyph index.
      * \param charHeight Size chosen for the glyph.
      * \param resolution Resolution in dpi.
      * \return GlyphImage containing the rendered glyph.
      */
-    static GlyphImage ftGlyphRender( FT_Face ftFace,
-                                     pdfe_gid glyph_idx ,
-                                     unsigned int charHeight,
-                                     long resolution );
+    GlyphImage ftGlyphRender( pdfe_gid gid,
+                              unsigned int charHeight,
+                              long resolution );
 protected:
     //Interface with FreeType library.
     /** FreeType charmaps that can be present in a FT face.

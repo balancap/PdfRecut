@@ -270,7 +270,7 @@ PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
     PRTextGroupWords groupWords( m_document, streamState );
 
     // Draw the group of words.
-    this->textDrawGroupWords( groupWords, m_renderParameters );
+    this->textDrawGroup( groupWords, m_renderParameters );
 
     // Return text displacement.
     return groupWords.displacement();
@@ -381,13 +381,13 @@ void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRRenderParamete
     penBrush.applyToPainter( m_pagePainter );
     m_pagePainter->drawPolygon( polygon );
 }
-void PRRenderPage::textDrawGroupWords( const PRTextGroupWords& groupWords,
+void PRRenderPage::textDrawGroup( const PRTextGroupWords& groupWords,
                                        const PRRenderParameters& parameters )
 {
     // Render the complete subgroup.
-    this->textDrawSubgroupWords( PRTextGroupWords::Subgroup( groupWords, true ), parameters );
+    this->textDrawSubgroup( PRTextGroupWords::Subgroup( groupWords, true ), parameters );
 }
-void PRRenderPage::textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup,
+void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
                                           const PRRenderParameters& parameters )
 {
     // Nothing to draw or can not draw...
@@ -448,6 +448,79 @@ void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
         PdfeORect bbox = groupWords.mSubgroup(i).bbox( false, true, true );
         PdfeVector lb = bbox.leftBottom();
         m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
+    }
+}
+void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
+{
+    //m_pagePainter->setRenderHint( QPainter::Antialiasing, true );
+    //m_pagePainter->setRenderHint( QPainter::SmoothPixmapTransform, true );
+
+    // Set font parameters.
+    PdfeFont* pFont = groupWords.font();
+    double charSpace = groupWords.textState().charSpace / groupWords.textState().fontSize;
+    double wordSpace = groupWords.textState().wordSpace / groupWords.textState().fontSize ;
+    pFont->setCharSpace( 0.0 );
+    pFont->setWordSpace( 0.0 );
+    pFont->setFontSize( 1.0 );
+    pFont->setHScale( 100. );
+
+    // Transformation matrix.
+    PdfeMatrix transMat, tmpMat;
+    transMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
+    m_pagePainter->setTransform( transMat.toQTransform() );
+
+    // Render glyphs of every word.
+    for( size_t i = 0 ; i < groupWords.nbWords() ; ++i ) {
+        const PRTextWord& word = groupWords.word( i );
+
+        // Draw only the type correspond to a classic word.
+        if( word.type() == PRTextWordType::Classic ) {
+            PdfeCIDString cidstr = word.cidString();
+
+            for( size_t j = 0 ; j < cidstr.length() ; ++j ) {
+                pdfe_gid gid = pFont->fromCIDToGID( cidstr[j] );
+
+                // Render glyph.
+                if( gid ) {
+                    // TODO: set resolution and size.
+                    PdfRect bbox = pFont->ftGlyphBBox( gid );
+                    PdfeFont::GlyphImage glyphRender = pFont->ftGlyphRender( gid, 100, 100 );
+                    glyphRender.image = glyphRender.image.mirrored( false, true );
+
+                    // Draw it on the page.
+                    m_pagePainter->drawImage( QRectF( bbox.GetLeft() * 0.001,
+                                                      bbox.GetBottom() * 0.001,
+                                                      bbox.GetWidth() * 0.001,
+                                                      bbox.GetHeight() * 0.001 ),
+                                              glyphRender.image );
+                }
+
+                double width = pFont->width( cidstr[j], false );
+                width = pFont->bbox( cidstr[j], false ).GetWidth();
+                if( pFont->isSpace( cidstr[j] ) == PdfeFontSpace::Code32 ) {
+                    width += wordSpace;
+                }
+                // Char space too large: divide the word and replace with pdf translation.
+//                if( charSpace <= PRTextGroupWords::MaxWordCharSpace ) {
+//                    width += charSpace;
+//                }
+
+                //width += charSpace;
+
+                // Update transformation matrix.
+                tmpMat(2,0) = width;
+                tmpMat(2,1) = 0.0;
+                transMat = tmpMat * transMat;
+                m_pagePainter->setTransform( transMat.toQTransform() );
+            }
+        }
+        else {
+            // Update transformation matrix.
+            tmpMat(2,0) = word.width( true );
+            tmpMat(2,1) = 0.0;
+            transMat = tmpMat * transMat;
+            m_pagePainter->setTransform( transMat.toQTransform() );
+        }
     }
 }
 

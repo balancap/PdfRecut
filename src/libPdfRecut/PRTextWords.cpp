@@ -42,11 +42,13 @@ PRTextWord::PRTextWord( PRTextWordType::Enum type,
                         long length,
                         const PdfRect& bbox,
                         double lastCharSpace ):
-    m_type(type), m_length(length), m_bbox(bbox), m_lastCharSpace(lastCharSpace)
+    m_pdfString(), m_cidString(), m_type(type), m_length(length), m_bbox(bbox), m_lastCharSpace(lastCharSpace)
 {
 }
 void PRTextWord::init()
 {
+    m_pdfString = PoDoFo::PdfString();
+    m_cidString = PdfeCIDString();
     m_length = 0;
     m_bbox = PdfRect(0,0,0,0);
     m_lastCharSpace = 0;
@@ -109,9 +111,11 @@ void PRTextGroupWords::init()
     m_groupIndex = -1;
     m_pTextLines.clear();
 
+    m_pFont = NULL;
+    m_fontBBox = PdfRect( 0,0,0,0 );
+
     m_transMatrix.init();
     m_textState.init();
-    m_fontBBox = PdfRect( 0,0,0,0 );
 
     m_words.clear();
     m_mainSubgroups.clear();
@@ -164,6 +168,7 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
     m_textState = textState;
 
     // Get font bounding box.
+    m_pFont = pFont;
     m_fontBBox = pFont->fontBBox();
 
     // Variant is a string.
@@ -232,6 +237,7 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         double width = 0.0;
         double bottom = std::numeric_limits<double>::max();
         double top = std::numeric_limits<double>::min();
+        size_t idxFirst = i;
 
         // Read space word: use SpaceHeight for the character height.
         if( pFont->isSpace( cidstr[i] ) ) {
@@ -303,6 +309,8 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                        length,
                                        PdfRect( 0.0, bottom, width, top-bottom ),
                                        charSpace ) );
+        m_words.back().setPdfString( str );
+        m_words.back().setCIDString( cidstr.substr( idxFirst, i-idxFirst ) );
 
         // Char space too large: replace with pdf translation.
         if( charSpace > MaxWordCharSpace ) {

@@ -238,26 +238,29 @@ public:
     void drawPdfeORect( const PdfeORect& orect,
                         const PRRenderParameters::PRPenBrush& penBrush );
 
-    /** Draw a group of words on the PDF on the page.
+    /** Draw a group of words on the page.
      * \param groupWords Group of words to draw.
      * \param parameters Rendering parameters to use.
      */
-    void textDrawGroupWords( const PRTextGroupWords& groupWords,
-                             const PRRenderParameters& parameters );
-
+    void textDrawGroup( const PRTextGroupWords& groupWords,
+                        const PRRenderParameters& parameters );
     /** Draw a subgroup of words on the pdf image painter.
      * \param subgroup Subgroup of words to draw.
      * \param parameters Rendering parameters to use.
      */
-    void textDrawSubgroupWords( const PRTextGroupWords::Subgroup& subgroup,
-                                const PRRenderParameters& parameters );
-
+    void textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
+                           const PRRenderParameters& parameters );
     /** Draw main subgroups of a PRTextGroupWords.
      * \param subgroup Group of words to consider.
      * \param parameters Rendering parameters to use.
      */
     void textDrawMainSubgroups( const PRTextGroupWords& groupWords,
                                 const PRRenderParameters& parameters );
+
+    /** Render glyphs from a group of words on the page.
+     * \param groupWords Group of words to render.
+     */
+    void textRenderGroup( const PRTextGroupWords& groupWords );
 
 protected:
     /** Test function on images.

@@ -485,13 +485,13 @@ void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
 }
 
 // Static functions used as interface with FreeType library.
-PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect& fontBBox )
+PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid gid, const PdfRect& fontBBox )
 {
     // Glyph bounding box.
     PdfRect glyphBBox( 0, 0, 0, 0 );
 
     // Try to load the glyph.
-    int error = FT_Load_Glyph( ftFace, glyph_idx, FT_LOAD_NO_SCALE );
+    int error = FT_Load_Glyph( ftFace, gid, FT_LOAD_NO_SCALE );
     if( error ) {
         return glyphBBox;
     }
@@ -530,8 +530,11 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid glyph_idx, const PdfRect
 
     return glyphBBox;
 }
-PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx,
-                                              unsigned int charHeight, long resolution )
+PdfRect PdfeFont::ftGlyphBBox( pdfe_gid gid )
+{
+    return PdfeFont::ftGlyphBBox( m_ftFace, gid, ScalePdfRect( this->fontBBox(), 1000. ) );
+}
+PdfeFont::GlyphImage PdfeFont::ftGlyphRender( pdfe_gid gid, unsigned int charHeight, long resolution )
 {
     // Static color table (always the same!).
     static QVector<QRgb> colorTable;
@@ -542,7 +545,7 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx
     }
 
     // Set character size.
-    int error = FT_Set_Char_Size( ftFace,
+    int error = FT_Set_Char_Size( m_ftFace,
                                   0, charHeight * 64,
                                   0, resolution );
 
@@ -552,22 +555,22 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( FT_Face ftFace, pdfe_gid glyph_idx
     }
 
     // Load glyph and render it.
-    error = FT_Load_Glyph( ftFace, glyph_idx, FT_LOAD_DEFAULT);
+    error = FT_Load_Glyph( m_ftFace, gid, FT_LOAD_DEFAULT);
     if( error ) {
         return GlyphImage();
     }
-    error = FT_Render_Glyph( ftFace->glyph, FT_RENDER_MODE_NORMAL);
+    error = FT_Render_Glyph( m_ftFace->glyph, FT_RENDER_MODE_NORMAL);
     if( error ) {
         return GlyphImage();
     }
 
     // Create QImage from the glyph bitmap.
     GlyphImage glyph;
-    glyph.image = QImage( ftFace->glyph->bitmap.buffer,
-                       ftFace->glyph->bitmap.width,
-                       ftFace->glyph->bitmap.rows,
-                       ftFace->glyph->bitmap.pitch,
-                       QImage::Format_Indexed8 );
+    glyph.image = QImage( m_ftFace->glyph->bitmap.buffer,
+                          m_ftFace->glyph->bitmap.width,
+                          m_ftFace->glyph->bitmap.rows,
+                          m_ftFace->glyph->bitmap.pitch,
+                          QImage::Format_Indexed8 );
     glyph.image.setColorTable(colorTable);
 
     // TODO: set transformation matrix.

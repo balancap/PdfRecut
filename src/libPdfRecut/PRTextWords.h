@@ -76,15 +76,19 @@ public:
     void init();
 
 public:
-    // Getters and setters...
-    long length() const             {   return m_length;    }
-    void setLength( long length )   {   m_length = length;  }
+    // Getters...
+    long length() const                 {   return m_length;    }
+    PRTextWordType::Enum type() const   {   return m_type;    }
+    double lastCharSpace() const        {   return m_lastCharSpace;    }
+    const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
+    const PdfeCIDString& cidString() const      {   return m_cidString; }
 
-    PRTextWordType::Enum type() const           {   return m_type;    }
-    void setType( PRTextWordType::Enum type )   {   m_type = type;  }
-
-    double lastCharSpace() const                    {   return m_lastCharSpace;    }
+    // and setters.
+    void setLength( long length )                   {   m_length = length;  }
+    void setType( PRTextWordType::Enum type )       {   m_type = type;  }
     void setLastCharSpace( double lastCharSpace )   {   m_lastCharSpace = lastCharSpace;  }
+    void setPdfString( const PoDoFo::PdfString& rhs )   {   m_pdfString = rhs;  }
+    void setCIDString( const PdfeCIDString& rhs )       {   m_cidString = rhs;  }
 
 public:
     /** Get word bounding box.
@@ -106,7 +110,12 @@ public:
      */
     double width( bool lastSpace ) const;
 
-protected:
+private:
+    /// Pdf string corresponding to the word. TODO: not working !
+    PoDoFo::PdfString  m_pdfString;
+    /// CID string corresponding to the word.
+    PdfeCIDString  m_cidString;
+
     /// Word type.
     PRTextWordType::Enum  m_type;
     /// Length: number of characters.
@@ -268,20 +277,19 @@ public:
     void buildMainSubGroups();
 
 public:
-    // Standard getters and setters...
-    long pageIndex() const;
+    // Getters.
+    long pageIndex() const                          {   return m_pageIndex;     }
+    long groupIndex() const                         {   return m_groupIndex;    }
+    const PdfeMatrix& transMatrix() const           {   return m_transMatrix;   }
+    const PoDoFoExtended::PdfeTextState& textState() const  {   return m_textState; }
+    const PoDoFo::PdfRect& fontBBox() const         {   return m_fontBBox;  }
+    PoDoFoExtended::PdfeFont* font() const          {   return m_pFont; }
+
+    // Setters
     void setPageIndex( long pageIndex );
-
-    long groupIndex() const;
     void setGroupIndex( long groupIndex );
-
-    const PdfeMatrix& transMatrix() const;
     void setTransMatrix( const PdfeMatrix& transMatrix );
-
-    const PoDoFoExtended::PdfeTextState& textState() const;
     void setTextState( const PoDoFoExtended::PdfeTextState& textState );
-
-    const PoDoFo::PdfRect& fontBBox() const;
 
 public:
     /** Get the number of words in the group.
@@ -312,13 +320,18 @@ protected:
     /// Minimal height for a character.
     static const double MinimalHeight = 0.2;
     /// Max char space allowed inside a word: when greater, split the word and replace char space by PDF translation.
-    static const double MaxWordCharSpace = 0.2;
+    static const double MaxWordCharSpace = -10.0;
 
 protected:
     /// Index of the page to which belongs the group.
     long  m_pageIndex;
     /// Index of the group in the page.
     long  m_groupIndex;
+
+    /// Font used for the group.
+    PoDoFoExtended::PdfeFont*  m_pFont;
+    /// Font bounding box.
+    PoDoFo::PdfRect  m_fontBBox;
 
     /// Text lines the group (or a subgroup) belongs to.
     std::vector<PRTextLine*>  m_pTextLines;
@@ -327,8 +340,6 @@ protected:
     PdfeMatrix  m_transMatrix;
     /// Text state for this group of words.
     PoDoFoExtended::PdfeTextState  m_textState;
-    /// Font bounding box.
-    PoDoFo::PdfRect  m_fontBBox;
 
     /// Vector of words that make the group.
     std::vector<PRTextWord>  m_words;
@@ -451,17 +462,9 @@ private:
 //**********************************************************//
 //                 Inline PRTextGroupWords                  //
 //**********************************************************//
-inline long PRTextGroupWords::pageIndex() const
-{
-    return m_pageIndex;
-}
 inline void PRTextGroupWords::setPageIndex( long pageIndex )
 {
     m_pageIndex = pageIndex;
-}
-inline long PRTextGroupWords::groupIndex() const
-{
-    return m_groupIndex;
 }
 inline void PRTextGroupWords::setGroupIndex( long groupIndex )
 {
@@ -471,25 +474,13 @@ inline std::vector<PRTextLine*> PRTextGroupWords::textLines() const
 {
     return m_pTextLines;
 }
-inline const PdfeMatrix &PRTextGroupWords::transMatrix() const
-{
-    return m_transMatrix;
-}
 inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix; m_words.size();
 }
-inline const PoDoFoExtended::PdfeTextState &PRTextGroupWords::textState() const
-{
-    return m_textState;
-}
 inline void PRTextGroupWords::setTextState( const PoDoFoExtended::PdfeTextState& textState )
 {
     m_textState = textState;
-}
-inline const PoDoFo::PdfRect &PRTextGroupWords::fontBBox() const
-{
-    return m_fontBBox;
 }
 
 inline size_t PRTextGroupWords::nbWords() const

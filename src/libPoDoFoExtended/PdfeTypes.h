@@ -32,6 +32,7 @@
 #include "podofo/base/PdfRect.h"
 
 #include <QPointF>
+#include <QRectF>
 #include <QTransform>
 
 #include <vector>
@@ -473,6 +474,27 @@ private:
     /// Height of the rectangle.
     double m_height;
 };
+
+//**********************************************************//
+//                         PdfeRect                         //
+//**********************************************************//
+/** Transform PoDoFo::PdfRect into QRectF.
+ * \param rect PdfRect.
+ **/
+inline QRectF FromPdfRectToQRectF( const PoDoFo::PdfRect& rect ) {
+    return QRectF( rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() );
+}
+/** Scale a PdfRect.
+ * \param rect PdfRect.
+ * \param scale Scale coefficient.
+ * \return PdfRect scaled.
+ */
+inline PoDoFo::PdfRect ScalePdfRect( const PoDoFo::PdfRect& rect, double scale ) {
+    return PoDoFo::PdfRect( rect.GetLeft() * scale,
+                            rect.GetBottom() * scale,
+                            rect.GetWidth() * scale,
+                            rect.GetHeight() * scale );
+}
 
 //}
 

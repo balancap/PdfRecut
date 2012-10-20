@@ -665,8 +665,8 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
+//    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
 
 //    renderParameters.textPB.drawPen = new QPen( Qt::blue );
 //    renderParameters.textSpacePB.drawPen = new QPen( Qt::blue );
@@ -683,14 +683,15 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 
         // Modify rendering colors.
         renderParameters.textPB.fillBrush->setColor( groupColor );
-        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
-        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
+//        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
+//        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 //        m_renderParameters.textPB.drawPen->setColor( groupColor );
 //        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
 //        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
 
         // Draw the group on the page.
-        renderPage.textDrawGroupWords( *m_pGroupsWords[idx], renderParameters );
+       renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
+        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
 //        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }
@@ -728,7 +729,7 @@ void PRTextPageStructure::renderTextLines(PRRenderPage &renderPage)
         if( pline ) {
             // Subgroups of words inside the line.
             for( size_t idx = 0 ; idx < pline->nbSubgroups() ; ++idx ) {
-                renderPage.textDrawSubgroupWords( pline->subgroup( idx ), renderParameters );
+                renderPage.textDrawSubgroup( pline->subgroup( idx ), renderParameters );
             }
 
             // Line bounding box.
