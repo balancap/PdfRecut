@@ -89,7 +89,9 @@ void PdfeFontTrueType::init()
     // Last CID < First CID to avoid problems.
     m_firstCID = 1;
     m_lastCID = 0;
-    m_widthsCID.clear();
+
+    m_advanceCID.clear();
+    m_bboxCID.clear();
 }
 void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
 {
@@ -99,14 +101,17 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
     // First read characters widths given in font object.
     PdfObject* pWidths = pFont->GetIndirectKey( "Widths" );
     const PdfArray&  widthsA = pWidths->GetArray();
-
+    m_advanceCID.resize( widthsA.size(), PdfeVector() );
     m_bboxCID.resize( widthsA.size(), PdfRect( 0, 0, 0, 0 ) );
+
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
+        m_advanceCID[i](0) = widthsA[i].GetReal();
         m_bboxCID[i].SetWidth( widthsA[i].GetReal() );
         m_bboxCID[i].SetHeight( fontBBox.GetHeight() + fontBBox.GetBottom() );
     }
     // Check the size for coherence.
     if( m_bboxCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
+        m_advanceCID.resize( m_lastCID - m_firstCID + 1, PdfeVector( 1000., 0. ) );
         m_bboxCID.resize( m_lastCID - m_firstCID + 1, PdfRect( 0, 0, 1000., fontBBox.GetHeight() + fontBBox.GetBottom() ) );
     }
 
@@ -117,14 +122,14 @@ void PdfeFontTrueType::initCharactersBBox( const PdfObject* pFont )
             // Glyph ID.
             pdfe_gid gid = this->fromCIDToGID( c );
             if( gid ) {
-                PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid, fontBBox );
+                PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                    m_bboxCID[c - m_firstCID].SetBottom( glyphBBox.GetBottom() );
-                    m_bboxCID[c - m_firstCID].SetHeight( glyphBBox.GetHeight() );
+                    m_bboxCID[c - m_firstCID] = glyphBBox;
                 }
             }
         }
         else {
+            // Default height for spaces.
             m_bboxCID[c - m_firstCID].SetBottom( 0.0 );
             m_bboxCID[c - m_firstCID].SetHeight( this->spaceHeight() );
         }
@@ -142,13 +147,7 @@ const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
 PdfRect PdfeFontTrueType::fontBBox() const
 {
     // Font bbox rescaled.
-    PdfRect fontBBox = m_fontDescriptor.fontBBox();
-    fontBBox.SetLeft( fontBBox.GetLeft() / 1000. );
-    fontBBox.SetBottom( fontBBox.GetBottom() / 1000. );
-    fontBBox.SetWidth( fontBBox.GetWidth() / 1000. );
-    fontBBox.SetHeight( fontBBox.GetHeight() / 1000. );
-
-    return fontBBox;
+    return PdfRectRescale( m_fontDescriptor.fontBBox(), 0.001 );
 }
 double PdfeFontTrueType::width( pdfe_cid c, bool useFParams ) const
 {
@@ -167,23 +166,33 @@ double PdfeFontTrueType::width( pdfe_cid c, bool useFParams ) const
     }
     return width;
 }
+PdfeVector PdfeFontTrueType::advance(pdfe_cid c, bool useFParams) const
+{
+    PdfeVector advance;
+    if( c >= m_firstCID && c <= m_lastCID ) {
+        advance = m_advanceCID[ static_cast<size_t>( c - m_firstCID ) ] * 0.001;
+    }
+    else {
+        advance(0) = m_fontDescriptor.missingWidth() * 0.001;
+    }
+    // Apply font parameters.
+    if( useFParams ) {
+        this->applyFontParameters( advance, this->isSpace( c ) == PdfeFontSpace::Code32 );
+    }
+    return advance;
+}
 PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
 {
-    //return PdfeFont::bbox( c, useFParams );
-
+    // Get glyph bbox and rescale it.
     PdfRect cbbox;
     if( c >= m_firstCID && c <= m_lastCID ) {
-        cbbox = m_bboxCID[ static_cast<size_t>( c - m_firstCID ) ];
-        cbbox.SetLeft( 0. );
-        cbbox.SetWidth( cbbox.GetWidth() / 1000. );
-        cbbox.SetBottom( cbbox.GetBottom() / 1000. );
-        cbbox.SetHeight( cbbox.GetHeight() / 1000. );
+        cbbox = m_bboxCID[ c - m_firstCID ];
+        cbbox = PdfRectRescale( cbbox, 0.001 );
     }
     else {
         // Call default implementation.
         return PdfeFont::bbox( c, useFParams );
     }
-
     // Apply font parameters.
     if( useFParams ) {
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );

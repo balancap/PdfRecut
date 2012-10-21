@@ -120,6 +120,90 @@ double PdfeFont::width( const PoDoFo::PdfString& str ) const
     return this->width( this->toCIDString( str ) );
 }
 
+PdfeVector PdfeFont::advance( const PdfeCIDString& str ) const
+{
+    PdfeVector advance;
+    for( size_t i = 0 ; i < str.length() ; ++i ) {
+        pdfe_cid c = str[i];
+        advance += this->advance( c, false );
+
+        // Space character 32: add word spacing.
+        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
+            advance(0) += m_wordSpace / m_fontSize;
+            advance(1) += m_wordSpace / m_fontSize ;
+        }
+    }
+    // Adjust using font parameters.
+    advance(0) = advance(0) * m_fontSize * ( m_hScale / 100. );
+    advance(0) += m_charSpace * str.length() * ( m_hScale / 100. );
+    advance(1) = advance(1) * m_fontSize;
+    advance(1) += m_charSpace * str.length();
+
+    return advance;
+}
+PdfeVector PdfeFont::advance( const PdfString& str ) const
+{
+    return this->advance( this->toCIDString( str ) );
+}
+
+PdfRect PdfeFont::bbox( const PdfeCIDString& str ) const
+{
+    // Bounding box coordinates.
+    double left = std::numeric_limits<double>::max();
+    double bottom = std::numeric_limits<double>::max();
+    double right = std::numeric_limits<double>::min();
+    double top = std::numeric_limits<double>::min();
+
+    PdfeVector advance;
+    PdfRect cbbox;
+
+    for( size_t i = 0 ; i < str.length() ; ++i ) {
+        pdfe_cid c = str[i];
+
+        // Glyph bounding box.
+        cbbox = this->bbox( c, true );
+
+        // Update string bounding box coordinates.
+        left = std::min( left, advance(0) + cbbox.GetLeft() );
+        bottom = std::min( bottom, advance(1) + cbbox.GetBottom() );
+        right = std::max( right, advance(0) + cbbox.GetLeft() + cbbox.GetWidth() );
+        top = std::max( top, advance(1) + cbbox.GetBottom() + cbbox.GetHeight() );
+
+        // Update advance vector.
+        advance += this->advance( c, true );
+    }
+    // Got a problem! Default empty bounding box.
+    if( left > right || bottom > top ) {
+        return PdfRect( 0,0,0,0 );
+    }
+    return PdfRect( left, bottom, right-left, top-bottom );
+}
+PdfRect PdfeFont::bbox( const PdfString& str ) const
+{
+    return this->bbox( this->toCIDString( str ) );
+}
+
+// Default simple implementation using font bounding box.
+PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
+{
+    // Font BBox for default height.
+    PdfRect fontBBox = this->fontBBox();
+
+    // CID width.
+    double width = this->advance( c, false )(0);
+
+    // Default bottom and height.
+    double bottom = fontBBox.GetBottom();
+    double height = fontBBox.GetHeight();
+
+    // Apply font parameters.
+    PdfRect cbbox( 0.0, 0.0, width, height-bottom );
+    if( useFParams ) {
+        this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
+    }
+    return cbbox;
+}
+
 QString PdfeFont::toUnicode(const PdfeCIDString& str, bool useUCMap, bool firstTryEncoding ) const
 {
     // Default implementation: get the unicode string of every CID in the string..
@@ -191,26 +275,6 @@ PdfeCIDString PdfeFont::toCIDString( const PdfString& str ) const
         cidstr[i] = static_cast<unsigned char>( pstr[i] );
     }
     return cidstr;
-}
-// Default simple implementation using font bounding box.
-PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
-{
-    // Font BBox for default height.
-    PdfRect fontBBox = this->fontBBox();
-
-    // CID width.
-    double width = this->width( c, false );
-
-    // Default bottom and height.
-    double bottom = fontBBox.GetBottom();
-    double height = fontBBox.GetHeight();
-
-    // Apply font parameters.
-    PdfRect cbbox( 0.0, bottom, width, height );
-    if( useFParams ) {
-        this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
-    }
-    return cbbox;
 }
 // Default implementation.
 PdfeFontSpace::Enum PdfeFont::isSpace( pdfe_cid c ) const
@@ -472,20 +536,35 @@ void PdfeFont::applyFontParameters( double& width, bool space32 ) const
         width += m_wordSpace * ( m_hScale / 100. );
     }
 }
+void PdfeFont::applyFontParameters( PdfeVector& advance, bool space32 ) const
+{
+    // Apply font parameters.
+    advance(0) = ( advance(0) * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+    advance(1) = advance(1) * m_fontSize + m_charSpace;
+    if( space32 ) {
+        advance(0) += m_wordSpace * ( m_hScale / 100. );
+        advance(1) += m_wordSpace;
+    }
+}
 void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
 {
+    // On characters bounding box: does no use the char space.
+    // Word space is used since it only applies on space characters.
+
     double width = bbox.GetWidth();
-    width = ( width * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
+    width = width * m_fontSize * ( m_hScale / 100. );
     if( space32 ) {
         width += m_wordSpace * ( m_hScale / 100. );
     }
     bbox.SetWidth( width );
+
+    bbox.SetLeft( bbox.GetLeft() * m_fontSize * ( m_hScale / 100. ) );
     bbox.SetBottom( bbox.GetBottom() * m_fontSize );
     bbox.SetHeight( bbox.GetHeight() * m_fontSize );
 }
 
 // Static functions used as interface with FreeType library.
-PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid gid, const PdfRect& fontBBox )
+PdfRect PdfeFont::ftGlyphBBox(FT_Face ftFace, pdfe_gid gid)
 {
     // Glyph bounding box.
     PdfRect glyphBBox( 0, 0, 0, 0 );
@@ -514,14 +593,6 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid gid, const PdfRect& font
 //    double bottom = double( glyph_bbox.yMin ) * scaling;
 //    double top = double( glyph_bbox.yMax ) * scaling;
 
-    // Perform some corrections using font bounding box.
-    if( fontBBox.GetWidth() > 0  && fontBBox.GetHeight() > 0 ) {
-        left = std::max( fontBBox.GetLeft(), left );
-        right = std::min( fontBBox.GetLeft()+fontBBox.GetWidth(), right );
-        bottom = std::max( fontBBox.GetBottom(), bottom );
-        top = std::min( fontBBox.GetBottom()+fontBBox.GetHeight(), top );
-    }
-
     // Set glyph bounding box.
     glyphBBox.SetLeft( left );
     glyphBBox.SetWidth( right-left );
@@ -532,7 +603,7 @@ PdfRect PdfeFont::ftGlyphBBox( FT_Face ftFace, pdfe_gid gid, const PdfRect& font
 }
 PdfRect PdfeFont::ftGlyphBBox( pdfe_gid gid )
 {
-    return PdfeFont::ftGlyphBBox( m_ftFace, gid, ScalePdfRect( this->fontBBox(), 1000. ) );
+    return PdfeFont::ftGlyphBBox( m_ftFace, gid );
 }
 PdfeFont::GlyphImage PdfeFont::ftGlyphRender( pdfe_gid gid, unsigned int charHeight, long resolution )
 {

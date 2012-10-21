@@ -72,13 +72,13 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     m_lastCID = static_cast<pdfe_cid>( pLChar->GetNumber() );
 
     const PdfArray&  widthsA = pWidths->GetArray();
-    m_widthsCID.resize( widthsA.size() );
+    m_advanceCID.resize( widthsA.size(), PdfeVector() );
     for( size_t i = 0 ; i < widthsA.size() ; ++i ) {
-        m_widthsCID[i] =  widthsA[i].GetReal();
+        m_advanceCID[i](0) = widthsA[i].GetReal();
     }
     // Check the size for coherence.
-    if( m_widthsCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
-        m_widthsCID.resize( m_lastCID - m_firstCID + 1, 1000. );
+    if( m_advanceCID.size() != static_cast<size_t>( m_lastCID - m_firstCID + 1 ) ) {
+        m_advanceCID.resize( m_lastCID - m_firstCID + 1, PdfeVector( 1000., 0. ) );
     }
 
     // Font descriptor (required in Tagged documents).
@@ -113,7 +113,7 @@ void PdfeFontType3::init()
     // Last CID < First CID to avoid problems.
     m_firstCID = 1;
     m_lastCID = 0;
-    m_widthsCID.clear();
+    m_advanceCID.clear();
 
     m_mapCIDToGID.clear();
     m_glyphs.clear();
@@ -168,24 +168,27 @@ PdfRect PdfeFontType3::fontBBox() const
 }
 double PdfeFontType3::width( pdfe_cid c, bool useFParams ) const
 {
-    double width;
+    return this->advance( c, useFParams )( 0 );
+}
+PdfeVector PdfeFontType3::advance( pdfe_cid c, bool useFParams ) const
+{
+    PdfeVector advance;
     if( c >= m_firstCID && c <= m_lastCID ) {
-        // Assume the letter is a square...
-        width = m_widthsCID[ c - m_firstCID ];
-        PdfeVector cVect( width, 0.0 );
-        cVect = cVect * m_fontMatrix;
-        width = cVect(0);
+        advance = m_advanceCID[ c - m_firstCID ];
+        advance = m_fontMatrix.map( advance );
+
+        // Only keep the horizontal component.
+        advance(1) = 0.0;
     }
     else {
         // Return 0 according to PDF Reference.
-        return 0.;
+        return advance;
     }
-
     // Apply font parameters.
     if( useFParams ) {
-        this->applyFontParameters( width, this->isSpace( c ) == PdfeFontSpace::Code32 );
+        this->applyFontParameters( advance, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
-    return width;
+    return advance;
 }
 PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
 {
@@ -193,15 +196,10 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
     if( c >= m_firstCID && c <= m_lastCID && m_mapCIDToGID[c-m_firstCID] ) {
         // Get glyph bounding box.
         cbbox = m_glyphs[c - m_firstCID].bbox();
-
         // Empty glyph bbox: call default implementation.
         if( cbbox.GetHeight() == 0 ) {
             return PdfeFont::bbox( c, useFParams );
         }
-
-        // Modify left and width accordingly to char width.
-        cbbox.SetLeft( 0.0 );
-        cbbox.SetWidth( m_widthsCID[c - m_firstCID] );
 
         // Apply font transformation to char bbox.
         PdfeORect oBBox( cbbox );
@@ -212,7 +210,6 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
         // Call default implementation.
         return PdfeFont::bbox( c, useFParams );
     }
-
     // Apply font parameters.
     if( useFParams ) {
         this->applyFontParameters( cbbox, this->isSpace( c ) == PdfeFontSpace::Code32 );
@@ -222,26 +219,29 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
 
 double PdfeFontType3::spaceHeight() const
 {
+    static double spaceHeight(-1);
+
     // Compute mean width.
-    size_t nbCID = 0;
-    double spaceHeight = 0;
+    if( spaceHeight <= 0 ) {
+        size_t nbCID = 0;
+        double spaceHeight = 0;
 
-    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-        if( m_widthsCID[c - m_firstCID] > 0) {
-            spaceHeight += m_widthsCID[c - m_firstCID];
-            ++nbCID;
+        for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+            if( m_advanceCID[c - m_firstCID](0) > 0) {
+                spaceHeight += m_advanceCID[c - m_firstCID](0);
+                ++nbCID;
+            }
         }
-    }
-    if( spaceHeight > 0 ) {
-        spaceHeight = spaceHeight / nbCID;
-    }
-    else {
-        spaceHeight = m_fontBBox.GetHeight();
-    }
+        if( spaceHeight > 0 ) {
+            spaceHeight = spaceHeight / nbCID;
+        }
+        else {
+            spaceHeight = m_fontBBox.GetHeight();
+        }
 
-    // Multiply by a constant factor.
-    spaceHeight = spaceHeight * 0.8;
-
+        // Multiply by a magic! constant factor.
+        spaceHeight = spaceHeight * 0.8;
+    }
     return spaceHeight;
 }
 pdfe_gid PdfeFontType3::fromCIDToGID(pdfe_cid c) const

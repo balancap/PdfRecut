@@ -64,12 +64,6 @@ public:
      */
     virtual PoDoFo::PdfRect fontBBox() const;
 
-    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return CID String corresponding.
-     */
-    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
-
     /** Get the width of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
@@ -77,12 +71,25 @@ public:
      */
     virtual double width( pdfe_cid c, bool useFParams ) const;
 
+    /** Get the advance vector of a character (horizontal or vertical usually).
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Advance vector.
+     */
+    virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const;
+
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
+
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return CID String corresponding.
+     */
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
 
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
@@ -161,7 +168,11 @@ public:
      * \return Width of the character.
      */
     double width( pdfe_cid c ) const;
-
+    /** Get the advance vector of a character (horizontal or vertical usually).
+     * \param c Character identifier (CID).
+     * \return Advance vector.
+     */
+    virtual PdfeVector advance( pdfe_cid c ) const;
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \return Bounding box of the character.
@@ -183,7 +194,7 @@ public:
     double spaceHeight() const;
 
 protected:
-    /** Private class that represents an array of glyph's horizontal
+    /** Private embedded class that represents an array of glyph's horizontal
      * bounding boxes.
      */
     class HBBoxArray
@@ -208,9 +219,8 @@ protected:
 
         /** Initialize characters bounding box.
          * \param FreeType face use to retrieve glyph information.
-         * \param fontBBox Font bounding box.
          */
-        void initCharactersBBox( FT_Face ftFace , const PoDoFo::PdfRect& fontBBox );
+        void initCharactersBBox(FT_Face ftFace );
 
         /** Get default width.
          * \return Default width of CID glyphs.
@@ -226,6 +236,11 @@ protected:
          * \return Width of the character.
          */
         double width( pdfe_cid c ) const;
+        /** Get the advance vector of a character (horizontal).
+         * \param c Character identifier (CID).
+         * \return Advance vector.
+         */
+        virtual PdfeVector advance( pdfe_cid c ) const;
         /** Get the bounding box of a character.
          * \param c Character identifier (CID).
          * \return Bounding box of the character.
@@ -247,9 +262,13 @@ protected:
         /// Vector containing last CID of each group.
         std::vector<pdfe_cid>  m_lastCID;
 
+        /// Vector containing the advance vector of CID of each group.
+        std::vector< std::vector<PdfeVector> >  m_advanceCID;
         /// Vector containing bounding box of CID of each group.
         std::vector< std::vector<PoDoFo::PdfRect> >  m_bboxCID;
 
+        /// Default horizontal advance vector.
+        PdfeVector  m_defaultAdvance;
         /// Default horizontal bounding box.
         PoDoFo::PdfRect  m_defaultBBox;
     };
@@ -273,7 +292,7 @@ private:
 
 
 //**********************************************************//
-//                        PdfeFontCID                       //
+//                    Inline PdfeFontCID                    //
 //**********************************************************//
 inline const PdfeFontDescriptor& PdfeFontCID::fontDescriptor() const
 {
@@ -281,7 +300,7 @@ inline const PdfeFontDescriptor& PdfeFontCID::fontDescriptor() const
 }
 inline double PdfeFontCID::width( pdfe_cid c ) const
 {
-    return m_hBBoxes.width( c ) / 1000.;
+    return m_hBBoxes.width( c ) * 0.001;
 }
 inline const std::vector<pdfe_cid>& PdfeFontCID::firstCIDs() const
 {
@@ -297,9 +316,8 @@ inline double PdfeFontCID::spaceHeight() const
     return 500. / 1000.;
 }
 
-
 //**********************************************************//
-//                   PdfeFontCID::HBBoxArray                //
+//               Inline PdfeFontCID::HBBoxArray             //
 //**********************************************************//
 inline double PdfeFontCID::HBBoxArray::width( pdfe_cid c ) const
 {
@@ -311,6 +329,17 @@ inline double PdfeFontCID::HBBoxArray::width( pdfe_cid c ) const
     }
     // Return default width.
     return m_defaultBBox.GetWidth();
+}
+inline PdfeVector PdfeFontCID::HBBoxArray::advance( pdfe_cid c ) const
+{
+    // Find the group of CID it belongs to.
+    for( size_t i = 0 ; i < m_advanceCID.size() ; ++i ) {
+        if( c >= m_firstCID[i] && c <= m_lastCID[i] ) {
+            return m_advanceCID[i][c - m_firstCID[i]];
+        }
+    }
+    // Return default advance vector.
+    return m_defaultAdvance;
 }
 inline PoDoFo::PdfRect PdfeFontCID::HBBoxArray::bbox( pdfe_cid c ) const
 {

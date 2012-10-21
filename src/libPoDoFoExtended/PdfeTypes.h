@@ -484,12 +484,13 @@ private:
 inline QRectF FromPdfRectToQRectF( const PoDoFo::PdfRect& rect ) {
     return QRectF( rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() );
 }
-/** Scale a PdfRect.
+
+/** Rescale a PdfRect.
  * \param rect PdfRect.
  * \param scale Scale coefficient.
  * \return PdfRect scaled.
  */
-inline PoDoFo::PdfRect ScalePdfRect( const PoDoFo::PdfRect& rect, double scale ) {
+inline PoDoFo::PdfRect PdfRectRescale( const PoDoFo::PdfRect& rect, double scale ) {
     return PoDoFo::PdfRect( rect.GetLeft() * scale,
                             rect.GetBottom() * scale,
                             rect.GetWidth() * scale,

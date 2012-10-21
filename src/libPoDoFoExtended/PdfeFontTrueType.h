@@ -64,14 +64,6 @@ public:
      */
     virtual PoDoFo::PdfRect fontBBox() const;
 
-    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return CID String corresponding.
-     */
-    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
-        return this->PdfeFont::toCIDString( str );
-    }
-
     /** Get the width of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
@@ -79,12 +71,27 @@ public:
      */
     virtual double width( pdfe_cid c, bool useFParams ) const;
 
+    /** Get the advance vector of a character (horizontal or vertical usually).
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Advance vector.
+     */
+    virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const;
+
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
+
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return CID String corresponding.
+     */
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
+        return this->PdfeFont::toCIDString( str );
+    }
 
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
@@ -129,9 +136,9 @@ private:
     pdfe_cid  m_firstCID;
     /// Last character defined in font's width array.
     pdfe_cid  m_lastCID;
-    /// Array of character widths.
-    std::vector<double>  m_widthsCID;
 
+    /// Array of advance vectors (horizontal for TrueType fonts).
+    std::vector<PdfeVector>  m_advanceCID;
     /// Array storing the bounding box of characters.
     std::vector<PoDoFo::PdfRect>  m_bboxCID;
 

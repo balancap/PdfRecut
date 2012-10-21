@@ -132,16 +132,42 @@ protected:
     PdfeFont();
 
 public:
-    /** Get the width of a CID string.
+    /** Get the width of a CID string. Font parameters are used in the computation.
      * \param str CID string to consider.
      * \return Width of the string.
      */
-    virtual double width( const PdfeCIDString& str ) const;
+    double width( const PdfeCIDString& str ) const;
     /** Get the width of a string (first converted to a CID string).
+     *  Font parameters are used in the computation.
      * \param str PoDoFo::PdfString to consider (can contain 0 characters !).
      * \return Width of the string.
      */
-    virtual double width( const PoDoFo::PdfString& str ) const;
+    double width( const PoDoFo::PdfString& str ) const;
+
+    /** Get the advance vector of a CID string.  Font parameters are used in the computation.
+     * \param str CID string to consider.
+     * \return Advance vector of the string.
+     */
+    PdfeVector advance( const PdfeCIDString& str ) const;
+    /** Get the advance vector of a string (first converted to a CID string).
+     * Font parameters are used in the computation.
+     * \param str PoDoFo::PdfString to consider (can contain 0 characters !).
+     * \return Advance vector of the string.
+     */
+    PdfeVector advance( const PoDoFo::PdfString& str ) const;
+
+    /** Compute the bounding box of a CID string. Refer to the coordinates of the first character.
+     * Font parameters are used in the computation.
+     * \param str CID string to consider.
+     * \return Bounding box of the string.
+     */
+    PoDoFo::PdfRect bbox( const PdfeCIDString& str ) const;
+    /** Compute the bounding box of a string (first converted to a CID string).
+     * Font parameters are used in the computation.
+     * \param str PoDoFo::PdfString to consider (can contain 0 characters !).
+     * \return Bounding box of the string.
+     */
+    PoDoFo::PdfRect bbox( const PoDoFo::PdfString& str ) const;
 
     /** Convert a CID string to unicode.
      * \param str CID string to convert.
@@ -172,12 +198,6 @@ public:
      */
     virtual PoDoFo::PdfRect fontBBox() const = 0;
 
-    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
-     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
-     * \return CID String corresponding.
-     */
-    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const = 0;
-
     /** Get the width of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
@@ -185,12 +205,25 @@ public:
      */
     virtual double width( pdfe_cid c, bool useFParams ) const = 0;
 
+    /** Get the advance vector of a character (horizontal or vertical usually).
+     * \param c Character identifier (CID).
+     * \param useFParams Use font parameters (char and word space, font size, ...).
+     * \return Advance vector.
+     */
+    virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const = 0;
+
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const = 0;
+
+    /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
+     * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
+     * \return CID String corresponding.
+     */
+    virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const = 0;
 
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
@@ -275,6 +308,13 @@ protected:
     void applyFontParameters( double& width,
                               bool space32 ) const;
 
+    /** Apply font parameter to a character advance vector.
+     * \param Reference to the advance vector to modify.
+     * \param space32 Is the character a 32 type space?
+     */
+    void applyFontParameters( PdfeVector& advance,
+                              bool space32 ) const;
+
     /** Apply font parameter to a character bounding box.
      * \param Reference to the bbox to modify.
      * \param space32 Is the character a 32 type space?
@@ -298,13 +338,11 @@ public:
     /** Obtain the bounding box of a glyph, using FreeType.
      * \param ftFace Freetype face object.
      * \param gid Glyph index.
-     * \param fontBBox Font bounding box.
      * \return Bounding box of the glyph (in 1000 units scale).
      * Set to zero if anything wrong happened.
      */
     static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
-                                        pdfe_gid gid,
-                                        const PoDoFo::PdfRect& fontBBox );
+                                        pdfe_gid gid );
 
     /** Obtain the bounding box of a glyph, using FreeType (not static).
      * \param gid Glyph index.

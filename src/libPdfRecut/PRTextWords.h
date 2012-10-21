@@ -49,7 +49,7 @@ namespace PRTextWordType {
  */
 enum Enum {
     Classic = 0,        /// Classic word.
-    Space,              /// Space character 0x0020.
+    Space,              /// Space characters (c.f. PdfeFont space characters).
     PDFTranslation,     /// PDF translation (c.f. TJ operator).
     PDFTranslationCS,   /// PDF translation replacing char space.
     Unknown             /// Unknown...

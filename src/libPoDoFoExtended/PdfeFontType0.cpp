@@ -103,19 +103,7 @@ const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 PdfRect PdfeFontType0::fontBBox() const
 {
     // Font bbox rescaled.
-    PdfRect fontBBox = m_fontCID->fontDescriptor().fontBBox();
-    fontBBox.SetLeft( fontBBox.GetLeft() / 1000. );
-    fontBBox.SetBottom( fontBBox.GetBottom() / 1000. );
-    fontBBox.SetWidth( fontBBox.GetWidth() / 1000. );
-    fontBBox.SetHeight( fontBBox.GetHeight() / 1000. );
-
-    return fontBBox;
-}
-
-PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
-{
-    // Use the encoding CMap to convert the string.
-    return m_encodingCMap.toCIDString( str );
+    return PdfRectRescale( m_fontCID->fontDescriptor().fontBBox(), 0.001 );
 }
 double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
 {
@@ -124,12 +112,18 @@ double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
 
     // Apply font parameters.
     if( useFParams ) {
-        width = ( width * fontSize() + charSpace() ) * ( hScale() / 100. );
-        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += wordSpace() * ( hScale() / 100. );
-        }
+        this->applyFontParameters( width, this->isSpace( c ) == PdfeFontSpace::Code32 );
     }
     return width;
+}
+PdfeVector PdfeFontType0::advance( pdfe_cid c, bool useFParams ) const
+{
+    // Get advance vector from CID font.
+    PdfeVector advance = m_fontCID->advance( c );
+    if( useFParams ) {
+        this->applyFontParameters( advance, this->isSpace( c ) == PdfeFontSpace::Code32 );
+    }
+    return advance;
 }
 PdfRect PdfeFontType0::bbox( pdfe_cid c, bool useFParams ) const
 {
@@ -141,6 +135,11 @@ PdfRect PdfeFontType0::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
+PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
+{
+    // Use the encoding CMap to convert the string.
+    return m_encodingCMap.toCIDString( str );
+}
 QString PdfeFontType0::toUnicode(pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
 {
     QString ustr;
@@ -226,24 +225,24 @@ void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
 }
 void PdfeFontCID::initCharactersBBox( FT_Face ftFace )
 {
-    m_hBBoxes.initCharactersBBox( ftFace, m_fontDescriptor.fontBBox() );
+    m_hBBoxes.initCharactersBBox( ftFace );
 }
 
+PdfeVector PdfeFontCID::advance( pdfe_cid c ) const
+{
+    // TODO: vertical fonts.
+    PdfeVector advance = m_hBBoxes.advance( c ) * 0.001;
+    return advance;
+}
 PoDoFo::PdfRect PdfeFontCID::bbox( pdfe_cid c ) const
 {
+    // Get bbox and rescale in page coordinates.
     PdfRect cbbox = m_hBBoxes.bbox( c );
-
-    // Change in to page coordinates.
-    cbbox.SetLeft( cbbox.GetLeft() / 1000. );
-    cbbox.SetWidth( cbbox.GetWidth() / 1000. );
-    cbbox.SetBottom( cbbox.GetBottom() / 1000. );
-    cbbox.SetHeight( cbbox.GetHeight() / 1000. );
-
-    return cbbox;
+    return PdfRectRescale( cbbox, 0.001 );
 }
 
 //**********************************************************//
-//                 PdfeFontCID::HBBoxArray                //
+//                   PdfeFontCID::HBBoxArray                //
 //**********************************************************//
 PdfeFontCID::HBBoxArray::HBBoxArray()
 {
@@ -253,8 +252,12 @@ void PdfeFontCID::HBBoxArray::init()
 {
     m_firstCID.clear();
     m_lastCID.clear();
+
+    m_advanceCID.clear();
     m_bboxCID.clear();
-    m_defaultBBox = PdfRect( 0, 0, 1000, 500 );
+
+    m_defaultAdvance = PdfeVector( 1000., 0. );
+    m_defaultBBox = PdfRect( 0., 0., 1000., 500. );
 }
 void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
                                     double defaultWidth,
@@ -264,7 +267,8 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
 
     // Default height used (from fontBBox) and default bounding box.
     double defaultHeight = fontBBox.GetHeight()+fontBBox.GetBottom();
-    m_defaultBBox = PdfRect( 0, 0, defaultWidth, defaultHeight );
+    m_defaultAdvance = PdfeVector( defaultWidth, 0. );
+    m_defaultBBox = PdfRect( 0., 0., defaultWidth, defaultHeight );
 
     size_t i = 0;
     while( i < widths.size() ) {
@@ -281,12 +285,15 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
         if( widths[i].IsArray() ) {
             const PdfArray& widthsCID = widths[i].GetArray();
 
-            // Resize bbox vector with default height set.
+            // Resize advance bbox vector with default height set.
+            m_advanceCID.back().resize( widthsCID.size(),
+                                        PdfeVector() );
             m_bboxCID.back().resize( widthsCID.size(),
                                      PdfRect( 0, 0, 0, defaultHeight ) );
 
-            // Set width  of the bounding box for each glyph.
+            // Set advance and default bbox for each glyph.
             for( size_t j = 0 ; j < widthsCID.size() ; ++j ) {
+                m_advanceCID.back()[j](0) = widthsCID[j].GetReal();
                 m_bboxCID.back()[j].SetWidth( widthsCID[j].GetReal() );
             }
             m_lastCID.back() = m_firstCID.back() + widthsCID.size() - 1;
@@ -297,29 +304,26 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
             m_lastCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );
             ++i;
 
-            // Create a bounding box for each glyph.
+            // Create advance vector and bounding box for each glyph.
+            m_advanceCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
+                                        PdfeVector( widths[i].GetReal(), 0. ) );
             m_bboxCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
-                                     PdfRect( 0, 0, widths[i].GetReal(), defaultHeight ) );
+                                     PdfRect( 0., 0., widths[i].GetReal(), defaultHeight ) );
             ++i;
         }
     }
 }
-
-void PdfeFontCID::HBBoxArray::initCharactersBBox( FT_Face ftFace, const PdfRect& fontBBox )
+void PdfeFontCID::HBBoxArray::initCharactersBBox( FT_Face ftFace )
 {
     // Get glyph bbox for characters in each group.
     for( size_t i = 0 ; i < m_bboxCID.size() ; ++i ) {
-
         for( pdfe_cid c = m_firstCID[i] ; c <= m_lastCID[i] ; ++c ) {
             // Glyph ID. TODO: map CID to GID...
             pdfe_gid glyph_idx = c;
 
-            PdfRect glyphBBox = PdfeFont::ftGlyphBBox( ftFace, glyph_idx, fontBBox );
-            if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                //m_bboxCID[c - m_firstCID].SetLeft( 0.0 );
-                //m_bboxCID[c - m_firstCID].SetWidth( glyphBBox.GetWidth() );
-                m_bboxCID[i][ c - m_firstCID[i] ].SetBottom( glyphBBox.GetBottom() );
-                m_bboxCID[i][ c - m_firstCID[i] ].SetHeight( glyphBBox.GetHeight() );
+            PdfRect glyphBBox = PdfeFont::ftGlyphBBox( ftFace, glyph_idx );
+            if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {    
+                m_bboxCID[i][ c - m_firstCID[i] ] = glyphBBox;
             }
         }
     }
