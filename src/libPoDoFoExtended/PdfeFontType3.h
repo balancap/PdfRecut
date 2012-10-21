@@ -71,13 +71,6 @@ public:
      */
     virtual PoDoFo::PdfRect fontBBox() const;
 
-    /** Get the width of a character.
-     * \param c Character identifier (CID).
-     * \param useFParams Use font parameters (char and word space, font size, ...).
-     * \return Width of the character.
-     */
-    virtual double width( pdfe_cid c, bool useFParams ) const;
-
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).

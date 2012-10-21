@@ -97,29 +97,6 @@ PdfeFont::~PdfeFont()
     }
 }
 
-double PdfeFont::width( const PdfeCIDString& str ) const
-{
-    double width = 0;
-    for( size_t i = 0 ; i < str.length() ; ++i ) {
-        pdfe_cid c = str[i];
-        width += this->width( c, false );
-
-        // Space character 32: add word spacing.
-        if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
-            width += m_wordSpace / m_fontSize;
-        }
-    }
-    // Adjust using font parameters.
-    width = width * m_fontSize * ( m_hScale / 100. );
-    width += m_charSpace * str.length() * ( m_hScale / 100. );
-
-    return width;
-}
-double PdfeFont::width( const PoDoFo::PdfString& str ) const
-{
-    return this->width( this->toCIDString( str ) );
-}
-
 PdfeVector PdfeFont::advance( const PdfeCIDString& str ) const
 {
     PdfeVector advance;

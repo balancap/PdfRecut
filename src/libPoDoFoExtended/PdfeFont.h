@@ -132,18 +132,6 @@ protected:
     PdfeFont();
 
 public:
-    /** Get the width of a CID string. Font parameters are used in the computation.
-     * \param str CID string to consider.
-     * \return Width of the string.
-     */
-    double width( const PdfeCIDString& str ) const;
-    /** Get the width of a string (first converted to a CID string).
-     *  Font parameters are used in the computation.
-     * \param str PoDoFo::PdfString to consider (can contain 0 characters !).
-     * \return Width of the string.
-     */
-    double width( const PoDoFo::PdfString& str ) const;
-
     /** Get the advance vector of a CID string.  Font parameters are used in the computation.
      * \param str CID string to consider.
      * \return Advance vector of the string.
@@ -197,13 +185,6 @@ public:
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const = 0;
-
-    /** Get the width of a character.
-     * \param c Character identifier (CID).
-     * \param useFParams Use font parameters (char and word space, font size, ...).
-     * \return Width of the character.
-     */
-    virtual double width( pdfe_cid c, bool useFParams ) const = 0;
 
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).

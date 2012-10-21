@@ -149,23 +149,6 @@ PdfRect PdfeFontTrueType::fontBBox() const
     // Font bbox rescaled.
     return PdfRectRescale( m_fontDescriptor.fontBBox(), 0.001 );
 }
-double PdfeFontTrueType::width( pdfe_cid c, bool useFParams ) const
-{
-    double width;
-    if( c >= m_firstCID && c <= m_lastCID ) {
-        //width = m_widthsCID[ static_cast<size_t>( c - m_firstCID ) ] / 1000.;
-        width = m_bboxCID[ static_cast<size_t>( c - m_firstCID ) ].GetWidth() / 1000.;
-    }
-    else {
-        width = m_fontDescriptor.missingWidth() / 1000.;
-    }
-
-    // Apply font parameters.
-    if( useFParams ) {
-        this->applyFontParameters( width, this->isSpace( c ) == PdfeFontSpace::Code32 );
-    }
-    return width;
-}
 PdfeVector PdfeFontTrueType::advance(pdfe_cid c, bool useFParams) const
 {
     PdfeVector advance;

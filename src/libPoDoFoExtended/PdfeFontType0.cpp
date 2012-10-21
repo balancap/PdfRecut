@@ -105,17 +105,6 @@ PdfRect PdfeFontType0::fontBBox() const
     // Font bbox rescaled.
     return PdfRectRescale( m_fontCID->fontDescriptor().fontBBox(), 0.001 );
 }
-double PdfeFontType0::width( pdfe_cid c, bool useFParams ) const
-{
-    // Use CID font to obtain the width.
-    double width = m_fontCID->width( c );
-
-    // Apply font parameters.
-    if( useFParams ) {
-        this->applyFontParameters( width, this->isSpace( c ) == PdfeFontSpace::Code32 );
-    }
-    return width;
-}
 PdfeVector PdfeFontType0::advance( pdfe_cid c, bool useFParams ) const
 {
     // Get advance vector from CID font.

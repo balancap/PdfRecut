@@ -166,10 +166,6 @@ PdfRect PdfeFontType3::fontBBox() const
     // Return the bounding box of the oriented rectangle.
     return fontBBox.toPdfRect( true );
 }
-double PdfeFontType3::width( pdfe_cid c, bool useFParams ) const
-{
-    return this->advance( c, useFParams )( 0 );
-}
 PdfeVector PdfeFontType3::advance( pdfe_cid c, bool useFParams ) const
 {
     PdfeVector advance;
