@@ -38,49 +38,66 @@ PRTextWord::PRTextWord()
 {
     this->init();
 }
-PRTextWord::PRTextWord( PRTextWordType::Enum type,
-                        long length,
-                        const PdfRect& bbox,
-                        double lastCharSpace ):
-    m_pdfString(), m_cidString(), m_type(type), m_length(length), m_bbox(bbox), m_lastCharSpace(lastCharSpace)
+PRTextWord::PRTextWord( const PdfeCIDString& cidstr, PRTextWordType::Enum type, PdfeFont* pFont )
 {
+    this->init( cidstr, type, pFont );
 }
+PRTextWord::PRTextWord( double spaceWidth, double spaceHeight, PRTextWordType::Enum type )
+{
+    this->init( spaceWidth, spaceHeight, type );
+}
+
 void PRTextWord::init()
 {
     m_pdfString = PoDoFo::PdfString();
     m_cidString = PdfeCIDString();
-    m_length = 0;
-    m_bbox = PdfRect(0,0,0,0);
-    m_lastCharSpace = 0;
     m_type = PRTextWordType::Unknown;
+
+    m_advance = PdfeVector();
+    m_bbox = PdfRect( 0,0,0,0 );
+    m_charSpace = 0.0;
+}
+void PRTextWord::init( const PdfeCIDString& cidstr, PRTextWordType::Enum type, PdfeFont* pFont )
+{
+    this->init();
+
+    // Copy members.
+    m_cidString = cidstr;
+    m_type = type;
+    m_charSpace = pFont->charSpace();
+
+    // Compute advance vector and bbox.
+    m_advance = pFont->advance( cidstr );
+    m_bbox = pFont->bbox( cidstr );
+
+    // Check size for space words.
+    if( type == PRTextWordType::Space ) {
+        m_bbox.SetBottom( 0.0 );
+        m_bbox.SetHeight( pFont->spaceHeight() );
+
+        m_bbox.SetLeft( 0.0 );
+        m_bbox.SetWidth( m_advance(0) );
+    }
+}
+void PRTextWord::init( double spaceWidth, double spaceHeight, PRTextWordType::Enum type )
+{
+    this->init();
+
+    // Set type, advance vector and bbox.
+    m_type = type;
+    m_advance = PdfeVector( spaceWidth, 0.0 );
+    m_bbox = PdfRect( 0.0, 0.0, spaceWidth, spaceHeight );
 }
 
-PdfRect PRTextWord::bbox( bool lastSpace,
-                          bool useBottomCoord ) const
+PdfRect PRTextWord::bbox( bool useBottomCoord ) const
 {
     PdfRect bbox = m_bbox;
-    // Remove last character space.
-    if( !lastSpace ) {
-        bbox.SetWidth( bbox.GetWidth() - m_lastCharSpace );
-    }
     // Set bottom to zero.
     if( !useBottomCoord ) {
         bbox.SetHeight( bbox.GetHeight() + bbox.GetBottom() );
         bbox.SetBottom( 0.0 );
     }
     return bbox;
-}
-double PRTextWord::width( bool lastSpace ) const
-{
-    double width  = m_bbox.GetWidth();
-    if( !lastSpace ) {
-        width -= m_lastCharSpace;
-    }
-    return width;
-}
-void PRTextWord::setBBox( const PdfRect& bbox )
-{
-    m_bbox = bbox;
 }
 
 //**********************************************************//
@@ -155,7 +172,6 @@ void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStr
                           streamState.gStates.back().transMat,
                           streamState.gStates.back().textState,
                           pFont );
-
 }
 
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
@@ -184,13 +200,10 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
                 this->readPdfString( array[i].GetString(), pFont );
             }
             else if( array[i].IsReal() || array[i].IsNumber() ) {
-                // Read pdf space.
-                PRTextWord textWord( PRTextWordType::PDFTranslation,
-                                     1,
-                                     PdfRect( 0.0, 0.0, -array[i].GetReal() / 1000.0, pFont->spaceHeight() ),
-                                     0.0 );
-
-                m_words.push_back( textWord );
+                // Add PDF translation space.
+               m_words.push_back( PRTextWord( -array[i].GetReal() / 1000.0,
+                                               pFont->spaceHeight(),
+                                               PRTextWordType::PDFTranslation ) );
             }
         }
     }
@@ -202,8 +215,8 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 {
     // To CID string.
     PdfeCIDString cidstr = pFont->toCIDString( str );
-    std::string bufstr = str.GetString();
 
+    //std::string bufstr = str.GetString();
     //if( pFont->type() ==  PdfeFontType::Type0 )
 //    {
 //        QString ustr = pFont->toUnicode( str );
@@ -213,115 +226,68 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
 //                 << cidstr[4];
 //    }
 
-
     // Text parameters.
     double fontSize = m_textState.fontSize;
     double charSpace = m_textState.charSpace / fontSize;
     double wordSpace = m_textState.wordSpace / fontSize;
 
-    // Set font parameters (not necessary in theory).
-    pFont->setCharSpace( 0.0 );
+    // Set font parameters.
+    if( charSpace > MaxWordCharSpace ) {
+        pFont->setCharSpace( 0.0 );         // Char spaces are replaced.
+    }
+    else {
+        pFont->setCharSpace( charSpace );   // Keep char spaces.
+    }
+    pFont->setWordSpace( wordSpace );
     pFont->setFontSize( 1.0 );
     pFont->setHScale( 100. );
 
-    PdfRect cbbox;
-    //double cwidth = 1.0;
-
     // Read characters from the string.
-    size_t i = 0;
-    while( i < cidstr.length() ) {
-
-        // Length and bbox of the next word.
-        PRTextWordType::Enum type;
-        long length = 0;
-        double width = 0.0;
-        double bottom = std::numeric_limits<double>::max();
-        double top = std::numeric_limits<double>::min();
-        size_t idxFirst = i;
+    size_t idx = 0;
+    while( idx < cidstr.length() ) {
+        // Save the first character index.
+        size_t idxFirst = idx;
 
         // Read space word: use SpaceHeight for the character height.
-        if( pFont->isSpace( cidstr[i] ) ) {
+        if( pFont->isSpace( cidstr[idx] ) ) {
 
             // Read spaces (can be multiple...)
-            while( i < cidstr.length() && pFont->isSpace( cidstr[i] ) )
-            {
-                // Get bounding box of the character.
-                cbbox = pFont->bbox( cidstr[i], false );
-                //cwidth = pFont->width( cidstr[i], false );
-
-                // Word space to add.
-                width += cbbox.GetWidth();
-                if( pFont->isSpace( cidstr[i] ) == PdfeFontSpace::Code32 ) {
-                    width += wordSpace;
-                }
-
-                length++;
-                i++;
-
-                // Char space too large: divide the word and replace with pdf translation.
-                if( charSpace > MaxWordCharSpace ) {
-                    break;
-                }
-                else {
-                    width += charSpace;
-                }
+            while( idx < cidstr.length() && pFont->isSpace( cidstr[idx] ) ) {
+                ++idx;
             }
-            bottom = 0.0;
-            top = this->SpaceHeight;
-            top = pFont->spaceHeight();
-            type = PRTextWordType::Space;
+            // Create associated word.
+            m_words.push_back( PRTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
+                                           PRTextWordType::Space,
+                                           pFont ) );
         }
         // Read classic word.
         else {
-            // Read word characters.
-            while( i < cidstr.length() && !pFont->isSpace( cidstr[i] ) )
-            {
-                // Get bounding box of the character.
-                cbbox = pFont->bbox( cidstr[i], false );
-                // cwidth = pFont->width( cidstr[i], false );
-
-                width += cbbox.GetWidth();
-
-                // Update bottom and top.
-                bottom = std::min( bottom, cbbox.GetBottom() );
-                top = std::max( top, cbbox.GetBottom() + cbbox.GetHeight() );
-
-                length++;
-                i++;
-
-                // Char space too large: divide the word and replace with pdf translation.
-                if( charSpace > MaxWordCharSpace ) {
-                    break;
+            // Create two words when char space is too large.
+            if( charSpace > MaxWordCharSpace ) {
+                m_words.push_back( PRTextWord( cidstr.substr( idxFirst, 1 ),
+                                               PRTextWordType::Classic,
+                                               pFont ) );
+                m_words.push_back( PRTextWord( charSpace,
+                                               pFont->spaceHeight(),
+                                               PRTextWordType::PDFTranslationCS ) );
+                ++idx;
+            }
+            // Create classic word
+            else {
+                // Read word characters.
+                while( idx < cidstr.length() && !pFont->isSpace( cidstr[idx] ) ) {
+                    ++idx;
                 }
-                else {
-                    width += charSpace;
-                }
+                m_words.push_back( PRTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
+                                               PRTextWordType::Classic,
+                                               pFont ) );
             }
             // Minimal height: add half for bottom and top.
-            if( top-bottom <= this->MinimalHeight ) {
-                top += this->MinimalHeight / 2;
-                bottom -= this->MinimalHeight / 2;
-            }
-            type = PRTextWordType::Classic;
-        }
-        // Add word to the collection !
-        m_words.push_back( PRTextWord( type,
-                                       length,
-                                       PdfRect( 0.0, bottom, width, top-bottom ),
-                                       charSpace ) );
-        m_words.back().setPdfString( str );
-        m_words.back().setCIDString( cidstr.substr( idxFirst, i-idxFirst ) );
-
-        // Char space too large: replace with pdf translation.
-        if( charSpace > MaxWordCharSpace ) {
-            // Reset last char space to zero.
-            m_words.back().setLastCharSpace( 0.0 );
-
-            // Push back PDF translation word.
-            m_words.push_back( PRTextWord( PRTextWordType::PDFTranslationCS,
-                                           1,
-                                           PdfRect( 0.0, 0.0, charSpace, this->SpaceHeight ),
-                                           0.0 ) );
+//            if( top-bottom <= this->MinimalHeight ) {
+//                top += this->MinimalHeight / 2;
+//                bottom -= this->MinimalHeight / 2;
+//            }
+//            type = PRTextWordType::Classic;
         }
     }
 }
@@ -335,24 +301,33 @@ void PRTextGroupWords::appendWord( const PRTextWord& word )
     this->buildMainSubGroups();
 }
 
-double PRTextGroupWords::width( bool leadTrailSpaces ) const
-{
-    // Width of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.width( leadTrailSpaces );
-}
-double PRTextGroupWords::height() const
-{
-    // Height of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.height();
-}
-
 size_t PRTextGroupWords::length( bool countSpaces ) const
 {
     // Length of the complete subgroup.
     Subgroup globalSubgroup( *this );
     return globalSubgroup.length( countSpaces );
+}
+
+PdfeVector PRTextGroupWords::advance() const
+{
+    // Advance vector of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.advance( true );
+}
+PdfeVector PRTextGroupWords::displacement() const
+{
+    PdfeVector displacement = this->advance();
+    displacement(0) = displacement(0) * m_textState.fontSize * ( m_textState.hScale / 100. );
+    displacement(1) = displacement(1) * m_textState.fontSize;
+    return displacement;
+}
+PdfeORect PRTextGroupWords::bbox(bool pageCoords,
+                                 bool leadTrailSpaces,
+                                 bool useBottomCoord ) const
+{
+    // Bounding box of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
 }
 
 PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
@@ -366,25 +341,6 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     textMat = tmpMat * m_textState.transMat * m_transMatrix;
 
     return textMat;
-}
-
-PdfeORect PRTextGroupWords::bbox(bool pageCoords,
-                                 bool leadTrailSpaces,
-                                 bool useBottomCoord ) const
-{
-    // Bounding box of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
-}
-PdfeVector PRTextGroupWords::displacement() const
-{
-    PdfeVector textDispl;
-
-    // Compute displacement. TODO: vertical component.
-    textDispl(0) = this->width( true ) * m_textState.fontSize * ( m_textState.hScale / 100. );
-    textDispl(1) = 0.0;
-
-    return textDispl;
 }
 
 double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
@@ -522,6 +478,51 @@ void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGr
     }
 }
 
+size_t PRTextGroupWords::Subgroup::length( bool countSpaces ) const
+{
+    size_t length = 0;
+    for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
+        // Current word.
+        const PRTextWord& word = m_pGroup->word( i );
+        if( m_wordsInside[i] &&
+            ( word.type() == PRTextWordType::Classic ||
+            ( word.type() == PRTextWordType::Space && countSpaces ) ) ) {
+            length += word.length();
+        }
+    }
+    return length;
+}
+PdfeVector PRTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
+{
+    // Handle the case of an empty group.
+    PdfeVector advance;
+    if( !m_wordsInside.size() ) {
+        return advance;
+    }
+
+    // First and last indexes to consider.
+    long idxFirst = 0;
+    if( !useGroupOrig ) {
+        while( idxFirst < static_cast<long>( m_wordsInside.size() ) && !m_wordsInside[idxFirst] ) {
+            ++idxFirst;
+        }
+    }
+    long idxLast = static_cast<long>( m_wordsInside.size() ) - 1;
+    while( idxLast >= 0L && !m_wordsInside[idxLast] ) {
+        --idxLast;
+    }
+    // Check indexes. If wrong, return 0 advance vector
+    if( idxFirst >= static_cast<long>( m_wordsInside.size() ) || idxLast < 0L || idxFirst > idxLast ) {
+        return advance;
+    }
+
+    // Compute advance vector.
+    for( long i = idxFirst ; i <= idxLast ; ++i ) {
+        const PRTextWord& word = m_pGroup->word( i );
+        advance += word.advance();
+    }
+    return advance;
+}
 PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
@@ -539,8 +540,7 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
     while( idxLast >= 0L && !m_wordsInside[idxLast] ) {
         --idxLast;
     }
-
-    // Check the indexes. If wrong, return empty bbox.
+    // Check indexes. If wrong, return empty bbox.
     if( idxFirst >= static_cast<long>( m_wordsInside.size() ) || idxLast < 0L || idxFirst > idxLast ) {
         return bbox;
     }
@@ -550,32 +550,27 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
     double bottom = std::numeric_limits<double>::max();
     double top = std::numeric_limits<double>::min();
 
-    // Sum of words width.
-    double widthSum = 0.0;
-
     // Compute bounding box.
+    PdfeVector advance;
     for( long i = 0 ; i < static_cast<long>( m_wordsInside.size() ) ; ++i ) {
         // Current word and its bounding box.
         const PRTextWord& word = m_pGroup->word( i );
-        PdfRect bboxWord = word.bbox( true, useBottomCoord );
+        PdfRect wbbox = word.bbox( useBottomCoord );
 
         // If inside the subgroup, update coordinates (remove spaces if needed).
         if( this->inside( i ) && i >= idxFirst && i <= idxLast &&
                 ( leadTrailSpaces || word.type() == PRTextWordType::Classic )  ) {
-            left = std::min( left, widthSum + bboxWord.GetLeft() );
-            right = std::max( right, widthSum + bboxWord.GetLeft() + bboxWord.GetWidth() );
-            bottom = std::min( bottom, bboxWord.GetBottom() );
-            top = std::max( top, bboxWord.GetBottom() + bboxWord.GetHeight() );
-
-        }
-        widthSum += bboxWord.GetWidth();
+           left = std::min( left, advance(0) + wbbox.GetLeft() );
+            bottom = std::min( bottom, advance(1) + wbbox.GetBottom() );
+            right = std::max( right, advance(0) + wbbox.GetLeft() + wbbox.GetWidth() );
+            top = std::max( top, advance(1) + wbbox.GetBottom() + wbbox.GetHeight() );
+       }
+        advance += word.advance();
     }
-
     // Strange coordinates, return empty bbox.
     if( left > right || bottom > top ) {
         return bbox;
     }
-
     // Set bounding box coordinates.
     bbox.setWidth( right - left );
     bbox.setLeftBottom( PdfeVector( left, bottom ) );
@@ -587,32 +582,6 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
         bbox = textMat.map( bbox );
     }
     return bbox;
-}
-double PRTextGroupWords::Subgroup::width( bool leadTrailSpaces ) const
-{
-    // Get bounding box.
-    PdfeORect bbox = this->bbox( false, leadTrailSpaces, true );
-    return bbox.width();
-}
-double PRTextGroupWords::Subgroup::height() const
-{
-    // Get bounding box.
-    PdfeORect bbox = this->bbox( false, true, true );
-    return bbox.height();
-}
-size_t PRTextGroupWords::Subgroup::length( bool countSpaces ) const
-{
-    size_t length = 0;
-    for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
-        // Current word.
-        const PRTextWord& word = m_pGroup->word( i );
-        if( m_wordsInside[i] &&
-            ( word.type() == PRTextWordType::Classic ||
-            ( word.type() == PRTextWordType::Space && countSpaces ) ) ) {
-            length += word.length();
-        }
-    }
-    return length;
 }
 
 PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::intersection( const PRTextGroupWords::Subgroup& subgroup1,

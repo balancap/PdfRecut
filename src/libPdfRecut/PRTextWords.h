@@ -21,8 +21,8 @@
 #ifndef PRTEXTWORDS_H
 #define PRTEXTWORDS_H
 
+#include "podofo/base/PdfString.h"
 #include "PdfeGraphicsState.h"
-#include "PdfeFont.h"
 
 namespace PoDoFo {
 class PdfPage;
@@ -32,6 +32,7 @@ class PdfVariant;
 }
 
 namespace PoDoFoExtended {
+class PdfeFont;
 class PdfeStreamState;
 }
 
@@ -57,75 +58,89 @@ enum Enum {
 }
 
 /** Class that represents a single word from a PDF stream.
+ * It is characterized by a corresponding CID string.
+ * Metrics (advance and bbox) are given in renormalized units, i.e.
+ * Fontsize = 1.0, hScale = 100. and char/word space are renormalized using fontsize.
  */
 class PRTextWord
 {
 public:
-    /** Default constructor.
+    /** Default empty constructor.
      */
     PRTextWord();
-    /** Constructor used to set members.
+    /** Constructor based on a CID string (classic or space words).
+     * \param cidstr CID string representing the word.
+     * \param type Type of the word.
+     * \param pFont Pointer to the font object used for the word.
      */
-    PRTextWord( PRTextWordType::Enum type,
-                long length,
-                const PoDoFo::PdfRect& bbox,
-                double lastCharSpace );
+    PRTextWord( const PdfeCIDString& cidstr,
+                PRTextWordType::Enum type,
+                PoDoFoExtended::PdfeFont* pFont );
+    /** Constructor of PDF translation space.
+     * \param spaceWidth Space width.
+     * \param spaceHeight Space height.
+     * \param type Type of the space.
+     */
+    PRTextWord( double spaceWidth,
+                double spaceHeight,
+                PRTextWordType::Enum type );
 
     /** Initialize to an empty word.
      */
     void init();
+    /** Initialization based on a CID string.
+     * \param cidstr CID string representing the word.
+     * \param type Type of the word.
+     * \param pFont Pointer to the font object used for the word.
+     */
+    void init( const PdfeCIDString& cidstr,
+               PRTextWordType::Enum type,
+               PoDoFoExtended::PdfeFont* pFont );
+    /** Initialization of PDF translation space.
+     * \param spaceWidth Space width.
+     * \param spaceHeight Space height.
+     * \param type Type of the space.
+     */
+    void init( double spaceWidth,
+               double spaceHeight,
+               PRTextWordType::Enum type );
 
 public:
-    // Getters...
-    long length() const                 {   return m_length;    }
+    // Simple getters...
+    long length() const                 {   return m_cidString.length();    }
+    double charSpace() const            {   return m_charSpace;     }
     PRTextWordType::Enum type() const   {   return m_type;    }
-    double lastCharSpace() const        {   return m_lastCharSpace;    }
     const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
     const PdfeCIDString& cidString() const      {   return m_cidString; }
 
-    // and setters.
-    void setLength( long length )                   {   m_length = length;  }
-    void setType( PRTextWordType::Enum type )       {   m_type = type;  }
-    void setLastCharSpace( double lastCharSpace )   {   m_lastCharSpace = lastCharSpace;  }
-    void setPdfString( const PoDoFo::PdfString& rhs )   {   m_pdfString = rhs;  }
-    void setCIDString( const PdfeCIDString& rhs )       {   m_cidString = rhs;  }
-
 public:
+    /** Get word advance/displacement vector.
+     * \return Advance vector of the word.
+     */
+    PdfeVector advance() const {
+        return m_advance;
+    }
     /** Get word bounding box.
-     * \param lastSpace Include last char space in width ? (default = true)
-     * \param useBottomCoord Use the bottom coordinate of the bbox (unless set to 0).
+     * \param useBottomCoord Use the bottom coordinate of bbox?
      * \return Rectangle containing the bounding box.
      */
-    PoDoFo::PdfRect bbox( bool lastSpace = true,
-                          bool useBottomCoord = true ) const;
-
-    /** Set the bounding box of the word (last char space included).
-     * \param bbox New bounding box.
-     */
-    void setBBox( const PoDoFo::PdfRect& bbox );
-
-    /** Get word width.
-     * \param lastSpace Include last char space in width ? (default = true)
-     * \return Width of the word.
-     */
-    double width( bool lastSpace ) const;
+    PoDoFo::PdfRect bbox( bool useBottomCoord ) const;
 
 private:
     /// Pdf string corresponding to the word. TODO: not working !
     PoDoFo::PdfString  m_pdfString;
     /// CID string corresponding to the word.
     PdfeCIDString  m_cidString;
-
     /// Word type.
     PRTextWordType::Enum  m_type;
-    /// Length: number of characters.
-    long  m_length;
 
-    /// Bounding box representing the word in local coordinates (includes last char space).
-    /// Always assume the left coordinate of the word is set to 0.
+    /// Advance vector of the word.
+    PdfeVector  m_advance;
+    /// Bounding box representing the word in local coordinates.
     PoDoFo::PdfRect  m_bbox;
-    /// Width of the last char space (usually zero...).
-    double  m_lastCharSpace;
+
+    /// Char space parameter used for the word.
+    double  m_charSpace;
 };
 
 //**********************************************************//
@@ -206,27 +221,20 @@ public:
      */
     void appendWord( const PRTextWord& word );
 
-    /** Compute the width of the group of words.
-     * \param leadTrailSpaces Include leading and trailing spaces ?
-     * \return Width of the group of words.
-     */
-    double width( bool leadTrailSpaces ) const;
-
-    /** Compute the height of the group of words.
-     * \return Height of the group of words.
-     */
-    double height() const;
-
     /** Compute the length of the group of words.
      * \param countSpaces Also count spaces?
      * \return Length of the group of words.
      */
     size_t length( bool countSpaces ) const;
 
-    /** Get global transformation matrix (font + text + gState).
-     * \return PdfeMatrix containing the transformation.
+    /** Get the advance vector of the group of words.
+     * \return Advance vector of the group.
      */
-    PdfeMatrix getGlobalTransMatrix() const;
+    PdfeVector advance() const;
+    /** Get the displacement vector of the group of words.
+     * \return Displacement vector of the group.
+     */
+    PdfeVector displacement() const;
 
     /** Get the bounding box of the group of words.
      * \param pageCoords In page coordinates (true) or local coordinates (false) ?
@@ -238,10 +246,10 @@ public:
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
 
-    /** Compute the displacement vector of the group of words.
-     * \return Displacement vector (horizontal and vertical components).
+    /** Get global transformation matrix (font + text + gState).
+     * \return PdfeMatrix containing the transformation.
      */
-    PdfeVector displacement() const;
+    PdfeMatrix getGlobalTransMatrix() const;
 
     /** Minimal distance between the object and another group.
      * Use subgroups to compute the distance.
@@ -320,7 +328,7 @@ protected:
     /// Minimal height for a character.
     static const double MinimalHeight = 0.2;
     /// Max char space allowed inside a word: when greater, split the word and replace char space by PDF translation.
-    static const double MaxWordCharSpace = -10.0;
+    static const double MaxWordCharSpace = 0.2;
 
 protected:
     /// Index of the page to which belongs the group.
@@ -404,6 +412,19 @@ public:
      */
     const PRTextWord* word( size_t idxWord ) const;
 
+    /** Compute the length of the subgroup of words.
+     * \param countSpaces Also count spaces?
+     * \return Length of the subgroup of words.
+     */
+    size_t length( bool countSpaces = true ) const;
+
+    /** Get the advance/displacement vector of the subgroup of words.
+     * Consider advance vectors of every words inside the interval [first,last].
+     * \param useGroupOrig Use the first word of the group as origin.
+     * \return Advance vector of the group.
+     */
+    PdfeVector advance( bool useGroupOrig ) const;
+
     /** Get the bounding box of the subgroup of words.
      * \param pageCoords In page coordinates (true) or local coordinates (false) ?
      * \param leadTrailSpaces Include leading and trailing spaces ?
@@ -413,23 +434,6 @@ public:
     PdfeORect bbox( bool pageCoords = true,
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
-
-    /** Compute the width of the subgroup of words.
-     * \param leadTrailSpaces Include leading and trailing spaces ?
-     * \return Width of the subgroup of words.
-     */
-    double width( bool leadTrailSpaces = true ) const;
-
-    /** Compute the height of the subgroup of words.
-     * \return Height of the subgroup of words.
-     */
-    double height() const;
-
-    /** Compute the length of the subgroup of words.
-     * \param countSpaces Also count spaces?
-     * \return Length of the subgroup of words.
-     */
-    size_t length( bool countSpaces = true ) const;
 
     /** Is the subgroup empty? Meaning to that no word belongs to it.
      * \return True if empty, false otherwise.

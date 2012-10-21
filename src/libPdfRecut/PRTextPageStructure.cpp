@@ -210,7 +210,8 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
             }
         }
         // Add group width (without spaces).
-        lGroupsCumulWidth += lGroupWords.width( false );
+        lGroupsCumulWidth += lGroupWords.bbox( false, false, true ).width();
+//        lGroupsCumulWidth += lGroupWords.width( false );
         if( lGroupsCumulWidth > MaxCumulWidth ) {
             break;
         }
@@ -428,7 +429,7 @@ PRTextLine* PRTextPageStructure::mergeLines_Inside( PRTextLine* pLine )
                     bool groupMerge = ( distBegin <= MaxDistanceInside ||
                                         distEnd <= MaxDistanceInside ) &&
                             ( m_pGroupsWords[i]->length( false ) <= MaxLengthInside ||
-                              m_pGroupsWords[i]->width( true ) <= MaxWidthInside );
+                              m_pGroupsWords[i]->bbox( false, false, true ).width() <= MaxWidthInside );
 
                     // Merge lines...
                     if( groupMerge ) {
@@ -484,7 +485,8 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
             PRTextGroupWords* pGroup2nd = m_pGroupsWords[j];
             PRTextLine* pLine2nd = pGroup2nd->textLines().at(0);
 
-            widthCumulBefore += pGroup2nd->width( true );
+//            widthCumulBefore += pGroup2nd->width( true );
+            widthCumulBefore += pGroup2nd->bbox( false, false, true ).width();
 
             // Consider the group ?
             if( widthCumulBefore <= MaxWidthCumul && distMaxBefore <= MaxDistCumul &&
@@ -520,7 +522,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
             PRTextGroupWords* pGroup2nd = m_pGroupsWords[j];
             PRTextLine* pLine2nd = pGroup2nd->textLines().at((0));
 
-            widthCumulAfter += pGroup2nd->width( true );
+            widthCumulAfter += pGroup2nd->bbox( false, false, true ).width();
 
             // Consider the group ?
             if( widthCumulAfter <= MaxWidthCumul && distMaxAfter <= MaxDistCumul &&
@@ -665,8 +667,8 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
     PRRenderParameters renderParameters;
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
-//    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-//    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
+    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
 
 //    renderParameters.textPB.drawPen = new QPen( Qt::blue );
 //    renderParameters.textSpacePB.drawPen = new QPen( Qt::blue );
@@ -683,19 +685,19 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 
         // Modify rendering colors.
         renderParameters.textPB.fillBrush->setColor( groupColor );
-//        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
-//        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
+        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
+        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
 //        m_renderParameters.textPB.drawPen->setColor( groupColor );
 //        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
 //        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
 
         // Draw the group on the page.
-       renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
+        renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
         renderPage.textRenderGroup( *m_pGroupsWords[idx] );
 //        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }
-void PRTextPageStructure::renderTextLines(PRRenderPage &renderPage)
+void PRTextPageStructure::renderTextLines( PRRenderPage& renderPage )
 {
     // Words rendering parameters.
     PRRenderParameters renderParameters;

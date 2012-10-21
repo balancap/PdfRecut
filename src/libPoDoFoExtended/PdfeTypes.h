@@ -226,7 +226,8 @@ public:
     /** Initialize vector to (0,0).
      */
     void init() {
-        this->at(0,0) = this->at(0,1) = 0;
+        this->at(0,0) = 0;
+        this->at(0,1) = 0;
         this->at(0,2) = 1;
     }
     /** Initialize vector to (x,y).

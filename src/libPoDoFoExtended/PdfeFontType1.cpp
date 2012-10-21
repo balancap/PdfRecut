@@ -141,7 +141,7 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
             if( gid ) {
                 PdfRect glyphBBox = this->ftGlyphBBox( ftFace(), gid );
                 if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
-                    glyphBBox = m_bboxCID[c - m_firstCID];
+                    m_bboxCID[c - m_firstCID] = glyphBBox;
                 }
             }
         }

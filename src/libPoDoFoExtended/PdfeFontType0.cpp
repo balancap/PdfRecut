@@ -276,6 +276,7 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
         m_firstCID.push_back( 0 );
         m_lastCID.push_back( 0 );
         m_bboxCID.push_back( std::vector<PdfRect>() );
+        m_advanceCID.push_back( std::vector<PdfeVector>() );
 
         // First CID value.
         m_firstCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );

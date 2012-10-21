@@ -388,7 +388,7 @@ void PRRenderPage::textDrawGroup( const PRTextGroupWords& groupWords,
     this->textDrawSubgroup( PRTextGroupWords::Subgroup( groupWords, true ), parameters );
 }
 void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
-                                          const PRRenderParameters& parameters )
+                                     const PRRenderParameters& parameters )
 {
     // Nothing to draw or can not draw...
     PRTextGroupWords* pGroup = subgroup.group();
@@ -403,7 +403,7 @@ void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
     m_pagePainter->setTransform( textMat.toQTransform() );
 
     // Paint words.
-    double widthStr = 0;
+    PdfeVector advance;
     for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
         const PRTextWord& word = pGroup->word( i );
         // Set pen & brush
@@ -418,11 +418,14 @@ void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
             parameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if it is inside the subgroup and the width is positive !
-        PdfRect bbox = word.bbox( false, true );
+        PdfRect bbox = word.bbox( true );
         if( subgroup.inside( i ) && bbox.GetWidth() >= 0) {
-            m_pagePainter->drawRect( QRectF( widthStr, bbox.GetBottom(), bbox.GetWidth(), bbox.GetHeight() ) );
+            m_pagePainter->drawRect( QRectF( advance(0) + bbox.GetLeft(),
+                                             advance(1) + bbox.GetBottom(),
+                                             bbox.GetWidth(),
+                                             bbox.GetHeight() ) );
         }
-        widthStr += word.width( true );
+        advance += word.advance();
     }
 }
 void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
@@ -455,14 +458,8 @@ void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
     //m_pagePainter->setRenderHint( QPainter::Antialiasing, true );
     //m_pagePainter->setRenderHint( QPainter::SmoothPixmapTransform, true );
 
-    // Set font parameters.
+    // Font.
     PdfeFont* pFont = groupWords.font();
-    double charSpace = groupWords.textState().charSpace / groupWords.textState().fontSize;
-    double wordSpace = groupWords.textState().wordSpace / groupWords.textState().fontSize ;
-    pFont->setCharSpace( 0.0 );
-    pFont->setWordSpace( 0.0 );
-    pFont->setFontSize( 1.0 );
-    pFont->setHScale( 100. );
 
     // Transformation matrix.
     PdfeMatrix transMat, tmpMat;
@@ -470,6 +467,7 @@ void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
     m_pagePainter->setTransform( transMat.toQTransform() );
 
     // Render glyphs of every word.
+    PdfeVector advance;
     for( size_t i = 0 ; i < groupWords.nbWords() ; ++i ) {
         const PRTextWord& word = groupWords.word( i );
 
@@ -483,43 +481,26 @@ void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
                 // Render glyph.
                 if( gid ) {
                     // TODO: set resolution and size.
-                    PdfRect bbox = pFont->ftGlyphBBox( gid );
+                    PdfRect bbox = pFont->bbox( cidstr[j], false );
                     PdfeFont::GlyphImage glyphRender = pFont->ftGlyphRender( gid, 100, 100 );
                     glyphRender.image = glyphRender.image.mirrored( false, true );
 
                     // Draw it on the page.
-                    m_pagePainter->drawImage( QRectF( bbox.GetLeft() * 0.001,
-                                                      bbox.GetBottom() * 0.001,
-                                                      bbox.GetWidth() * 0.001,
-                                                      bbox.GetHeight() * 0.001 ),
+                    m_pagePainter->drawImage( QRectF( bbox.GetLeft() + advance(0),
+                                                      bbox.GetBottom() + advance(1),
+                                                      bbox.GetWidth(),
+                                                      bbox.GetHeight() ),
                                               glyphRender.image );
                 }
-
-                double width = pFont->width( cidstr[j], false );
-                width = pFont->bbox( cidstr[j], false ).GetWidth();
-                if( pFont->isSpace( cidstr[j] ) == PdfeFontSpace::Code32 ) {
-                    width += wordSpace;
-                }
-                // Char space too large: divide the word and replace with pdf translation.
-//                if( charSpace <= PRTextGroupWords::MaxWordCharSpace ) {
-//                    width += charSpace;
-//                }
-
-                //width += charSpace;
-
-                // Update transformation matrix.
-                tmpMat(2,0) = width;
-                tmpMat(2,1) = 0.0;
-                transMat = tmpMat * transMat;
-                m_pagePainter->setTransform( transMat.toQTransform() );
+                // Update advance vector.
+                advance += pFont->advance( cidstr[j], false );
+                advance(0) += word.charSpace();
+                //advance(1) += word.charSpace();
             }
         }
         else {
-            // Update transformation matrix.
-            tmpMat(2,0) = word.width( true );
-            tmpMat(2,1) = 0.0;
-            transMat = tmpMat * transMat;
-            m_pagePainter->setTransform( transMat.toQTransform() );
+            // Update advance vector
+            advance += word.advance();
         }
     }
 }

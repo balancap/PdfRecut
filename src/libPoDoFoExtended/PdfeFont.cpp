@@ -130,14 +130,17 @@ PdfeVector PdfeFont::advance( const PdfeCIDString& str ) const
         // Space character 32: add word spacing.
         if( this->isSpace( c ) == PdfeFontSpace::Code32 ) {
             advance(0) += m_wordSpace / m_fontSize;
-            advance(1) += m_wordSpace / m_fontSize ;
+            // TODO: vertical fonts.
+            //advance(1) += m_wordSpace / m_fontSize ;
         }
     }
     // Adjust using font parameters.
     advance(0) = advance(0) * m_fontSize * ( m_hScale / 100. );
     advance(0) += m_charSpace * str.length() * ( m_hScale / 100. );
-    advance(1) = advance(1) * m_fontSize;
-    advance(1) += m_charSpace * str.length();
+
+    // TODO: vertical fonts.
+    //advance(1) = advance(1) * m_fontSize;
+    //advance(1) += m_charSpace * str.length();
 
     return advance;
 }
@@ -540,11 +543,12 @@ void PdfeFont::applyFontParameters( PdfeVector& advance, bool space32 ) const
 {
     // Apply font parameters.
     advance(0) = ( advance(0) * m_fontSize + m_charSpace ) * ( m_hScale / 100. );
-    advance(1) = advance(1) * m_fontSize + m_charSpace;
+    //advance(1) = advance(1) * m_fontSize + m_charSpace;
     if( space32 ) {
         advance(0) += m_wordSpace * ( m_hScale / 100. );
-        advance(1) += m_wordSpace;
+        //advance(1) += m_wordSpace;
     }
+    // TODO: vertical fonts.
 }
 void PdfeFont::applyFontParameters( PdfRect& bbox, bool space32 ) const
 {
@@ -717,7 +721,7 @@ PdfeFont14Standard::Enum PdfeFont::isStandard14Font( const std::string& fontName
     };
 
     // Find the font name in the list.
-    for( int i = 0 ; i <= 14 ; ++i ) {
+    for( int i = 0 ; i < 14 ; ++i ) {
         for( int j = 0 ; std14FontNames[i][j] ; ++j ) {
             if( fontName == std14FontNames[i][j] ) {
                 return PdfeFont14Standard::Enum( i );
