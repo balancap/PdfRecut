@@ -39,7 +39,9 @@
 
 using namespace PdfRecut;
 using namespace PoDoFo;
+using namespace PoDoFoExtended;
 using namespace std;
+
 
 void readTokens( PdfDocument& doc, int pageIdx )
 {
@@ -64,7 +66,6 @@ void pageExtract( PdfDocument& doc, int page )
     for(int i=0 ; doc.GetPageCount() > 1 ; i++)
         doc.GetPagesTree()->DeletePage(1);
 }
-
 void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
 {
     PdfPage* page;
@@ -120,7 +121,6 @@ void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
         docLayout.addPageZone(2*i+1, pageZone);
     }
 }
-
 void proceedFile( QString filePath )
 {
     // Document objects.
@@ -138,6 +138,10 @@ void proceedFile( QString filePath )
     cout << " >>> Opening Pdf file..." << endl;
     document.loadPoDoFoDocument();
     //document.loadPopplerDocument();
+
+
+    // Create standard fonts...
+    PdfeFontType1 helvetica( PdfeFont14Standard::Helvetica, document.ftLibrary() );
 
     // Generate a PdfDocumentLayout
 //    cout << " >>> Generating a Pdf Document Layout..." << endl;

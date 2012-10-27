@@ -57,7 +57,7 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Standard 14 font?
     if( pFontName && ( PdfeFont::isStandard14Font( m_baseFont.GetName() ) != PdfeFont14Standard::None ) ) {
-        this->initStandard14Font( pFont );
+        this->initStandard14Font( m_baseFont, pFont );
         return;
     }
 
@@ -97,6 +97,20 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
     // Log font information.
     this->initLogInformation();
 }
+PdfeFontType1::PdfeFontType1( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary ) :
+    PdfeFont( stdFontType, ftLibrary )
+{
+    this->init();
+    this->setType( PdfeFontType::Type1 );
+    this->setSubtype( PdfeFontSubType::Type1 );
+
+    // Font name corresponding.
+    m_baseFont = PdfName( standard14FontName( stdFontType ) );
+
+    // Init standard font object.
+    this->initStandard14Font( m_baseFont, NULL );
+}
+
 void PdfeFontType1::init()
 {
     // Initialize members to default values.
@@ -152,10 +166,11 @@ void PdfeFontType1::initCharactersBBox( const PdfObject* pFont )
         }
     }
 }
-void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
+
+void PdfeFontType1::initStandard14Font( const PdfName& fontName, const PdfObject* pFont )
 {
     // Read base font (required for standard font!).
-    m_baseFont = pFont->GetIndirectKey( "BaseFont" )->GetName();
+    m_baseFont = fontName;
 
     // Get PoDoFo Metrics object and set metrics paramters.
     PdfFontMetricsBase14* pMetrics = PODOFO_Base14FontDef_FindBuiltinData( m_baseFont.GetName().c_str() );
@@ -185,7 +200,11 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
     m_fontDescriptor.setXHeight( 500. );
 
     // Create associate encoding object.
-    PdfObject* pEncodingObj = pFont->GetIndirectKey( "Encoding" );
+    PdfObject* pEncodingObj = NULL;
+    if( pFont ) {
+        pEncodingObj = pFont->GetIndirectKey( "Encoding" );
+    }
+
     if( pEncodingObj ) {
         this->initEncoding( pEncodingObj );
     }
@@ -202,8 +221,10 @@ void PdfeFontType1::initStandard14Font( const PoDoFo::PdfObject* pFont )
                             false );
     }
     // Unicode CMap.
-    PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
-    this->initUnicodeCMap( pUnicodeCMap );
+    if( pFont ) {
+        PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
+        this->initUnicodeCMap( pUnicodeCMap );
+    }
 
     // FreeType font face.
     this->initFTFace( m_fontDescriptor );

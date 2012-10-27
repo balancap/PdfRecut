@@ -117,6 +117,11 @@ public:
      * \param ftLibrary FreeType library.
      */
     PdfeFont( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
+    /** Create a PdfeFont corresponding to a standard 14 font.
+     * \param stdFontType Type of the standard font.
+     * \param ftLibrary FreeType library.
+     */
+    PdfeFont( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -374,10 +379,15 @@ public:
 
 protected:
     /** Does a font name corresponds to the name of a standard 14 font?
-     * \param pFont Font object.
+     * \param fontName Name of the font.
      * \return PdfeFont14Standard value. None if it is not.
      */
     static PdfeFont14Standard::Enum isStandard14Font( const std::string& fontName );
+    /** Get the name (most used) of a standard 14 font.
+     * \param stdFontType Type of the standard font.
+     * \return Font name.
+     */
+    static std::string standard14FontName( PdfeFont14Standard::Enum stdFontType );
     /** Get the path (and filename) of a standard 14 font.
      * \param stdFontType Type of the standard font.
      * \return Path of the font file (empty if not found).
@@ -394,6 +404,10 @@ protected:
      * By convention the first one is the classic space 0x0020.
      */
     static const std::vector<QChar>& spaceCharacters();
+
+private:
+    /// Standard font names (multiple given for each font).
+    static const char* Standard14FontNames[][10];
 
 private:
     // Members

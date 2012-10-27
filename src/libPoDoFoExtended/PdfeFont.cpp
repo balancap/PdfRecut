@@ -35,6 +35,37 @@ namespace PoDoFoExtended {
 //**********************************************************//
 QDir PdfeFont::Standard14FontsDir;
 
+const char* PdfeFont::Standard14FontNames[][10] =
+{
+    { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
+        "TimesNewRomanPS", NULL },
+    { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
+        "TimesNewRomanPS-Bold", "TimesNewRoman-Bold", NULL },
+    { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
+        "TimesNewRomanPS-Italic", "TimesNewRoman-Italic", NULL },
+    { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
+        "TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
+        "TimesNewRoman-BoldItalic", NULL },
+    { "Helvetica", "ArialMT", "Arial", NULL },
+    { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
+        "Helvetica,Bold", NULL },
+    { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
+        "Helvetica,Italic", "Helvetica-Italic", NULL },
+    { "Helvetica-BoldOblique", "Arial-BoldItalicMT",
+        "Arial,BoldItalic", "Arial-BoldItalic",
+        "Helvetica,BoldItalic", "Helvetica-BoldItalic", NULL },
+    { "Courier", "CourierNew", "CourierNewPSMT", NULL },
+    { "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
+        "CourierNewPS-BoldMT", "CourierNew-Bold", NULL },
+    { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
+        "CourierNewPS-ItalicMT", "CourierNew-Italic", NULL },
+    { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
+        "CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", NULL },
+    { "Symbol", "Symbol,Italic", "Symbol,Bold", "Symbol,BoldItalic",
+        "SymbolMT", "SymbolMT,Italic", "SymbolMT,Bold", "SymbolMT,BoldItalic", NULL },
+    { "ZapfDingbats", NULL }
+};
+
 PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary ) :
     m_ftLibrary( NULL ), m_ftFace( NULL ),
     m_pEncoding( NULL ), m_encodingOwned( false )
@@ -53,6 +84,14 @@ PdfeFont::PdfeFont( PdfObject* pFont, FT_Library ftLibrary ) :
     }
     m_ftLibrary = ftLibrary;
 }
+PdfeFont::PdfeFont( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary ) :
+    m_ftLibrary( NULL ), m_ftFace( NULL ),
+    m_pEncoding( NULL ), m_encodingOwned( false )
+{
+    this->init();
+    m_ftLibrary = ftLibrary;
+}
+
 void PdfeFont::init()
 {
     // Destroy objects if necessary.
@@ -665,47 +704,19 @@ pdfe_gid PdfeFont::ftGIDFromName( const PdfName& charName ) const
 
 PdfeFont14Standard::Enum PdfeFont::isStandard14Font( const std::string& fontName )
 {
-    // Known names for standard 14 fonts.
-    static const char* std14FontNames[][10] =
-    {
-        { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
-            "TimesNewRomanPS", NULL },
-        { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
-            "TimesNewRomanPS-Bold", "TimesNewRoman-Bold", NULL },
-        { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
-            "TimesNewRomanPS-Italic", "TimesNewRoman-Italic", NULL },
-        { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
-            "TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
-            "TimesNewRoman-BoldItalic", NULL },
-        { "Helvetica", "ArialMT", "Arial", NULL },
-        { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
-            "Helvetica,Bold", NULL },
-        { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
-            "Helvetica,Italic", "Helvetica-Italic", NULL },
-        { "Helvetica-BoldOblique", "Arial-BoldItalicMT",
-            "Arial,BoldItalic", "Arial-BoldItalic",
-            "Helvetica,BoldItalic", "Helvetica-BoldItalic", NULL },
-        { "Courier", "CourierNew", "CourierNewPSMT", NULL },
-        { "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
-            "CourierNewPS-BoldMT", "CourierNew-Bold", NULL },
-        { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
-            "CourierNewPS-ItalicMT", "CourierNew-Italic", NULL },
-        { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
-            "CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", NULL },
-        { "Symbol", "Symbol,Italic", "Symbol,Bold", "Symbol,BoldItalic",
-            "SymbolMT", "SymbolMT,Italic", "SymbolMT,Bold", "SymbolMT,BoldItalic", NULL },
-        { "ZapfDingbats", NULL }
-    };
-
     // Find the font name in the list.
     for( int i = 0 ; i < 14 ; ++i ) {
-        for( int j = 0 ; std14FontNames[i][j] ; ++j ) {
-            if( fontName == std14FontNames[i][j] ) {
+        for( int j = 0 ; Standard14FontNames[i][j] ; ++j ) {
+            if( fontName == Standard14FontNames[i][j] ) {
                 return PdfeFont14Standard::Enum( i );
             }
         }
     }
     return PdfeFont14Standard::None;
+}
+std::string PdfeFont::standard14FontName( PdfeFont14Standard::Enum stdFontType )
+{
+    return Standard14FontNames[ stdFontType ][0];
 }
 QString PdfeFont::standard14FontPath( PdfeFont14Standard::Enum stdFontType )
 {

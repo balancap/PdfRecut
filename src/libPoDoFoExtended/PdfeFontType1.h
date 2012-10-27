@@ -39,6 +39,11 @@ public:
      * \param pFont Pointer to the object where is defined the type 1 font.
      */
     PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
+    /** Create a PdfeFontType1 corresponding to a standard 14 font.
+     * \param stdFontType Type of the standard font.
+     * \param ftLibrary FreeType library.
+     */
+    PdfeFontType1( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary );
 
     /** Initialize the object to default parameters.
      */
@@ -59,9 +64,11 @@ protected:
     void initCharactersBBox( const PoDoFo::PdfObject* pFont );
 
     /** Initialize the font as one of the 14 standard font.
-     * \param pFont Pointer to the object where is defined the standard type 1 font.
+     * \param fontName Font name.
+     * \param pFont Pointer to the object where is defined the standard type 1 font (can be NULL).
      */
-    void initStandard14Font( const PoDoFo::PdfObject* pFont );
+    void initStandard14Font( const PoDoFo::PdfName& fontName,
+                             const PoDoFo::PdfObject* pFont );
 
 public:
     // Implementation of PdfeFont interface.
