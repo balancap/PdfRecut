@@ -129,7 +129,7 @@ PdfeCIDString PdfeFontType0::toCIDString( const PdfString& str ) const
     // Use the encoding CMap to convert the string.
     return m_encodingCMap.toCIDString( str );
 }
-QString PdfeFontType0::toUnicode(pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
+QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
 {
     QString ustr;
 
@@ -148,7 +148,8 @@ QString PdfeFontType0::toUnicode(pdfe_cid c, bool useUCMap, bool firstTryEncodin
 }
 double PdfeFontType0::spaceHeight() const
 {
-    return m_fontCID->spaceHeight();
+    // Default implementation.
+    return this->PdfeFont::spaceHeight();
 }
 pdfe_gid PdfeFontType0::fromCIDToGID(pdfe_cid c) const
 {

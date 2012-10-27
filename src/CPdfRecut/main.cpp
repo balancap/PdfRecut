@@ -42,6 +42,24 @@ using namespace PoDoFo;
 using namespace PoDoFoExtended;
 using namespace std;
 
+void computeBBoxStats( const PRDocument& document, PdfeFont14Standard::Enum stdFontType )
+{
+    // Create standard font object.
+    PdfeFontType1 font( stdFontType, document.ftLibrary() );
+    PdfeFont::Statistics stats = font.statistics();
+
+    std::cout << "Stats (" << font.standard14FontName( stdFontType ) << ") : "
+              << stats.meanAdvance << " / "
+              << stats.meanBBox.GetLeft() << " : "
+              << stats.meanBBox.GetBottom() << " : "
+              << stats.meanBBox.GetWidth() << " : "
+              << stats.meanBBox.GetHeight() << " : "
+              << std::endl;
+
+//    QLOG_INFO() << QString( "Stats( %1 ) :" ).arg( font.standard14FontName( stdFontType ).c_str(), 20 )
+//                   .toAscii().constData();
+
+}
 
 void readTokens( PdfDocument& doc, int pageIdx )
 {
@@ -139,9 +157,12 @@ void proceedFile( QString filePath )
     document.loadPoDoFoDocument();
     //document.loadPopplerDocument();
 
-
-    // Create standard fonts...
-    PdfeFontType1 helvetica( PdfeFont14Standard::Helvetica, document.ftLibrary() );
+    // Compute some mean values bbox.
+    computeBBoxStats( document, PdfeFont14Standard::Helvetica );
+    computeBBoxStats( document, PdfeFont14Standard::HelveticaBold );
+    computeBBoxStats( document, PdfeFont14Standard::HelveticaOblique );
+    computeBBoxStats( document, PdfeFont14Standard::TimesRoman );
+    computeBBoxStats( document, PdfeFont14Standard::Courier );
 
     // Generate a PdfDocumentLayout
 //    cout << " >>> Generating a Pdf Document Layout..." << endl;
@@ -229,8 +250,8 @@ int main( int argc, char *argv[] )
     QsLogging::DestinationPtr fileDestination( QsLogging::DestinationFactory::MakeFileDestination(sLogPath) );
     QsLogging::DestinationPtr debugDestination( QsLogging::DestinationFactory::MakeDebugOutputDestination() );
 
-    logger.addDestination( debugDestination.get() );
     logger.addDestination( fileDestination.get() );
+//    logger.addDestination( debugDestination.get() );
 
     // Set Standard 14 fonts path.
     PoDoFoExtended::PdfeFont::Standard14FontsDir.setPath( "./standard14fonts" );

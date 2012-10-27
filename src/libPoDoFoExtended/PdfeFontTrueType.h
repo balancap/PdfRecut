@@ -85,7 +85,6 @@ public:
     virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
         return this->PdfeFont::toCIDString( str );
     }
-
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
@@ -97,7 +96,6 @@ public:
                                bool firstTryEncoding = false ) const {
         return this->PdfeFont::toUnicode( c, useUCMap, firstTryEncoding );
     }
-
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
@@ -110,7 +108,14 @@ public:
      * \return Space height.
      */
     virtual double spaceHeight() const {
-        return 500. / 1000.;    // Default choice for TrueType font.
+        return this->PdfeFont::spaceHeight();
+    }
+    /** Compute some font statistics.
+     * \param defaultValue Use some predefined default values (for Type 0/1 and TrueType fonts).
+     * \return PdfeFont::Statistics object containing data.
+     */
+    virtual Statistics statistics( bool defaultValue = false ) const {
+        return this->PdfeFont::statistics( defaultValue );
     }
 
     /** Convert a character CID to the corresponding glyph GID.

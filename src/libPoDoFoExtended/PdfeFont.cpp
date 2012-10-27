@@ -247,7 +247,6 @@ QString PdfeFont::toUnicode(const PoDoFo::PdfString& str, bool useUCMap , bool f
     }
     return ustr;
 }
-
 // Default implementation for simple fonts (Type 1, TrueType and Type 3).
 QString PdfeFont::toUnicode( pdfe_cid c, bool useUCMap, bool firstTryEncoding ) const
 {
@@ -305,6 +304,54 @@ PdfeFontSpace::Enum PdfeFont::isSpace( pdfe_cid c ) const
         }
     }
     return PdfeFontSpace::None;
+}
+// Default implementation.
+double PdfeFont::spaceHeight() const
+{
+    // Default value for Type 1, TrueType and Type 0 fonts.
+    return 0.5;
+}
+// Default implementation.
+PdfeFont::Statistics PdfeFont::statistics( bool defaultValue ) const
+{
+    PdfeFont::Statistics stats;
+
+    // Default values computed from standard 14 fonts.
+    if( defaultValue ) {
+        stats.meanAdvance = 0.5;
+        stats.meanBBox = PdfRect( 0.0, 0.0, 0.45, 0.57 );
+    }
+    else {
+        // Compute mean values.
+        PdfeVector advance;
+        double left = 0.0;
+        double bottom = 0.0;
+        double width = 0.0;
+        double height = 0.0;
+        size_t nbChars = 0;
+
+        for( pdfe_cid c = 0 ; c <= 255 ; ++c ) {
+            // Consider the character if GID not null and not a space char.
+            pdfe_gid gid = this->fromCIDToGID( c );
+            if( gid && ( this->isSpace( c ) == PdfeFontSpace::None ) ) {
+                advance = advance + this->advance( c, false );
+
+                PdfRect bbox = this->bbox( c, false );
+                left += bbox.GetLeft();
+                bottom += bbox.GetBottom();
+                width += bbox.GetWidth();
+                height += bbox.GetHeight();
+
+                nbChars++;
+            }
+        }
+        stats.meanAdvance = advance.norm2() / nbChars;
+        stats.meanBBox.SetLeft( left / nbChars );
+        stats.meanBBox.SetBottom( bottom / nbChars );
+        stats.meanBBox.SetWidth( width / nbChars );
+        stats.meanBBox.SetHeight( height / nbChars );
+    }
+    return stats;
 }
 
 PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const

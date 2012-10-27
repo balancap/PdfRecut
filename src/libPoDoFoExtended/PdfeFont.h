@@ -240,6 +240,22 @@ public:
     virtual pdfe_gid fromCIDToGID( pdfe_cid c ) const = 0;
 
 public:
+    /// Embedded structure containing some font statistics.
+    struct Statistics
+    {
+        /// Mean advance value.
+        double meanAdvance;
+        /// Mean bounding box (width, bottom and top computed).
+        PoDoFo::PdfRect meanBBox;
+    };
+
+    /** Compute some font statistics.
+     * \param defaultValue Use some predefined default values (for Type 0/1 and TrueType fonts).
+     * \return PdfeFont::Statistics object containing data.
+     */
+    virtual Statistics statistics( bool defaultValue = false ) const = 0;
+
+public:
     /** Get a character name from its CID.
      * Default implementation first try using the font encoding and then the unicode code.
      * Needs the encoding object to be initialized.
@@ -377,7 +393,7 @@ public:
     /// Directory where are stored standard 14 fonts files.
     static QDir Standard14FontsDir;
 
-protected:
+public:
     /** Does a font name corresponds to the name of a standard 14 font?
      * \param fontName Name of the font.
      * \return PdfeFont14Standard value. None if it is not.
@@ -392,6 +408,7 @@ protected:
      * \param stdFontType Type of the standard font.
      * \return Path of the font file (empty if not found).
      */
+protected:
     static QString standard14FontPath( PdfeFont14Standard::Enum stdFontType );
     /** Get the data of a standard 14 font.
      * \param stdFontType Type of the standard font.

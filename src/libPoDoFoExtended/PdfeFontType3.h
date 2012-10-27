@@ -117,6 +117,14 @@ public:
      * \return Space height.
      */
     virtual double spaceHeight() const;
+    /** Compute some font statistics.
+     * \param defaultValue Use some predefined default values (for Type 0/1 and TrueType fonts).
+     * \return PdfeFont::Statistics object containing data.
+     */
+    virtual Statistics statistics( bool defaultValue = false ) const {
+        // No default value for Type 3 fonts.
+        return this->PdfeFont::statistics( false );
+    }
 
     /** Convert a character CID to the corresponding glyph GID.
      * Need the freetype face, unicode CMap and encoding to be initialized.
