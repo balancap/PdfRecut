@@ -366,7 +366,7 @@ public:
         m_leftBottom(1) = lbY;
     }
     /// Get direction (unit vector).
-    PdfeVector direction() const {
+    const PdfeVector& direction() const {
         return m_direction;
     }
     /// Set direction vector.

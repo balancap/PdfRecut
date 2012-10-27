@@ -53,126 +53,40 @@ public:
      * \param groupWords Pointer to the group of words to remove.
      */
     void rmGroupWords( PRTextGroupWords* pGroupWords );
-
     /** Set a subgroup which is inside the line.
-     * Can raise an exception.
+     * Can raise an out of range exception.
      * \param idx Index of the subgroup to modify.
      * \param subgroup Constant reference to the new subgroup.
      */
-    void setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup );
-
+    void setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup );    
+    /** Get the number of subgroups in the line.
+     * \return Number of subgroups.
+     */
+    size_t nbSubgroups() const;
+    /** Get a subgroup which is inside the line.
+     * Can raise an exception.
+     * \param idx Index of the subgroup.
+     * \return Constant reference to the subgroup.
+     */
+    const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
     /** Clear empty subgroups in the line.
      */
     void clearEmptySubgroups();
-
-public:
-    /** Block inside a line: represent a generic collection of subgroups
-     * that must belong to a common line.
+    /** Does the group belongs to the line.
+     * \param pGroup Pointer to the group.
+     * \return Index of the corresponding subgroup (-1 if not found).
      */
-    class Block
-    {
-    public:
-        /** Default constructor.
-         */
-        Block();
-        /** Constructor: initialize with a given line and subgroup.
-         * \param pLine Pointer to the parent line.
-         * \param subgroup Subgroup which must be a subset of a line subgroup.
-         * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
-         * \param useBottomCoord Use bottom coordinates for the BBox ?
-         */
-        Block( const PRTextLine* pLine,
-               const PRTextGroupWords::Subgroup& subgroup,
-               bool leadTrailSpaces,
-               bool useBottomCoord );
-
-        /** Initialize to an empty block.
-         */
-        void init();
-        /** Initialize a block with a given line and subgroup of words.
-         * \param pLine Pointer to the parent line.
-         * \param subgroup Subgroup which must be a subset of a line subgroup.
-         * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
-         * \param useBottomCoord Use bottom coordinates for the BBox ?
-         */
-        void init( const PRTextLine* pLine,
-                   const PRTextGroupWords::Subgroup& subgroup,
-                   bool leadTrailSpaces,
-                   bool useBottomCoord );
-
-        /** Get the parent line.
-         * \return Pointer the parent line.
-         */
-        PRTextLine* line() const;
-
-        /** Is a line subgroup inside the block? Can raise an exception.
-         * \param idx Index of the subgroup.
-         * \return The subgroup belongs to the block?
-         */
-        bool inside( size_t idx ) const;
-        /** Set if a subgroup belongs, or not, to the line.
-         * Can raise an exception.
-         * \param idx Index of the subgroup.
-         * \param inside Is the subgroup inside the block.
-         */
-        void setInside( size_t idx, bool inside );
-
-        /** Get the number of subgroups in the block.
-         * \return Number of subgroups.
-         */
-        size_t nbSubgroups() const;
-
-        /** Get a subgroup of the block.
-         * Can raise an exception.
-         * \param idx Index of the subgroup.
-         * \return Constant reference to the subgroup.
-         */
-        const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
-
-        /** Merge the block with another one.
-         * \param block2nd Second block (not modified).
-         */
-        void merge( const Block& block2nd );
-
-        /** Get the bounding box, in the line coordinate system.
-         * \return PdfRect containing the bounding box.
-         */
-        PoDoFo::PdfRect bbox() const;
-
-        /** Horizontally compare two blocks.
-         * \param block1 First block.
-         * \param block2 Second block.
-         */
-        static bool horizontalComp( const Block& block1, const Block& block2 );
-
-        /** Horizontally compare two block (use pointers).
-         * \param block1 Pointer to the first block.
-         * \param block2 Pointer to the second block.
-         */
-        static bool horizontalCompPtr( Block* pBlock1, Block* pBlock2 );
-
-    protected:
-        /// Pointer to the parent line.
-        PRTextLine*  m_pLine;
-
-        /// Vector of boolean telling if a line subgroup (or a subset) belongs to the block.
-        std::vector<bool>  m_subgroupsInside;
-        /// Vector of words subgroups which constitute the block.
-        std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
-
-        /// Bounding box.
-        PoDoFo::PdfRect  m_bbox;
-    };
+    long hasGroupWords( PRTextGroupWords* pGroup ) const;
 
 public:
     /** Minimum index of group of words inside the line.
      * \return Minimum index found.
      */
-    long minGroupIndex();
+    long minGroupIndex() const;
     /** Maximum index of group of words inside the line.
      * \return Maximum index found.
      */
-    long maxGroupIndex();
+    long maxGroupIndex() const;
 
     /** Get the line bounding box.
      * \param pageCoords BBox in page coordinates (true) or local coordinates (false) ?
@@ -183,13 +97,11 @@ public:
     PdfeORect bbox( bool pageCoords,
                     bool leadTrailSpaces,
                     bool useBottomCoord );
-
     /** Get the width of the line.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Width in local coordinates.
      */
     double width( bool leadTrailSpaces );
-
     /** Get the length of the line.
      * \param countSpaces Also count spaces?
      * \return Length of the line.
@@ -201,23 +113,18 @@ public:
      */
     PdfeMatrix transMatrix();
 
-    /** Does the group belongs to the line.
-     * \param pGroup Pointer to the group.
-     * \return Index of the corresponding subgroup (-1 if not found).
+    /** Is the line empty?
+     * \return Answer!
      */
-    long hasGroupWords( PRTextGroupWords* pGroup ) const;
+    bool isEmpty() const;
+    /** Is the line uniquelly composed of spaces?
+     * \return Answer!
+     */
+    bool isSpace() const;
 
-    /** Get the number of subgroups in the line.
-     * \return Number of subgroups.
-     */
-    size_t nbSubgroups() const;
-
-    /** Get a subgroup which is inside the line.
-     * Can raise an exception.
-     * \param idx Index of the subgroup.
-     * \return Constant reference to the subgroup.
-     */
-    const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
+public:
+    /// Embedded class that represent a block of a line.
+    class Block;
 
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
@@ -231,14 +138,12 @@ public:
      */
     std::list<PRTextLine::Block> horizontalBlocksList( double hDistance = 0.0 ) const;
 
-protected:
-    /** Compuet cache data of the line (bbox, first capital letter, ...).
-     */
-    void computeData();
+private:
+    /// Compute inside cache data of the line (bbox, first capital letter, ...).
+    void computeCacheData();
 
-    /** Compute bounding boxes and the transformation matrix.
-     */
-    void computeBBoxes();
+    /// Compute bounding boxes and the transformation matrix.
+    void computeBBoxes() const;
 
 public:
     /** Sort two lines using the index of their groups.
@@ -253,20 +158,119 @@ protected:
     long  m_pageIndex;
     /// Index of the line in the page.
     long  m_lineIndex;
-    /// Boolean value used to detect if the line have been modified (add words, ...).
-    bool  m_modified;
 
     /// Vector of words subgroups which constitute the line.
     std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
 
-    // Cache data for the line.
-    /// Transformation matrix (into page coordinates). Related to the bounding box.
-    PdfeMatrix  m_transMatrix;
-    /// Line bounding box.
-    PoDoFo::PdfRect  m_bbox;
-    /// Line bounding box (with no leading and trailing spaces).
-    PoDoFo::PdfRect  m_bboxNoLTSpaces;
+    // Cache computed data.
+    /// Boolean value used to detect if the line have been modified (add words, ...).
+    mutable bool  m_modified;
 
+    /// Transformation matrix (into page coordinates). Related to the bounding box.
+    mutable PdfeMatrix  m_transMatrix;
+    /// Line bounding box.
+    mutable PoDoFo::PdfRect  m_bbox;
+    /// Line bounding box (with no leading and trailing spaces).
+    mutable PoDoFo::PdfRect  m_bboxNoLTSpaces;
+
+};
+
+/** Block inside a line: represent a generic collection of subgroups
+ * that must belong to a common line.
+ */
+class PRTextLine::Block
+{
+public:
+    /** Default constructor.
+     */
+    Block();
+    /** Constructor: initialize with a given line and subgroup.
+     * \param pLine Pointer to the parent line.
+     * \param subgroup Subgroup which must be a subset of a line subgroup.
+     * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
+     * \param useBottomCoord Use bottom coordinates for the BBox ?
+     */
+    Block( const PRTextLine* pLine,
+           const PRTextGroupWords::Subgroup& subgroup,
+           bool leadTrailSpaces,
+           bool useBottomCoord );
+
+    /** Initialize to an empty block.
+     */
+    void init();
+    /** Initialize a block with a given line and subgroup of words.
+     * \param pLine Pointer to the parent line.
+     * \param subgroup Subgroup which must be a subset of a line subgroup.
+     * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
+     * \param useBottomCoord Use bottom coordinates for the BBox ?
+     */
+    void init( const PRTextLine* pLine,
+               const PRTextGroupWords::Subgroup& subgroup,
+               bool leadTrailSpaces,
+               bool useBottomCoord );
+
+    /** Get the parent line.
+     * \return Pointer the parent line.
+     */
+    PRTextLine* line() const;
+
+    /** Is a line subgroup inside the block? Can raise an exception.
+     * \param idx Index of the subgroup.
+     * \return The subgroup belongs to the block?
+     */
+    bool inside( size_t idx ) const;
+    /** Set if a subgroup belongs, or not, to the line.
+     * Can raise an exception.
+     * \param idx Index of the subgroup.
+     * \param inside Is the subgroup inside the block.
+     */
+    void setInside( size_t idx, bool inside );
+
+    /** Get the number of subgroups in the block.
+     * \return Number of subgroups.
+     */
+    size_t nbSubgroups() const;
+
+    /** Get a subgroup of the block.
+     * Can raise an exception.
+     * \param idx Index of the subgroup.
+     * \return Constant reference to the subgroup.
+     */
+    const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
+
+    /** Merge the block with another one.
+     * \param block2nd Second block (not modified).
+     */
+    void merge( const Block& block2nd );
+
+    /** Get the bounding box, in the line coordinate system.
+     * \return PdfRect containing the bounding box.
+     */
+    PoDoFo::PdfRect bbox() const;
+
+    /** Horizontally compare two blocks.
+     * \param block1 First block.
+     * \param block2 Second block.
+     */
+    static bool horizontalComp( const Block& block1, const Block& block2 );
+
+    /** Horizontally compare two block (use pointers).
+     * \param block1 Pointer to the first block.
+     * \param block2 Pointer to the second block.
+     */
+    static bool horizontalCompPtr( Block* pBlock1, Block* pBlock2 );
+
+protected:
+    /// Pointer to the parent line.
+    PRTextLine*  m_pLine;
+
+    /// Vector of boolean telling if a line subgroup (or a subset) belongs to the block.
+    std::vector<bool>  m_subgroupsInside;
+    /// Vector of words subgroups which constitute the block.
+    std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
+
+    /// Bounding box.
+    PoDoFo::PdfRect  m_bbox;
 };
 
 //**********************************************************//

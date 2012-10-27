@@ -127,6 +127,10 @@ public:
     PoDoFo::PdfRect bbox( bool useBottomCoord ) const;
 
 private:
+    /// Minimal height scale factor for a word (compared to space height).
+    static const double MinimalHeightScale = 0.3;
+
+private:
     /// Pdf string corresponding to the word. TODO: not working !
     PoDoFo::PdfString  m_pdfString;
     /// CID string corresponding to the word.
@@ -237,7 +241,7 @@ public:
     PdfeVector displacement() const;
 
     /** Get the bounding box of the group of words.
-     * \param pageCoords In page coordinates (true) or local coordinates (false) ?
+     * \param pageCoords In page coordinates (true) or local font coordinates (false) ?
      * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
@@ -245,6 +249,10 @@ public:
     PdfeORect bbox( bool pageCoords,
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
+    /** Estimate the global font size used for this group.
+     * \return Global font size.
+     */
+    double fontSize() const;
 
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
@@ -258,7 +266,6 @@ public:
      * \return Distance computed.
      */
     double minDistance( const PRTextGroupWords& group ) const;
-
     /** Maximal distance between the object and another group.
      * Use subgroups to compute the distance.
      * Distance computed in the coordinate system of the object.
@@ -268,15 +275,21 @@ public:
     double maxDistance( const PRTextGroupWords& group ) const;
 
     /** Add a text line. The (sub)group must belong to it.
+     * \param pLine Pointer to the line to add.
      */
     void addTextLine( PRTextLine* pLine );
     /** Remove a text line. The (sub)group must not belong to it.
+     * \param pLine Pointer to the line to remove.
      */
     void rmTextLine( PRTextLine* pLine );
-
     /** Get lines the (sub)group belongs to.
+     * \return Vector of pointers to PRTextLines.
      */
     std::vector<PRTextLine*> textLines() const;
+
+    /** Is the group composed uniquely of space characters?
+     */
+    bool isSpace() const;
 
 public:
     /** Build the private vector of main subgroups.
@@ -322,15 +335,12 @@ public:
      */
     const Subgroup& mSubgroup( size_t idx ) const;
 
-protected:
-    /// Default space height used.
-    static const double SpaceHeight = 0.5;
-    /// Minimal height for a character.
-    static const double MinimalHeight = 0.2;
+private:
     /// Max char space allowed inside a word: when greater, split the word and replace char space by PDF translation.
-    static const double MaxWordCharSpace = 0.2;
+    /// Compared to font mean width.
+    static const double MaxCharSpaceScale = 0.4;
 
-protected:
+private:
     /// Index of the page to which belongs the group.
     long  m_pageIndex;
     /// Index of the group in the page.
@@ -439,7 +449,12 @@ public:
      * \return True if empty, false otherwise.
      */
     bool isEmpty() const;
+    /** Is the subgroup uniquely composed of space characters?
+     * \return Answer!
+     */
+    bool isSpace() const;
 
+public:
     /** Intersection of two subgroups.
      * The parent group must be the same (return empty subgroup else).
      * \param subgroup1 First subgroup.

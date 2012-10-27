@@ -78,6 +78,14 @@ void PRTextWord::init( const PdfeCIDString& cidstr, PRTextWordType::Enum type, P
         m_bbox.SetLeft( 0.0 );
         m_bbox.SetWidth( m_advance(0) );
     }
+    else {
+        // Check minimal height.
+        double minHeight = pFont->spaceHeight() * MinimalHeightScale;
+        if( m_bbox.GetHeight() < minHeight ) {
+            m_bbox.SetBottom( m_bbox.GetBottom() - minHeight / 4 );
+            m_bbox.SetHeight( m_bbox.GetHeight() + minHeight );
+        }
+    }
 }
 void PRTextWord::init( double spaceWidth, double spaceHeight, PRTextWordType::Enum type )
 {
@@ -231,8 +239,10 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     double charSpace = m_textState.charSpace / fontSize;
     double wordSpace = m_textState.wordSpace / fontSize;
 
+    double maxCharSpace = pFont->statistics( true ).meanBBox.GetWidth() * MaxCharSpaceScale;
+
     // Set font parameters.
-    if( charSpace > MaxWordCharSpace ) {
+    if( charSpace > maxCharSpace ) {
         pFont->setCharSpace( 0.0 );         // Char spaces are replaced.
     }
     else {
@@ -263,7 +273,7 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
         // Read classic word.
         else {
             // Create two words when char space is too large.
-            if( charSpace > MaxWordCharSpace ) {
+            if( charSpace > maxCharSpace ) {
                 m_words.push_back( PRTextWord( cidstr.substr( idxFirst, 1 ),
                                                PRTextWordType::Classic,
                                                pFont ) );
@@ -282,12 +292,6 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                                PRTextWordType::Classic,
                                                pFont ) );
             }
-            // Minimal height: add half for bottom and top.
-//            if( top-bottom <= this->MinimalHeight ) {
-//                top += this->MinimalHeight / 2;
-//                bottom -= this->MinimalHeight / 2;
-//            }
-//            type = PRTextWordType::Classic;
         }
     }
 }
@@ -321,15 +325,26 @@ PdfeVector PRTextGroupWords::displacement() const
     displacement(1) = displacement(1) * m_textState.fontSize;
     return displacement;
 }
-PdfeORect PRTextGroupWords::bbox(bool pageCoords,
-                                 bool leadTrailSpaces,
-                                 bool useBottomCoord ) const
+PdfeORect PRTextGroupWords::bbox( bool pageCoords,
+                                  bool leadTrailSpaces,
+                                  bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
     Subgroup globalSubgroup( *this );
     return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
 }
 
+double PRTextGroupWords::fontSize() const
+{
+    PdfeFont::Statistics stats = m_pFont->statistics( true );
+
+    // Apply global transformation matrix on meanBBox.
+    PdfeORect meanBBox( stats.meanBBox );
+    meanBBox = this->getGlobalTransMatrix().map( meanBBox );
+
+    // Estimation of the font size...
+    return ( meanBBox.height() / stats.meanBBox.GetHeight() );
+}
 PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
 {
     // Compute text rendering matrix.
@@ -411,6 +426,13 @@ void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
     if( it != m_pTextLines.end() ) {
         m_pTextLines.erase( it );
     }
+}
+
+bool PRTextGroupWords::isSpace() const
+{
+    // Advance vector of the complete subgroup.
+    Subgroup globalSubgroup( *this );
+    return globalSubgroup.isSpace();
 }
 
 void PRTextGroupWords::buildMainSubGroups()
@@ -582,6 +604,17 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
         bbox = textMat.map( bbox );
     }
     return bbox;
+}
+
+bool PRTextGroupWords::Subgroup::isSpace() const
+{
+    // Check words.
+    for( size_t i = 0 ; i < this->m_wordsInside.size() ; ++i ) {
+        if( m_wordsInside[i] && ( this->m_pGroup->word(i).type() == PRTextWordType::Classic ) ) {
+            return false;
+        }
+    }
+    return true;
 }
 
 PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::intersection( const PRTextGroupWords::Subgroup& subgroup1,

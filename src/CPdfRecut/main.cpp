@@ -158,11 +158,9 @@ void proceedFile( QString filePath )
     //document.loadPopplerDocument();
 
     // Compute some mean values bbox.
-    computeBBoxStats( document, PdfeFont14Standard::Helvetica );
-    computeBBoxStats( document, PdfeFont14Standard::HelveticaBold );
-    computeBBoxStats( document, PdfeFont14Standard::HelveticaOblique );
-    computeBBoxStats( document, PdfeFont14Standard::TimesRoman );
-    computeBBoxStats( document, PdfeFont14Standard::Courier );
+//    computeBBoxStats( document, PdfeFont14Standard::Helvetica );
+//    computeBBoxStats( document, PdfeFont14Standard::TimesRoman );
+//    computeBBoxStats( document, PdfeFont14Standard::Courier );
 
     // Generate a PdfDocumentLayout
 //    cout << " >>> Generating a Pdf Document Layout..." << endl;
@@ -190,7 +188,7 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderParameters renderParams;
-    renderParams.resolution = 3.0;
+    renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
@@ -201,12 +199,12 @@ void proceedFile( QString filePath )
 
         // Analyse page text
         textPage.detectGroupsWords();
-//        textPage.detectLines();
+        textPage.detectLines();
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-        textPage.renderTextGroupsWords( renderPage );
-//        textPage.renderTextLines( renderPage );
+//        textPage.renderTextGroupsWords( renderPage );
+        textPage.renderTextLines( renderPage );
 //        renderPage.render( renderParams );
 
         // Save image to file.
@@ -251,7 +249,7 @@ int main( int argc, char *argv[] )
     QsLogging::DestinationPtr debugDestination( QsLogging::DestinationFactory::MakeDebugOutputDestination() );
 
     logger.addDestination( fileDestination.get() );
-//    logger.addDestination( debugDestination.get() );
+    logger.addDestination( debugDestination.get() );
 
     // Set Standard 14 fonts path.
     PoDoFoExtended::PdfeFont::Standard14FontsDir.setPath( "./standard14fonts" );

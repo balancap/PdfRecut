@@ -79,15 +79,15 @@ void PRTextPageStructure::detectLines()
     }
 
     // Sort lines using group index.
-    std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::sortLines );
+//    std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::sortLines );
 
-    // Try to merge some lines (inside elements).
-    PRTextLine* pLine;
-    std::vector<PRTextLine*>::iterator it;
-    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-        pLine = this->mergeLines_EnlargeInside( *it );
-        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-    }
+//    // Try to merge some lines (inside elements).
+//    PRTextLine* pLine;
+//    std::vector<PRTextLine*>::iterator it;
+//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
+//        pLine = this->mergeLines_EnlargeInside( *it );
+//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+//    }
 
     // Try to merge with elements outside a line.
     /*const size_t nLoops = 8;
@@ -693,7 +693,7 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 
         // Draw the group on the page.
         renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
-        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
+//        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
 //        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }
@@ -704,7 +704,7 @@ void PRTextPageStructure::renderTextLines( PRRenderPage& renderPage )
     renderParameters.initToEmpty();
     renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
     renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-//    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
 
     // Line rendering pen.
     PRRenderParameters::PRPenBrush linePen;
@@ -725,7 +725,7 @@ void PRTextPageStructure::renderTextLines( PRRenderPage& renderPage )
         // Modify rendering parameters.
         renderParameters.textPB.fillBrush->setColor( lineColorWord );
         renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
-//        renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
+        renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
         linePen.drawPen->setColor( lineColorBBox );
 
         if( pline ) {
