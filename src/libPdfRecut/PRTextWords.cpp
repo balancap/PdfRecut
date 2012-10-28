@@ -138,6 +138,7 @@ void PRTextGroupWords::init()
 
     m_pFont = NULL;
     m_fontBBox = PdfRect( 0,0,0,0 );
+    m_fontNormTransMatrix.init();
 
     m_transMatrix.init();
     m_textState.init();
@@ -150,7 +151,13 @@ void PRTextGroupWords::init( const PdfVariant& variant,
                              const PdfeTextState& textState, PdfeFont* pFont )
 {
     this->init();
-    this->readPdfVariant( variant, transMatrix, textState, pFont );
+
+    // Set transformation matrix and text state.
+    m_transMatrix = transMatrix;
+    m_textState = textState;
+
+    // Read group of words from variant.
+    this->readPdfVariant( variant, pFont );
 }
 
 void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStreamState& streamState )
@@ -167,6 +174,10 @@ void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStr
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
+    // Set transformation matrix and text state.
+    m_transMatrix = gState.transMat;
+    m_textState = gState.textState;
+
     // Get variant from string.
     PdfVariant variant;
     PdfTokenizer tokenizer( gOperands.back().c_str(), gOperands.back().length() );
@@ -176,24 +187,21 @@ void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStr
     PdfeFont* pFont = document->fontCache( gState.textState.fontRef );
 
     // Read group of words.
-    this->readPdfVariant( variant,
-                          streamState.gStates.back().transMat,
-                          streamState.gStates.back().textState,
-                          pFont );
+    this->readPdfVariant( variant, pFont );
 }
 
 void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
-                                       const PdfeMatrix& transMatrix,
-                                       const PdfeTextState& textState,
                                        PdfeFont* pFont )
 {
-    // Set transformation matrix and textstate.
-    m_transMatrix = transMatrix;
-    m_textState = textState;
-
-    // Get font bounding box.
+    // Related font members
     m_pFont = pFont;
     m_fontBBox = pFont->fontBBox();
+
+    // Font renormalization matrix.
+    PdfeFont::Statistics stats = pFont->statistics( true );
+    m_fontNormTransMatrix.init();
+    m_fontNormTransMatrix(0,0) = 1 / stats.meanBBox.GetWidth();
+    m_fontNormTransMatrix(1,1) = 1 / stats.meanBBox.GetHeight();
 
     // Variant is a string.
     if( variant.IsString() || variant.IsHexString() ) {
@@ -325,13 +333,13 @@ PdfeVector PRTextGroupWords::displacement() const
     displacement(1) = displacement(1) * m_textState.fontSize;
     return displacement;
 }
-PdfeORect PRTextGroupWords::bbox( bool pageCoords,
+PdfeORect PRTextGroupWords::bbox( PRTextWordCoordinates::Enum wordCoord,
                                   bool leadTrailSpaces,
                                   bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
     Subgroup globalSubgroup( *this );
-    return globalSubgroup.bbox( pageCoords, leadTrailSpaces, useBottomCoord );
+    return globalSubgroup.bbox( wordCoord, leadTrailSpaces, useBottomCoord );
 }
 
 double PRTextGroupWords::fontSize() const
@@ -344,6 +352,44 @@ double PRTextGroupWords::fontSize() const
 
     // Estimation of the font size...
     return ( meanBBox.height() / stats.meanBBox.GetHeight() );
+}
+
+PdfeMatrix PRTextGroupWords::transMatrix( PRTextWordCoordinates::Enum startCoord,
+                                          PRTextWordCoordinates::Enum endCoord )
+{
+    // Compute global rendering matrix (font -> page).
+    PdfeMatrix tmpMat, globalTransMat;
+    tmpMat(0,0) = m_textState.fontSize * ( m_textState.hScale / 100. );
+    tmpMat(1,1) = m_textState.fontSize;
+    tmpMat(2,1) = m_textState.rise;
+    globalTransMat = tmpMat * m_textState.transMat * m_transMatrix;
+
+    if( startCoord == PRTextWordCoordinates::Font &&
+        endCoord == PRTextWordCoordinates::Page ) {
+        return globalTransMat;
+    }
+    else if( startCoord == PRTextWordCoordinates::Font &&
+             endCoord == PRTextWordCoordinates::FontNormalized ) {
+        return m_fontNormTransMatrix;
+    }
+    else if( startCoord == PRTextWordCoordinates::Page &&
+             endCoord == PRTextWordCoordinates::Font ) {
+        return globalTransMat.inverse();
+    }
+    else if( startCoord == PRTextWordCoordinates::Page &&
+             endCoord == PRTextWordCoordinates::FontNormalized ) {
+        return ( globalTransMat.inverse() * m_fontNormTransMatrix );
+    }
+    else if( startCoord == PRTextWordCoordinates::FontNormalized &&
+             endCoord == PRTextWordCoordinates::Font ) {
+        return m_fontNormTransMatrix.inverse();
+    }
+    else if( startCoord == PRTextWordCoordinates::FontNormalized &&
+             endCoord == PRTextWordCoordinates::Page ) {
+        return ( m_fontNormTransMatrix.inverse() * globalTransMat );
+    }
+    // Identity in other cases.
+    return PdfeMatrix();
 }
 PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
 {
@@ -370,12 +416,12 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
         const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRTextWordCoordinates::Page, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
             const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( false, true, true );
+            grp1BBox = subGrp1.bbox( PRTextWordCoordinates::Font, true, true );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
@@ -383,7 +429,7 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     return dist;
 }
 
-double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
+double PRTextGroupWords::maxDistance( const PRTextGroupWords& group ) const
 {
     PdfeORect grp1BBox, grp2BBox;
     double dist = 0.0;
@@ -395,12 +441,12 @@ double PRTextGroupWords::maxDistance(const PRTextGroupWords &group) const
     for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
         const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( true, true, true ) );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRTextWordCoordinates::Page, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
             const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( false, true, true );
+            grp1BBox = subGrp1.bbox( PRTextWordCoordinates::Font, true, true );
 
             dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }
@@ -545,7 +591,8 @@ PdfeVector PRTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
     }
     return advance;
 }
-PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpaces, bool useBottomCoord ) const
+
+PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoord, bool leadTrailSpaces, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     PdfeORect bbox( 0.0, 0.0 );
@@ -598,10 +645,10 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( bool pageCoords, bool leadTrailSpace
     bbox.setLeftBottom( PdfeVector( left, bottom ) );
     bbox.setHeight( top - bottom );
 
-    // Apply global transform if needed.
-    if( pageCoords ) {
-        PdfeMatrix textMat = m_pGroup->getGlobalTransMatrix();
-        bbox = textMat.map( bbox );
+    // Apply transformation if needed.
+    if( wordCoord != PRTextWordCoordinates::Font ) {
+        PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
+        bbox = transMat.map( bbox );
     }
     return bbox;
 }

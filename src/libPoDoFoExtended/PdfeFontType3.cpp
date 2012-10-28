@@ -241,7 +241,10 @@ double PdfeFontType3::spaceHeight() const
     return spaceHeight;
 }
 pdfe_gid PdfeFontType3::fromCIDToGID(pdfe_cid c) const
-{
+{    // Outside bounds: return 0.
+    if( c < m_firstCID || c > m_lastCID ) {
+        return 0;
+    }
     return ( c + 1 );
 }
 

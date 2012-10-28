@@ -122,7 +122,7 @@ private:
 
     /** No copy constructor allowed.
      */
-    PRTextPageStructure( const PRTextPageStructure& obj );
+    PRTextPageStructure( const PRTextPageStructure& rhs );
 
 protected:
     // Reimplement PdfeCanvasAnalysis interface.
@@ -192,7 +192,7 @@ private:
     long  m_pageIndex;
 
     /// Number of text groups read.
-    long m_nbTextGroups;
+    long  m_nbTextGroups;
 
     /// Groups of words that belong to the page (vector of pointers).
     std::vector<PRTextGroupWords*>  m_pGroupsWords;

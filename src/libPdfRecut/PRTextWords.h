@@ -57,6 +57,18 @@ enum Enum {
 };
 }
 
+namespace PRTextWordCoordinates {
+/** Enumeration of the different coordinates system
+ * a word bounding box can be expressed in.
+ */
+enum Enum {
+    Font = 0,           /// Default font coordinates.
+    FontNormalized,     /// Renormalized font coordinates.
+    Page                /// Page coordinates.
+};
+
+}
+
 /** Class that represents a single word from a PDF stream.
  * It is characterized by a corresponding CID string.
  * Metrics (advance and bbox) are given in renormalized units, i.e.
@@ -202,13 +214,9 @@ public:
 
     /** Read a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
-     * \param transMatrix Transformation matrix from graphics state.
-     * \param textState Corresponding text state.
      * \param pFont Font object used to compute words width.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
-                         const PdfeMatrix& transMatrix,
-                         const PoDoFoExtended::PdfeTextState& textState,
                          PoDoFoExtended::PdfeFont* pFont );
 
 private:
@@ -241,18 +249,27 @@ public:
     PdfeVector displacement() const;
 
     /** Get the bounding box of the group of words.
-     * \param pageCoords In page coordinates (true) or local font coordinates (false) ?
+     * \param wordCoord Word coordinates system in which the bbox is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( bool pageCoords,
+    PdfeORect bbox( PRTextWordCoordinates::Enum wordCoord,
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
     /** Estimate the global font size used for this group.
      * \return Global font size.
      */
     double fontSize() const;
+
+    /** Get a transformation matrix from a starting coordinate
+     * system to an ending one.
+     * \param startCoord Starting coordinate system.
+     * \param endCoord Ending coordinate system.
+     * \return Transformation matrix.
+     */
+    PdfeMatrix transMatrix( PRTextWordCoordinates::Enum startCoord,
+                            PRTextWordCoordinates::Enum endCoord );
 
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
@@ -301,7 +318,7 @@ public:
     // Getters.
     long pageIndex() const                          {   return m_pageIndex;     }
     long groupIndex() const                         {   return m_groupIndex;    }
-    const PdfeMatrix& transMatrix() const           {   return m_transMatrix;   }
+    const PdfeMatrix& gsTransMatrix() const         {   return m_transMatrix;   }
     const PoDoFoExtended::PdfeTextState& textState() const  {   return m_textState; }
     const PoDoFo::PdfRect& fontBBox() const         {   return m_fontBBox;  }
     PoDoFoExtended::PdfeFont* font() const          {   return m_pFont; }
@@ -309,7 +326,7 @@ public:
     // Setters
     void setPageIndex( long pageIndex );
     void setGroupIndex( long groupIndex );
-    void setTransMatrix( const PdfeMatrix& transMatrix );
+    void setGSTransMatrix( const PdfeMatrix& transMatrix );
     void setTextState( const PoDoFoExtended::PdfeTextState& textState );
 
 public:
@@ -350,9 +367,8 @@ private:
     PoDoFoExtended::PdfeFont*  m_pFont;
     /// Font bounding box.
     PoDoFo::PdfRect  m_fontBBox;
-
-    /// Text lines the group (or a subgroup) belongs to.
-    std::vector<PRTextLine*>  m_pTextLines;
+    /// Font renormalization transformation matrix (font coord to renorm coord)..
+    PdfeMatrix  m_fontNormTransMatrix;
 
     /// Transformation matrix of the graphics state.
     PdfeMatrix  m_transMatrix;
@@ -363,6 +379,9 @@ private:
     std::vector<PRTextWord>  m_words;
     /// Main subgroups of words.
     std::vector<Subgroup>  m_mainSubgroups;
+
+    /// Text lines the group (or a subgroup) belongs to.
+    std::vector<PRTextLine*>  m_pTextLines;
 };
 
 //**********************************************************//
@@ -436,12 +455,12 @@ public:
     PdfeVector advance( bool useGroupOrig ) const;
 
     /** Get the bounding box of the subgroup of words.
-     * \param pageCoords In page coordinates (true) or local coordinates (false) ?
+     * \param wordCoord Word coordinates system in which the bbox is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( bool pageCoords = true,
+    PdfeORect bbox( PRTextWordCoordinates::Enum wordCoord,
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
 
@@ -493,7 +512,7 @@ inline std::vector<PRTextLine*> PRTextGroupWords::textLines() const
 {
     return m_pTextLines;
 }
-inline void PRTextGroupWords::setTransMatrix( const PdfeMatrix& transMatrix )
+inline void PRTextGroupWords::setGSTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix; m_words.size();
 }

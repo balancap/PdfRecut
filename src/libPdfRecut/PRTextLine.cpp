@@ -212,6 +212,14 @@ PdfeMatrix PRTextLine::transMatrix()
     }
     return m_transMatrix;
 }
+double PRTextLine::meanFontSize()
+{
+    // Compute transformation matrix and bbox if necessary.
+    if( m_modified ) {
+        this->computeCacheData();
+    }
+    return m_meanFontSize;
+}
 
 bool PRTextLine::isEmpty() const
 {
@@ -363,8 +371,8 @@ void PRTextLine::computeBBoxes() const
     PdfeVector unitVect = unitRect.direction();
 
     PdfeMatrix transMat;
-    transMat(0,0) = unitVect(0);    transMat(0,1) = -unitVect(1);
-    transMat(1,0) = unitVect(1);    transMat(1,1) = unitVect(0);
+    transMat(0,0) =  unitVect(0);    transMat(0,1) = unitVect(1);
+    transMat(1,0) = -unitVect(1);    transMat(1,1) = unitVect(0);
     PdfeMatrix invTransMat = transMat.inverse();
 
     // Left, Bottom, Right and Top coordinates of the bounding box.
@@ -375,44 +383,49 @@ void PRTextLine::computeBBoxes() const
     // Left, Bottom, Right and Top coordinates of the No LT bounding box.
     double leftNoLT, bottomNoLT, rightNoLT, topNoLT;
     leftNoLT = bottomNoLT = std::numeric_limits<double>::max();
-    rightNoLT = topNoLT = std::numeric_limits<double>::min();
+    rightNoLT = topNoLT = -std::numeric_limits<double>::max();
 
     // Mean coordinate of the base line.
     double meanBaseCoord = 0.0;
     double totalWidth = 0.0;
 
+    // Mean font size.
+    m_meanFontSize = 0.0;
+
     // Big loop on subgroups of words.
     PdfeORect subGpBBox;
     for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
         // Update line bbox coordinates.
-        subGpBBox = m_subgroupsWords[i].bbox( true, true, true );
+        subGpBBox = m_subgroupsWords[i].bbox( PRTextWordCoordinates::Page, true, true );
         subGpBBox = invTransMat.map( subGpBBox );
 
         left = std::min( left, subGpBBox.leftBottomX() );
         bottom = std::min( bottom,  subGpBBox.leftBottomY() );
         right = std::max( right, subGpBBox.rightTopX() );
-        top = std::max( top, subGpBBox.rightTopY() );
+        top = std::max( top, subGpBBox.leftTopY() );
 
         // Update no LT line bbox coordinates, if the width is positive.
-        subGpBBox = m_subgroupsWords[i].bbox( true, false, true );
+        subGpBBox = m_subgroupsWords[i].bbox( PRTextWordCoordinates::Page, false, true );
         subGpBBox = invTransMat.map( subGpBBox );
 
         if( subGpBBox.width() > 0 && subGpBBox.height() > 0 ) {
             leftNoLT = std::min( leftNoLT, subGpBBox.leftBottomX() );
             bottomNoLT = std::min( bottomNoLT, subGpBBox.leftBottomY() );
             rightNoLT = std::max( rightNoLT, subGpBBox.rightTopX() );
-            topNoLT = std::max( topNoLT, subGpBBox.rightTopY() );
+            topNoLT = std::max( topNoLT, subGpBBox.leftTopY() );
         }
 
-        // Update mean base coordinate.
-        subGpBBox = m_subgroupsWords[i].bbox( true, true, false );
+        // Update mean base coordinate and font size.
+        subGpBBox = m_subgroupsWords[i].bbox( PRTextWordCoordinates::Page, true, false );
         subGpBBox = invTransMat.map( subGpBBox );
-
         double width = subGpBBox.width();
+
         totalWidth += width;
         meanBaseCoord += subGpBBox.leftBottomY() * width;
+        m_meanFontSize += m_subgroupsWords[i].group()->fontSize() * width;
     }
     meanBaseCoord = meanBaseCoord / totalWidth;
+    m_meanFontSize = m_meanFontSize / totalWidth;
 
     // Transformation matrix used for the line. Set such the (0,0) corresponds to (left, meanBaseCoord),
     // and the rotation component is transMat.
@@ -490,7 +503,7 @@ void PRTextLine::Block::init( const PRTextLine* pLine,
                                                                                    pLine->subgroup( idxSubgroup ) );
 
     // Compute bounding box.
-    PdfeORect bbox = subgroup.bbox( true, leadTrailSpaces, useBottomCoord );
+    PdfeORect bbox = subgroup.bbox( PRTextWordCoordinates::Page, leadTrailSpaces, useBottomCoord );
     bbox = m_pLine->transMatrix().inverse().map( bbox );
 
     m_bbox.SetLeft( bbox.leftBottomX() );

@@ -322,6 +322,7 @@ PdfeFont::Statistics PdfeFont::statistics( bool defaultValue ) const
         stats.meanBBox = PdfRect( 0.0, 0.0, 0.45, 0.57 );
     }
     else {
+        // TODO: case of Type 0 fonts.
         // Compute mean values.
         PdfeVector advance;
         double left = 0.0;
@@ -334,15 +335,17 @@ PdfeFont::Statistics PdfeFont::statistics( bool defaultValue ) const
             // Consider the character if GID not null and not a space char.
             pdfe_gid gid = this->fromCIDToGID( c );
             if( gid && ( this->isSpace( c ) == PdfeFontSpace::None ) ) {
-                advance = advance + this->advance( c, false );
-
                 PdfRect bbox = this->bbox( c, false );
-                left += bbox.GetLeft();
-                bottom += bbox.GetBottom();
-                width += bbox.GetWidth();
-                height += bbox.GetHeight();
+                if( bbox.GetWidth() > 0 && bbox.GetHeight() > 0 ) {
+                    advance = advance + this->advance( c, false );
 
-                nbChars++;
+                    left += bbox.GetLeft();
+                    bottom += bbox.GetBottom();
+                    width += bbox.GetWidth();
+                    height += bbox.GetHeight();
+
+                    nbChars++;
+                }
             }
         }
         stats.meanAdvance = advance.norm2() / nbChars;
@@ -350,6 +353,8 @@ PdfeFont::Statistics PdfeFont::statistics( bool defaultValue ) const
         stats.meanBBox.SetBottom( bottom / nbChars );
         stats.meanBBox.SetWidth( width / nbChars );
         stats.meanBBox.SetHeight( height / nbChars );
+//        stats.meanBBox = this->fontBBox();
+//        stats.meanAdvance = stats.meanBBox.GetWidth();
     }
     return stats;
 }
@@ -592,6 +597,20 @@ void PdfeFont::initLogInformation()
                 << QString( "Font program (%1,%2)." ).arg( bool( m_ftFace ) || this->type() == PdfeFontType::Type3 )
                    .arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) )
                    .toAscii().constData();
+
+//    if( this->type() == PdfeFontType::Type3 ) {
+//        PdfeFont::Statistics stats = this->statistics();
+//        qDebug() << QString( "Mean BBox : [ %1 ; %2 ; %3 ; %4 ]" )
+//                    .arg( stats.meanBBox.GetLeft() )
+//                    .arg( stats.meanBBox.GetBottom() )
+//                    .arg( stats.meanBBox.GetWidth() )
+//                    .arg( stats.meanBBox.GetHeight() )
+//                 << QString( "Font BBox : [ %1 ; %2 ; %3 ; %4 ]" )
+//                    .arg( this->fontBBox().GetLeft() )
+//                    .arg( this->fontBBox().GetBottom() )
+//                    .arg( this->fontBBox().GetWidth() )
+//                    .arg( this->fontBBox().GetHeight() );
+//    }
 }
 
 void PdfeFont::applyFontParameters( double& width, bool space32 ) const

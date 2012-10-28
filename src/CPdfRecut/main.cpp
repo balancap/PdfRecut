@@ -188,7 +188,7 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderParameters renderParams;
-    renderParams.resolution = 1.0;
+    renderParams.resolution = 3.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;

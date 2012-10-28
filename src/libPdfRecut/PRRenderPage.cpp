@@ -448,7 +448,7 @@ void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
         parameters.textPB.applyToPainter( m_pagePainter );
 
         // Paint word, if the width is positive !
-        PdfeORect bbox = groupWords.mSubgroup(i).bbox( false, true, true );
+        PdfeORect bbox = groupWords.mSubgroup(i).bbox( PRTextWordCoordinates::Font, true, true );
         PdfeVector lb = bbox.leftBottom();
         m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
     }

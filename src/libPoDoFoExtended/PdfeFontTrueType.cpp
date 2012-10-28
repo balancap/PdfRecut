@@ -184,6 +184,10 @@ PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
 }
 pdfe_gid PdfeFontTrueType::fromCIDToGID( pdfe_cid c ) const
 {
+    // Outside bounds: return 0.
+    if( c < m_firstCID || c > m_lastCID ) {
+        return 0;
+    }
     // No FreeType face loaded: return 0 GID.
     if( !ftFace() ) {
         return 0;

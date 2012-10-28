@@ -59,16 +59,16 @@ public:
      * \param subgroup Constant reference to the new subgroup.
      */
     void setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup );    
-    /** Get the number of subgroups in the line.
-     * \return Number of subgroups.
-     */
-    size_t nbSubgroups() const;
     /** Get a subgroup which is inside the line.
      * Can raise an exception.
      * \param idx Index of the subgroup.
      * \return Constant reference to the subgroup.
      */
     const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
+    /** Get the number of subgroups in the line.
+     * \return Number of subgroups.
+     */
+    size_t nbSubgroups() const;
     /** Clear empty subgroups in the line.
      */
     void clearEmptySubgroups();
@@ -112,6 +112,10 @@ public:
      * \return PdfeMatrix representing the transformation.
      */
     PdfeMatrix transMatrix();
+
+    /** Mean font size of the line.
+     */
+    double meanFontSize();
 
     /** Is the line empty?
      * \return Answer!
@@ -172,7 +176,8 @@ protected:
     mutable PoDoFo::PdfRect  m_bbox;
     /// Line bounding box (with no leading and trailing spaces).
     mutable PoDoFo::PdfRect  m_bboxNoLTSpaces;
-
+    /// Mean font size of the line.
+    mutable double  m_meanFontSize;
 };
 
 /** Block inside a line: represent a generic collection of subgroups
