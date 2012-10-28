@@ -615,9 +615,9 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
     }
     // Bounding box coordinates.
     double left = std::numeric_limits<double>::max();
-    double right = std::numeric_limits<double>::min();
+    double right = -std::numeric_limits<double>::max();
     double bottom = std::numeric_limits<double>::max();
-    double top = std::numeric_limits<double>::min();
+    double top = -std::numeric_limits<double>::max();
 
     // Compute bounding box.
     PdfeVector advance;

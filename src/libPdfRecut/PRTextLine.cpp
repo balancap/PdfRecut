@@ -378,7 +378,7 @@ void PRTextLine::computeBBoxes() const
     // Left, Bottom, Right and Top coordinates of the bounding box.
     double left, bottom, right, top;
     left = bottom = std::numeric_limits<double>::max();
-    right = top = std::numeric_limits<double>::min();
+    right = top = -std::numeric_limits<double>::max();
 
     // Left, Bottom, Right and Top coordinates of the No LT bounding box.
     double leftNoLT, bottomNoLT, rightNoLT, topNoLT;

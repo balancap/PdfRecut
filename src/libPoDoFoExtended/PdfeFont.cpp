@@ -170,8 +170,8 @@ PdfRect PdfeFont::bbox( const PdfeCIDString& str ) const
     // Bounding box coordinates.
     double left = std::numeric_limits<double>::max();
     double bottom = std::numeric_limits<double>::max();
-    double right = std::numeric_limits<double>::min();
-    double top = std::numeric_limits<double>::min();
+    double right = -std::numeric_limits<double>::max();
+    double top = -std::numeric_limits<double>::max();
 
     PdfeVector advance;
     PdfRect cbbox;
