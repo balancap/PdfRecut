@@ -18,7 +18,11 @@
  ***************************************************************************/
 
 #include "PdfeFontType0.h"
+#include "PdfeUtils.h"
+
 #include "podofo/podofo.h"
+
+#include <boost/shared_ptr.hpp>
 
 using namespace PoDoFo;
 
@@ -151,10 +155,9 @@ double PdfeFontType0::spaceHeight() const
     // Default implementation.
     return this->PdfeFont::spaceHeight();
 }
-pdfe_gid PdfeFontType0::fromCIDToGID(pdfe_cid c) const
+pdfe_gid PdfeFontType0::fromCIDToGID( pdfe_cid c ) const
 {
-    // TODO: improve implementation using mapCIDToGID.
-    return c;
+    return m_fontCID->fromCIDToGID( c );
 }
 
 //**********************************************************//
@@ -168,11 +171,12 @@ void PdfeFontCID::init()
 {
     m_type = PdfeFontType::Unknown;
     m_subtype =PdfeFontSubType::Unknown;
-
     m_baseFont = PdfName();
-    m_cidSystemInfo.init();
 
+    m_cidSystemInfo.init();
     m_fontDescriptor.init();
+    m_hBBoxes.init();
+    m_mapCIDToGID.clear();
 }
 void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
 {
@@ -204,6 +208,9 @@ void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
     m_cidSystemInfo.init( pCIDSytemInfo );
     m_fontDescriptor.init( pDescriptor );
 
+    // CID to GID map.
+    this->initMapCIDToGID( pFont->GetIndirectKey( "CIDToGIDMap" ) );
+
     // Read width of glyphs CID.
     double defaultWidth = static_cast<double>( pFont->GetDictionary().GetKeyAsLong( "DW", 1000L ) );
     if( pWidths ) {
@@ -215,7 +222,30 @@ void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
 }
 void PdfeFontCID::initCharactersBBox( FT_Face ftFace )
 {
-    m_hBBoxes.initCharactersBBox( ftFace );
+    m_hBBoxes.initCharactersBBox( ftFace, this );
+}
+void PdfeFontCID::initMapCIDToGID( PdfObject* pMapObj )
+{
+    // Case the map is set to identity...
+    if( !pMapObj || pMapObj->IsName() || ! pMapObj->HasStream() ) {
+        m_mapCIDToGID.clear();
+        return;
+    }
+
+    // Copy stream content (use boost shared pointer to autmotically free the memory).
+    char* pBuffer;
+    long length;
+    pMapObj->GetStream()->GetFilteredCopy( &pBuffer, &length );
+    boost::shared_ptr<char> spBuffer( pBuffer, free_ptr_fctor<char>() );
+
+    // Copy the mapping given in the stream.
+    long size = length / 2;
+    PoDoFo::pdf_uint16* pgid = reinterpret_cast<PoDoFo::pdf_uint16*>( pBuffer );
+    m_mapCIDToGID.resize( size, 0 );
+    for( long i = 0 ; i < size ; ++i ) {
+        m_mapCIDToGID[i] = PDFE_UTF16BE_HBO( *pgid );
+        pgid++;
+    }
 }
 
 PdfeVector PdfeFontCID::advance( pdfe_cid c ) const
@@ -230,6 +260,32 @@ PoDoFo::PdfRect PdfeFontCID::bbox( pdfe_cid c ) const
     PdfRect cbbox = m_hBBoxes.bbox( c );
     return PdfRectRescale( cbbox, 0.001 );
 }
+pdfe_gid PdfeFontCID::fromCIDToGID( pdfe_cid c ) const
+{
+    // Check c is in the range [firstCID, lastCID].
+    bool insideRange = false;
+    for( size_t i = 0 ; i < this->firstCIDs().size() && !insideRange ; ++i ) {
+        insideRange = ( firstCIDs()[i] <= c ) && ( c <= lastCIDs()[i] );
+    }
+    // Not inside... Return 0.
+    if(!insideRange ) {
+        return 0;
+    }
+
+    // Use CID to GID map.
+    if( !m_mapCIDToGID.size() ) {
+        // Default identity map.
+        return c;
+    }
+    else {
+        if( c < m_mapCIDToGID.size() ) {
+            return m_mapCIDToGID[c];
+        }
+    }
+    // Default value...
+    return 0;
+}
+
 
 //**********************************************************//
 //                   PdfeFontCID::HBBoxArray                //
@@ -304,17 +360,18 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
         }
     }
 }
-void PdfeFontCID::HBBoxArray::initCharactersBBox( FT_Face ftFace )
+void PdfeFontCID::HBBoxArray::initCharactersBBox( FT_Face ftFace , PdfeFontCID* pFontCID )
 {
     // Get glyph bbox for characters in each group.
     for( size_t i = 0 ; i < m_bboxCID.size() ; ++i ) {
         for( pdfe_cid c = m_firstCID[i] ; c <= m_lastCID[i] ; ++c ) {
-            // Glyph ID. TODO: map CID to GID...
-            pdfe_gid glyph_idx = c;
-
-            PdfRect glyphBBox = PdfeFont::ftGlyphBBox( ftFace, glyph_idx );
-            if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {    
-                m_bboxCID[i][ c - m_firstCID[i] ] = glyphBBox;
+            // Glyph ID.
+            pdfe_gid gid = pFontCID->fromCIDToGID( c );
+            if( gid ) {
+                PdfRect glyphBBox = PdfeFont::ftGlyphBBox( ftFace, gid );
+                if( glyphBBox.GetWidth() > 0 && glyphBBox.GetHeight() > 0 ) {
+                    m_bboxCID[i][ c - m_firstCID[i] ] = glyphBBox;
+                }
             }
         }
     }

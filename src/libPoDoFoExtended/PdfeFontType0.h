@@ -155,6 +155,12 @@ public:
      */
     void initCharactersBBox( FT_Face ftFace );
 
+private:
+    /** Initialize the CID to GID map.
+     * \param pMapObj Pointer to the PoDoFo map object. Can be null.
+     */
+    void initMapCIDToGID( PoDoFo::PdfObject* pMapObj );
+
 public:
     /** Get the descriptor object corresponding to the font.
      * \return Constant reference to a PdfeFontDescriptor object.
@@ -185,6 +191,13 @@ public:
      * \return Constant reference to a vector of CID.
      */
     const std::vector<pdfe_cid>& lastCIDs() const;
+
+    /** Convert a character CID to the corresponding glyph GID.
+     * Need the freetype face, unicode CMap and encoding to be initialized.
+     * \param c Character CID;
+     * \return Glyph GID. 0 if not found.
+     */
+    pdfe_gid fromCIDToGID( pdfe_cid c ) const;
 
     /** Get default height used for space characters of the font.
      * \return Space height.
@@ -217,8 +230,9 @@ protected:
 
         /** Initialize characters bounding box.
          * \param FreeType face use to retrieve glyph information.
+         * \param pFontCID Parent CID font.
          */
-        void initCharactersBBox(FT_Face ftFace );
+        void initCharactersBBox( FT_Face ftFace, PdfeFontCID* pFontCID );
 
         /** Get default width.
          * \return Default width of CID glyphs.
@@ -286,6 +300,8 @@ private:
     PdfeFontDescriptor  m_fontDescriptor;
     /// Horizontal bounding boxes of characters.
     HBBoxArray  m_hBBoxes;
+    /// CID to GID map. If empty, assume it is Identity.
+    std::vector<pdfe_gid>  m_mapCIDToGID;
 };
 
 
