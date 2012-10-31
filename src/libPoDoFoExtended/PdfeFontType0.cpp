@@ -365,7 +365,7 @@ void PdfeFontCID::HBBoxArray::initCharactersBBox( FT_Face ftFace , PdfeFontCID* 
     // Get glyph bbox for characters in each group.
     for( size_t i = 0 ; i < m_bboxCID.size() ; ++i ) {
         for( pdfe_cid c = m_firstCID[i] ; c <= m_lastCID[i] ; ++c ) {
-            // Glyph ID.
+            // Glyph ID, using the CID to GID map from CID fonts.
             pdfe_gid gid = pFontCID->fromCIDToGID( c );
             if( gid ) {
                 PdfRect glyphBBox = PdfeFont::ftGlyphBBox( ftFace, gid );

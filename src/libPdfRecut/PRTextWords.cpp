@@ -97,17 +97,6 @@ void PRTextWord::init( double spaceWidth, double spaceHeight, PRTextWordType::En
     m_bbox = PdfRect( 0.0, 0.0, spaceWidth, spaceHeight );
 }
 
-PdfRect PRTextWord::bbox( bool useBottomCoord ) const
-{
-    PdfRect bbox = m_bbox;
-    // Set bottom to zero.
-    if( !useBottomCoord ) {
-        bbox.SetHeight( bbox.GetHeight() + bbox.GetBottom() );
-        bbox.SetBottom( 0.0 );
-    }
-    return bbox;
-}
-
 //**********************************************************//
 //                     PRTextGroupWords                     //
 //**********************************************************//
@@ -523,15 +512,18 @@ PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords& group , bool allGr
 }
 PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords::Subgroup& subgroup )
 {
-    // Comy members.
+    // Copy members.
     m_pGroup = subgroup.m_pGroup;
     m_wordsInside = subgroup.m_wordsInside;
+    m_bboxCache = subgroup.m_bboxCache;
+    m_isBBoxCache = subgroup.m_isBBoxCache;
 }
 
 void PRTextGroupWords::Subgroup::init()
 {
     m_pGroup = NULL;
     m_wordsInside.clear();
+    m_isBBoxCache = false;
 }
 
 void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGroup )
@@ -544,6 +536,7 @@ void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGr
     else {
         m_wordsInside.assign( group.nbWords(), false );
     }
+    m_isBBoxCache = false;
 }
 
 size_t PRTextGroupWords::Subgroup::length( bool countSpaces ) const
@@ -595,10 +588,22 @@ PdfeVector PRTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
 PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoord, bool leadTrailSpaces, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
-    PdfeORect bbox( 0.0, 0.0 );
     if( !m_wordsInside.size() ) {
+        return PdfeORect( 0.0, 0.0 );
+    }
+    // BBox cache.
+    if( m_isBBoxCache ) {
+        PdfeORect bbox( m_bboxCache );
+        // Apply transformation if needed.
+        if( wordCoord != PRTextWordCoordinates::Font ) {
+            PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
+            bbox = transMat.map( bbox );
+        }
         return bbox;
     }
+
+    // Else: classic computation.
+    PdfeORect bbox( 0.0, 0.0 );
 
     // First and last indexes of the subgroup.
     long idxFirst = 0;
@@ -629,11 +634,11 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
         // If inside the subgroup, update coordinates (remove spaces if needed).
         if( this->inside( i ) && i >= idxFirst && i <= idxLast &&
                 ( leadTrailSpaces || word.type() == PRTextWordType::Classic )  ) {
-           left = std::min( left, advance(0) + wbbox.GetLeft() );
+            left = std::min( left, advance(0) + wbbox.GetLeft() );
             bottom = std::min( bottom, advance(1) + wbbox.GetBottom() );
             right = std::max( right, advance(0) + wbbox.GetLeft() + wbbox.GetWidth() );
             top = std::max( top, advance(1) + wbbox.GetBottom() + wbbox.GetHeight() );
-       }
+        }
         advance += word.advance();
     }
     // Strange coordinates, return empty bbox.
@@ -650,6 +655,10 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
         PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
         bbox = transMat.map( bbox );
     }
+    // Cache result
+    m_bboxCache = bbox;
+    m_isBBoxCache = true;
+
     return bbox;
 }
 

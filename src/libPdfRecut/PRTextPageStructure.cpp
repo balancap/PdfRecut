@@ -130,9 +130,9 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
 {
     // Parameters of the algorithm, based on font statistics.
     long MaxSearchGroupWords = 20;
-    double MaxHDistanceLB = -8.0;
-    double MaxHDistanceUB = 4.0;
-    double MaxCumulWidth = 15.0;
+    double MaxHDistanceLB = -10.0;
+    double MaxHDistanceUB = 6.0;
+    double MaxCumulWidth = 25.0;
     double MinVOverlap = 0.3;
 
     // Right group of words and its bbox.
@@ -213,9 +213,8 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
                 break;
             }
         }
-        // Add group width (without spaces).
+        // Add group width (without leading and trailing spaces).
         lGroupsCumulWidth += lGroupWords.bbox( PRTextWordCoordinates::FontNormalized, false, true ).width();
-//        lGroupsCumulWidth += lGroupWords.width( false );
         if( lGroupsCumulWidth > MaxCumulWidth ) {
             break;
         }
@@ -697,7 +696,7 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 
         // Draw the group on the page.
         renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
-        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
+//        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
 //        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }

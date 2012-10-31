@@ -495,7 +495,29 @@ private:
     PRTextGroupWords*  m_pGroup;
     /// Vector of boolean telling if words of the group belongs to the subgroup.
     std::vector<bool>  m_wordsInside;
+
+    // Cache private data.
+    /// Cache Bounding box.
+    mutable PdfeORect  m_bboxCache;
+    /// Is the bounding box cache?
+    mutable bool  m_isBBoxCache;
 };
+
+//**********************************************************//
+//                    Inline PRTextWord                     //
+//**********************************************************//
+inline PoDoFo::PdfRect PRTextWord::bbox( bool useBottomCoord ) const
+{
+    if( useBottomCoord ) {
+        return m_bbox;
+    }
+
+    // Set bottom to zero.
+    PoDoFo::PdfRect bbox = m_bbox;
+    bbox.SetHeight( bbox.GetHeight() + bbox.GetBottom() );
+    bbox.SetBottom( 0.0 );
+    return bbox;
+}
 
 //**********************************************************//
 //                 Inline PRTextGroupWords                  //
@@ -556,6 +578,7 @@ inline bool PRTextGroupWords::Subgroup::inside( size_t idxWord ) const
 inline void PRTextGroupWords::Subgroup::setInside( size_t idxWord, bool inside )
 {
     m_wordsInside.at( idxWord ) = inside;
+    m_isBBoxCache = false;
 }
 inline const PRTextWord* PRTextGroupWords::Subgroup::word( size_t idxWord ) const
 {

@@ -435,15 +435,24 @@ void PRTextLine::computeBBoxes() const
     m_transMatrix = rescaleMat * transMat;
 
     // Set bounding boxes.
-    m_bbox.SetLeft( 0.0 );
-    m_bbox.SetBottom( bottom - meanBaseCoord );
-    m_bbox.SetWidth( right - left );
-    m_bbox.SetHeight( top - bottom );
-
-    m_bboxNoLTSpaces.SetLeft( leftNoLT - left  );
-    m_bboxNoLTSpaces.SetBottom( bottomNoLT - meanBaseCoord );
-    m_bboxNoLTSpaces.SetWidth( rightNoLT - leftNoLT );
-    m_bboxNoLTSpaces.SetHeight( topNoLT - bottomNoLT );
+    if( right >= left && top >= bottom ) {
+        m_bbox.SetLeft( 0.0 );
+        m_bbox.SetBottom( bottom - meanBaseCoord );
+        m_bbox.SetWidth( right - left );
+        m_bbox.SetHeight( top - bottom );
+    }
+    else {
+        m_bbox = PdfRect( 0,0,0,0 );
+    }
+    if( rightNoLT >= leftNoLT && topNoLT >= bottomNoLT ) {
+        m_bboxNoLTSpaces.SetLeft( leftNoLT - left  );
+        m_bboxNoLTSpaces.SetBottom( bottomNoLT - meanBaseCoord );
+        m_bboxNoLTSpaces.SetWidth( rightNoLT - leftNoLT );
+        m_bboxNoLTSpaces.SetHeight( topNoLT - bottomNoLT );
+    }
+    else {
+        m_bboxNoLTSpaces = PdfRect( 0,0,0,0 );
+    }
 }
 
 bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )

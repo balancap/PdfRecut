@@ -21,13 +21,14 @@
 #ifndef PDFETYPES_H
 #define PDFETYPES_H
 
-//#ifndef NDEBUG
-//#define NDEBUG
-//#include "vmmlib/vmmlib.hpp"
-//#undef NDEBUG
-//#else
+#ifndef NDEBUG
+#define NDEBUG
 #include "vmmlib/vmmlib.hpp"
-//#endif
+#undef NDEBUG
+#else
+#include "vmmlib/vmmlib.hpp"
+#endif
+//#include "vmmlib/vmmlib.hpp"
 
 #include "podofo/base/PdfRect.h"
 

@@ -188,7 +188,7 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderParameters renderParams;
-    renderParams.resolution = 3.0;
+    renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
@@ -203,8 +203,8 @@ void proceedFile( QString filePath )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        textPage.renderTextGroupsWords( renderPage );
-        textPage.renderTextLines( renderPage );
+        textPage.renderTextGroupsWords( renderPage );
+//        textPage.renderTextLines( renderPage );
 //        renderPage.render( renderParams );
 
         // Save image to file.
