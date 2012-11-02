@@ -203,8 +203,8 @@ void proceedFile( QString filePath )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-        textPage.renderTextGroupsWords( renderPage );
-//        textPage.renderTextLines( renderPage );
+//        textPage.renderTextGroupsWords( renderPage );
+        textPage.renderTextLines( renderPage );
 //        renderPage.render( renderParams );
 
         // Save image to file.

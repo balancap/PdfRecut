@@ -66,7 +66,6 @@ enum Enum {
     FontNormalized,     /// Renormalized font coordinates.
     Page                /// Page coordinates.
 };
-
 }
 
 /** Class that represents a single word from a PDF stream.
@@ -497,7 +496,7 @@ private:
     std::vector<bool>  m_wordsInside;
 
     // Cache private data.
-    /// Cache Bounding box.
+    /// Cache Bounding box (with spaces and bottom). TODO: improve?
     mutable PdfeORect  m_bboxCache;
     /// Is the bounding box cache?
     mutable bool  m_isBBoxCache;

@@ -80,15 +80,15 @@ void PRTextPageStructure::detectLines()
     }
 
     // Sort lines using group index.
-//    std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::sortLines );
+    std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::compareGroupIndex );
 
-//    // Try to merge some lines (inside elements).
-//    PRTextLine* pLine;
-//    std::vector<PRTextLine*>::iterator it;
-//    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-//        pLine = this->mergeLines_EnlargeInside( *it );
-//        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-//    }
+    // Try to merge some lines (inside elements).
+    PRTextLine* pLine;
+    std::vector<PRTextLine*>::iterator it;
+    for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
+        pLine = this->mergeLines_EnlargeInside( *it );
+        it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
+    }
 
     // Try to merge with elements outside a line.
     /*const size_t nLoops = 8;
@@ -206,7 +206,6 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
                     pLinesToMerge.push_back( lGroupLines[0] );
                     break;
                 }
-
             }
             // Line found: break...
             if( lrGroupLink ) {
@@ -219,7 +218,6 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
             break;
         }
     }
-
     // Add line corresponding to the right group.
     if( rGroupWords.textLines().empty() ) {
         m_pTextLines.push_back( new PRTextLine() );
@@ -228,13 +226,14 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
     }
 
     // Sort lines to merge using the indexes of their groups.
-    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::compareGroupIndex );
 
     // Merge lines.
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine )
+PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
+                                                           )
 {
     // Parameters of the algorithm.
     const double MinBaseHeight = 0.8;
@@ -252,8 +251,9 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
     pLinesToMerge.push_back( pBaseLine );
 
     // Line bounding box (no spaces) and transformation matrix.
-    PdfeORect baseLineOBBox = pBaseLine->bbox( false, false, true );
-    PdfeMatrix baseTransMat = pBaseLine->transMatrix().inverse();
+    PdfeORect baseLineOBBox = pBaseLine->bbox( PRTextLineCoordinates::Line, false );
+    PdfeMatrix baseTransMat = pBaseLine->transMatrix( PRTextLineCoordinates::Page,
+                                                      PRTextLineCoordinates::Line );
 
     // Line too small, do not consider it...
     if( baseLineOBBox.width() <= MinLineWidth ) {
@@ -279,7 +279,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
         }
 
         // Line bounding box in base coordinates system (check it is not empty).
-        PdfeORect lineOBBox = pLine->bbox( true, false, true );
+        PdfeORect lineOBBox = pLine->bbox( PRTextLineCoordinates::Page, false );
         if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 ) {
             continue;
         }
@@ -299,7 +299,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
         }
     }
     // Sort lines to merge using the indexes of their groups.
-    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::compareGroupIndex );
 
     // Merge lines.
     return this->mergeVectorLines( pLinesToMerge );
@@ -333,8 +333,9 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
     pLinesToMerge.push_back( pBaseLine );
 
     // Line bounding box (no spaces) and transformation matrix.
-    PdfeORect baseLineOBBox = pBaseLine->bbox( false, false, true );
-    PdfeMatrix baseTransMat = pBaseLine->transMatrix().inverse();
+    PdfeORect baseLineOBBox = pBaseLine->bbox( PRTextLineCoordinates::Line, false );
+    PdfeMatrix baseTransMat = pBaseLine->transMatrix( PRTextLineCoordinates::Page,
+                                                      PRTextLineCoordinates::Line );
 
     // Line too small, do not consider it...
     if( baseLineOBBox.width() <= MinLineWidth ) {
@@ -358,7 +359,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
                 continue;
             }
             // Line bounding box in base coordinates system (check it is not empty or too big).
-            PdfeORect lineOBBox = pLine->bbox( true, false, true );
+            PdfeORect lineOBBox = pLine->bbox( PRTextLineCoordinates::Page, false );
             lineOBBox = baseTransMat.map( lineOBBox );
             if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 || lineOBBox.width() >= MaxLineWidth ) {
                 continue;
@@ -376,7 +377,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
         }
     }
     // Sort lines to merge using the indexes of their groups.
-    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::compareGroupIndex );
 
     // Merge lines.
     return this->mergeVectorLines( pLinesToMerge );
@@ -445,7 +446,7 @@ PRTextLine* PRTextPageStructure::mergeLines_Inside( PRTextLine* pLine )
         }
     }
     // Sort lines to merge using the indexes of their groups.
-    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::compareGroupIndex );
 
     // Merge lines.
     return this->mergeVectorLines( pLinesToMerge );
@@ -465,8 +466,9 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
     if( pLine->width( true ) > MaxWidthLine || pLine->length( false ) > MaxLengthLine ) {
         return pLine;
     }
-    PdfeMatrix lineTransMat = pLine->transMatrix().inverse();
-    PdfeORect lineBBox = pLine->bbox( false, true, true );
+    PdfeMatrix lineTransMat = pLine->transMatrix( PRTextLineCoordinates::Page,
+                                                  PRTextLineCoordinates::Line );
+    PdfeORect lineBBox = pLine->bbox( PRTextLineCoordinates::Line, true );
     PdfeVector lineLBPoint = lineBBox.leftBottom();
 
     // Vector of lines to merge.
@@ -500,7 +502,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
                 distMaxBefore = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
 
                 // Line bounding box.
-                PdfeORect lineBBox2nd = pLine2nd->bbox( true, true, true );
+                PdfeORect lineBBox2nd = pLine2nd->bbox( PRTextLineCoordinates::Page, true );
                 lineBBox2nd = lineTransMat.map( lineBBox2nd );
 
                 // Compute the expected height of the merge line.
@@ -536,7 +538,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
                 distMaxAfter = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
 
                 // Line bounding box.
-                PdfeORect lineBBox2nd = pLine2nd->bbox( true, true, true );
+                PdfeORect lineBBox2nd = pLine2nd->bbox( PRTextLineCoordinates::Page, true );
                 lineBBox2nd = lineTransMat.map( lineBBox2nd );
 
                 // Compute the expected height of the merge line.
@@ -555,7 +557,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
     }
 
     // Sort lines to merge using the indexes of their groups.
-    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::sortLines );
+    std::sort( pLinesToMerge.begin(), pLinesToMerge.end(), PRTextLine::compareGroupIndex );
 
     // Merge lines.
     return this->mergeVectorLines( pLinesToMerge );
@@ -738,7 +740,7 @@ void PRTextPageStructure::renderTextLines( PRRenderPage& renderPage )
             }
 
             // Line bounding box.
-            renderPage.drawPdfeORect( pline->bbox( true, false, true ), linePen );
+            renderPage.drawPdfeORect( pline->bbox( PRTextLineCoordinates::Page, false ), linePen );
 
             // Line blocks.
 //            std::vector<PRTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );

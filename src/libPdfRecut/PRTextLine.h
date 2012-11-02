@@ -25,6 +25,16 @@
 
 namespace PdfRecut {
 
+namespace PRTextLineCoordinates {
+/** Enumeration of the different coordinates system
+ * a line bounding box can be expressed in.
+ */
+enum Enum {
+    Line = 0,           /// Default line coordinates.
+    Page                /// Page coordinates.
+};
+}
+
 /** Class that represent a line of text in a PDF page.
  */
 class PRTextLine
@@ -89,14 +99,12 @@ public:
     long maxGroupIndex() const;
 
     /** Get the line bounding box.
-     * \param pageCoords BBox in page coordinates (true) or local coordinates (false) ?
+     * \param lineCoords Coordinates system in which the bounding box is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
-     * \param useBottomCoord Use bottom coordinates for the rectangle?
      * \return Oriented rectangle containing the bounding box.
      */
-    PdfeORect bbox( bool pageCoords,
-                    bool leadTrailSpaces,
-                    bool useBottomCoord );
+    PdfeORect bbox( PRTextLineCoordinates::Enum lineCoords,
+                    bool leadTrailSpaces );
     /** Get the width of the line.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Width in local coordinates.
@@ -108,10 +116,14 @@ public:
      */
     size_t length( bool countSpaces );
 
-    /** Get the transformation matrix associated to line coordinates.
-     * \return PdfeMatrix representing the transformation.
+    /** Get a transformation matrix from a starting coordinate
+     * system to an ending one.
+     * \param startCoord Starting coordinate system.
+     * \param endCoord Ending coordinate system.
+     * \return Transformation matrix.
      */
-    PdfeMatrix transMatrix();
+    PdfeMatrix transMatrix( PRTextLineCoordinates::Enum startCoord,
+                            PRTextLineCoordinates::Enum endCoord );
 
     /** Mean font size of the line.
      */
@@ -155,7 +167,7 @@ public:
      * \param pLine2 Pointer to the second line.
      * \return line1 < line2.
      */
-    static bool sortLines( PRTextLine* pLine1, PRTextLine* pLine2 );
+    static bool compareGroupIndex( PRTextLine* pLine1, PRTextLine* pLine2 );
 
 protected:
     /// Index of the page to which belongs the line.

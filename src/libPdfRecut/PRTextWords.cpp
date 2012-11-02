@@ -592,7 +592,7 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
         return PdfeORect( 0.0, 0.0 );
     }
     // BBox cache.
-    if( m_isBBoxCache ) {
+    if( m_isBBoxCache && leadTrailSpaces && useBottomCoord ) {
         PdfeORect bbox( m_bboxCache );
         // Apply transformation if needed.
         if( wordCoord != PRTextWordCoordinates::Font ) {
@@ -650,15 +650,17 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
     bbox.setLeftBottom( PdfeVector( left, bottom ) );
     bbox.setHeight( top - bottom );
 
+    // Cache result
+    if( !m_isBBoxCache && leadTrailSpaces && useBottomCoord ) {
+        m_bboxCache = bbox;
+        m_isBBoxCache = true;
+    }
+
     // Apply transformation if needed.
     if( wordCoord != PRTextWordCoordinates::Font ) {
         PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
         bbox = transMat.map( bbox );
     }
-    // Cache result
-    m_bboxCache = bbox;
-    m_isBBoxCache = true;
-
     return bbox;
 }
 

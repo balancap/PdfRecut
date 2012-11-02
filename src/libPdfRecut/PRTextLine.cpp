@@ -156,7 +156,7 @@ long PRTextLine::maxGroupIndex() const
     return maxGroupIdx;
 }
 
-PdfeORect PRTextLine::bbox( bool pageCoords, bool leadTrailSpaces, bool useBottomCoord )
+PdfeORect PRTextLine::bbox( PRTextLineCoordinates::Enum lineCoords, bool leadTrailSpaces )
 {
     // Compute the bounding box if necessary.
     if( m_modified ) {
@@ -168,16 +168,18 @@ PdfeORect PRTextLine::bbox( bool pageCoords, bool leadTrailSpaces, bool useBotto
     if( !leadTrailSpaces ) {
         bbox = m_bboxNoLTSpaces;
     }
+    // Bottom coordinates: TODO.
+//    if( !useBottomCoord ) {
+//        PdfeVector lbPoint = bbox.leftBottom();
 
-    if( !useBottomCoord ) {
-        PdfeVector lbPoint = bbox.leftBottom();
+//        // Update height and bottom.
+//        bbox.setHeight( bbox.height()+lbPoint(1) );
+//        lbPoint(1) = 0.0;
+//        bbox.setLeftBottom( lbPoint );
+//    }
 
-        // Update height and bottom.
-        bbox.setHeight( bbox.height()+lbPoint(1) );
-        lbPoint(1) = 0.0;
-        bbox.setLeftBottom( lbPoint );
-    }
-    if( pageCoords ) {
+    // Transformation if necessary
+    if( lineCoords == PRTextLineCoordinates::Page ) {
         bbox = m_transMatrix.map( bbox );
     }
     return bbox;
@@ -204,13 +206,25 @@ size_t PRTextLine::length( bool countSpaces )
     }
     return length;
 }
-PdfeMatrix PRTextLine::transMatrix()
+PdfeMatrix PRTextLine::transMatrix( PRTextLineCoordinates::Enum startCoord,
+                                    PRTextLineCoordinates::Enum endCoord )
 {
     // Compute transformation matrix and bbox if necessary.
     if( m_modified ) {
         this->computeCacheData();
     }
-    return m_transMatrix;
+
+    // Get the transformation matrix
+    if( startCoord == PRTextLineCoordinates::Line &&
+        endCoord == PRTextLineCoordinates::Page ) {
+        return m_transMatrix;
+    }
+    else if( startCoord == PRTextLineCoordinates::Page &&
+             endCoord == PRTextLineCoordinates::Line ) {
+        return m_transMatrix.inverse();
+    }
+    // Identity in default case.
+    return PdfeMatrix();
 }
 double PRTextLine::meanFontSize()
 {
@@ -455,7 +469,7 @@ void PRTextLine::computeBBoxes() const
     }
 }
 
-bool PRTextLine::sortLines( PRTextLine* pLine1, PRTextLine* pLine2 )
+bool PRTextLine::compareGroupIndex( PRTextLine* pLine1, PRTextLine* pLine2 )
 {
     // Compare minimum group index found in each line.
     return ( pLine1->minGroupIndex() < pLine2->minGroupIndex() );
@@ -513,7 +527,8 @@ void PRTextLine::Block::init( const PRTextLine* pLine,
 
     // Compute bounding box.
     PdfeORect bbox = subgroup.bbox( PRTextWordCoordinates::Page, leadTrailSpaces, useBottomCoord );
-    bbox = m_pLine->transMatrix().inverse().map( bbox );
+    bbox = m_pLine->transMatrix( PRTextLineCoordinates::Page,
+                                 PRTextLineCoordinates::Line ).map( bbox );
 
     m_bbox.SetLeft( bbox.leftBottomX() );
     m_bbox.SetBottom( bbox.leftBottomY() );
