@@ -82,7 +82,14 @@ PdfeFontType1::PdfeFontType1( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Font encoding.
     PdfObject* pEncoding = pFont->GetIndirectKey( "Encoding" );
-    this->initEncoding( pEncoding );
+    if( pEncoding ) {
+        this->initEncoding( pEncoding );
+    }
+    else {
+        // Default choice: standard encoding.
+        //this->initEncoding( const_cast<PdfEncoding*>( PdfEncodingFactory::GlobalStandardEncodingInstance() ), false );
+    }
+
     // Unicode CMap.
     PdfObject* pUnicodeCMap = pFont->GetIndirectKey( "ToUnicode" );
     this->initUnicodeCMap( pUnicodeCMap );
@@ -326,9 +333,31 @@ pdfe_gid PdfeFontType1::fromCIDToGID( pdfe_cid c ) const
     if( !ftFace() ) {
         return 0;
     }
+
+    // Symbolic font?
+    pdfe_gid gid( 0 );
+    bool symbolic = this->fontDescriptor().flags() & PdfeFontDescriptor::FlagSymbolic;
+
+    // Symbolic fonts: directly use font encoding. TODO: clean up?
+    if( symbolic ){
+        // Try different charmaps (except unicode).
+        for( int i = 0 ; i < ftFace()->num_charmaps ; i++ ) {
+            FT_CharMap charmap = ftFace()->charmaps[i];
+            if( this->ftCharmapIndex( FTCharmap31 ) != i ) {
+                FT_Set_Charmap( ftFace(), charmap );
+                gid = this->ftGIDFromCharCode( c, false );
+                if( gid ) {
+                    return gid;
+                }
+            }
+        }
+    }
+
     // Get the glyph index of the character from its name.
+    // Usually the default way.
     PdfName cname = this->fromCIDToName( c );
-    return this->ftGIDFromName( cname );
+    gid = this->ftGIDFromName( cname );
+    return gid;
 }
 
 }
