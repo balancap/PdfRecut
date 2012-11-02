@@ -398,13 +398,15 @@ public:
     /** Enlarge a rectangle along X and Y directions.
      * \param xEnlarge Enlargement along X direction.
      * \param yEnlarge Enlargement along Y direction.
+     * \return Reference to the modified rectangle.
      */
-    void enlarge( double xEnlarge, double yEnlarge ) {
+    PdfeORect& enlarge( double xEnlarge, double yEnlarge ) {
         // Change coordinates and size.
         m_leftBottom( 0 ) = m_leftBottom( 0 ) - xEnlarge;
         m_leftBottom( 1 ) = m_leftBottom( 1 ) - yEnlarge;
         m_width = m_width + 2 * xEnlarge;
-        m_height = m_height + 2* yEnlarge;
+        m_height = m_height + 2 * yEnlarge;
+        return *this;
     }
 
     /** Rough conversion to PdfRect: basically ignore the direction.

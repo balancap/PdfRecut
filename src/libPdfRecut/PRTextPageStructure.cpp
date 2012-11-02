@@ -82,21 +82,31 @@ void PRTextPageStructure::detectLines()
     // Sort lines using group index.
     std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRTextLine::compareGroupIndex );
 
+    // Inside enlarge algorithm parameters.
+    const double MinBaseHeightIn = 0.0;
+    const double MaxBaseHeightIn = std::numeric_limits<double>::max();
+    const double MinLineWidthIn = 1.0;
+
     // Try to merge some lines (inside elements).
     PRTextLine* pLine;
     std::vector<PRTextLine*>::iterator it;
     for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
-        pLine = this->mergeLines_EnlargeInside( *it );
+        pLine = this->mergeLines_EnlargeInside( *it,
+                                                MinBaseHeightIn,
+                                                MaxBaseHeightIn,
+                                                MinLineWidthIn );
         it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
     }
 
+    // TODO: improve using text statistics.
     // Try to merge with elements outside a line.
-    /*const size_t nLoops = 8;
+    const size_t nLoops = 8;
     for( size_t n = 0 ; n <= nLoops ; ++n ) {
         // Algorithm parameters for this iteration.
         double ScaleXEnlarge = 0.15 * n;
         double ScaleYEnlarge = 0.05 * n;
-        double MaxLineWidth = 8.0 - 0.7*n;
+        double MaxLineWidth = std::numeric_limits<double>::max();
+        //double MaxLineWidth = 8.0 - 0.7*n;
 
         for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ++it ) {
             // Try to merge every line.
@@ -108,12 +118,15 @@ void PRTextPageStructure::detectLines()
             it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
 
             // Also merge inside elements in case they appear.
-            pLine = this->mergeLines_EnlargeInside( *it );
+            pLine = this->mergeLines_EnlargeInside( *it,
+                                                    MinBaseHeightIn,
+                                                    MaxBaseHeightIn,
+                                                    MinLineWidthIn );
             it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
         }
     }
-
-    // Now split lines, using horizontal blocks.
+/*
+    // Split lines which have too large inside horizontal spaces.
     std::vector<PRTextLine*> pLines;
     for( it = m_pTextLines.begin() ; it != m_pTextLines.end() ; ) {
         pLines = this->splitLines_hBlocks( *it );
@@ -232,15 +245,14 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
-                                                           )
+PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine,
+                                                           double minBaseHeight,
+                                                           double maxBaseHeight,
+                                                           double minLineWidth )
 {
-    // Parameters of the algorithm.
-    const double MinBaseHeight = 0.8;
-    const double MaxBaseHeight = 2.0;
-    const double ScaleXEnlarge = 1.0;
-    const double ScaleYEnlarge = 0.7;
-    const double MinLineWidth = 3.0;
+    // Scaling parameters used in the algorithm.
+    const double ScaleXEnlarge = 1.5;
+    const double ScaleYEnlarge = 0.8;
 
     // Min and max group indexes to consider.
     long minGrpIdx = pBaseLine->minGroupIndex();
@@ -255,20 +267,18 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
     PdfeMatrix baseTransMat = pBaseLine->transMatrix( PRTextLineCoordinates::Page,
                                                       PRTextLineCoordinates::Line );
 
-    // Line too small, do not consider it...
-    if( baseLineOBBox.width() <= MinLineWidth ) {
+    // Line too small or full of spaces, do not consider it...
+    if( baseLineOBBox.width() <= minLineWidth || pBaseLine->isSpace() ) {
         return pBaseLine;
     }
 
     // Enlarge bounding box used.
-    PdfeORect enlargeOBBox = baseLineOBBox;
-    double baseHeight = std::min( std::max( baseLineOBBox.height(), MinBaseHeight ),
-                                  MaxBaseHeight );
-    enlargeOBBox.enlarge( baseHeight * ScaleXEnlarge,
-                          baseHeight * ScaleYEnlarge );
-    PdfRect enlargeBBox = enlargeOBBox.toPdfRect();
+    double baseHeight = std::min( std::max( baseLineOBBox.height(), minBaseHeight ),
+                                  maxBaseHeight );
+    PdfRect enlargeBBox = baseLineOBBox.enlarge( baseHeight * ScaleXEnlarge,
+                                                 baseHeight * ScaleYEnlarge ).toPdfRect();
 
-    // Search with groups in the interval (lineMinGrpIdx,lineMaxGrpIdx)
+    // Search with groups in the interval ( lineMinGrpIdx,lineMaxGrpIdx )
     for( long i = minGrpIdx ; i <= maxGrpIdx ; ++i ) {
         // Assume the group of words only has one line!
         PRTextLine* pLine = m_pGroupsWords[i]->textLines().at( 0 );
@@ -286,10 +296,9 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
         lineOBBox = baseTransMat.map( lineOBBox );
 
         // Check the angle between the two lines: should be less than ~5°.
-        if( PdfeVector::angle( enlargeOBBox.direction(), lineOBBox.direction() ) > 0.1  ) {
+        if( PdfeVector::angle( baseLineOBBox.direction(), lineOBBox.direction() ) > 0.1  ) {
             continue;
         }
-
         // Can now approximate with a PdfRect...
         PdfRect lineBBox = lineOBBox.toPdfRect();
 
@@ -305,15 +314,15 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLine,
-                                                            double ScaleXEnlarge,
-                                                            double ScaleYEnlarge,
-                                                            double MaxLineWidth )
+PRTextLine* PRTextPageStructure::mergeLines_EnlargeOutside(PRTextLine* pBaseLine,
+                                                            double scaleXEnlarge,
+                                                            double scaleYEnlarge,
+                                                            double maxLineWidth )
 {
     // Parameters of the algorithm.
-    const double MinBaseHeight = 0.7;
-    const double MaxBaseHeight = 2.0;
-    const double MinLineWidth = 2.5;
+    const double MinBaseHeight = 0.0;
+    const double MaxBaseHeight = std::numeric_limits<double>::max();
+    const double MinLineWidthScale = 2.5;   // TODO: improve...
     const long MaxOutsideGroups = 10;
 
     // Min and max group indexes to consider.
@@ -338,7 +347,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
                                                       PRTextLineCoordinates::Line );
 
     // Line too small, do not consider it...
-    if( baseLineOBBox.width() <= MinLineWidth ) {
+    if( baseLineOBBox.width() <= baseLineOBBox.height() * MinLineWidthScale ) {
         return pBaseLine;
     }
 
@@ -346,8 +355,8 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
     PdfeORect enlargeOBBox = baseLineOBBox;
     double baseHeight = std::min( std::max( baseLineOBBox.height(), MinBaseHeight ),
                                   MaxBaseHeight );
-    enlargeOBBox.enlarge( baseHeight * ScaleXEnlarge,
-                          baseHeight * ScaleYEnlarge );
+    enlargeOBBox.enlarge( baseHeight * scaleXEnlarge,
+                          baseHeight * scaleYEnlarge );
     PdfRect enlargeBBox = enlargeOBBox.toPdfRect();
 
     // Search groups before and after the line.
@@ -361,7 +370,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeOutside( PRTextLine* pBaseLin
             // Line bounding box in base coordinates system (check it is not empty or too big).
             PdfeORect lineOBBox = pLine->bbox( PRTextLineCoordinates::Page, false );
             lineOBBox = baseTransMat.map( lineOBBox );
-            if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 || lineOBBox.width() >= MaxLineWidth ) {
+            if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 || lineOBBox.width() >= maxLineWidth ) {
                 continue;
             }
 

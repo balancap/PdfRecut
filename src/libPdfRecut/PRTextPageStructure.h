@@ -79,9 +79,15 @@ private:
     /** Try to merge existing lines.
      * Enlarge inside algorithm: detect elements inside a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
+     * \param minBaseHeight Minimum height used in the enlargement algorithm.
+     * \param maxBaseHeight Maximum height used in the enlargement algorithm.
+     * \param minLineWidth Minimum length of lines.
      * \return Pointer the merged line.
      */
-    PRTextLine* mergeLines_EnlargeInside( PRTextLine* pBaseLine );
+    PRTextLine* mergeLines_EnlargeInside( PRTextLine* pBaseLine,
+                                          double minBaseHeight,
+                                          double maxBaseHeight,
+                                          double minLineWidth );
 
     /** Try to merge existing lines. Depreciated.
      * Enlarge outside algorithm: detect elements in the neighbourhood of a line and check if they belong to it.
@@ -89,9 +95,9 @@ private:
      * \return Pointer the merged line.
      */
     PRTextLine* mergeLines_EnlargeOutside( PRTextLine* pBaseLine,
-                                           double ScaleXEnlarge,
-                                           double ScaleYEnlarge,
-                                           double MaxLineWidth );
+                                           double scaleXEnlarge,
+                                           double scaleYEnlarge,
+                                           double maxLineWidth );
 
     /** Try to merge existing lines. Depreciated.
      * Inside algorithm: detect elements inside a line and check if they belong to it.
