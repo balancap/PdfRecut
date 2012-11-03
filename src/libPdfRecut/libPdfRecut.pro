@@ -10,6 +10,7 @@ DEFINES += LIBPDFRECUT_LIBRARY
 
 SOURCES += \
     PRDocument.cpp \
+    PRSubDocument.cpp \
     PRException.cpp \
     PRDocumentLayout.cpp \
     PRDocumentStructure.cpp \
@@ -23,6 +24,7 @@ SOURCES += \
 
 HEADERS +=\
     PRDocument.h \
+    PRSubDocument.h \
     PRException.h \
     PRDocumentLayout.h \
     PRDocumentStructure.h \

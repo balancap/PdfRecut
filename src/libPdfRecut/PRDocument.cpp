@@ -10,8 +10,9 @@
  ***************************************************************************/
 
 #include "PRDocument.h"
-#include "PRException.h"
+#include "PRSubDocument.h"
 
+#include "PRException.h"
 #include "PdfeFontType0.h"
 #include "PdfeFontTrueType.h"
 #include "PdfeFontType1.h"

@@ -15,11 +15,12 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <vector>
 #include <map>
 
+#include <QObject>
 #include <QString>
 #include <QMutex>
-#include <QtCore/QObject>
 
 namespace PoDoFo {
     class PdfMemDocument;
@@ -31,6 +32,8 @@ namespace PoDoFoExtended {
 
 namespace PdfRecut {
 
+class PRSubDocument;
+
 /** Class that handles a document object from PoDoFo library.
  * It owns a mutex for the access to this object.
  */
@@ -39,7 +42,7 @@ class PRDocument : public QObject
     Q_OBJECT
 
 public:
-    /** Default constructor: initialize pointers and filename.
+    /** Default constructor: initialize parent QObject and filename.
      * \param parent Parent QObject.
      * \param filename Filename of the PDF document.
      */
@@ -76,7 +79,9 @@ public:
     /** Write PoDoFo document to a file.  Need PoDoFo mutex.
      * \param filename Filename of the output Pdf document. Modified if equal to
      * the member filename (to avoid PoDoFo writing issues).
-     */
+     */public:
+
+
     void writePoDoFoDocument( const QString& filename );
     /** Free PoDoFo document. Need PoDoFo mutex to free memory.
      */
@@ -98,6 +103,9 @@ private:
      * \return PdfeFont pointer, owned by the PRDocument object.
      */
     PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
+
+public:
+
 
 public:
     // Getters...
@@ -150,6 +158,9 @@ private:
     PoDoFo::PdfMemDocument*  m_podofoDocument;
     /// PoDoFo document mutex.
     QMutex  m_podofoMutex;
+
+    /// Vector of sub-documents.
+    std::vector<PRSubDocument*>  m_subDocuments;
 
     /// Map containing font cache. Each key corresponds to the reference of the font object.
     std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;
