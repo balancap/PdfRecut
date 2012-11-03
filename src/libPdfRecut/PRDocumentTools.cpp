@@ -20,8 +20,8 @@ namespace PdfRecut {
 void PRDocumentTools::addGraphicStateStack( PRDocument* documentHandle )
 {
     // Get PoDoFo document and mutex on it.
-    PdfMemDocument* document = documentHandle->getPoDoFoDocument();
-    QMutexLocker locker( documentHandle->getPoDoFoMutex() );
+    PdfMemDocument* document = documentHandle->podofoDocument();
+    QMutexLocker locker( documentHandle->podofoMutex() );
 
     // Create two PdfObjects which correspond to streams with graphic operators q and Q.
     PdfObject* qPdfObj = document->GetObjects().CreateObject();
@@ -75,8 +75,8 @@ void PRDocumentTools::addGraphicStateStack( PRDocument* documentHandle )
 void PRDocumentTools::uncompressStreams( PRDocument* documentHandle )
 {
     // Get PoDoFo document and mutex on it.
-    PdfMemDocument* document = documentHandle->getPoDoFoDocument();
-    QMutexLocker locker( documentHandle->getPoDoFoMutex() );
+    PdfMemDocument* document = documentHandle->podofoDocument();
+    QMutexLocker locker( documentHandle->podofoMutex() );
 
     // Iterator on document objects
     TIVecObjects it = document->GetObjects().begin();

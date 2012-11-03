@@ -12,18 +12,21 @@
 #ifndef PRDOCUMENT_H
 #define PRDOCUMENT_H
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <map>
 
 #include <QString>
 #include <QMutex>
 #include <QtCore/QObject>
 
-#include <podofo/doc/PdfFontCache.h>
-
-#include "PdfeFont.h"
-
 namespace PoDoFo {
     class PdfMemDocument;
+    class PdfReference;
+}
+namespace PoDoFoExtended {
+    class PdfeFont;
 }
 
 namespace PdfRecut {
@@ -37,11 +40,12 @@ class PRDocument : public QObject
 
 public:
     /** Default constructor: initialize pointers and filename.
-     * \param filename Filename of the Pdf document.
+     * \param parent Parent QObject.
+     * \param filename Filename of the PDF document.
      */
     PRDocument( QObject* parent = 0, const QString& filename = "" );
 
-    /** Destructor: delete PoDoFo and Poppler document objects.
+    /** Destructor: delete PoDoFo document object, if loaded.
      */
     ~PRDocument();
 
@@ -65,18 +69,20 @@ public slots:
 
 public:
     /** (Re)Load PoDoFo document from the defined filename. Need PoDoFo mutex.
+     * Throw an exception if an error occured during the loading operation.
      * \return Pointer to a PdfMemDocument object if loaded correctly.
      */
     PoDoFo::PdfMemDocument* loadPoDoFoDocument();
     /** Write PoDoFo document to a file.  Need PoDoFo mutex.
      * \param filename Filename of the output Pdf document. Modified if equal to
-     * the member filename (to avoid PoDoFo problem).
+     * the member filename (to avoid PoDoFo writing issues).
      */
     void writePoDoFoDocument( const QString& filename );
     /** Free PoDoFo document. Need PoDoFo mutex to free memory.
      */
     void freePoDoFoDocument();
 
+public:
     /** Get the font object corresponding to a font reference.
      * \param fontRef Reference to the PoDoFo font object.
      * \return PdfeFont pointer, owned by the PRDocument object.
@@ -84,7 +90,7 @@ public:
     PoDoFoExtended::PdfeFont* fontCache( const PoDoFo::PdfReference& fontRef );
     /** Free objects stored in font cache.
      */
-    void freeFontCache();
+    void clearFontCache();
 
 private:
     /** Add a font object into the cache.
@@ -98,22 +104,22 @@ public:
     /** Is PoDoFo document loaded.
      * \return Answer!
      */
-    bool isPoDoFoDocumentLoaded() const {
+    bool isDocumentLoaded() const {
         return ( m_podofoDocument != NULL );
     }
     /** Get PoDoFo document pointer.
      * \return Pointer to a PdfMemDocument object (can be NULL if not loaded).
      */
-    PoDoFo::PdfMemDocument* getPoDoFoDocument() const {
+    PoDoFo::PdfMemDocument* podofoDocument() const {
         return m_podofoDocument;
     }
     /** Get PoDoFo document mutex.
      * \return QMutex used for PoDoFo document object.
      */
-    QMutex* getPoDoFoMutex() {
+    QMutex* podofoMutex() {
         return &m_podofoMutex;
     }
-    /** Get filename of the Pdf document.
+    /** Get filename of the PDF document.
      * \return Filename.
      */
     QString filename() const {
@@ -135,8 +141,7 @@ public:
 
 private:
     // No copy constructor and operator= allowed.
-    PRDocument( const PRDocument& );
-    PRDocument& operator=( const PRDocument& );
+    Q_DISABLE_COPY(PRDocument)
 
 private:
     /// Document filename.
@@ -149,7 +154,7 @@ private:
     /// Map containing font cache. Each key corresponds to the reference of the font object.
     std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;
 
-    /// FreeType library.
+    /// FreeType library instance associated to the document.
     FT_Library  m_ftLibrary;
 };
 

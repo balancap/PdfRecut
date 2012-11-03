@@ -11,53 +11,97 @@
 
 #include "PRException.h"
 
+#include <podofo/podofo.h>
 #include <QtCore>
 
 namespace PdfRecut {
 
-PRException::PRException( const EPdfDocException& code,
-                                  const QString& description ) throw() :
+PRException::PRException(PRExceptionCode::Enum code,
+                          const QString& description , bool logException) throw() :
     std::exception(), m_code( code ), m_description( description )
 {
+    if( logException ) {
+        this->log( QsLogging::ErrorLevel );
+    }
 }
 PRException::PRException( const PoDoFo::PdfError& error ) throw() :
-    std::exception(), m_code( ePdfDocE_PoDoFo )
+    std::exception(), m_code( PRExceptionCode::PoDoFo )
 {
     m_description = QCoreApplication::translate( "PoDoFoError",
-                    "Error from library PoDoFo (code %1): %2" )
-                    .arg( PoDoFo::PdfError::ErrorName( error.GetError() ) )
-                    .arg( PoDoFo::PdfError::ErrorMessage( error.GetError() ) );
+                                                 "Error raised by PoDoFo library (code %1): \"%2\"" )
+            .arg( PoDoFo::PdfError::ErrorName( error.GetError() ) )
+            .arg( PoDoFo::PdfError::ErrorMessage( error.GetError() ) );
 }
 
 PRException::PRException( const PRException& exception ) throw() :
-    std::exception( exception )
+    std::exception( exception ),
+    m_code( exception.m_code ),
+    m_description( exception.m_description )
 {
-    this->operator =( exception );
 }
 PRException& PRException::operator=( const PRException& exception ) throw()
 {
-    this->std::exception::operator =( exception );
-    this->m_code = exception.m_code;
-    this->m_description = exception.m_description;
-
+    std::exception::operator=( exception );
+    m_code = exception.m_code;
+    m_description = exception.m_description;
     return *this;
 }
-
 PRException::~PRException() throw()
 {
 }
 
-EPdfDocException PRException::getCode() const throw()
+void PRException::log( QsLogging::Level level ) const throw()
+{
+    QString logMessage = QString( "PRException (%1): %2" ).arg( codeDescription( m_code ) ).arg( m_description );
+
+    switch( level ) {
+    case QsLogging::TraceLevel:
+        QLOG_TRACE() << logMessage.toAscii().constData();
+        break;
+    case QsLogging::DebugLevel:
+        QLOG_DEBUG() << logMessage.toAscii().constData();
+        break;
+    case QsLogging::InfoLevel:
+        QLOG_INFO() << logMessage.toAscii().constData();
+        break;
+    case QsLogging::WarnLevel:
+        QLOG_WARN() << logMessage.toAscii().constData();
+        break;
+    case QsLogging::ErrorLevel:
+        QLOG_ERROR() << logMessage.toAscii().constData();
+        break;
+    case QsLogging::FatalLevel:
+        QLOG_FATAL() << logMessage.toAscii().constData();
+        break;
+    }
+}
+
+PRExceptionCode::Enum PRException::code() const throw()
 {
     return m_code;
 }
-QString PRException::getDescription() const throw()
+QString PRException::description() const throw()
 {
     return m_description;
 }
 const char* PRException::what() const throw()
 {
     return m_description.toLocal8Bit().data();
+}
+
+QString PRException::codeDescription( PRExceptionCode::Enum code )
+{
+    switch( code ) {
+    case PRExceptionCode::ErrorOK:
+        return QString( "ErrorOK" );
+    case PRExceptionCode::PoDoFo:
+        return QString( "PoDoFo" );
+    case PRExceptionCode::FreeType:
+        return QString( "FreeType" );
+    case PRExceptionCode::Abort:
+        return QString( "Abort" );
+    }
+    return QString( "Unknown" );
 }
 
 }

@@ -183,7 +183,7 @@ void proceedFile( QString filePath )
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
-    for( int i = 0 ; i < std::min(50,document.getPoDoFoDocument()->GetPageCount()) ; i++ ) {
+    for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
         // Text and render page objects.
         PRRenderPage renderPage( &document, i );
         PRTextPageStructure textPage( &document, i );

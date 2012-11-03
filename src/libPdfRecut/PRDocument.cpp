@@ -36,12 +36,14 @@ PRDocument::PRDocument( QObject* parent, const QString& filename ) :
 
     // Initialize freetype library.
     if( FT_Init_FreeType( &m_ftLibrary ) ) {
-        PODOFO_RAISE_ERROR( ePdfError_FreeType );
+        throw PRException( PRExceptionCode::FreeType,
+                           tr( "Can not initialize FreeType library." ),
+                           true );
     }
 }
 PRDocument::~PRDocument()
 {
-    this->freeFontCache();
+    this->clearFontCache();
     delete m_podofoDocument;
 }
 
@@ -56,7 +58,7 @@ void PRDocument::loadDocument()
     }
     catch( const PRException& error ) {
         emit methodError( "PoDoFo document load error.",
-                          error.getDescription() );
+                          error.description() );
         return;
     }
     emit methodProgress( methodTitle, 1.0 );
@@ -73,8 +75,18 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
 
     try
     {
+        // Log information.
+        QLOG_INFO() << QString( "PRDocument: Begin loading PoDoFo document \"%1\"." )
+                       .arg( QFileInfo( m_filename ).fileName() )
+                       .toAscii().constData();
+
         m_podofoDocument = new PoDoFo::PdfMemDocument();
         m_podofoDocument->Load( m_filename.toLocal8Bit().data() );
+
+        // Log information.
+        QLOG_INFO() << QString( "PRDocument: End loading PoDoFo document \"%1\"." )
+                       .arg( QFileInfo( m_filename ).fileName() )
+                       .toAscii().constData();
     }
     catch( const PoDoFo::PdfError& error )
     {
@@ -82,7 +94,9 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
         m_podofoDocument = NULL;
 
         // Throw exception...
-        throw PRException( error );
+        PRException errPR( error );
+        errPR.log( QsLogging::ErrorLevel );
+        throw errPR;
     }
     return m_podofoDocument;
 }
@@ -90,8 +104,9 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
 {
     // No document loaded.
     if( !m_podofoDocument ) {
-        throw PRException( ePdfDocE_PoDoFo,
-              tr( "Can not write PoDoFo document: no file loaded." ) );
+        throw PRException( PRExceptionCode::PoDoFo,
+                           tr( "Can not write down PoDoFo document: no file loaded." ),
+                           true );
         return;
     }
 
@@ -100,21 +115,33 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
     QFileInfo infoOut( fileOut );
     if( infoOut == QFileInfo( m_filename ) ) {
         fileOut = infoOut.canonicalPath() + "/"
-                + infoOut.baseName() + "_eInk.pdf";
+                + infoOut.baseName() + "Recut.pdf";
     }
 
     // Get mutex and then write file.
     QMutexLocker locker( &m_podofoMutex );
     try
     {
-        //m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Compact );
-        m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Clean );
+        // Log information.
+        QLOG_INFO() << QString( "PRDocument: Begin writing PoDoFo document \"%1\"." )
+                       .arg( QFileInfo( fileOut ).fileName() )
+                       .toAscii().constData();
+
+        m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Compact );
+        //m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Clean );
         m_podofoDocument->Write( fileOut.toLocal8Bit().data() );
+
+        // Log information.
+        QLOG_INFO() << QString( "PRDocument: Begin writing PoDoFo document \"%1\"." )
+                       .arg( QFileInfo( fileOut ).fileName() )
+                       .toAscii().constData();
     }
     catch( const PoDoFo::PdfError& error )
     {
         // Throw exception...
-        throw PRException( error );
+        PRException errPR( error );
+        errPR.log( QsLogging::ErrorLevel );
+        throw errPR;
     }
 }
 void PRDocument::freePoDoFoDocument()
@@ -122,7 +149,7 @@ void PRDocument::freePoDoFoDocument()
     // Get mutex and then free.
     QMutexLocker locker( &m_podofoMutex );
 
-    this->freeFontCache();
+    this->clearFontCache();
     delete m_podofoDocument;
     m_podofoDocument = NULL;
 }
@@ -141,7 +168,7 @@ PoDoFoExtended::PdfeFont* PRDocument::fontCache( const PoDoFo::PdfReference& fon
         return it->second;
     }
 }
-void PRDocument::freeFontCache()
+void PRDocument::clearFontCache()
 {
     // Free Pdf font metrics object.
     std::map< PdfReference, PdfeFont* >::iterator it;

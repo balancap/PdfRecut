@@ -136,10 +136,10 @@ void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isPoDoFoDocumentLoaded() ) {
+        if( !documentHandle->isDocumentLoaded() ) {
             documentHandle->loadPoDoFoDocument();
         }
-        QMutexLocker pdfLocker( documentHandle->getPoDoFoMutex() );
+        QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Transform PoDoFo document.
         this->transformDocument( documentHandle );
@@ -164,7 +164,7 @@ void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
         documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document export error."),
-                          error.getDescription() );
+                          error.description() );
     }
 }
 
@@ -176,10 +176,10 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isPoDoFoDocumentLoaded() ) {
+        if( !documentHandle->isDocumentLoaded() ) {
             documentHandle->loadPoDoFoDocument();
         }
-        QMutexLocker pdfLocker( documentHandle->getPoDoFoMutex() );
+        QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Write overlay.
         this->printLayoutIn( documentHandle );
@@ -204,7 +204,7 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
         documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document overlay export error."),
-                          error.getDescription() );
+                          error.description() );
     }
 }
 
@@ -216,10 +216,10 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isPoDoFoDocumentLoaded() ) {
+        if( !documentHandle->isDocumentLoaded() ) {
             documentHandle->loadPoDoFoDocument();
         }
-        QMutexLocker pdfLocker( documentHandle->getPoDoFoMutex() );
+        QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Write overlay.
         this->printLayoutOut( documentHandle );
@@ -244,7 +244,7 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
         documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document overlay export error."),
-                          error.getDescription() );
+                          error.description() );
     }
 }
 
@@ -254,7 +254,7 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
 void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
-    PdfMemDocument* document = documentHandle->getPoDoFoDocument();
+    PdfMemDocument* document = documentHandle->podofoDocument();
     QString methodTitle = tr( "Reorganize Pdf document." );
 
     // Construct vector and map which reference zones for each page in the input document.
@@ -309,7 +309,7 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( ePdfDocE_Abort, methodTitle );
+                throw PRException( PRExceptionCode::Abort, methodTitle );
             }
 
             // Create a stream which corresponds to the current zone.
@@ -388,7 +388,7 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
 void PRDocumentLayout::printLayoutIn( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
-    PdfMemDocument* document = documentHandle->getPoDoFoDocument();
+    PdfMemDocument* document = documentHandle->podofoDocument();
     QString methodTitle = tr( "Print out layout overlay." );
 
     // Watermark parameters.
@@ -425,7 +425,7 @@ void PRDocumentLayout::printLayoutIn( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( ePdfDocE_Abort, methodTitle );
+                throw PRException( PRExceptionCode::Abort, methodTitle );
             }
 
             const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
@@ -460,7 +460,7 @@ void PRDocumentLayout::printLayoutIn( PRDocument* documentHandle ) const
 void PRDocumentLayout::printLayoutOut( PRDocument* documentHandle ) const
 {
     // Get PoDoFo document.
-    PdfMemDocument* document = documentHandle->getPoDoFoDocument();
+    PdfMemDocument* document = documentHandle->podofoDocument();
     QString methodTitle = tr( "Print in layout overlay." );
 
     // Watermark parameters
@@ -517,7 +517,7 @@ void PRDocumentLayout::printLayoutOut( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( ePdfDocE_Abort, methodTitle );
+                throw PRException( PRExceptionCode::Abort, methodTitle );
             }
 
             const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
@@ -646,7 +646,7 @@ void PRDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PRException( ePdfDocE_Abort, methodTitle );
+            throw PRException( PRExceptionCode::Abort, methodTitle );
         }
 
         document->GetObjects().RemoveObject( vecObjects[i]->Reference() );
@@ -699,7 +699,7 @@ void PRDocumentLayout::copyOutlineItem( PoDoFo::PdfMemDocument* document,
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PRException( ePdfDocE_Abort, "Abort outlines copy." );
+        throw PRException( PRExceptionCode::Abort, "Abort outlines copy." );
     }
 
     // Get destination and action of the outline item.
@@ -924,7 +924,7 @@ void PRDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PRException( ePdfDocE_Abort, "Abort annotations copy." );
+            throw PRException( PRExceptionCode::Abort, "Abort annotations copy." );
         }
 
         PdfAnnotation* pageAnn = pageIn->GetAnnotation( i );
@@ -1025,7 +1025,7 @@ std::vector<int> PRDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* d
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PRException( ePdfDocE_Abort, "Abort labels copy." );
+        throw PRException( PRExceptionCode::Abort, "Abort labels copy." );
     }
 
     PdfObject* nodeKids = node->GetIndirectKey( "Kids" );

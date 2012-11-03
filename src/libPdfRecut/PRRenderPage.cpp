@@ -9,6 +9,7 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
+#include "PdfeFont.h"
 #include "PRRenderPage.h"
 
 #include <podofo/podofo.h>
@@ -87,7 +88,7 @@ PRRenderPage::PRRenderPage( PRDocument* document,
                             long pageIndex ) :
     PdfeCanvasAnalysis(),
     m_document( document ),
-    m_page( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    m_page( document->podofoDocument()->GetPage( pageIndex ) ),
     m_pageIndex( pageIndex ),
     m_pageImage( NULL ),
     m_pagePainter( NULL )

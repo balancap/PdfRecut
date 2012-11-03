@@ -30,7 +30,7 @@ PRTextPageStructure::PRTextPageStructure( PRDocument* document,
                                           long pageIndex ) :
     PdfeCanvasAnalysis(),
     m_document( document ),
-    m_page( document->getPoDoFoDocument()->GetPage( pageIndex ) ),
+    m_page( document->podofoDocument()->GetPage( pageIndex ) ),
     m_pageIndex( pageIndex )
 {
     // Clear vectors content.

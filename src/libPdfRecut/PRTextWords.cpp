@@ -9,6 +9,7 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
+#include "PdfeFont.h"
 #include "PRTextWords.h"
 #include "PRDocument.h"
 

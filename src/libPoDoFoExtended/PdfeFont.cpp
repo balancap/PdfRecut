@@ -576,7 +576,7 @@ void PdfeFont::initLogInformation()
 {
     size_t MaxNameLength = 25;
 
-    QLOG_INFO() << QString( "PdfeFont:%1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), MaxNameLength )
+    QLOG_INFO() << QString( "PdfeFont: %1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), -MaxNameLength )
                    .toAscii().constData()
                 << QString( "Subset (%1) ;" ).arg( this->fontDescriptor().isSubsetFont() )
                    .toAscii().constData()
@@ -585,6 +585,8 @@ void PdfeFont::initLogInformation()
                 << QString( "Encoding (%1) ;" ).arg( bool( m_pEncoding ) )
                    .toAscii().constData()
                 << QString( "UCMap (%1) ;" ).arg( bool( !m_unicodeCMap.emptyCodeSpaceRange() ) )
+                   .toAscii().constData()
+                << QString( "Symbolic (%1) ;" ).arg( bool( this->fontDescriptor().flags() & PdfeFontDescriptor::FlagSymbolic ) )
                    .toAscii().constData()
                 << QString( "Font program (%1,%2)." ).arg( bool( m_ftFace ) || this->type() == PdfeFontType::Type3 )
                    .arg( bool( this->fontDescriptor().fontEmbedded().fontFile() ) )

@@ -12,47 +12,53 @@
 #ifndef PREXCEPTION_H
 #define PREXCEPTION_H
 
-#include <podofo/podofo.h>
 #include <QtCore/QString>
 
 #include <string>
 #include <exception>
 
+#include <QsLog/QsLog.h>
+
+namespace PoDoFo {
+class PdfError;
+}
+
 namespace PdfRecut {
 
-/** Error Code defines which are used in PdfDocException to describe
- * the exception type.
+namespace PRExceptionCode {
+/** PRException types that can be raised.
  */
-enum EPdfDocException {
-    ePdfDocE_ErrOK = 0,           /**< The default value indicating no error. */
-    ePdfDocE_PoDoFo,              /**< Error from library PoDoFo.             */
-    ePdfDocE_Poppler,             /**< Error from library Poppler.            */
-    ePdfDocE_Abort                /**< Current operation aborted.             */
+enum Enum {
+    ErrorOK = 0,    /// The default value indicating no error.
+    PoDoFo,         /// Error from library PoDoFo.
+    FreeType,       /// FreeType error.
+    Abort           /// Current operation aborted.
 };
+}
 
-/** Class that handle errors during threatment on Pdf document.
+/** Class that handle errors during threatment on PDF document.
  * Error code and description can be provided to an exception.
  */
 class PRException : public std::exception
 {
 public:
-    /** Default constructor
+    /** Default constructor of a PdfRecut exception.
      * \param code Error code.
      * \param description String describing the error.
+     * \param logException Log the exception (error level)? False by default.
      */
-    PRException( const EPdfDocException& code = ePdfDocE_ErrOK,
-                     const QString& description = "" ) throw();
+    PRException( PRExceptionCode::Enum code = PRExceptionCode::ErrorOK,
+                 const QString& description = "",
+                 bool logException = false ) throw();
 
     /** Constructor based on a PoDoFo error.
      * \param error PoDoFo exception error.
      */
     PRException( const PoDoFo::PdfError& error ) throw();
-
     /** Copy constructor.
      * \param exception Exception object to copy.
      */
     PRException( const PRException& exception ) throw();
-
     /** Operator=.
      * \param exception Exception object to copy.
      */
@@ -62,29 +68,38 @@ public:
      */
     virtual ~PRException() throw();
 
+    /** Log the exception.
+     * \param level Level used in the log (default: error).
+     */
+    void log( QsLogging::Level level = QsLogging::ErrorLevel ) const throw();
+
+public:
+    // Getters...
     /** Obtain exception code.
-     * \return Error code.
+     * \return Exception code.
      */
-    EPdfDocException getCode() const throw();
-
+    PRExceptionCode::Enum code() const throw();
     /** Obtain exception description.
-     * \return Error description.
+     * \return Exception description.
      */
-    QString getDescription() const throw();
-
-    /** Classic what function, inheritated from std::exception.
+    QString description() const throw();
+    /** Overload what member function, inheritated from std::exception.
      * \return Description of the exception.
      */
     virtual const char* what() const throw();
 
-protected:
-    /** Exception code.
+public:
+    /** Obtain the description of an exception error.
+     * \param code Exception code.
+     * \return Code description (QString).
      */
-    EPdfDocException m_code;
+    static QString codeDescription( PRExceptionCode::Enum code );
 
-    /** Exception description.
-     */
-    QString m_description;
+protected:
+    /// Exception code.
+    PRExceptionCode::Enum  m_code;
+    /// Exception description.
+    QString  m_description;
 };
 
 }
