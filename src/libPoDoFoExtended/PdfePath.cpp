@@ -56,10 +56,10 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
         // Only check center with strict inclusion
         if( strictInclusion ) {
             strictCenter = strictCenter &&
-                           m_coordPoints[i](0) >= zone.GetLeft() &&
-                           m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
-                           m_coordPoints[i](1) >= zone.GetBottom() &&
-                           m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight();
+                    m_coordPoints[i](0) >= zone.GetLeft() &&
+                    m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
+                    m_coordPoints[i](1) >= zone.GetBottom() &&
+                    m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight();
         }
         else {
             // Where is the current point / zone.
@@ -140,7 +140,7 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& path,
                 path.GetLeft()+path.GetWidth() >= zone.GetLeft()+zone.GetWidth();
 
         bottom = !( path.GetLeft()+path.GetWidth() <= zone.GetLeft() ||
-                  path.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
+                    path.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
                 path.GetBottom() <= zone.GetBottom();
 
         top = !( path.GetLeft()+path.GetWidth() <= zone.GetLeft() ||
@@ -208,6 +208,67 @@ void PdfeSubPath::reduceToZone( const PoDoFo::PdfRect& zone )
         }
     }
 }
+QPainterPath PdfeSubPath::toQPainterPath( bool closeSubpath, bool evenOddRule ) const
+{
+    // Qt painter path to create from PDF subpath.
+    QPainterPath qPath;
+
+    // Add points from the subpath.
+    for( size_t j = 0 ; j < this->nbPoints() ; ++j ) {
+        const PdfeVector& point = m_coordPoints[j];
+        PdfePathOperators::Enum opPoint = m_opPoints[j];
+
+        // Distinction between different painting operators.
+        if( opPoint == PdfePathOperators::m ) {
+            qPath.moveTo( point(0), point(1) );
+        }
+        else if( opPoint == PdfePathOperators::l ) {
+            qPath.lineTo( point(0), point(1) );
+        }
+        else if( opPoint == PdfePathOperators::c ) {
+            QPointF c1Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
+            QPointF c2Pt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
+            QPointF endPt( m_coordPoints[j+2](0), m_coordPoints[j+2](1) );
+            qPath.cubicTo( c1Pt, c2Pt, endPt );
+            j+=2;
+        }
+        else if( opPoint == PdfePathOperators::v ) {
+            QPointF c1Pt( qPath.currentPosition() );
+            QPointF c2Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
+            QPointF endPt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
+            qPath.cubicTo( c1Pt, c2Pt, endPt );
+            j+=1;
+        }
+        else if( opPoint == PdfePathOperators::y ) {
+            QPointF c1Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
+            QPointF c2Pt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
+            QPointF endPt( c2Pt );
+            qPath.cubicTo( c1Pt, c2Pt, endPt );
+            j+=1;
+        }
+        else if( opPoint == PdfePathOperators::h ) {
+            qPath.closeSubpath();
+        }
+        else if( opPoint == PdfePathOperators::re ) {
+            // Rectangle:  "re" corresponds to "m l l l h"
+            const PdfeVector& pointUR = m_coordPoints[j+2];
+            qPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
+            j+=4;
+        }
+    }
+    // Force the subpaths to be closed according, based on the painting operator.
+    if( closeSubpath ) {
+        qPath.closeSubpath();
+    }
+    // Filling rule.
+    if( evenOddRule ) {
+        qPath.setFillRule( Qt::OddEvenFill );
+    }
+    else {
+        qPath.setFillRule( Qt::WindingFill );
+    }
+    return qPath;
+}
 
 //**********************************************************//
 //                          PdfePath                        //
@@ -229,7 +290,12 @@ void PdfePath::appendPath( const PdfePath& path )
     m_subpaths.insert( m_subpaths.end(), path.m_subpaths.begin(), path.m_subpaths.end() );
     m_currentPoint = path.m_currentPoint;
 }
-
+void PdfePath::appendSubpath( const PdfeSubPath& subpath )
+{
+    // Append subpath and set current point.
+    m_subpaths.push_back( subpath );
+    m_currentPoint = subpath.pointCoord( subpath.nbPoints()-1 );
+}
 void PdfePath::beginSubpath( const PdfeVector& point )
 {
     // Get current subpath.
@@ -247,7 +313,6 @@ void PdfePath::beginSubpath( const PdfeVector& point )
     }
     m_currentPoint = point;
 }
-
 void PdfePath::appendLine( const PdfeVector& point )
 {
     // Get current subpath.
@@ -262,10 +327,9 @@ void PdfePath::appendLine( const PdfeVector& point )
     curSubpath.appendPoint( point, PdfePathOperators::l );
     m_currentPoint = point;
 }
-
 void PdfePath::appendBezierC( const PdfeVector& point1,
-                             const PdfeVector& point2,
-                             const PdfeVector& point3 )
+                              const PdfeVector& point2,
+                              const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfeSubPath& curSubpath = this->currentSubPath();
@@ -282,7 +346,7 @@ void PdfePath::appendBezierC( const PdfeVector& point1,
     m_currentPoint = point3;
 }
 void PdfePath::appendBezierV( const PdfeVector& point2,
-                             const PdfeVector& point3 )
+                              const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfeSubPath& curSubpath = this->currentSubPath();
@@ -298,7 +362,7 @@ void PdfePath::appendBezierV( const PdfeVector& point2,
     m_currentPoint = point3;
 }
 void PdfePath::appendBezierY( const PdfeVector& point1,
-                             const PdfeVector& point3 )
+                              const PdfeVector& point3 )
 {
     // Get current subpath.
     PdfeSubPath& curSubpath = this->currentSubPath();
@@ -313,7 +377,6 @@ void PdfePath::appendBezierY( const PdfeVector& point1,
     curSubpath.appendPoint( point3, PdfePathOperators::y );
     m_currentPoint = point3;
 }
-
 void PdfePath::closeSubpath()
 {
     // Get current subpath.
@@ -326,9 +389,8 @@ void PdfePath::closeSubpath()
         m_currentPoint = curSubpath.pointCoord( curSubpath.nbPoints()-1 );
     }
 }
-
 void PdfePath::appendRectangle( const PdfeVector& llPoint,
-                               const PdfeVector& size )
+                                const PdfeVector& size )
 {
     /* Known to be equivalent to
       x y m
@@ -352,7 +414,6 @@ void PdfePath::appendRectangle( const PdfeVector& llPoint,
     subpath.close();
     m_currentPoint = llPoint;
 }
-
 PdfeSubPath& PdfePath::currentSubPath()
 {
     // Vector of subpaths empty: create an empty one and returned it.
@@ -366,69 +427,18 @@ PdfeSubPath& PdfePath::currentSubPath()
         m_subpaths.push_back( PdfeSubPath() );
         return m_subpaths.back();
     }
-
     // Default behaviour; return last one in the list.
     return m_subpaths.back();
 }
 
 QPainterPath PdfePath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) const
 {
-    // Qt painter path to create from Pdf path.
+    // Qt painter path to create from PDF path.
     QPainterPath qPath;
 
-    // Add every subpath to the qt painter path.
+    // Append subpaths.
     for( size_t i = 0 ; i < m_subpaths.size() ; ++i ) {
-        // Points from the subpath.
-        for( size_t j = 0 ; j < m_subpaths[i].nbPoints() ; ++j ) {
-            const PdfeVector& point = m_subpaths[i].pointCoord( j );
-            PdfePathOperators::Enum opPoint = m_subpaths[i].pointOp( j );
-
-            // Distinction between different painting operators.
-            if( opPoint == PdfePathOperators::m ) {
-                qPath.moveTo( point(0), point(1) );
-            }
-            else if( opPoint == PdfePathOperators::l ) {
-                qPath.lineTo( point(0), point(1) );
-            }
-            else if( opPoint == PdfePathOperators::c ) {
-                QPointF c1Pt( m_subpaths[i].pointCoord(j)(0), m_subpaths[i].pointCoord(j)(1) );
-                QPointF c2Pt( m_subpaths[i].pointCoord(j+1)(0), m_subpaths[i].pointCoord(j+1)(1) );
-                QPointF endPt( m_subpaths[i].pointCoord(j+2)(0), m_subpaths[i].pointCoord(j+2)(1) );
-
-                qPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=2;
-            }
-            else if( opPoint == PdfePathOperators::v ) {
-                QPointF c1Pt( qPath.currentPosition() );
-                QPointF c2Pt( m_subpaths[i].pointCoord(j)(0), m_subpaths[i].pointCoord(j)(1) );
-                QPointF endPt( m_subpaths[i].pointCoord(j+1)(0), m_subpaths[i].pointCoord(j+1)(1) );
-
-                qPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=1;
-            }
-            else if( opPoint == PdfePathOperators::y ) {
-                QPointF c1Pt( m_subpaths[i].pointCoord(j)(0), m_subpaths[i].pointCoord(j)(1) );
-                QPointF c2Pt( m_subpaths[i].pointCoord(j+1)(0), m_subpaths[i].pointCoord(j+1)(1) );
-                QPointF endPt( c2Pt );
-
-                qPath.cubicTo( c1Pt, c2Pt, endPt );
-                j+=1;
-            }
-            else if( opPoint == PdfePathOperators::h ) {
-                qPath.closeSubpath();
-            }
-            else if( opPoint == PdfePathOperators::re ) {
-                // Rectangle:  "re" corresponds to "m l l l h"
-                const PdfeVector& pointUR = m_subpaths[i].pointCoord(j+2);
-
-                qPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
-                j+=4;
-            }
-        }
-        // Force the subpaths to be closed according, based on the painting operator.
-        if( closeSubpaths ) {
-            qPath.closeSubpath();
-        }
+        qPath.addPath( m_subpaths[i].toQPainterPath( closeSubpaths, evenOddRule ) );
     }
     // Filling rule.
     if( evenOddRule ) {
