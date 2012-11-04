@@ -10,7 +10,12 @@
  ***************************************************************************/
 
 #include "PRTextPageStructure.h"
+
+#include "PRDocument.h"
 #include "PRRenderPage.h"
+#include "PRTextLine.h"
+#include "PRTextWords.h"
+
 #include "PdfeUtils.h"
 
 #include <podofo/podofo.h>

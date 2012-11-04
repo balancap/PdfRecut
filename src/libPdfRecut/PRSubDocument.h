@@ -10,7 +10,7 @@
  ***************************************************************************/
 
 #ifndef PRSUBDOCUMENT_H
-#define PRSUBDOCUMENT_Hqobject
+#define PRSUBDOCUMENT_H
 
 #include <QObject>
 

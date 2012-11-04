@@ -9,8 +9,10 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#include "PdfeFont.h"
 #include "PRRenderPage.h"
+#include "PRDocument.h"
+
+#include "PdfeFont.h"
 
 #include <podofo/podofo.h>
 #include <QtCore>

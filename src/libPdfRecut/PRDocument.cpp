@@ -77,7 +77,7 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
     try
     {
         // Log information.
-        QLOG_INFO() << QString( "PRDocument: Begin loading PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> Begin loading PoDoFo document \"%1\"." )
                        .arg( QFileInfo( m_filename ).fileName() )
                        .toAscii().constData();
 
@@ -85,7 +85,7 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
         m_podofoDocument->Load( m_filename.toLocal8Bit().data() );
 
         // Log information.
-        QLOG_INFO() << QString( "PRDocument: End loading PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> End loading PoDoFo document \"%1\"." )
                        .arg( QFileInfo( m_filename ).fileName() )
                        .toAscii().constData();
     }
@@ -124,7 +124,7 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
     try
     {
         // Log information.
-        QLOG_INFO() << QString( "PRDocument: Begin writing PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> Begin writing PoDoFo document \"%1\"." )
                        .arg( QFileInfo( fileOut ).fileName() )
                        .toAscii().constData();
 
@@ -133,7 +133,7 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
         m_podofoDocument->Write( fileOut.toLocal8Bit().data() );
 
         // Log information.
-        QLOG_INFO() << QString( "PRDocument: Begin writing PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> Begin writing PoDoFo document \"%1\"." )
                        .arg( QFileInfo( fileOut ).fileName() )
                        .toAscii().constData();
     }

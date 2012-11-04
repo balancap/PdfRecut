@@ -12,10 +12,6 @@
 #ifndef PRTEXTPAGESTRUCTURE_H
 #define PRTEXTPAGESTRUCTURE_H
 
-#include "PRDocument.h"
-#include "PRTextWords.h"
-#include "PRTextLine.h"
-
 #include "PdfeCanvasAnalysis.h"
 
 namespace PoDoFo {
@@ -28,7 +24,10 @@ class PdfVariant;
 
 namespace PdfRecut {
 
+class PRDocument;
 class PRRenderPage;
+class PRTextLine;
+class PRTextGroupWords;
 
 /** Class that analyse the text structure of a PDF page.
  */

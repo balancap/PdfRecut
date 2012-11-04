@@ -576,7 +576,7 @@ void PdfeFont::initLogInformation()
 {
     size_t MaxNameLength = 25;
 
-    QLOG_INFO() << QString( "PdfeFont: %1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), -MaxNameLength )
+    QLOG_INFO() << QString( "<PdfeFont> %1 ;" ).arg( this->fontDescriptor().fontName( false ).GetName().c_str(), -MaxNameLength )
                    .toAscii().constData()
                 << QString( "Subset (%1) ;" ).arg( this->fontDescriptor().isSubsetFont() )
                    .toAscii().constData()

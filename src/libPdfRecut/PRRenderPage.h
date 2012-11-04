@@ -16,7 +16,7 @@
 
 #include "PdfeCanvasAnalysis.h"
 
-#include "PRDocument.h"
+//#include "PRDocument.h"
 #include "PRTextWords.h"
 
 namespace PoDoFo {
@@ -28,6 +28,8 @@ class PdfString;
 }
 
 namespace PdfRecut {
+
+class PRDocument;
 
 /** Parameters used to render a Pdf page.
  */

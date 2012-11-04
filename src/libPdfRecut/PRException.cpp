@@ -52,7 +52,7 @@ PRException::~PRException() throw()
 
 void PRException::log( QsLogging::Level level ) const throw()
 {
-    QString logMessage = QString( "PRException (%1): %2" ).arg( codeDescription( m_code ) ).arg( m_description );
+    QString logMessage = QString( "<PRException> (Code %1): %2" ).arg( codeDescription( m_code ) ).arg( m_description );
 
     switch( level ) {
     case QsLogging::TraceLevel:

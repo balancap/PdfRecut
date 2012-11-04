@@ -75,11 +75,11 @@ public:
 
 public:
     // Getters...
-    /** Obtain exception code.
+    /** Obtain the exception code.
      * \return Exception code.
      */
     PRExceptionCode::Enum code() const throw();
-    /** Obtain exception description.
+    /** Obtain the exception description.
      * \return Exception description.
      */
     QString description() const throw();
