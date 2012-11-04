@@ -133,7 +133,7 @@ void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
 void proceedFile( QString filePath )
 {
     // Document objects.
-    PRDocument document( 0, filePath );
+    PRDocument document( 0 );
     PRDocumentLayout docLayout;
 
     QTime timeTask;
@@ -145,7 +145,7 @@ void proceedFile( QString filePath )
 
     // Open file
     cout << " >>> Opening Pdf file..." << endl;
-    document.loadPoDoFoDocument();
+    document.load( filePath );
     //document.loadPopplerDocument();
 
     // Compute some mean values bbox.

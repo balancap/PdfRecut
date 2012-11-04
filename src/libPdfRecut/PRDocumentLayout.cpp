@@ -129,16 +129,16 @@ PRLayoutParameters PRDocumentLayout::getLayoutParameters() const
 //                        Public slots                        //
 //************************************************************//
 void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
-                                          const QString& filename )
+                                         const QString& filename )
 {
     // Read Locker semaphore needed.
     PdfeSemaphoreReadLocker readLocker( &m_semaphore );
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isDocumentLoaded() ) {
-            documentHandle->loadPoDoFoDocument();
-        }
+//        if( !documentHandle->isDocumentLoaded() ) {
+//            documentHandle->loadPoDoFoDocument();
+//        }
         QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Transform PoDoFo document.
@@ -148,11 +148,11 @@ void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
         // Write it to a pdf.
         QString writeTitle = tr( "Write Pdf document with new layout." );
         emit methodProgress( writeTitle, 0.0 );
-        documentHandle->writePoDoFoDocument( filename );
+        documentHandle->save( filename );
         emit methodProgress( writeTitle, 0.5 );
 
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+        //documentHandle->loadPoDoFoDocument();
         emit methodProgress( writeTitle, 1.0 );
 
         // Export done.
@@ -161,7 +161,7 @@ void PRDocumentLayout::writeLayoutToPdf( PRDocument* documentHandle,
     catch( const PRException& error )
     {
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+        //documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document export error."),
                           error.description() );
@@ -176,9 +176,9 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isDocumentLoaded() ) {
-            documentHandle->loadPoDoFoDocument();
-        }
+//        if( !documentHandle->isDocumentLoaded() ) {
+//            documentHandle->loadPoDoFoDocument();
+//        }
         QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Write overlay.
@@ -188,11 +188,11 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
         // Write it to a pdf.
         QString writeTitle = tr( "Write Pdf document with input layout overlay." );
         emit methodProgress( writeTitle, 0.0 );
-        documentHandle->writePoDoFoDocument( filename );
+        documentHandle->save( filename );
         emit methodProgress( writeTitle, 0.5 );
 
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+//        documentHandle->loadPoDoFoDocument();
         emit methodProgress( writeTitle, 1.0 );
 
         // Export done.
@@ -201,7 +201,7 @@ void PRDocumentLayout::writeOverlayInToPdf( PRDocument* documentHandle,
     catch( const PRException& error )
     {
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+//        documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document overlay export error."),
                           error.description() );
@@ -216,9 +216,9 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
     try
     {
         // Load PoDoFo document if necessary and obtain mutex on it.
-        if( !documentHandle->isDocumentLoaded() ) {
-            documentHandle->loadPoDoFoDocument();
-        }
+//        if( !documentHandle->isDocumentLoaded() ) {
+//            documentHandle->loadPoDoFoDocument();
+//        }
         QMutexLocker pdfLocker( documentHandle->podofoMutex() );
 
         // Write overlay.
@@ -228,11 +228,11 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
         // Write it to a pdf.
         QString writeTitle = tr( "Write Pdf document with output layout overlay." );
         emit methodProgress( writeTitle, 0.0 );
-        documentHandle->writePoDoFoDocument( filename );
+        documentHandle->save( filename );
         emit methodProgress( writeTitle, 0.5 );
 
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+//        documentHandle->loadPoDoFoDocument();
         emit methodProgress( writeTitle, 1.0 );
 
         // Export done.
@@ -241,7 +241,7 @@ void PRDocumentLayout::writeOverlayOutToPdf( PRDocument* documentHandle,
     catch( const PRException& error )
     {
         // Restore original document.
-        documentHandle->loadPoDoFoDocument();
+//        documentHandle->loadPoDoFoDocument();
 
         emit methodError( tr("Pdf document overlay export error."),
                           error.description() );

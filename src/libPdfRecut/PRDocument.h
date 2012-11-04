@@ -46,57 +46,57 @@ public:
      * \param parent Parent QObject.
      * \param filename Filename of the PDF document.
      */
-    PRDocument( QObject* parent = 0, const QString& filename = "" );
+    PRDocument( QObject* parent = 0 );
 
     /** Destructor: delete PoDoFo document object, if loaded.
      */
     ~PRDocument();
 
-signals:
-    /** Progress signal sent by methods.
-     * \param title Title of the current operation.
-     * \param progress Progress, between 0 and 1.
-     */
-    void methodProgress( const QString& title, double progress ) const;
-
-    /** Error signal.
-     * \param title Title of the error.
-     * \param description Description of the error.
-     */
-    void methodError( const QString& title, const QString& description ) const;
-
-public slots:
-    /** Load the PoDoFo document using the filename given.
-     */
-    void loadDocument();
-
 public:
+    /** Load a PoDoFo document at a given filename.
+     * \param filename Path the document to load.
+     */
+    void load( const QString& filename );
+
+    /** Save the document in at a given place.
+     * \param filename Path where to save the document. Modified if equal to
+     * the member filename (to avoid PoDoFo writing issues).
+     */
+    void save( const QString& filename );
+
+    /** Clear the document (free PoDoFo memory and internal objects).
+     */
+    void clear();
+
+private:
+    // PoDoFo document related member functions.
     /** (Re)Load PoDoFo document from the defined filename. Need PoDoFo mutex.
      * Throw an exception if an error occured during the loading operation.
+     * \param filename Filename of the PDF document to load.
      * \return Pointer to a PdfMemDocument object if loaded correctly.
      */
-    PoDoFo::PdfMemDocument* loadPoDoFoDocument();
+    PoDoFo::PdfMemDocument* loadPoDoFoDocument( const QString& filename );
     /** Write PoDoFo document to a file.  Need PoDoFo mutex.
      * \param filename Filename of the output Pdf document. Modified if equal to
      * the member filename (to avoid PoDoFo writing issues).
-     */public:
-
-
-    void writePoDoFoDocument( const QString& filename );
+     * \param suffix Suffix used to modified the filename, if necessary.
+     */
+    void writePoDoFoDocument( const QString& filename, const QString& suffix );
     /** Free PoDoFo document. Need PoDoFo mutex to free memory.
+     * Reset the filename to empty.
      */
     void freePoDoFoDocument();
 
 public:
+    // Font cache related member functions.
     /** Get the font object corresponding to a font reference.
      * \param fontRef Reference to the PoDoFo font object.
      * \return PdfeFont pointer, owned by the PRDocument object.
      */
     PoDoFoExtended::PdfeFont* fontCache( const PoDoFo::PdfReference& fontRef );
-    /** Free objects stored in font cache.
+    /** Free font objects stored in the font cache.
      */
     void clearFontCache();
-
 private:
     /** Add a font object into the cache.
      * \param fontRef Reference to the PoDoFo font object.
@@ -105,7 +105,16 @@ private:
     PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
 
 public:
+    // Contents related member functions.
+    /** Analyse the content of the PDF file.
+     * Create an internal structure (based on PRSubDocument, PRPage, ...) that
+     * describes the geometry of the PDF content.
+     */
+    void analyseContent();
 
+    /** Clear the internal structure which describes PDF content.
+     */
+    void clearContent();
 
 public:
     // Getters...
@@ -140,12 +149,18 @@ public:
         return m_ftLibrary;
     }
 
-    // and setters.
-    /** Set filename of the Pdf document. Document loaded  with the
-     * previous filename are released. Need PoDoFo and Poppler mutex.
-     * \param filename New filename of the document.
+signals:
+    /** Progress signal sent by methods.
+     * \param title Title of the current operation.
+     * \param progress Progress, between 0 and 1.
      */
-    void setFilename( const QString& filename );
+    void methodProgress( const QString& title, double progress ) const;
+
+    /** Error signal.
+     * \param title Title of the error.
+     * \param description Description of the error.
+     */
+    void methodError( const QString& title, const QString& description ) const;
 
 private:
     // No copy constructor and operator= allowed.
@@ -159,14 +174,15 @@ private:
     /// PoDoFo document mutex.
     QMutex  m_podofoMutex;
 
-    /// Vector of sub-documents.
-    std::vector<PRSubDocument*>  m_subDocuments;
-
     /// Map containing font cache. Each key corresponds to the reference of the font object.
     std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;
 
     /// FreeType library instance associated to the document.
     FT_Library  m_ftLibrary;
+
+    // PDF content.
+    /// Vector of sub-documents.
+    std::vector<PRSubDocument*>  m_subDocuments;
 };
 
 //************************************************************//

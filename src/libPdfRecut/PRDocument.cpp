@@ -11,12 +11,13 @@
 
 #include "PRDocument.h"
 #include "PRSubDocument.h"
-
 #include "PRException.h"
+
 #include "PdfeFontType0.h"
 #include "PdfeFontTrueType.h"
 #include "PdfeFontType1.h"
 #include "PdfeFontType3.h"
+#include "PdfeUtils.h"
 
 #include <QtCore>
 #include <podofo/podofo.h>
@@ -29,10 +30,10 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
-PRDocument::PRDocument( QObject* parent, const QString& filename ) :
+PRDocument::PRDocument( QObject* parent ) :
     QObject( parent )
 {
-    m_filename = filename;
+    m_filename = QString();
     m_podofoDocument = NULL;
 
     // Initialize freetype library.
@@ -48,23 +49,36 @@ PRDocument::~PRDocument()
     delete m_podofoDocument;
 }
 
-void PRDocument::loadDocument()
+void PRDocument::load( const QString& filename )
 {
-    QString methodTitle = tr( "Load PDF Document." );
+    // Clear document.
+    this->clear();
 
     // Load PoDoFo document.
-    emit methodProgress( methodTitle, 0.0 );
-    try {
-        this->loadPoDoFoDocument();
-    }
-    catch( const PRException& error ) {
-        emit methodError( "PoDoFo document load error.",
-                          error.description() );
-        return;
-    }
-    emit methodProgress( methodTitle, 1.0 );
+    this->loadPoDoFoDocument( filename );
+
+    // Old ?
+//    QString methodTitle = tr( "Load PDF Document." );
+//    emit methodProgress( methodTitle, 0.0 );
+//    emit methodProgress( methodTitle, 1.0 );
 }
-PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
+void PRDocument::save( const QString& filename )
+{
+    // Write down PoDoFo document.
+    QString suffix( "_recut" );
+    this->writePoDoFoDocument( filename, suffix );
+}
+void PRDocument::clear()
+{
+    // Free PoDoFo document.
+    this->freePoDoFoDocument();
+    // Cleat font cache.
+    this->clearFontCache();
+    // Clear contents.
+    this->clearContent();
+}
+
+PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename )
 {
     // Not null pointer: free current document before loading.
     if( m_podofoDocument ) {
@@ -73,9 +87,10 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
 
     // Get mutex and then load file.
     QMutexLocker locker( &m_podofoMutex );
-
     try
     {
+        m_filename = filename;
+
         // Log information.
         QLOG_INFO() << QString( "<PRDocument> Begin loading PoDoFo document \"%1\"." )
                        .arg( QFileInfo( m_filename ).fileName() )
@@ -91,8 +106,10 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
     }
     catch( const PoDoFo::PdfError& error )
     {
+        // Reset members.
         delete m_podofoDocument;
         m_podofoDocument = NULL;
+        m_filename.clear();
 
         // Throw exception...
         PRException errPR( error );
@@ -101,7 +118,7 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument()
     }
     return m_podofoDocument;
 }
-void PRDocument::writePoDoFoDocument( const QString& filename )
+void PRDocument::writePoDoFoDocument( const QString& filename, const QString& suffix )
 {
     // No document loaded.
     if( !m_podofoDocument ) {
@@ -116,7 +133,8 @@ void PRDocument::writePoDoFoDocument( const QString& filename )
     QFileInfo infoOut( fileOut );
     if( infoOut == QFileInfo( m_filename ) ) {
         fileOut = infoOut.canonicalPath() + "/"
-                + infoOut.baseName() + "Recut.pdf";
+                + infoOut.baseName()
+                + QString("%1.pdf").arg( suffix );
     }
 
     // Get mutex and then write file.
@@ -150,9 +168,9 @@ void PRDocument::freePoDoFoDocument()
     // Get mutex and then free.
     QMutexLocker locker( &m_podofoMutex );
 
-    this->clearFontCache();
     delete m_podofoDocument;
     m_podofoDocument = NULL;
+    m_filename = QString();
 }
 
 PoDoFoExtended::PdfeFont* PRDocument::fontCache( const PoDoFo::PdfReference& fontRef )
@@ -209,11 +227,13 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     return pFont;
 }
 
-void PRDocument::setFilename( const QString& filename )
+void PRDocument::analyseContent()
 {
-    // Free PoDoFo document.
-    this->freePoDoFoDocument();
-    m_filename = filename;
+}
+void PRDocument::clearContent()
+{
+    // Delete PRSubDocuments objects.
+    std::for_each( m_subDocuments.begin(), m_subDocuments.end(), delete_ptr_fctor<PRSubDocument>() );
 }
 
 }
