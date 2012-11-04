@@ -48,8 +48,7 @@ PRDocument::PRDocument( QObject* parent ) :
 }
 PRDocument::~PRDocument()
 {
-    this->clearFontCache();
-    delete m_podofoDocument;
+    this->clear();
 }
 
 void PRDocument::load( const QString& filename )
@@ -210,8 +209,8 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     if( fontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
-    const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
 
+    const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
     if( fontSubType == PdfName("Type0") ) {
         pFont = new PdfeFontType0( fontObj, m_ftLibrary );
     }
@@ -227,7 +226,6 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
 
     // Insert font in the cache.
     m_fontCache.insert( std::make_pair( fontRef, pFont ) );
-
     return pFont;
 }
 
@@ -236,9 +234,11 @@ void PRDocument::analyseContent( const ContentParameters& params )
     // First clear content.
     this->clearContent();
 
-    // Detect sub-documents.
+    // Detect sub-documents and analyse their content.
     this->detectSubDocuments( params.subDocumentTolerance );
-
+    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
+        m_subDocuments[i]->analyseContent( params );
+    }
 }
 void PRDocument::clearContent()
 {
@@ -296,6 +296,31 @@ PdfRect PRDocument::PageCropBox( PdfPage* pPage )
     return cropBox;
 }
 
+size_t PRDocument::nbPages() const
+{
+    return m_podofoDocument->GetPageCount();
+}
+PRPage* PRDocument::page( size_t idx )
+{
+    // Find the sub-document if belongs to.
+    PRSubDocument* subDocument = NULL;
+    for( size_t i = 0 ; i < m_subDocuments.size() && !subDocument ; ++i ) {
+        if( i >= m_subDocuments[i]->firstPageIndex() && i <= m_subDocuments[i]->lastPageIndex() ) {
+            subDocument = m_subDocuments[i];
+        }
+    }
+    if( subDocument ) {
+        return subDocument->page( idx );
+    }
+    return NULL;
+}
+const PRPage* PRDocument::page( size_t idx ) const
+{
+    // Use the non-const implementation!
+    return const_cast<PRPage*>( const_cast<PRDocument*>( this )->page( idx ) );
+}
+
+
 //************************************************************//
 //                PRDocument::ContentParameters               //
 //************************************************************//
@@ -311,6 +336,7 @@ void PRDocument::ContentParameters::init()
     // Detect lines.
     textLineDetection = true;
 }
+
 
 
 

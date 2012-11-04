@@ -13,10 +13,11 @@
 #define PRSUBDOCUMENT_H
 
 #include <QObject>
+#include "PRDocument.h"
 
 namespace PdfRecut {
 
-class PRDocument;
+class PRPage;
 
 /** Class that represents a sub-document, i.e. a range of pages,
  * usually homogeneous in certain way, from a parent PRDocument.
@@ -31,21 +32,42 @@ public:
      * \param firstPageIndex First page of the sub-document.
      * \param lastPageIndex Last page of the sub-document.
      */
-    PRSubDocument( PRDocument* parent,
-                   size_t firstPageIndex,
-                   size_t lastPageIndex );
-
+    explicit PRSubDocument( PRDocument* parent,
+                            size_t firstPageIndex,
+                            size_t lastPageIndex );
+    /** Destructor.
+     */
+    virtual ~PRSubDocument();
 
 public:
+    // Contents related member functions.
+    /** Analyse the content of the sub-document
+     * Create an internal structure (based on PRPage,...) that
+     * describes the geometry of the PDF content.
+     * \param params Parameters used for the analysis.
+     */
+    void analyseContent( const PRDocument::ContentParameters& params );
     /** Clear the internal structure which describes the sub-document content.
      */
     void clearContent();
 
+public:
     /** Reimplement QObject parent function.
      * \return Pointer to the parent PRDocument.
      */
     PRDocument* parent() const;
 
+public:
+    // Getters...
+    /// Number of pages in the sub-document.
+    size_t nbPages() const  {   return (m_lastPageIndex-m_firstPageIndex+1);    }
+    /// Get a page object.
+    PRPage* page( size_t idx );
+    const PRPage* page( size_t idx ) const;
+    /// First page index in the sub-document.
+    size_t firstPageIndex() const   {   return m_firstPageIndex;    }
+    /// Last page index in the sub-document.
+    size_t lastPageIndex() const    {   return m_lastPageIndex;    }
 
 private:
     // No copy constructor and operator= allowed.
@@ -57,7 +79,8 @@ private:
     /// Index of the last page of the sub-document.
     size_t  m_lastPageIndex;
     
-    
+    /// Vector of PRPage (pointers) corresponding the page range.
+    std::vector<PRPage*>  m_pages;
 };
 
 }

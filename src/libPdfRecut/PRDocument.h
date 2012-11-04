@@ -35,6 +35,7 @@ namespace PoDoFoExtended {
 namespace PdfRecut {
 
 class PRSubDocument;
+class PRPage;
 
 //************************************************************//
 //                         PRDocument                         //
@@ -51,24 +52,21 @@ public:
      * \param parent Parent QObject.
      * \param filename Filename of the PDF document.
      */
-    PRDocument( QObject* parent = 0 );
-
+    explicit PRDocument( QObject* parent = 0 );
     /** Destructor: delete PoDoFo document object, if loaded.
      */
-    ~PRDocument();
+    virtual ~PRDocument();
 
 public:
     /** Load a PoDoFo document at a given filename.
      * \param filename Path the document to load.
      */
     void load( const QString& filename );
-
     /** Save the document in at a given place.
      * \param filename Path where to save the document. Modified if equal to
      * the member filename (to avoid PoDoFo writing issues).
      */
     void save( const QString& filename );
-
     /** Clear the document (free PoDoFo memory and internal objects).
      */
     void clear();
@@ -120,11 +118,9 @@ public:
      * \param params Parameters used for the analysis.
      */
     void analyseContent( const PRDocument::ContentParameters& params );
-
     /** Clear the internal structure which describes the PDF content.
      */
     void clearContent();
-
 private:
     /** Detect sub-documents inside the PDF.
      * \param tolerance Tolerance used for the size.
@@ -140,36 +136,26 @@ public:
 
 public:
     // Getters...
-    /** Is PoDoFo document loaded.
-     * \return Answer!
-     */
-    bool isDocumentLoaded() const {
-        return ( m_podofoDocument != NULL );
-    }
-    /** Get PoDoFo document pointer.
-     * \return Pointer to a PdfMemDocument object (can be NULL if not loaded).
-     */
-    PoDoFo::PdfMemDocument* podofoDocument() const {
-        return m_podofoDocument;
-    }
-    /** Get PoDoFo document mutex.
-     * \return QMutex used for PoDoFo document object.
-     */
-    QMutex* podofoMutex() {
-        return &m_podofoMutex;
-    }
-    /** Get filename of the PDF document.
-     * \return Filename.
-     */
-    QString filename() const {
-        return m_filename;
-    }
-    /** Get the FreeType library object.
-     * \return FT_Library object.
-     */
-    FT_Library ftLibrary() const {
-        return m_ftLibrary;
-    }
+    /// Number of sub-documents detected.
+    size_t nbSubDocuments() const {     return m_subDocuments.size();   }
+    /// Get a sub-document object.
+    PRSubDocument* subDocument( size_t idx )                {  return m_subDocuments.at( idx );    }
+    const PRSubDocument* subDocument( size_t idx ) const    {  return m_subDocuments.at( idx );    }
+    /// Number of pages in the document.
+    size_t nbPages() const;
+    /// Get a page object.
+    PRPage* page( size_t idx );
+    const PRPage* page( size_t idx ) const;
+    /// Is PoDoFo document loaded.
+    bool isDocumentLoaded() const   {   return ( m_podofoDocument != NULL );    }
+    /// Get PoDoFo document pointer.
+    PoDoFo::PdfMemDocument* podofoDocument() const {    return m_podofoDocument;    }
+    /// Get PoDoFo document mutex.
+    QMutex* podofoMutex()       {   return &m_podofoMutex;  }
+    /// Get filename of the PDF document.
+    QString filename() const    {   return m_filename;  }
+    /// Get the FreeType library object linked to the document.
+    FT_Library ftLibrary() const    {   return m_ftLibrary;   }
 
 signals:
     /** Progress signal sent by methods.

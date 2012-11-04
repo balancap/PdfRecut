@@ -26,7 +26,7 @@ PRPage::~PRPage()
 {
 }
 
-void PRPage::analyseContent(const PRDocument::ContentParameters &params)
+void PRPage::analyseContent( const PRDocument::ContentParameters& params )
 {
 }
 void PRPage::clearContent()
