@@ -11,6 +11,8 @@
 
 #include "PdfeTypes.h"
 
+#include <QString>
+
 //namespace PoDoFoExtended {
 
 //**********************************************************//
@@ -270,6 +272,22 @@ bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rec
              rect2.GetBottom() >= rect1.GetBottom() &&
              rect2.GetLeft() + rect2.GetWidth() <= rect1.GetLeft() + rect1.GetWidth() &&
              rect2.GetBottom() + rect2.GetHeight() <= rect1.GetBottom() + rect1.GetHeight() );
+}
+
+//**********************************************************//
+//                          PdfRect                         //
+//**********************************************************//
+std::string PdfRectToString( const PoDoFo::PdfRect& rect )
+{
+    size_t MaxLength = 5;
+    QString desc =
+            QString( "[ %1 %2 %3 %4 ]" )
+            .arg( rect.GetLeft(), -MaxLength )
+            .arg( rect.GetBottom(), -MaxLength )
+            .arg( rect.GetWidth(), -MaxLength )
+            .arg( rect.GetHeight(), -MaxLength );
+
+    return std::string( desc.toLocal8Bit().constData() );
 }
 
 

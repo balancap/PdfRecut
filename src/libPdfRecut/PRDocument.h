@@ -25,6 +25,8 @@
 namespace PoDoFo {
     class PdfMemDocument;
     class PdfReference;
+    class PdfRect;
+    class PdfPage;
 }
 namespace PoDoFoExtended {
     class PdfeFont;
@@ -34,6 +36,9 @@ namespace PdfRecut {
 
 class PRSubDocument;
 
+//************************************************************//
+//                         PRDocument                         //
+//************************************************************//
 /** Class that handles a document object from PoDoFo library.
  * It owns a mutex for the access to this object.
  */
@@ -105,16 +110,33 @@ private:
     PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
 
 public:
+    /// Structure which describes content analysis parameters.
+    struct ContentParameters;
+
     // Contents related member functions.
     /** Analyse the content of the PDF file.
      * Create an internal structure (based on PRSubDocument, PRPage, ...) that
      * describes the geometry of the PDF content.
+     * \param params Parameters used for the analysis.
      */
-    void analyseContent();
+    void analyseContent( const PRDocument::ContentParameters& params );
 
-    /** Clear the internal structure which describes PDF content.
+    /** Clear the internal structure which describes the PDF content.
      */
     void clearContent();
+
+private:
+    /** Detect sub-documents inside the PDF.
+     * \param tolerance Tolerance used for the size.
+     */
+    void detectSubDocuments( double tolerance );
+
+public:
+    // Some static functions that can be useful.
+    /// Get the media box of a page.
+    static PoDoFo::PdfRect PageMediaBox( PoDoFo::PdfPage* pPage );
+    /// Get the crop box of a page (check the coherence with media box).
+    static PoDoFo::PdfRect PageCropBox( PoDoFo::PdfPage* pPage );
 
 public:
     // Getters...
@@ -186,8 +208,22 @@ private:
 };
 
 //************************************************************//
-//                      Inline functions                      //
+//                PRDocument::ContentParameters               //
 //************************************************************//
+/** Structure that describes PRDocument content analysis parameters.
+ */
+struct PRDocument::ContentParameters
+{
+    /// Sub-document tolerance (relative) for the page size.
+    double  subDocumentTolerance;
+    /// Perform the text line detection.
+    bool  textLineDetection;
+
+    /// Default constructor.
+    ContentParameters();
+    /// Initialize to default values.
+    void init();
+};
 
 
 }

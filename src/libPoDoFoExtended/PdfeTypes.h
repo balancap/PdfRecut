@@ -471,7 +471,7 @@ private:
 };
 
 //**********************************************************//
-//                         PdfeRect                         //
+//                          PdfRect                         //
 //**********************************************************//
 /** Transform PoDoFo::PdfRect into QRectF.
  * \param rect PdfRect.
@@ -479,7 +479,6 @@ private:
 inline QRectF FromPdfRectToQRectF( const PoDoFo::PdfRect& rect ) {
     return QRectF( rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() );
 }
-
 /** Rescale a PdfRect.
  * \param rect PdfRect.
  * \param scale Scale coefficient.
@@ -491,6 +490,10 @@ inline PoDoFo::PdfRect PdfRectRescale( const PoDoFo::PdfRect& rect, double scale
                             rect.GetWidth() * scale,
                             rect.GetHeight() * scale );
 }
+/** PdfRect to std::string. Use width and height on the contrary to PoDoFo.
+ * \return String describing the rectangle.
+ */
+std::string PdfRectToString( const PoDoFo::PdfRect& rect );
 
 //}
 

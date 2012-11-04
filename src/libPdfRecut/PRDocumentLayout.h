@@ -18,7 +18,7 @@
 
 #include "PdfeTypes.h"
 #include "PdfeSemaphore.h"
-#include "PRDocument.h"
+//#include "PRDocument.h"
 #include "PdfeMisc.h"
 
 namespace PoDoFo {
@@ -34,6 +34,7 @@ namespace PoDoFo {
 
 namespace PdfRecut {
 
+class PRDocument;
 class PRPageLayout;
 
 /** Pdf zone in the input document to be inserted in an output page.

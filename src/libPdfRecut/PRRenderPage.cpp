@@ -104,6 +104,9 @@ PRRenderPage::~PRRenderPage()
 
 void PRRenderPage::initRendering( double resolution )
 {
+    // Clear.
+    this->clearRendering();
+
     // Get crop and media boxes and set painted box.
     PdfRect mediaBox = m_page->GetMediaBox();
     PdfRect cropBox = m_page->GetCropBox();
@@ -113,14 +116,12 @@ void PRRenderPage::initRendering( double resolution )
     m_pageRect = cropBox;
 
     // Create associated image.
-    delete m_pageImage;
     m_pageImage = new QImage( int( m_pageRect.GetWidth() * resolution ),
                               int( m_pageRect.GetHeight() * resolution ),
                               QImage::Format_RGB32 );
     m_pageImage->fill( QColor( Qt::white ).rgb() );
 
     // QPainter used to draw the page.
-    delete m_pagePainter;
     m_pagePainter = new QPainter( m_pageImage );
     m_pagePainter->setRenderHint( QPainter::Antialiasing, false );
 
@@ -135,6 +136,8 @@ void PRRenderPage::clearRendering()
 {
     delete m_pageImage;
     delete m_pagePainter;
+    m_pageImage = NULL;
+    m_pagePainter = NULL;
 }
 
 void PRRenderPage::render( const PRRenderParameters& parameters )

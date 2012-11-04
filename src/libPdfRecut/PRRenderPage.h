@@ -261,7 +261,7 @@ protected:
     static int imgNbs;
     void testPdfImage( PoDoFo::PdfObject* xobj );
 
-protected:
+private:
     /// Pointer to PRDocument object.
     PRDocument*  m_document;
     /// Page pointer.

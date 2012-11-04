@@ -143,10 +143,40 @@ void proceedFile( QString filePath )
     QFileInfo infoFile( filePath );
     cout << "Proceeding file: " << infoFile.fileName().toLocal8Bit().data() << endl;
 
-    // Open file
-    cout << " >>> Opening Pdf file..." << endl;
+    // Load PDF file
     document.load( filePath );
-    //document.loadPopplerDocument();
+
+    // Analyse document content.
+    PRDocument::ContentParameters contentParams;
+    document.analyseContent( contentParams );
+
+    // Render page and save.
+    PRRenderParameters renderParams;
+    renderParams.resolution = 1.0;
+//    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
+
+    QString filename;
+    for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
+        // Text and render page objects.
+        PRRenderPage renderPage( &document, i );
+        PRTextPageStructure textPage( &document, i );
+
+        // Analyse page text
+        textPage.detectGroupsWords();
+        textPage.detectLines();
+
+        // Render some elements.
+        renderPage.initRendering( renderParams.resolution );
+//        textPage.renderTextGroupsWords( renderPage );
+        textPage.renderTextLines( renderPage );
+//        renderPage.render( renderParams );
+
+        // Save image to file.
+        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
+        renderPage.image().save( filename );
+    }
+    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
+
 
     // Compute some mean values bbox.
 //    computeBBoxStats( document, PdfeFont14Standard::Helvetica );
@@ -176,33 +206,6 @@ void proceedFile( QString filePath )
     //docLayout.printLayoutOut( &document );
     //docLayout.printLayoutIn( &document );
     //document.writePoDoFoDocument( filePath );
-
-    // Render page and save.
-    PRRenderParameters renderParams;
-    renderParams.resolution = 1.0;
-//    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
-
-    QString filename;
-    for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
-        // Text and render page objects.
-        PRRenderPage renderPage( &document, i );
-        PRTextPageStructure textPage( &document, i );
-
-        // Analyse page text
-        textPage.detectGroupsWords();
-        textPage.detectLines();
-
-        // Render some elements.
-        renderPage.initRendering( renderParams.resolution );
-//        textPage.renderTextGroupsWords( renderPage );
-        textPage.renderTextLines( renderPage );
-//        renderPage.render( renderParams );
-
-        // Save image to file.
-        filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
-        renderPage.image().save( filename );
-    }
-    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 }
 
 void proceedDir( QString dirPath )

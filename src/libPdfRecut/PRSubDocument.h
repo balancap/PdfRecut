@@ -37,6 +37,10 @@ public:
 
 
 public:
+    /** Clear the internal structure which describes the sub-document content.
+     */
+    void clearContent();
+
     /** Reimplement QObject parent function.
      * \return Pointer to the parent PRDocument.
      */

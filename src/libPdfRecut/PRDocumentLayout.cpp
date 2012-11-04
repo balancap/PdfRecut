@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include "PRDocumentLayout.h"
+#include "PRDocument.h"
 #include "PRException.h"
 #include "PRStreamLayoutZone.h"
 

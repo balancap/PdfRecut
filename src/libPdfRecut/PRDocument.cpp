@@ -30,6 +30,9 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
+//************************************************************//
+//                         PRDocument                         //
+//************************************************************//
 PRDocument::PRDocument( QObject* parent ) :
     QObject( parent )
 {
@@ -100,8 +103,9 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename 
         m_podofoDocument->Load( m_filename.toLocal8Bit().data() );
 
         // Log information.
-        QLOG_INFO() << QString( "<PRDocument> End loading PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> End loading PoDoFo document \"%1\" (%2 pages)." )
                        .arg( QFileInfo( m_filename ).fileName() )
+                       .arg( m_podofoDocument->GetPageCount() )
                        .toAscii().constData();
     }
     catch( const PoDoFo::PdfError& error )
@@ -151,7 +155,7 @@ void PRDocument::writePoDoFoDocument( const QString& filename, const QString& su
         m_podofoDocument->Write( fileOut.toLocal8Bit().data() );
 
         // Log information.
-        QLOG_INFO() << QString( "<PRDocument> Begin writing PoDoFo document \"%1\"." )
+        QLOG_INFO() << QString( "<PRDocument> End writing PoDoFo document \"%1\"." )
                        .arg( QFileInfo( fileOut ).fileName() )
                        .toAscii().constData();
     }
@@ -227,13 +231,87 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     return pFont;
 }
 
-void PRDocument::analyseContent()
+void PRDocument::analyseContent( const ContentParameters& params )
 {
+    // First clear content.
+    this->clearContent();
+
+    // Detect sub-documents.
+    this->detectSubDocuments( params.subDocumentTolerance );
+
 }
 void PRDocument::clearContent()
 {
     // Delete PRSubDocuments objects.
-    std::for_each( m_subDocuments.begin(), m_subDocuments.end(), delete_ptr_fctor<PRSubDocument>() );
+    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
+        m_subDocuments[i]->clearContent();
+        delete m_subDocuments[i];
+        m_subDocuments[i] = NULL;
+    }
+    m_subDocuments.clear();
 }
+void PRDocument::detectSubDocuments( double tolerance )
+{
+    long idx( 0 );
+    long idxFirst;
+    PdfRect cbox;
+    PdfRect cboxst;
+
+    while( idx < m_podofoDocument->GetPageCount() ) {
+        // Initialize the subdocument with the current page.
+        idxFirst = idx;
+        cboxst = PageCropBox( m_podofoDocument->GetPage( idxFirst ) );
+        bool belong = true;
+        //++idx;
+
+        while( idx < m_podofoDocument->GetPageCount() ) {
+            // Check the size of the page (width and height).
+            cbox = PageCropBox( m_podofoDocument->GetPage( idx ) );
+            belong = ( fabs( cboxst.GetWidth() - cbox.GetWidth() ) <= cboxst.GetWidth() * tolerance ) &&
+                    ( fabs( cboxst.GetHeight() - cbox.GetHeight() ) <= cboxst.GetHeight() * tolerance );
+            if( !belong ) {
+                break;
+            }
+            ++idx;
+            // QLOG_INFO() << QString( "Crop box: %1" ).arg( PdfRectToString( cbox ).c_str() ).toLocal8Bit().constData();
+        }
+        // Create the SubDocument and add it to the vector.
+        m_subDocuments.push_back( new PRSubDocument( this, idxFirst, idx-1 ) );
+    }
+}
+
+PdfRect PRDocument::PageMediaBox( PdfPage* pPage )
+{
+    PdfRect mediaBox( pPage->GetMediaBox() );
+    return mediaBox;
+}
+
+PdfRect PRDocument::PageCropBox( PdfPage* pPage )
+{
+    PdfRect mediaBox( PRDocument::PageMediaBox( pPage ) );
+    PdfRect cropBox( pPage->GetCropBox() );
+
+    // Intersection between the two.
+    cropBox = PdfeORect::intersection( mediaBox, cropBox );
+    return cropBox;
+}
+
+//************************************************************//
+//                PRDocument::ContentParameters               //
+//************************************************************//
+PRDocument::ContentParameters::ContentParameters()
+{
+    this->init();
+}
+void PRDocument::ContentParameters::init()
+{
+    // 2 percent tolerance on the size.
+    subDocumentTolerance = 0.05;
+
+    // Detect lines.
+    textLineDetection = true;
+}
+
+
 
 }
