@@ -24,7 +24,7 @@ namespace PdfRecut {
 class PRSubDocument;
 
 /** Class that represent a page in a PDF document.
- * It describes its basic geometry (text, paths and images).
+ * It describes page's basic geometry (text, paths and images).
  */
 class PRPage : public QObject
 {

@@ -134,10 +134,10 @@ void PRRenderPage::initRendering( double resolution )
 }
 void PRRenderPage::clearRendering()
 {
-    delete m_pageImage;
     delete m_pagePainter;
-    m_pageImage = NULL;
     m_pagePainter = NULL;
+    delete m_pageImage;
+    m_pageImage = NULL;
 }
 
 void PRRenderPage::render( const PRRenderParameters& parameters )

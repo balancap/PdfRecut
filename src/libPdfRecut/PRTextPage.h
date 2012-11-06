@@ -25,25 +25,27 @@ class PdfVariant;
 namespace PdfRecut {
 
 class PRDocument;
+class PRPage;
 class PRRenderPage;
 class PRTextLine;
 class PRTextGroupWords;
 
-/** Class that analyse the text structure of a PDF page.
+/** Class that describes the text organization in PDF page:
+ * - Groups of words that belong to the page;
+ * - Text lines that can be detected.
  */
-class PRTextPageStructure : public PoDoFoExtended::PdfeCanvasAnalysis
+class PRTextPage : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
     /** Default constructor
      * \param document Input document.
      * \param pageIndex Index of the page to render.
      */
-    PRTextPageStructure( PRDocument* document,
-                         long pageIndex );
-
+    PRTextPage( PRDocument* document,
+                long pageIndex );
     /** Destructor.
      */
-    virtual ~PRTextPageStructure();
+    virtual ~PRTextPage();
 
 protected:
     /** Clear content of the object (i.e. different vectors).
@@ -118,7 +120,7 @@ private:
 
     /** No copy constructor allowed.
      */
-    PRTextPageStructure( const PRTextPageStructure& rhs );
+    PRTextPage( const PRTextPage& rhs );
 
 protected:
     // Reimplement PdfeCanvasAnalysis interface.

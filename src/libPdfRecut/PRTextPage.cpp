@@ -9,7 +9,7 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#include "PRTextPageStructure.h"
+#include "PRTextPage.h"
 
 #include "PRDocument.h"
 #include "PRRenderPage.h"
@@ -31,7 +31,7 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
-PRTextPageStructure::PRTextPageStructure( PRDocument* document,
+PRTextPage::PRTextPage( PRDocument* document,
                                           long pageIndex ) :
     PdfeCanvasAnalysis(),
     m_document( document ),
@@ -42,13 +42,12 @@ PRTextPageStructure::PRTextPageStructure( PRDocument* document,
     m_pGroupsWords.clear();
     m_pTextLines.clear();
 }
-
-PRTextPageStructure::~PRTextPageStructure()
+PRTextPage::~PRTextPage()
 {
     this->clearContent();
 }
 
-void PRTextPageStructure::clearContent()
+void PRTextPage::clearContent()
 {
     // Delete groups of words.
     std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), delete_ptr_fctor<PRTextGroupWords>() );
@@ -58,7 +57,7 @@ void PRTextPageStructure::clearContent()
     std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRTextLine>() );
 }
 
-void PRTextPageStructure::detectGroupsWords()
+void PRTextPage::detectGroupsWords()
 {
     // Clear content.
     this->clearContent();
@@ -67,7 +66,7 @@ void PRTextPageStructure::detectGroupsWords()
     this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
 }
 
-void PRTextPageStructure::detectLines()
+void PRTextPage::detectLines()
 {
     // Create basic lines based on groups of words.
     // Basic merge between groups is performed.
@@ -135,7 +134,7 @@ void PRTextPageStructure::detectLines()
     }*/
 }
 
-PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
+PRTextLine* PRTextPage::createLine_Basic( size_t idxGroupWords )
 {
     // Parameters of the algorithm, based on font statistics.
     long MaxSearchGroupWords = 20;
@@ -241,7 +240,7 @@ PRTextLine* PRTextPageStructure::createLine_Basic( size_t idxGroupWords )
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine,
+PRTextLine *PRTextPage::mergeLines_EnlargeInside( PRTextLine* pBaseLine,
                                                            double minBaseHeight,
                                                            double maxBaseHeight,
                                                            double minLineWidth )
@@ -310,7 +309,7 @@ PRTextLine *PRTextPageStructure::mergeLines_EnlargeInside( PRTextLine* pBaseLine
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine* PRTextPageStructure::mergeLines_EnlargeOutside(PRTextLine* pBaseLine,
+PRTextLine* PRTextPage::mergeLines_EnlargeOutside(PRTextLine* pBaseLine,
                                                             double scaleXEnlarge,
                                                             double scaleYEnlarge,
                                                             double maxLineWidth )
@@ -388,7 +387,7 @@ PRTextLine* PRTextPageStructure::mergeLines_EnlargeOutside(PRTextLine* pBaseLine
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine* PRTextPageStructure::mergeLines_Inside( PRTextLine* pLine )
+PRTextLine* PRTextPage::mergeLines_Inside( PRTextLine* pLine )
 {
     // Parameters of the algorithm.
     double MaxDistanceInside = 1.0;
@@ -457,7 +456,7 @@ PRTextLine* PRTextPageStructure::mergeLines_Inside( PRTextLine* pLine )
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
+PRTextLine *PRTextPage::mergeLines_Small( PRTextLine *pLine )
 {
     // Parameters of the algorithm.
     double MaxDistance = 1.0;
@@ -568,7 +567,7 @@ PRTextLine *PRTextPageStructure::mergeLines_Small( PRTextLine *pLine )
     return this->mergeVectorLines( pLinesToMerge );
 }
 
-std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pLine )
+std::vector<PRTextLine*> PRTextPage::splitLines_hBlocks( PRTextLine* pLine )
 {
     // Parameters of the algorithm.
     double BlockHDistance = 2.0;
@@ -611,7 +610,7 @@ std::vector<PRTextLine*> PRTextPageStructure::splitLines_hBlocks( PRTextLine* pL
     return pLines;
 }
 
-PRTextLine* PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*>& pLines )
+PRTextLine* PRTextPage::mergeVectorLines( const std::vector<PRTextLine*>& pLines )
 {
     // Empty vector...
     if( pLines.empty() ) {
@@ -650,7 +649,7 @@ PRTextLine* PRTextPageStructure::mergeVectorLines( const std::vector<PRTextLine*
 }
 
 // Reimplement PdfeCanvasAnalysis interface.
-PdfeVector PRTextPageStructure::fTextShowing( const PdfeStreamState& streamState )
+PdfeVector PRTextPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Read the group of words.
     PRTextGroupWords* pGroup = new PRTextGroupWords( m_document, streamState );
@@ -671,7 +670,7 @@ PdfeVector PRTextPageStructure::fTextShowing( const PdfeStreamState& streamState
 }
 
 // Rendering routines.
-void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
+void PRTextPage::renderTextGroupsWords( PRRenderPage& renderPage )
 {
     // Rendering parameters.
     PRRenderParameters renderParameters;
@@ -707,7 +706,7 @@ void PRTextPageStructure::renderTextGroupsWords( PRRenderPage& renderPage )
 //        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
     }
 }
-void PRTextPageStructure::renderTextLines( PRRenderPage& renderPage )
+void PRTextPage::renderTextLines( PRRenderPage& renderPage )
 {
     // Words rendering parameters.
     PRRenderParameters renderParameters;

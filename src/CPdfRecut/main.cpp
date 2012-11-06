@@ -16,7 +16,7 @@
 #include "PRDocumentLayout.h"
 #include "PRDocumentTools.h"
 #include "PRRenderPage.h"
-#include "PRTextPageStructure.h"
+#include "PRTextPage.h"
 
 #include "PdfeFontType1.h"
 
@@ -159,7 +159,7 @@ void proceedFile( QString filePath )
     for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
         // Text and render page objects.
         PRRenderPage renderPage( &document, i );
-        PRTextPageStructure textPage( &document, i );
+        PRTextPage textPage( &document, i );
 
         // Analyse page text
         textPage.detectGroupsWords();
