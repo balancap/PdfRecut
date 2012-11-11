@@ -121,11 +121,11 @@ void PRRenderPage::fGeneralGState( const PdfeStreamState& streamState ) { }
 void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
 {
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    if( gOperator.code == ePdfGOperator_q ) {
+    if( gOperator.code == PdfeGOperator::q ) {
         // Push on the clipping paths stm_documentack.
         m_clippingPathStack.push_back( m_clippingPathStack.back() );
     }
-    else if( gOperator.code == ePdfGOperator_Q ) {
+    else if( gOperator.code == PdfeGOperator::Q ) {
         // Pop on the graphics state stack.
         m_clippingPathStack.pop_back();
 
@@ -229,7 +229,7 @@ void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
-    if( gOperator.code == ePdfGOperator_EI )
+    if( gOperator.code == PdfeGOperator::EI )
     {
         // Compute path rendering matrix.
         PdfeMatrix pathMat;

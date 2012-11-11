@@ -86,23 +86,23 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
             //this->fUnknown( streamState );
 
             // Distinction between operator categories.
-            if( gOperator.cat == ePdfGCategory_GeneralGState )
+            if( gOperator.cat == PdfeGCategory::GeneralGState )
             {
                 // Commands in this category: w, J, j, M, d, ri, i, gs.
 
-                if( gOperator.code ==ePdfGOperator_w ) {
+                if( gOperator.code ==PdfeGOperator::w ) {
                     // Get line width.
                     this->readValue( gOperands.back(), gState.lineWidth );
                 }
-                else if( gOperator.code ==ePdfGOperator_J ) {
+                else if( gOperator.code ==PdfeGOperator::J ) {
                     // Get line cap.
                     this->readValue( gOperands.back(), gState.lineCap );
                 }
-                else if( gOperator.code ==ePdfGOperator_j ) {
+                else if( gOperator.code ==PdfeGOperator::j ) {
                     // Get line join.
                     this->readValue( gOperands.back(), gState.lineJoin );
                 }
-                else if( gOperator.code ==ePdfGOperator_gs ) {
+                else if( gOperator.code ==PdfeGOperator::gs ) {
                     // Get parameters from an ExtGState dictionary.
                     tmpString = gOperands.back().substr( 1 );
                     gState.importExtGState( resources, tmpString );
@@ -110,19 +110,19 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fGeneralGState( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_SpecialGState )
+            else if( gOperator.cat == PdfeGCategory::SpecialGState )
             {
                 // Commands in this category: q, Q, cm.
 
-                if( gOperator.code == ePdfGOperator_q ) {
+                if( gOperator.code == PdfeGOperator::q ) {
                     // Push on the graphics state stack.
                     streamState.gStates.push_back( gState );
                 }
-                else if( gOperator.code == ePdfGOperator_Q ) {
+                else if( gOperator.code == PdfeGOperator::Q ) {
                     // Pop on the graphics state stack.
                     streamState.gStates.pop_back();
                 }
-                else if( gOperator.code == ePdfGOperator_cm ) {
+                else if( gOperator.code == PdfeGOperator::cm ) {
                     // Get transformation matrix and compute new one.
                     size_t nbvars = gOperands.size();
                     tmpMat.init();
@@ -139,38 +139,38 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fSpecialGState( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_TextObjects )
+            else if( gOperator.cat == PdfeGCategory::TextObjects )
             {
                 // Commands in this category: BT, ET.
 
                 // Initialize text transform matrices when op = "BT".
-                if( gOperator.code == ePdfGOperator_BT ) {
+                if( gOperator.code == PdfeGOperator::BT ) {
                     gState.textState.initMatrices();
                 }
                 // Call category function.
                 this->fTextObjects( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_TextState )
+            else if( gOperator.cat == PdfeGCategory::TextState )
             {
                 // Commands in this category: Tc, Tw, Tz, TL, Tf, Tr, Ts.
 
-                if( gOperator.code == ePdfGOperator_Tc ) {
+                if( gOperator.code == PdfeGOperator::Tc ) {
                     // Read char space.
                     this->readValue( gOperands.back(), gState.textState.charSpace );
                 }
-                else if( gOperator.code == ePdfGOperator_Tw ) {
+                else if( gOperator.code == PdfeGOperator::Tw ) {
                     // Read word space.
                     this->readValue( gOperands.back(), gState.textState.wordSpace );
                 }
-                else if( gOperator.code == ePdfGOperator_Tz ) {
+                else if( gOperator.code == PdfeGOperator::Tz ) {
                     // Read horizontal scale.
                     this->readValue( gOperands.back(), gState.textState.hScale );
                 }
-                else if( gOperator.code == ePdfGOperator_TL ) {
+                else if( gOperator.code == PdfeGOperator::TL ) {
                     // Read leading.
                     this->readValue( gOperands.back(), gState.textState.leading );
                 }
-                else if( gOperator.code == ePdfGOperator_Tf ) {
+                else if( gOperator.code == PdfeGOperator::Tf ) {
                     // Read font size and font name
                     size_t nbvars = gOperands.size();
                     this->readValue( gOperands[nbvars-1], gState.textState.fontSize );
@@ -180,22 +180,22 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     gState.textState.fontName = tmpString.substr( 1 );
                     gState.importFontReference( resources );
                 }
-                else if( gOperator.code == ePdfGOperator_Tr ) {
+                else if( gOperator.code == PdfeGOperator::Tr ) {
                     // Read render.
                     this->readValue( gOperands.back(), gState.textState.render );
                 }
-                else if( gOperator.code == ePdfGOperator_Ts ) {
+                else if( gOperator.code == PdfeGOperator::Ts ) {
                     // Read rise.
                     this->readValue( gOperands.back(), gState.textState.rise );
                 }
                 // Call category function.
                 this->fTextState( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_TextPositioning )
+            else if( gOperator.cat == PdfeGCategory::TextPositioning )
             {
                 // Commands in this category: Td, TD, Tm, T*.
 
-                if( gOperator.code == ePdfGOperator_Td ) {
+                if( gOperator.code == PdfeGOperator::Td ) {
                     // Read and compute text transformation matrix.
                     tmpMat.init();
                     size_t nbvars = gOperands.size();
@@ -205,7 +205,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     gState.textState.lineTransMat = tmpMat * gState.textState.lineTransMat;
                     gState.textState.transMat = gState.textState.lineTransMat;
                 }
-                else if( gOperator.code == ePdfGOperator_TD ) {
+                else if( gOperator.code == PdfeGOperator::TD ) {
                     // Read and compute text transformation matrix.
                     tmpMat.init();
                     size_t nbvars = gOperands.size();
@@ -218,7 +218,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     // New leading value.
                     gState.textState.leading = -tmpMat(2,1);
                 }
-                else if( gOperator.code == ePdfGOperator_Tm ) {
+                else if( gOperator.code == PdfeGOperator::Tm ) {
                     // Get transformation matrix new one.
                     size_t nbvars = gOperands.size();
 
@@ -232,7 +232,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     gState.textState.transMat = tmpMat;
                     gState.textState.lineTransMat = tmpMat;
                 }
-                else if( gOperator.code == ePdfGOperator_Tstar ) {
+                else if( gOperator.code == PdfeGOperator::Tstar ) {
                     // "T*" equivalent to "0 -Tl Td".
                     tmpMat.init();
                     tmpMat(2,1) = -gState.textState.leading;
@@ -243,12 +243,12 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fTextPositioning( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_TextShowing )
+            else if( gOperator.cat == PdfeGCategory::TextShowing )
             {
                 // Commands in this category: Tj, TJ, ', "
 
                 //Modify text graphics state parameters when necessary.
-                if( gOperator.code == ePdfGOperator_Quote ) {
+                if( gOperator.code == PdfeGOperator::Quote ) {
                     // Corresponds to T*, Tj.
                     tmpMat.init();
                     tmpMat(2,1) = -gState.textState.leading;
@@ -256,7 +256,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     gState.textState.lineTransMat = tmpMat * gState.textState.lineTransMat;
                     gState.textState.transMat = gState.textState.lineTransMat;
                 }
-                else if( gOperator.code == ePdfGOperator_DoubleQuote ) {
+                else if( gOperator.code == PdfeGOperator::DoubleQuote ) {
                     // Corresponds to Tw, Tc, Tj.
                     size_t nbvars = gOperands.size();
                     tmpMat.init();
@@ -273,7 +273,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 tmpMat(2,1) = textDispl(1);
                 gState.textState.transMat = tmpMat * gState.textState.transMat;
             }
-            else if( gOperator.cat == ePdfGCategory_Color )
+            else if( gOperator.cat == PdfeGCategory::Color )
             {
                 // Commands in this category: CS, cs, SC, SCN, sc, scn, G, g, RG, rg, K, k.
                 // Not so much done in this category. Should maybe implement a bit more !
@@ -281,11 +281,11 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fColor( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_PathConstruction )
+            else if( gOperator.cat == PdfeGCategory::PathConstruction )
             {
                 // Commands in this category: m, l, c, v, y, h, re.
 
-                if( gOperator.code == ePdfGOperator_m ) {
+                if( gOperator.code == PdfeGOperator::m ) {
                     // Begin a new subpath.
                     size_t nbvars = gOperands.size();
                     PdfeVector point;
@@ -295,7 +295,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                     currentPath.beginSubpath( point );
                 }
-                else if( gOperator.code == ePdfGOperator_l ) {
+                else if( gOperator.code == PdfeGOperator::l ) {
                     // Append straight line.
                     size_t nbvars = gOperands.size();
                     PdfeVector point;
@@ -305,7 +305,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                     currentPath.appendLine( point );
                 }
-                else if( gOperator.code == ePdfGOperator_c ) {
+                else if( gOperator.code == PdfeGOperator::c ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
                     PdfeVector point1, point2, point3;
@@ -319,7 +319,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                     currentPath.appendBezierC( point1, point2, point3 );
                 }
-                else if( gOperator.code == ePdfGOperator_v ) {
+                else if( gOperator.code == PdfeGOperator::v ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
                     PdfeVector point2, point3;
@@ -331,7 +331,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                     currentPath.appendBezierV( point2, point3 );
                 }
-                else if( gOperator.code == ePdfGOperator_y ) {
+                else if( gOperator.code == PdfeGOperator::y ) {
                     // Append Bézier curve (c).
                     size_t nbvars = gOperands.size();
                     PdfeVector point1, point3;
@@ -343,11 +343,11 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                     currentPath.appendBezierY( point1, point3 );
                 }
-                else if( gOperator.code == ePdfGOperator_h ) {
+                else if( gOperator.code == PdfeGOperator::h ) {
                     // Close the current subpath by appending a straight line.
                     currentPath.closeSubpath();
                 }
-                else if( gOperator.code == ePdfGOperator_re ) {
+                else if( gOperator.code == PdfeGOperator::re ) {
                     // Append a rectangle to the current path as a complete subpath.
                     size_t nbvars = gOperands.size();
                     PdfeVector llpoint, size;
@@ -362,7 +362,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fPathConstruction( streamState, currentPath );
             }
-            else if( gOperator.cat == ePdfGCategory_PathPainting )
+            else if( gOperator.cat == PdfeGCategory::PathPainting )
             {
                 // Commands in this category: S, s, f, F, f*, B, B*, b, b*, n.
 
@@ -372,7 +372,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Clear the current path.
                 currentPath.init();
             }
-            else if( gOperator.cat == ePdfGCategory_ClippingPath )
+            else if( gOperator.cat == PdfeGCategory::ClippingPath )
             {
                 // Commands in this category: W, W*.
 
@@ -385,28 +385,28 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fClippingPath( streamState, currentPath );
             }
-            else if( gOperator.cat == ePdfGCategory_Type3Fonts )
+            else if( gOperator.cat == PdfeGCategory::Type3Fonts )
             {
                 // Commands in this category: d0, d1.
 
                 // Call category function.
                 this->fType3Fonts( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_ShadingPatterns )
+            else if( gOperator.cat == PdfeGCategory::ShadingPatterns )
             {
                 // Commands in this category: sh.
 
                 // Call category function.
                 this->fShadingPatterns( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_InlineImages )
+            else if( gOperator.cat == PdfeGCategory::InlineImages )
             {
                 // Commands in this category: BI, ID, EI.
 
                 // Call category function.
                 this->fInlineImages( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_XObjects )
+            else if( gOperator.cat == PdfeGCategory::XObjects )
             {
                 // Commands in this category: Do.
 
@@ -464,15 +464,15 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fXObjects( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_Compatibility )
+            else if( gOperator.cat == PdfeGCategory::Compatibility )
             {
                 // Commands in this category: BX, EX.
 
-                if( gOperator.code == ePdfGOperator_BX ) {
+                if( gOperator.code == PdfeGOperator::BX ) {
                     // Activate compatibility mode.
                     gState.compatibilityMode = true;
                 }
-                else if( gOperator.code == ePdfGOperator_EX ) {
+                else if( gOperator.code == PdfeGOperator::EX ) {
                     // Deactivate compatibility mode.
                     gState.compatibilityMode = false;
                 }
@@ -480,7 +480,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Call category function.
                 this->fCompatibility( streamState );
             }
-            else if( gOperator.cat == ePdfGCategory_Unknown )
+            else if( gOperator.cat == PdfeGCategory::Unknown )
             {
                 // Call category function.
                 this->fUnknown( streamState );

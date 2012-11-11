@@ -92,7 +92,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
     m_bufStream.str("");
     m_bufString.clear();
 
-    if( gOperator.code == ePdfGOperator_gs ) {
+    if( gOperator.code == PdfeGOperator::gs ) {
         // Specific case of command "gs": add resource suffixe.
         m_bufString += "/";
         m_bufString += gOperands.back().substr( 1 );
@@ -270,7 +270,7 @@ void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
-    if( gOperator.code == ePdfGOperator_Tf ) {
+    if( gOperator.code == PdfeGOperator::Tf ) {
         // Font: add resource prefix to name.
         m_bufString = "/";
         m_bufString += gOperands[0].substr( 1 );
@@ -331,10 +331,10 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState 
     {
         // In the case of operators ' or ", write non-showing code.
         m_bufStream.str( "" );
-        if( gOperator.code == ePdfGOperator_Quote ) {
+        if( gOperator.code == PdfeGOperator::Quote ) {
             m_bufStream << "T*\n";
         }
-        else if( gOperator.code == ePdfGOperator_DoubleQuote ) {
+        else if( gOperator.code == PdfeGOperator::DoubleQuote ) {
             m_bufStream << gState.textState.wordSpace << "Tw\n"
                         << gState.textState.charSpace << "Tc\n";
         }
@@ -424,11 +424,11 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
-    if( gOperator.code == ePdfGOperator_ID ) {
+    if( gOperator.code == PdfeGOperator::ID ) {
         // Save variables.
         m_keyValuesII = gOperands;
     }
-    else if( gOperator.code == ePdfGOperator_EI ) {
+    else if( gOperator.code == PdfeGOperator::EI ) {
         // Check if the inline image is inside the zone.
         PdfePath pathII;
         pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );

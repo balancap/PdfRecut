@@ -149,7 +149,7 @@ bool PdfeStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicO
         op.set( pszToken );
 
         // Assume it is variant when operator is set to Unknown.
-        if( op.code == ePdfGOperator_Unknown )
+        if( op.code == PdfeGOperator::Unknown )
         {
             type = ePdfContentsType_Variant;
             variant = pszToken;
@@ -160,7 +160,7 @@ bool PdfeStreamTokenizer::ReadNext( PoDoFo::EPdfContentsType& type, PdfeGraphicO
             variant.clear();
 
             // Token == ID: read inline image at the next step.
-            if( op.code == ePdfGOperator_ID ) {
+            if( op.code == PdfeGOperator::ID ) {
                 m_readingInlineImgData = true;
             }
         }

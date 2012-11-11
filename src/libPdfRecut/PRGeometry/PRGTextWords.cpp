@@ -149,7 +149,7 @@ void PRGTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeSt
     this->init();
 
     // Check it is a text showing operator.
-    if( streamState.gOperator.cat != ePdfGCategory_TextShowing ) {
+    if( streamState.gOperator.cat != PdfeGCategory::TextShowing ) {
         return;
     }
 
