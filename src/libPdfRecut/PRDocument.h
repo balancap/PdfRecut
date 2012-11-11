@@ -34,9 +34,6 @@ namespace PoDoFoExtended {
 
 namespace PdfRecut {
 
-class PRSubDocument;
-class PRPage;
-
 //************************************************************//
 //                         PRDocument                         //
 //************************************************************//

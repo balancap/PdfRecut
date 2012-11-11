@@ -13,10 +13,10 @@
 #define PRRENDERPAGE_H
 
 #include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
+#include <QtCore/QRectF>
 
 #include "PdfeCanvasAnalysis.h"
-
-#include "PRGeometry/PRGTextWords.h"
 
 namespace PoDoFo {
 class PdfPage;
@@ -30,130 +30,103 @@ namespace PdfRecut {
 
 class PRDocument;
 
-/** Parameters used to render a Pdf page.
+//************************************************************//
+//                         PRPenBrush                         //
+//************************************************************//
+/** Simple class that describes pen and brush used to respectively
+ * draw and fill when an object is rendered on a page.
  */
-struct PRRenderParameters
+class PRPenBrush
 {
-    /** Simple structure which contains pen and brush objects
-     * used to respectively draw and fill.
-     */
-    struct PRPenBrush
-    {
-        /// Pointer to a draw pen object (belongs to the structure). If NULL, object is not drawned.
-        QPen* drawPen;
-        /// Pointer to a fill brush object (belongs to the structure). If NULL, object is not filled.
-        QBrush* fillBrush;
-
-        /** Basic constructor: set pointers to NULL.
-         */
-        PRPenBrush() :
-            drawPen( NULL ), fillBrush( NULL ) {}
-
-        /** Copy constructor.
-         */
-        PRPenBrush( const PRPenBrush& penBrush )
-        {
-            (*this) = penBrush;
-        }
-        /** Operator=.
-         */
-        PRPenBrush& operator=( const PRPenBrush& penBrush )
-        {
-            delete drawPen;
-            delete fillBrush;
-            if( penBrush.drawPen ) {
-                drawPen = new QPen( *penBrush.drawPen );
-            } else {
-                drawPen = NULL;
-            }
-            if( penBrush.fillBrush ) {
-                fillBrush = new QBrush( *penBrush.fillBrush );
-            } else {
-                fillBrush = NULL;
-            }
-            return *this;
-        }
-        /** Destructor: delete pen and brush.
-         */
-        ~PRPenBrush()
-        {
-            delete drawPen;
-            delete fillBrush;
-        }
-
-        /** Is painting necessary ?
-         */
-        bool isPainting() const
-        {
-            return ( drawPen || fillBrush );
-        }
-        /** Set pen and brush to a painter.
-         */
-        void applyToPainter( QPainter* painter ) const
-        {
-            if( drawPen ) {
-                painter->setPen( *drawPen );
-            } else {
-                painter->setPen( Qt::NoPen );
-            }
-            if( fillBrush ) {
-                painter->setBrush( *fillBrush );
-            } else {
-                painter->setBrush( Qt::NoBrush );
-            }
-        }
-    };
-
-    /// Resolution used to render a page (default = 1.0).
-    double resolution;
-    /// Initial clipping path used to render the page.
-    QPainterPath clippingPath;
-
-    /// Pen and brush used to draw and fill text objects.
-    PRPenBrush textPB;
-    /// Pen and brush used to draw and fill text spaces.
-    PRPenBrush textSpacePB;
-    /// Pen and brush used to draw and fill PDF text translation characters.
-    PRPenBrush textPDFTranslationPB;
-
-    /// Pen and brush used to draw and fill path objects.
-    PRPenBrush pathPB;
-    /// Pen and brush used to draw and fill clipping path objects.
-    PRPenBrush clippingPathPB;
-
-    /// Pen and brush used to draw and fill inline images.
-    PRPenBrush inlineImagePB;
-    /// Pen and brush used to draw and fill images (xobjects).
-    PRPenBrush imagePB;
-    /// Pen and brush used to draw and fill forms (xobjects).
-    PRPenBrush formPB;
-
 public:
-    /** Constructor, initialize members to default values.
+    /** Basic constructor: set pen and brush to NULL objects.
      */
-    PRRenderParameters();
+    PRPenBrush() :
+        m_pPen( NULL ), m_pBrush( NULL ) {}
+    /** Copy constructor.
+     */
+    PRPenBrush( const PRPenBrush& penBrush )
+    {
+        (*this) = penBrush;
+    }
+    /** Operator=.
+     */
+    PRPenBrush& operator=( const PRPenBrush& penBrush )
+    {
+        delete m_pPen;
+        delete m_pBrush;
+        if( penBrush.m_pPen ) {
+            m_pPen = new QPen( *penBrush.m_pPen );
+        } else {
+            m_pPen = NULL;
+        }
+        if( penBrush.m_pBrush ) {
+            m_pBrush = new QBrush( *penBrush.m_pBrush );
+        } else {
+            m_pBrush = NULL;
+        }
+        return *this;
+    }
+    /** Destructor: delete pen and brush.
+     */
+    ~PRPenBrush()
+    {
+        delete m_pPen;
+        delete m_pBrush;
+    }
 
-    /** Initialize pen and brush to a default layout.
+    /** Is the Pen/Brush mepty, i.e. both pen and brush are set to NULL.
      */
-    void initToDefault();
+    bool isEmpty() const
+    {
+        return ( m_pPen || m_pBrush );
+    }
+    /** Apply pen and brush to a painter.
+     */
+    void applyToPainter( QPainter* painter ) const
+    {
+        if( m_pPen ) {
+            painter->setPen( *m_pPen );
+        } else {
+            painter->setPen( Qt::NoPen );
+        }
+        if( m_pBrush ) {
+            painter->setBrush( *m_pBrush );
+        } else {
+            painter->setBrush( Qt::NoBrush );
+        }
+    }
+public:
+    // Getters...
+    QPen* pen() const       {   return m_pPen;      }
+    QBrush* brush() const   {   return m_pBrush;    }
 
-    /** Initialize to an empty layout.
-     */
-    void initToEmpty();
+    // Setters... Pointers given belongs to the PRPenBrush object.
+    void setPen( QPen* pen )        {   m_pPen = pen;       }
+    void setBrush( QBrush* brush )  {   m_pBrush = brush;   }
+
+private:
+    /// Pointer to a draw pen object. If NULL, pen is not used.
+    QPen*  m_pPen;
+    /// Pointer to a fill brush object. If NULL, bursh is not used.
+    QBrush* m_pBrush;
 };
 
-/** Class used to obtain a basic render a Pdf page.
+//************************************************************//
+//                        PRRenderPage                        //
+//************************************************************//
+/** Class used as interface to render elements of PDF Page.
+ * Can perform a basic rendering of all elements inside a page.
  */
 class PRRenderPage : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
     /** Default constructor.
-     * \param document Input document.
-     * \param pageIndex Index of the page to render.
+     * \param document Parent document object.
+     * \param pageIndex Index of the page which is rendered.
      */
     PRRenderPage( PRDocument* document,
                   long pageIndex );
-
     /** Destructor: release image resources.
      */
     virtual ~PRRenderPage();
@@ -166,15 +139,57 @@ public:
      */
     void clearRendering();
 
-    /** Render the page, using given rendering parameters.
-     * \param parameters Structure containing resolution and painting parameters.
-     */
-    void render( const PRRenderParameters& parameters );
-
     /** Get rendered image of the page.
      * \return Image.
      */
     QImage image();
+
+public:
+    /** Parameters used to render elements inside a page.
+     */
+    struct Parameters
+    {
+        /// Resolution used to render a page (default = 1.0).
+        double resolution;
+        /// Initial clipping path used to render the page.
+        QPainterPath clippingPath;
+
+        /// Pen and brush used to draw and fill text objects.
+        PRPenBrush textPB;
+        /// Pen and brush used to draw and fill text spaces.
+        PRPenBrush textSpacePB;
+        /// Pen and brush used to draw and fill PDF text translation characters.
+        PRPenBrush textPDFTranslationPB;
+
+        /// Pen and brush used to draw and fill path objects.
+        PRPenBrush pathPB;
+        /// Pen and brush used to draw and fill clipping path objects.
+        PRPenBrush clippingPathPB;
+
+        /// Pen and brush used to draw and fill inline images.
+        PRPenBrush inlineImagePB;
+        /// Pen and brush used to draw and fill images (xobjects).
+        PRPenBrush imagePB;
+        /// Pen and brush used to draw and fill forms (xobjects).
+        PRPenBrush formPB;
+
+    public:
+        /** Constructor, initialize members to default values.
+         */
+        Parameters();
+        /** Initialize pen and brush to a default layout.
+         */
+        void initToDefault();
+        /** Initialize to an empty layout.
+         */
+        void initToEmpty();
+    };
+
+    // Basic rendering of a page.
+    /** Render the page, using given rendering parameters.
+     * \param parameters Structure containing resolution and painting parameters.
+     */
+    void renderElements( const PRRenderPage::Parameters& parameters );
 
 protected:
     virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
@@ -222,37 +237,31 @@ protected:
 
 
 public:
-    // Specific drawing functions.
+    // Basic drawing routines.
+    // Operate in page coordinate system.
+    /** Draw a painter path on the page.
+     * \param path QPainterPath to draw.
+     * \param penBrush Pen/Brush to use for rendering.
+     * \param transMat Transformation matrix (identity by default).
+     */
+    void drawPath( QPainterPath path,
+                   const PRPenBrush& penBrush,
+                   const PdfeMatrix& transMat = PdfeMatrix() );
+    /** Draw a painter path on the page.
+     * \param image Qimage to draw.
+     * \param rect Target rectangle inside the page.
+     * \param transMat Transformation matrix (identity by default).
+     */
+    void drawImage( QImage image,
+                    QRectF rect,
+                    const PdfeMatrix& transMat = PdfeMatrix() );
     /** Draw a PdfeORect on the page.
      * \param orect Oriented rectangle to draw.
      * \param penBrush Pen/Brush to use for rendering.
      */
     void drawPdfeORect( const PdfeORect& orect,
-                        const PRRenderParameters::PRPenBrush& penBrush );
-
-    /** Draw a group of words on the page.
-     * \param groupWords Group of words to draw.
-     * \param parameters Rendering parameters to use.
-     */
-    void textDrawGroup( const PRGTextGroupWords& groupWords,
-                        const PRRenderParameters& parameters );
-    /** Draw a subgroup of words on the pdf image painter.
-     * \param subgroup Subgroup of words to draw.
-     * \param parameters Rendering parameters to use.
-     */
-    void textDrawSubgroup( const PRGTextGroupWords::Subgroup& subgroup,
-                           const PRRenderParameters& parameters );
-    /** Draw main subgroups of a PRGTextGroupWords.
-     * \param subgroup Group of words to consider.
-     * \param parameters Rendering parameters to use.
-     */
-    void textDrawMainSubgroups( const PRGTextGroupWords& groupWords,
-                                const PRRenderParameters& parameters );
-
-    /** Render glyphs from a group of words on the page.
-     * \param groupWords Group of words to render.
-     */
-    void textRenderGroup( const PRGTextGroupWords& groupWords );
+                        const PRPenBrush& penBrush,
+                        const PdfeMatrix& transMat = PdfeMatrix() );
 
 protected:
     /** Test function on images.
@@ -275,17 +284,16 @@ private:
     QImage*  m_pageImage;
     /// QPainter used to draw the page.
     QPainter*  m_pagePainter;
-
-    /// Rendering parameters.
-    PRRenderParameters  m_renderParameters;
-
-    /// Clipping paths stack. Used to store the clipping path in page coordinates.
-    std::vector<QPainterPath>  m_clippingPathStack;
-
     /** Transform from page space to image space.
      * In particular, invert y-axis coordinate.
      */
     PdfeMatrix  m_pageImgTrans;
+
+    /// Clipping paths stack. Used to store the clipping path in page coordinates.
+    std::vector<QPainterPath>  m_clippingPathStack;
+
+    /// Rendering parameters.
+    Parameters  m_renderParameters;
 };
 
 //**********************************************************//

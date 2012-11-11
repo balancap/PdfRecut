@@ -81,10 +81,7 @@ public:
     /** Copy constructor for vmml::mat3d.
      */
     PdfeMatrix( const vmml::mat3d& source  ) :
-        vmml::mat3d( source )
-    {
-    }
-
+        vmml::mat3d( source ) { }
     /** =Operator overload
      */
     const PdfeMatrix& operator=( const vmml::mat3d& source ) {

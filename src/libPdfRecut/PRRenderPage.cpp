@@ -11,6 +11,7 @@
 
 #include "PRRenderPage.h"
 #include "PRDocument.h"
+#include "PRGeometry/PRGTextWords.h"
 
 #include "PdfeFont.h"
 
@@ -26,62 +27,6 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 int PRRenderPage::imgNbs = 0;
-
-//**********************************************************//
-//                    PRRenderParameters                    //
-//**********************************************************//
-PRRenderParameters::PRRenderParameters()
-{
-    this->resolution = 1.0;
-    this->initToDefault();
-}
-void PRRenderParameters::initToDefault()
-{
-    // Clipping path set to empty.
-    clippingPath = QPainterPath();
-
-    // Path (normal & clipping) pens.
-    pathPB.drawPen = new QPen( Qt::magenta );
-    clippingPathPB.drawPen = new QPen( Qt::darkMagenta );
-
-    // Text filling gradient.
-    QLinearGradient textGradient( 0.0, 0.0, 0.0, 1.0 );
-    textGradient.setColorAt( 0.0, Qt::blue );
-    textGradient.setColorAt( 1.0, Qt::white );
-    textPB.fillBrush = new QBrush( textGradient );
-
-    // Space filling color.
-    textSpacePB.fillBrush = new QBrush( Qt::lightGray );
-    textPDFTranslationPB.fillBrush = new QBrush( Qt::lightGray );
-
-    // Inline image pen color.
-    inlineImagePB.drawPen = new QPen( Qt::darkCyan );
-    inlineImagePB.fillBrush = new QBrush( Qt::cyan );
-
-    // Image pen color.
-    imagePB.drawPen = new QPen( Qt::darkRed );
-    imagePB.fillBrush = new QBrush( Qt::red );
-
-    // Form pen color.
-    formPB.drawPen = new QPen( Qt::green );
-    //formPB.fillBrush = new QBrush( Qt::green );
-}
-void PRRenderParameters::initToEmpty()
-{
-    clippingPath = QPainterPath();
-    resolution = 1.0;
-
-    textPB = PRRenderParameters::PRPenBrush();
-    textSpacePB = PRRenderParameters::PRPenBrush();
-    textPDFTranslationPB = PRRenderParameters::PRPenBrush();
-    pathPB = PRRenderParameters::PRPenBrush();
-    clippingPathPB = PRRenderParameters::PRPenBrush();
-    inlineImagePB = PRRenderParameters::PRPenBrush();
-    imagePB = PRRenderParameters::PRPenBrush();
-    formPB = PRRenderParameters::PRPenBrush();
-    textPB = PRRenderParameters::PRPenBrush();
-    textSpacePB = PRRenderParameters::PRPenBrush();
-}
 
 //**********************************************************//
 //                       PRRenderPage                       //
@@ -139,8 +84,17 @@ void PRRenderPage::clearRendering()
     delete m_pageImage;
     m_pageImage = NULL;
 }
+QImage PRRenderPage::image()
+{
+    if( m_pageImage ) {
+        return *m_pageImage;
+    }
+    else {
+        return QImage();
+    }
+}
 
-void PRRenderPage::render( const PRRenderParameters& parameters )
+void PRRenderPage::renderElements(const Parameters &parameters )
 {
     // Initialize image and painter.
     this->initRendering( parameters.resolution );
@@ -160,15 +114,6 @@ void PRRenderPage::render( const PRRenderParameters& parameters )
 
     // Perform the analysis and draw.
     this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
-}
-QImage PRRenderPage::image()
-{
-    if( m_pageImage ) {
-        return *m_pageImage;
-    }
-    else {
-        return QImage();
-    }
 }
 
 // Reimplement PdfeCanvasAnalysis interface.
@@ -205,7 +150,7 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
-    if( !m_renderParameters.pathPB.isPainting() ) {
+    if( !m_renderParameters.pathPB.isEmpty() ) {
         return;
     }
 
@@ -265,10 +210,11 @@ PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Create the group of words.
     PRGTextGroupWords groupWords( m_document, streamState );
-
     // Draw the group of words.
-    this->textDrawGroup( groupWords, m_renderParameters );
-
+    groupWords.render( *this,
+                       m_renderParameters.textPB,
+                       m_renderParameters.textSpacePB,
+                       m_renderParameters.textPDFTranslationPB );
     // Return text displacement.
     return groupWords.displacement();
 }
@@ -357,15 +303,42 @@ void PRRenderPage::fCompatibility( const PdfeStreamState& streamState ) { }
 //**********************************************************//
 //                 Drawing member functions                 //
 //**********************************************************//
-void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRRenderParameters::PRPenBrush& penBrush )
+void PRRenderPage::drawPath( QPainterPath path, const PRPenBrush& penBrush, const PdfeMatrix& transMat )
 {
     // No image or painter...
     if( !m_pageImage || !m_pagePainter ) {
         return;
     }
+    // Set transformation matrix.
+    PdfeMatrix mat = transMat * m_pageImgTrans;
+    m_pagePainter->setTransform( mat.toQTransform() );
 
-    // Basic transformation matrix.
-    m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
+    // Draw path using the given Pen/Brush.
+    penBrush.applyToPainter( m_pagePainter );
+    m_pagePainter->drawPath( path );
+}
+void PRRenderPage::drawImage( QImage image, QRectF rect, const PdfeMatrix& transMat )
+{
+    // No image or painter...
+    if( !m_pageImage || !m_pagePainter ) {
+        return;
+    }
+    // Set transformation matrix.
+    PdfeMatrix mat = transMat * m_pageImgTrans;
+    m_pagePainter->setTransform( mat.toQTransform() );
+
+    // Draw image.
+    m_pagePainter->drawImage( rect, image );
+}
+void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRPenBrush& penBrush, const PdfeMatrix& transMat )
+{
+    // No image or painter...
+    if( !m_pageImage || !m_pagePainter ) {
+        return;
+    }
+    // Set transformation matrix.
+    PdfeMatrix mat = transMat * m_pageImgTrans;
+    m_pagePainter->setTransform( mat.toQTransform() );
 
     // Create polygon corresponding to the oriented rectangle.
     QPolygonF polygon;
@@ -377,129 +350,6 @@ void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRRenderParamete
     // Draw polygon using the given Pen/Brush.
     penBrush.applyToPainter( m_pagePainter );
     m_pagePainter->drawPolygon( polygon );
-}
-void PRRenderPage::textDrawGroup( const PRGTextGroupWords& groupWords,
-                                       const PRRenderParameters& parameters )
-{
-    // Render the complete subgroup.
-    this->textDrawSubgroup( PRGTextGroupWords::Subgroup( groupWords, true ), parameters );
-}
-void PRRenderPage::textDrawSubgroup( const PRGTextGroupWords::Subgroup& subgroup,
-                                     const PRRenderParameters& parameters )
-{
-    // Nothing to draw or can not draw...
-    PRGTextGroupWords* pGroup = subgroup.group();
-    if( !m_pageImage || !m_pagePainter ||
-        !pGroup || !pGroup->nbWords() ) {
-        return;
-    }
-
-    // Compute text rendering matrix.
-    PdfeMatrix textMat;
-    textMat = pGroup->getGlobalTransMatrix() * m_pageImgTrans;
-    m_pagePainter->setTransform( textMat.toQTransform() );
-
-    // Paint words.
-    PdfeVector advance;
-    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
-        const PRGTextWord& word = pGroup->word( i );
-        // Set pen & brush
-        if( word.type() == PRGTextWordType::Classic ) {
-            parameters.textPB.applyToPainter( m_pagePainter );
-        }
-        else if( word.type() == PRGTextWordType::Space ) {
-            parameters.textSpacePB.applyToPainter( m_pagePainter );
-        }
-        else if( word.type() == PRGTextWordType::PDFTranslation ||
-                 word.type() == PRGTextWordType::PDFTranslationCS ) {
-            parameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
-        }
-        // Paint word, if it is inside the subgroup and the width is positive !
-        PdfRect bbox = word.bbox( true );
-        if( subgroup.inside( i ) && bbox.GetWidth() >= 0) {
-            m_pagePainter->drawRect( QRectF( advance(0) + bbox.GetLeft(),
-                                             advance(1) + bbox.GetBottom(),
-                                             bbox.GetWidth(),
-                                             bbox.GetHeight() ) );
-        }
-        advance += word.advance();
-    }
-}
-void PRRenderPage::textDrawMainSubgroups( const PRGTextGroupWords& groupWords,
-                                          const PRRenderParameters& parameters )
-{
-    // Nothing to draw...
-    if( !m_pageImage || !m_pagePainter || !groupWords.nbWords() ) {
-        return;
-    }
-
-    // Compute text rendering matrix.
-    PdfeMatrix textMat;
-    textMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
-    m_pagePainter->setTransform( textMat.toQTransform() );
-
-    // Paint subgroups: only text is considered in these subgroups.
-    for( size_t i = 0 ; i < groupWords.nbMSubgroups() ; i++ )
-    {
-        // Set pen & brush
-        parameters.textPB.applyToPainter( m_pagePainter );
-
-        // Paint word, if the width is positive !
-        PdfeORect bbox = groupWords.mSubgroup(i).bbox( PRGTextWordCoordinates::Font, true, true );
-        PdfeVector lb = bbox.leftBottom();
-        m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
-    }
-}
-void PRRenderPage::textRenderGroup( const PRGTextGroupWords& groupWords )
-{
-    //m_pagePainter->setRenderHint( QPainter::Antialiasing, true );
-    //m_pagePainter->setRenderHint( QPainter::SmoothPixmapTransform, true );
-
-    // Font.
-    PdfeFont* pFont = groupWords.font();
-
-    // Transformation matrix.
-    PdfeMatrix transMat, tmpMat;
-    transMat = groupWords.getGlobalTransMatrix() * m_pageImgTrans;
-    m_pagePainter->setTransform( transMat.toQTransform() );
-
-    // Render glyphs of every word.
-    PdfeVector advance;
-    for( size_t i = 0 ; i < groupWords.nbWords() ; ++i ) {
-        const PRGTextWord& word = groupWords.word( i );
-
-        // Draw only the type correspond to a classic word.
-        if( word.type() == PRGTextWordType::Classic ) {
-            PdfeCIDString cidstr = word.cidString();
-
-            for( size_t j = 0 ; j < cidstr.length() ; ++j ) {
-                pdfe_gid gid = pFont->fromCIDToGID( cidstr[j] );
-
-                // Render glyph.
-                if( gid ) {
-                    // TODO: set resolution and size.
-                    PdfRect bbox = pFont->bbox( cidstr[j], false );
-                    PdfeFont::GlyphImage glyphRender = pFont->ftGlyphRender( gid, 100, 100 );
-                    glyphRender.image = glyphRender.image.mirrored( false, true );
-
-                    // Draw it on the page.
-                    m_pagePainter->drawImage( QRectF( bbox.GetLeft() + advance(0),
-                                                      bbox.GetBottom() + advance(1),
-                                                      bbox.GetWidth(),
-                                                      bbox.GetHeight() ),
-                                              glyphRender.image );
-                }
-                // Update advance vector.
-                advance += pFont->advance( cidstr[j], false );
-                advance(0) += word.charSpace();
-                //advance(1) += word.charSpace();
-            }
-        }
-        else {
-            // Update advance vector
-            advance += word.advance();
-        }
-    }
 }
 
 //**********************************************************//
@@ -556,6 +406,61 @@ void PRRenderPage::testPdfImage( PoDoFo::PdfObject* xobj )
     std::cout << std::endl;
 }
 
+//************************************************************//
+//                  PRRenderPage::Parameters                  //
+//************************************************************//
+PRRenderPage::Parameters::Parameters()
+{
+    this->resolution = 1.0;
+    this->initToDefault();
+}
+void PRRenderPage::Parameters::initToDefault()
+{
+    // Clipping path set to empty.
+    clippingPath = QPainterPath();
+
+    // Path (normal & clipping) pens.
+    pathPB.setPen( new QPen( Qt::magenta ) );
+    clippingPathPB.setPen( new QPen( Qt::darkMagenta ) );
+
+    // Text filling gradient.
+    QLinearGradient textGradient( 0.0, 0.0, 0.0, 1.0 );
+    textGradient.setColorAt( 0.0, Qt::blue );
+    textGradient.setColorAt( 1.0, Qt::white );
+    textPB.setBrush( new QBrush( textGradient ) );
+
+    // Space filling color.
+    textSpacePB.setBrush( new QBrush( Qt::lightGray ) );
+    textPDFTranslationPB.setBrush( new QBrush( Qt::lightGray ) );
+
+    // Inline image pen color.
+    inlineImagePB.setPen( new QPen( Qt::darkCyan ) );
+    inlineImagePB.setBrush( new QBrush( Qt::cyan ) );
+
+    // Image pen color.
+    imagePB.setPen( new QPen( Qt::darkRed ) );
+    imagePB.setBrush( new QBrush( Qt::red ) );
+
+    // Form pen color.
+    formPB.setPen( new QPen( Qt::green ) );
+    //formPB.fillBrush = new QBrush( Qt::green );
+}
+void PRRenderPage::Parameters::initToEmpty()
+{
+    clippingPath = QPainterPath();
+    resolution = 1.0;
+
+    textPB = PRPenBrush();
+    textSpacePB = PRPenBrush();
+    textPDFTranslationPB = PRPenBrush();
+    pathPB = PRPenBrush();
+    clippingPathPB = PRPenBrush();
+    inlineImagePB = PRPenBrush();
+    imagePB = PRPenBrush();
+    formPB = PRPenBrush();
+    textPB = PRPenBrush();
+    textSpacePB = PRPenBrush();
+}
 
 }
 

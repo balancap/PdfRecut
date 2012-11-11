@@ -82,7 +82,6 @@ private:
 
     /// Text elements in the page.
     PRGTextPage*  m_text;
-    
 };
 
 }

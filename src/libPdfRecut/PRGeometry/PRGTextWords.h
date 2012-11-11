@@ -34,6 +34,9 @@ class PRDocument;
 class PRGDocument;
 class PRGTextLine;
 
+class PRRenderPage;
+class PRPenBrush;
+
 //**********************************************************//
 //                        PRGTextWord                       //
 //**********************************************************//
@@ -306,6 +309,23 @@ public:
     void buildMainSubGroups();
 
 public:
+    // Rendering routines.
+    /** Render a group of words inside a page.
+     * \param renderPage Object on which words are rendered.
+     * \param textPB Pen/Brush used for normal text.
+     * \param spacePB Pen/Brush used for space characters.
+     * \param translationPB Pen/Brush used for PDF translation.
+     */
+    void render( PRRenderPage& renderPage,
+                 const PRPenBrush& textPB,
+                 const PRPenBrush& spacePB,
+                 const PRPenBrush& translationPB ) const;
+    /** Render words glyphs.
+     * \param renderPage Object on which glyphs are rendered.
+     */
+    void renderGlyphs( PRRenderPage& renderPage ) const;
+
+public:
     // Getters.
     long pageIndex() const                          {   return m_pageIndex;     }
     long groupIndex() const                         {   return m_groupIndex;    }
@@ -321,26 +341,13 @@ public:
     void setTextState( const PoDoFoExtended::PdfeTextState& textState );
 
 public:
-    /** Get the number of words in the group.
-     * \return Number of words.
-     */
+    /// Get the number of words in the group.
     size_t nbWords() const;
-
-    /** Get a constant reference to a word.
-     * \param idx Index of the word.
-     * \return Constant reference to a PRGTextWord.
-     */
+    /// Get a constant reference to a word.
     const PRGTextWord& word( size_t idx ) const;
-
-    /** Get the number of main subgroups.
-     * \return Number of subgroups.
-     */
+    /// Get the number of main subgroups.
     size_t nbMSubgroups() const;
-
-    /** Get a main subgroup component.
-     * \param idx Index of the subgroup.
-     * \return Const reference to a PRGTextGroupWords::SubGroup.
-     */
+    /// Get a main subgroup component.
     const Subgroup& mSubgroup( size_t idx ) const;
 
 private:
@@ -480,6 +487,23 @@ public:
      * \return New subgroup corresponding to the union.
      */
     static Subgroup reunion( const Subgroup& subgroup1, const Subgroup& subgroup2 );
+
+public:
+    // Rendering routines.
+    /** Render a group of words inside a page.
+     * \param renderPage Object on which words are rendered.
+     * \param textPB Pen/Brush used for normal text.
+     * \param spacePB Pen/Brush used for space characters.
+     * \param translationPB Pen/Brush used for PDF translation.
+     */
+    void render( PRRenderPage& renderPage,
+                 const PRPenBrush& textPB,
+                 const PRPenBrush& spacePB,
+                 const PRPenBrush& translationPB ) const;
+    /** Render words glyphs.
+     * \param renderPage Object on which glyphs are rendered.
+     */
+    void renderGlyphs( PRRenderPage& renderPage ) const;
 
 private:
     /// Pointer to the group.

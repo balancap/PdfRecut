@@ -12,6 +12,7 @@
 #include "PRGTextWords.h"
 
 #include "PRDocument.h"
+#include "PRRenderPage.h"
 
 #include "PdfeFont.h"
 #include "PdfeCanvasAnalysis.h"
@@ -91,22 +92,22 @@ void PRGTextWord::init( double spaceWidth, double spaceHeight, PRGTextWordType::
 }
 
 //**********************************************************//
-//                     PRGTextGroupWords                     //
+//                     PRGTextGroupWords                    //
 //**********************************************************//
 PRGTextGroupWords::PRGTextGroupWords()
 {
     this->init();
 }
 PRGTextGroupWords::PRGTextGroupWords( const PdfVariant& variant,
-                                    const PdfeMatrix& transMatrix,
-                                    const PdfeTextState& textState,
-                                    PdfeFont* pFont )
+                                      const PdfeMatrix& transMatrix,
+                                      const PdfeTextState& textState,
+                                      PdfeFont* pFont )
 {
     this->init( variant, transMatrix, textState, pFont );
 }
 
 PRGTextGroupWords::PRGTextGroupWords( PRDocument* document,
-                                    const PoDoFoExtended::PdfeStreamState& streamState )
+                                      const PoDoFoExtended::PdfeStreamState& streamState )
 {
     this->init( document, streamState );
 }
@@ -129,8 +130,8 @@ void PRGTextGroupWords::init()
     m_mainSubgroups.clear();
 }
 void PRGTextGroupWords::init( const PdfVariant& variant,
-                             const PdfeMatrix& transMatrix,
-                             const PdfeTextState& textState, PdfeFont* pFont )
+                              const PdfeMatrix& transMatrix,
+                              const PdfeTextState& textState, PdfeFont* pFont )
 {
     this->init();
 
@@ -173,7 +174,7 @@ void PRGTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeSt
 }
 
 void PRGTextGroupWords::readPdfVariant( const PdfVariant& variant,
-                                       PdfeFont* pFont )
+                                        PdfeFont* pFont )
 {
     // Related font members
     m_pFont = pFont;
@@ -199,9 +200,9 @@ void PRGTextGroupWords::readPdfVariant( const PdfVariant& variant,
             }
             else if( array[i].IsReal() || array[i].IsNumber() ) {
                 // Add PDF translation space.
-               m_words.push_back( PRGTextWord( -array[i].GetReal() / 1000.0,
-                                               pFont->spaceHeight(),
-                                               PRGTextWordType::PDFTranslation ) );
+                m_words.push_back( PRGTextWord( -array[i].GetReal() / 1000.0,
+                                                pFont->spaceHeight(),
+                                                PRGTextWordType::PDFTranslation ) );
             }
         }
     }
@@ -209,20 +210,20 @@ void PRGTextGroupWords::readPdfVariant( const PdfVariant& variant,
     this->buildMainSubGroups();
 }
 void PRGTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
-                                      PoDoFoExtended::PdfeFont* pFont )
+                                       PoDoFoExtended::PdfeFont* pFont )
 {
     // To CID string.
     PdfeCIDString cidstr = pFont->toCIDString( str );
 
     //std::string bufstr = str.GetString();
     //if( pFont->type() ==  PdfeFontType::Type0 )
-//    {
-//        QString ustr = pFont->toUnicode( str );
-//        qDebug() << pFont->type()
-//                 << " : " << ustr << " / "
-//                 << cidstr[0] << " / "
-//                 << cidstr[4];
-//    }
+    //    {
+    //        QString ustr = pFont->toUnicode( str );
+    //        qDebug() << pFont->type()
+    //                 << " : " << ustr << " / "
+    //                 << cidstr[0] << " / "
+    //                 << cidstr[4];
+    //    }
 
     // Text parameters.
     double fontSize = m_textState.fontSize;
@@ -257,19 +258,19 @@ void PRGTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
             }
             // Create associated word.
             m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
-                                           PRGTextWordType::Space,
-                                           pFont ) );
+                                            PRGTextWordType::Space,
+                                            pFont ) );
         }
         // Read classic word.
         else {
             // Create two words when char space is too large.
             if( charSpace > maxCharSpace ) {
                 m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, 1 ),
-                                               PRGTextWordType::Classic,
-                                               pFont ) );
+                                                PRGTextWordType::Classic,
+                                                pFont ) );
                 m_words.push_back( PRGTextWord( charSpace,
-                                               pFont->spaceHeight(),
-                                               PRGTextWordType::PDFTranslationCS ) );
+                                                pFont->spaceHeight(),
+                                                PRGTextWordType::PDFTranslationCS ) );
                 ++idx;
             }
             // Create classic word
@@ -279,8 +280,8 @@ void PRGTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                     ++idx;
                 }
                 m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
-                                               PRGTextWordType::Classic,
-                                               pFont ) );
+                                                PRGTextWordType::Classic,
+                                                pFont ) );
             }
         }
     }
@@ -316,8 +317,8 @@ PdfeVector PRGTextGroupWords::displacement() const
     return displacement;
 }
 PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum wordCoord,
-                                  bool leadTrailSpaces,
-                                  bool useBottomCoord ) const
+                                   bool leadTrailSpaces,
+                                   bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
     Subgroup globalSubgroup( *this );
@@ -337,7 +338,7 @@ double PRGTextGroupWords::fontSize() const
 }
 
 PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoord,
-                                          PRGTextWordCoordinates::Enum endCoord )
+                                           PRGTextWordCoordinates::Enum endCoord )
 {
     // Compute global rendering matrix (font -> page).
     PdfeMatrix tmpMat, globalTransMat;
@@ -347,7 +348,7 @@ PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoo
     globalTransMat = tmpMat * m_textState.transMat * m_transMatrix;
 
     if( startCoord == PRGTextWordCoordinates::Font &&
-        endCoord == PRGTextWordCoordinates::Page ) {
+            endCoord == PRGTextWordCoordinates::Page ) {
         return globalTransMat;
     }
     else if( startCoord == PRGTextWordCoordinates::Font &&
@@ -489,9 +490,22 @@ void PRGTextGroupWords::buildMainSubGroups()
         }
     }
 }
+void PRGTextGroupWords::render( PRRenderPage& renderPage,
+                                const PRPenBrush& textPB,
+                                const PRPenBrush& spacePB,
+                                const PRPenBrush& translationPB ) const
+{
+    Subgroup globalSubgroup( *this );
+    globalSubgroup.render( renderPage, textPB, spacePB, translationPB );
+}
+void PRGTextGroupWords::renderGlyphs( PRRenderPage& renderPage ) const
+{
+    Subgroup globalSubgroup( *this );
+    globalSubgroup.renderGlyphs( renderPage );
+}
 
 //**********************************************************//
-//                PRGTextGroupWords::SubGroup                //
+//                PRGTextGroupWords::SubGroup               //
 //**********************************************************//
 PRGTextGroupWords::Subgroup::Subgroup()
 {
@@ -539,8 +553,8 @@ size_t PRGTextGroupWords::Subgroup::length( bool countSpaces ) const
         // Current word.
         const PRGTextWord& word = m_pGroup->word( i );
         if( m_wordsInside[i] &&
-            ( word.type() == PRGTextWordType::Classic ||
-            ( word.type() == PRGTextWordType::Space && countSpaces ) ) ) {
+                ( word.type() == PRGTextWordType::Classic ||
+                  ( word.type() == PRGTextWordType::Space && countSpaces ) ) ) {
             length += word.length();
         }
     }
@@ -601,7 +615,7 @@ PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum wordCo
     // First and last indexes of the subgroup.
     long idxFirst = 0;
     while( idxFirst < static_cast<long>( m_wordsInside.size() ) && !m_wordsInside[idxFirst] ) {
-         ++idxFirst;
+        ++idxFirst;
     }
     long idxLast = static_cast<long>( m_wordsInside.size() ) - 1;
     while( idxLast >= 0L && !m_wordsInside[idxLast] ) {
@@ -669,7 +683,7 @@ bool PRGTextGroupWords::Subgroup::isSpace() const
 }
 
 PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::intersection( const PRGTextGroupWords::Subgroup& subgroup1,
-                                                                     const PRGTextGroupWords::Subgroup& subgroup2 )
+                                                                       const PRGTextGroupWords::Subgroup& subgroup2 )
 {
     Subgroup subgroup;
     // Check the parent group is the same.
@@ -685,7 +699,7 @@ PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::intersection( const PRG
     return subgroup;
 }
 PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::reunion( const PRGTextGroupWords::Subgroup& subgroup1,
-                                                                const PRGTextGroupWords::Subgroup& subgroup2 )
+                                                                  const PRGTextGroupWords::Subgroup& subgroup2 )
 {
     Subgroup subgroup;
     // Check the parent group is the same.
@@ -699,6 +713,94 @@ PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::reunion( const PRGTextG
         }
     }
     return subgroup;
+}
+
+void PRGTextGroupWords::Subgroup::render( PRRenderPage& renderPage,
+                                          const PRPenBrush& textPB,
+                                          const PRPenBrush& spacePB,
+                                          const PRPenBrush& translationPB ) const
+{
+    // Nothing to draw...
+    PRGTextGroupWords* pGroup = this->group();
+    if( !pGroup || !pGroup->nbWords() ) {
+        return;
+    }
+    // Compute text rendering matrix.
+    PdfeMatrix textMat = pGroup->getGlobalTransMatrix();
+
+    // Paint words.
+    PdfeVector advance;
+    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
+        // Word bounding box.
+        const PRGTextWord& word = pGroup->word( i );
+        PdfRect bbox = word.bbox( true );
+        bbox.SetLeft( bbox.GetLeft() + advance(0) );
+        bbox.SetBottom( bbox.GetBottom() + advance(1) );
+
+        // Draw the word (use the correct Pen/Brush).
+        if( this->inside( i ) && bbox.GetWidth() >= 0) {
+            if( word.type() == PRGTextWordType::Classic ) {
+                renderPage.drawPdfeORect( PdfeORect( bbox ), textPB, textMat );
+            }
+            else if( word.type() == PRGTextWordType::Space ) {
+                renderPage.drawPdfeORect( PdfeORect( bbox ), spacePB, textMat );
+            }
+            else if( word.type() == PRGTextWordType::PDFTranslation ||
+                     word.type() == PRGTextWordType::PDFTranslationCS ) {
+                renderPage.drawPdfeORect( PdfeORect( bbox ), translationPB, textMat );
+            }
+        }
+        advance += word.advance();
+    }
+}
+void PRGTextGroupWords::Subgroup::renderGlyphs( PRRenderPage& renderPage ) const
+{
+    // Nothing to draw...
+    PRGTextGroupWords* pGroup = this->group();
+    if( !pGroup || !pGroup->nbWords() ) {
+        return;
+    }
+    // Text rendering matrix and font.
+    PdfeMatrix textMat = pGroup->getGlobalTransMatrix();
+    PdfeFont* pFont = pGroup->font();
+
+    // Render glyphs of every word.
+    PdfeVector advance;
+    for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
+        const PRGTextWord& word = pGroup->word( i );
+
+        // Draw only the type correspond to a classic word.
+        if( word.type() == PRGTextWordType::Classic ) {
+            PdfeCIDString cidstr = word.cidString();
+
+            for( size_t j = 0 ; j < cidstr.length() ; ++j ) {
+                pdfe_gid gid = pFont->fromCIDToGID( cidstr[j] );
+
+                // Render glyph.
+                if( gid && this->inside( i ) ) {
+                    // TODO: set resolution and size.
+                    PdfRect bbox = pFont->bbox( cidstr[j], false );
+                    PdfeFont::GlyphImage glyphRender = pFont->ftGlyphRender( gid, 100, 100 );
+                    glyphRender.image = glyphRender.image.mirrored( false, true );
+
+                    // Draw it on the page.
+                    QRectF rect( bbox.GetLeft() + advance(0),
+                                 bbox.GetBottom() + advance(1),
+                                 bbox.GetWidth(),
+                                 bbox.GetHeight() );
+                    renderPage.drawImage( glyphRender.image, rect, textMat );
+                }
+                // Update advance vector.
+                advance += pFont->advance( cidstr[j], false );
+                advance(0) += word.charSpace();
+                //advance(1) += word.charSpace();
+            }
+        }
+        else {
+            // Update advance vector
+            advance += word.advance();
+        }
+    }
 }
 
 }

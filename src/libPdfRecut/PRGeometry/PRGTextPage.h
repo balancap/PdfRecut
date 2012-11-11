@@ -176,11 +176,11 @@ public:
     /** Render the groups of words present in the page.
      * \param renderPage PRRenderPage on which words are rendered.
      */
-    void renderTextGroupsWords( PRRenderPage& renderPage );
+    void renderGroupsWords( PRRenderPage& renderPage ) const;
     /** Render lines of text present in the page.
      * \param renderPage PRRenderPage on which lines are rendered.
      */
-    void renderTextLines( PRRenderPage& renderPage );
+    void renderLines( PRRenderPage& renderPage ) const;
 
 private:
     /// Pointer to PRDocument object.

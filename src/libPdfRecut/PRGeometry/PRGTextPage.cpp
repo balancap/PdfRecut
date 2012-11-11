@@ -670,15 +670,13 @@ PdfeVector PRGTextPage::fTextShowing( const PdfeStreamState& streamState )
 }
 
 // Rendering routines.
-void PRGTextPage::renderTextGroupsWords( PRRenderPage& renderPage )
+void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage ) const
 {
-    // Rendering parameters.
-    PRRenderParameters renderParameters;
-    renderParameters.initToEmpty();
-    renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
-
+    // Rendering Pen/Brush.
+    PRPenBrush textPB, spacePB, translationPB;
+    textPB.setBrush( new QBrush( Qt::white ) );
+    spacePB.setBrush( new QBrush( Qt::white ) );
+    translationPB.setBrush( new QBrush( Qt::white ) );
 //    renderParameters.textPB.drawPen = new QPen( Qt::blue );
 //    renderParameters.textSpacePB.drawPen = new QPen( Qt::blue );
 //    renderParameters.textPDFTranslationPB.drawPen = new QPen( Qt::blue );
@@ -693,58 +691,52 @@ void PRGTextPage::renderTextGroupsWords( PRRenderPage& renderPage )
         groupColorSpace.setHsv( idx % 360, 100, 255 );
 
         // Modify rendering colors.
-        renderParameters.textPB.fillBrush->setColor( groupColor );
-        renderParameters.textSpacePB.fillBrush->setColor( groupColorSpace );
-        renderParameters.textPDFTranslationPB.fillBrush->setColor( groupColorSpace );
-//        m_renderParameters.textPB.drawPen->setColor( groupColor );
-//        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
-//        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
+        textPB.brush()->setColor( groupColor );
+        spacePB.brush()->setColor( groupColorSpace );
+        translationPB.brush()->setColor( groupColorSpace );
+        //        m_renderParameters.textPB.drawPen->setColor( groupColor );
+        //        m_renderParameters.textSpacePB.drawPen->setColor( groupColorSpace );
+        //        m_renderParameters.textPDFTranslationPB.drawPen->setColor( groupColorSpace );
 
         // Draw the group on the page.
-        renderPage.textDrawGroup( *m_pGroupsWords[idx], renderParameters );
-        renderPage.textRenderGroup( *m_pGroupsWords[idx] );
-//        renderPage.textDrawMainSubgroups( *m_pGroupsWords[idx], renderParameters );
+        m_pGroupsWords[idx]->render( renderPage, textPB, spacePB, translationPB );
+        m_pGroupsWords[idx]->renderGlyphs( renderPage );
     }
 }
-void PRGTextPage::renderTextLines( PRRenderPage& renderPage )
+void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
 {
-    // Words rendering parameters.
-    PRRenderParameters renderParameters;
-    renderParameters.initToEmpty();
-    renderParameters.textPB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textSpacePB.fillBrush = new QBrush( Qt::blue );
-    renderParameters.textPDFTranslationPB.fillBrush = new QBrush( Qt::blue );
+    // Rendering Pen/Brush.
+    PRPenBrush textPB, spacePB, translationPB, linePB;
+    textPB.setBrush( new QBrush( Qt::white ) );
+    spacePB.setBrush( new QBrush( Qt::white ) );
+    translationPB.setBrush( new QBrush( Qt::white ) );
+    linePB.setPen( new QPen( Qt::white ) );
 
-    // Line rendering pen.
-    PRRenderParameters::PRPenBrush linePen;
-    linePen.drawPen = new QPen( Qt::blue );
-    //linePen.drawPen->setWidthF( 2.0 );
-
+    // Colors
     QColor lineColorWord, lineColorSpace, lineColorBBox;
 
     // Draw lines
     for( size_t idx = 0 ; idx < m_pTextLines.size() ; ++idx ) {
         PRGTextLine* pline = m_pTextLines[idx];
 
-        // Set line colors.
+        // Set colors.
         lineColorWord.setHsv( idx*36 % 360, 255, 255 );
         lineColorSpace.setHsv( idx*36 % 360, 100, 255 );
         lineColorBBox.setHsv( idx*36 % 360, 255, 200 );
 
         // Modify rendering parameters.
-        renderParameters.textPB.fillBrush->setColor( lineColorWord );
-        renderParameters.textSpacePB.fillBrush->setColor( lineColorSpace );
-        renderParameters.textPDFTranslationPB.fillBrush->setColor( lineColorSpace );
-        linePen.drawPen->setColor( lineColorBBox );
+        textPB.brush()->setColor( lineColorWord );
+        spacePB.brush()->setColor( lineColorSpace );
+        translationPB.brush()->setColor( lineColorSpace );
+        linePB.pen()->setColor( lineColorBBox );
 
         if( pline ) {
             // Subgroups of words inside the line.
             for( size_t idx = 0 ; idx < pline->nbSubgroups() ; ++idx ) {
-                renderPage.textDrawSubgroup( pline->subgroup( idx ), renderParameters );
+                pline->subgroup( idx ).render( renderPage, textPB, spacePB, translationPB );
             }
-
             // Line bounding box.
-            renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false ), linePen );
+            renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false ), linePB );
 
             // Line blocks.
 //            std::vector<PRGTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );

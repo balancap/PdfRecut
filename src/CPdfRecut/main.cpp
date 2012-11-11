@@ -154,7 +154,7 @@ void proceedFile( QString filePath )
     pGDocument->analyse( gParams );
 
     // Render page and save.
-    PRRenderParameters renderParams;
+    PRRenderPage::Parameters renderParams;
     renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
@@ -170,9 +170,9 @@ void proceedFile( QString filePath )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        textPage.renderTextGroupsWords( renderPage );
-        textPage.renderTextLines( renderPage );
-//        renderPage.render( renderParams );
+//        textPage.renderGroupsWords( renderPage );
+        textPage.renderLines( renderPage );
+//        renderPage.renderElements( renderParams );
 
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );

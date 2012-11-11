@@ -13,6 +13,7 @@
 
 #include "PRDocument.h"
 #include "PRGSubDocument.h"
+#include "PRGTextPage.h"
 
 #include "PdfeTypes.h"
 
