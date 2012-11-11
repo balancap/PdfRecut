@@ -9,11 +9,10 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#ifndef PRDOCUMENTSTRUCTURE_H
-#define PRDOCUMENTSTRUCTURE_H
+#ifndef PRSDOCUMENT_H
+#define PRSDOCUMENT_H
 
 #include <QtCore/QObject>
-#include <poppler/qt4/poppler-qt4.h>
 
 #include "PRDocumentLayout.h"
 
@@ -24,14 +23,14 @@ namespace PdfRecut {
  * This class is virtual and has to be implemented to support a particular
  * document structure (two sided book, two columns article, ...).
  */
-class PRDocumentStructure : public QObject
+class PRSDocument : public QObject
 {
     Q_OBJECT
 
 public:
     /** Default constructor... Not a big deal.
      */
-    PRDocumentStructure( QObject* parent = 0 );
+    PRSDocument( QObject* parent = 0 );
 
     /** Abort current operation. Used in a context of multithread program where
      * slots are executed on another thread.
@@ -59,11 +58,11 @@ protected:
 //**********************************************************//
 //                      Inline methods                      //
 //**********************************************************//
-inline void PRDocumentStructure::setAbortOperation( bool abort )
+inline void PRSDocument::setAbortOperation( bool abort )
 {
     this->m_abortOperation = abort;
 }
 
 }
 
-#endif // PRDOCUMENTSTRUCTURE_H
+#endif // PRSDOCUMENT_H

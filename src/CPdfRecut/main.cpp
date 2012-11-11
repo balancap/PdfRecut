@@ -16,7 +16,9 @@
 #include "PRDocumentLayout.h"
 #include "PRDocumentTools.h"
 #include "PRRenderPage.h"
-#include "PRTextPage.h"
+
+#include "PRGeometry/PRGDocument.h"
+#include "PRGeometry/PRGTextPage.h"
 
 #include "PdfeFontType1.h"
 
@@ -146,9 +148,10 @@ void proceedFile( QString filePath )
     // Load PDF file
     document.load( filePath );
 
-    // Analyse document content.
-    PRDocument::ContentParameters contentParams;
-    document.analyseContent( contentParams );
+    // Analyse document geometry.
+    PRGDocument::GParameters gParams;
+    PRGDocument* pGDocument = new PRGDocument( &document );
+    pGDocument->analyse( gParams );
 
     // Render page and save.
     PRRenderParameters renderParams;
@@ -159,7 +162,7 @@ void proceedFile( QString filePath )
     for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
         // Text and render page objects.
         PRRenderPage renderPage( &document, i );
-        PRTextPage textPage( &document, i );
+        PRGTextPage textPage( &document, i );
 
         // Analyse page text
         textPage.detectGroupsWords();

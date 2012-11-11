@@ -9,10 +9,11 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#include "PdfeFont.h"
-#include "PRTextWords.h"
+#include "PRGTextWords.h"
+
 #include "PRDocument.h"
 
+#include "PdfeFont.h"
 #include "PdfeCanvasAnalysis.h"
 
 #include <podofo/podofo.h>
@@ -24,32 +25,32 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 //**********************************************************//
-//                         PRTextWord                       //
+//                        PRGTextWord                       //
 //**********************************************************//
-PRTextWord::PRTextWord()
+PRGTextWord::PRGTextWord()
 {
     this->init();
 }
-PRTextWord::PRTextWord( const PdfeCIDString& cidstr, PRTextWordType::Enum type, PdfeFont* pFont )
+PRGTextWord::PRGTextWord( const PdfeCIDString& cidstr, PRGTextWordType::Enum type, PdfeFont* pFont )
 {
     this->init( cidstr, type, pFont );
 }
-PRTextWord::PRTextWord( double spaceWidth, double spaceHeight, PRTextWordType::Enum type )
+PRGTextWord::PRGTextWord( double spaceWidth, double spaceHeight, PRGTextWordType::Enum type )
 {
     this->init( spaceWidth, spaceHeight, type );
 }
 
-void PRTextWord::init()
+void PRGTextWord::init()
 {
     m_pdfString = PoDoFo::PdfString();
     m_cidString = PdfeCIDString();
-    m_type = PRTextWordType::Unknown;
+    m_type = PRGTextWordType::Unknown;
 
     m_advance = PdfeVector();
     m_bbox = PdfRect( 0,0,0,0 );
     m_charSpace = 0.0;
 }
-void PRTextWord::init( const PdfeCIDString& cidstr, PRTextWordType::Enum type, PdfeFont* pFont )
+void PRGTextWord::init( const PdfeCIDString& cidstr, PRGTextWordType::Enum type, PdfeFont* pFont )
 {
     this->init();
 
@@ -63,7 +64,7 @@ void PRTextWord::init( const PdfeCIDString& cidstr, PRTextWordType::Enum type, P
     m_bbox = pFont->bbox( cidstr );
 
     // Check size for space words.
-    if( type == PRTextWordType::Space ) {
+    if( type == PRGTextWordType::Space ) {
         m_bbox.SetBottom( 0.0 );
         m_bbox.SetHeight( pFont->spaceHeight() );
 
@@ -79,7 +80,7 @@ void PRTextWord::init( const PdfeCIDString& cidstr, PRTextWordType::Enum type, P
         }
     }
 }
-void PRTextWord::init( double spaceWidth, double spaceHeight, PRTextWordType::Enum type )
+void PRGTextWord::init( double spaceWidth, double spaceHeight, PRGTextWordType::Enum type )
 {
     this->init();
 
@@ -90,13 +91,13 @@ void PRTextWord::init( double spaceWidth, double spaceHeight, PRTextWordType::En
 }
 
 //**********************************************************//
-//                     PRTextGroupWords                     //
+//                     PRGTextGroupWords                     //
 //**********************************************************//
-PRTextGroupWords::PRTextGroupWords()
+PRGTextGroupWords::PRGTextGroupWords()
 {
     this->init();
 }
-PRTextGroupWords::PRTextGroupWords( const PdfVariant& variant,
+PRGTextGroupWords::PRGTextGroupWords( const PdfVariant& variant,
                                     const PdfeMatrix& transMatrix,
                                     const PdfeTextState& textState,
                                     PdfeFont* pFont )
@@ -104,13 +105,13 @@ PRTextGroupWords::PRTextGroupWords( const PdfVariant& variant,
     this->init( variant, transMatrix, textState, pFont );
 }
 
-PRTextGroupWords::PRTextGroupWords( PRDocument* document,
+PRGTextGroupWords::PRGTextGroupWords( PRDocument* document,
                                     const PoDoFoExtended::PdfeStreamState& streamState )
 {
     this->init( document, streamState );
 }
 
-void PRTextGroupWords::init()
+void PRGTextGroupWords::init()
 {
     // Initialize members to default values.
     m_pageIndex = -1;
@@ -127,7 +128,7 @@ void PRTextGroupWords::init()
     m_words.clear();
     m_mainSubgroups.clear();
 }
-void PRTextGroupWords::init( const PdfVariant& variant,
+void PRGTextGroupWords::init( const PdfVariant& variant,
                              const PdfeMatrix& transMatrix,
                              const PdfeTextState& textState, PdfeFont* pFont )
 {
@@ -141,7 +142,7 @@ void PRTextGroupWords::init( const PdfVariant& variant,
     this->readPdfVariant( variant, pFont );
 }
 
-void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStreamState& streamState )
+void PRGTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStreamState& streamState )
 {
     // Initialize to empty.
     this->init();
@@ -171,7 +172,7 @@ void PRTextGroupWords::init( PRDocument* document, const PoDoFoExtended::PdfeStr
     this->readPdfVariant( variant, pFont );
 }
 
-void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
+void PRGTextGroupWords::readPdfVariant( const PdfVariant& variant,
                                        PdfeFont* pFont )
 {
     // Related font members
@@ -198,16 +199,16 @@ void PRTextGroupWords::readPdfVariant( const PdfVariant& variant,
             }
             else if( array[i].IsReal() || array[i].IsNumber() ) {
                 // Add PDF translation space.
-               m_words.push_back( PRTextWord( -array[i].GetReal() / 1000.0,
+               m_words.push_back( PRGTextWord( -array[i].GetReal() / 1000.0,
                                                pFont->spaceHeight(),
-                                               PRTextWordType::PDFTranslation ) );
+                                               PRGTextWordType::PDFTranslation ) );
             }
         }
     }
     // Construct subgroups vector.
     this->buildMainSubGroups();
 }
-void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
+void PRGTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                                       PoDoFoExtended::PdfeFont* pFont )
 {
     // To CID string.
@@ -255,20 +256,20 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 ++idx;
             }
             // Create associated word.
-            m_words.push_back( PRTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
-                                           PRTextWordType::Space,
+            m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
+                                           PRGTextWordType::Space,
                                            pFont ) );
         }
         // Read classic word.
         else {
             // Create two words when char space is too large.
             if( charSpace > maxCharSpace ) {
-                m_words.push_back( PRTextWord( cidstr.substr( idxFirst, 1 ),
-                                               PRTextWordType::Classic,
+                m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, 1 ),
+                                               PRGTextWordType::Classic,
                                                pFont ) );
-                m_words.push_back( PRTextWord( charSpace,
+                m_words.push_back( PRGTextWord( charSpace,
                                                pFont->spaceHeight(),
-                                               PRTextWordType::PDFTranslationCS ) );
+                                               PRGTextWordType::PDFTranslationCS ) );
                 ++idx;
             }
             // Create classic word
@@ -277,15 +278,15 @@ void PRTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
                 while( idx < cidstr.length() && !pFont->isSpace( cidstr[idx] ) ) {
                     ++idx;
                 }
-                m_words.push_back( PRTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
-                                               PRTextWordType::Classic,
+                m_words.push_back( PRGTextWord( cidstr.substr( idxFirst, idx-idxFirst ),
+                                               PRGTextWordType::Classic,
                                                pFont ) );
             }
         }
     }
 }
 
-void PRTextGroupWords::appendWord( const PRTextWord& word )
+void PRGTextGroupWords::appendWord( const PRGTextWord& word )
 {
     // Append the word to the vector.
     m_words.push_back( word );
@@ -294,27 +295,27 @@ void PRTextGroupWords::appendWord( const PRTextWord& word )
     this->buildMainSubGroups();
 }
 
-size_t PRTextGroupWords::length( bool countSpaces ) const
+size_t PRGTextGroupWords::length( bool countSpaces ) const
 {
     // Length of the complete subgroup.
     Subgroup globalSubgroup( *this );
     return globalSubgroup.length( countSpaces );
 }
 
-PdfeVector PRTextGroupWords::advance() const
+PdfeVector PRGTextGroupWords::advance() const
 {
     // Advance vector of the complete subgroup.
     Subgroup globalSubgroup( *this );
     return globalSubgroup.advance( true );
 }
-PdfeVector PRTextGroupWords::displacement() const
+PdfeVector PRGTextGroupWords::displacement() const
 {
     PdfeVector displacement = this->advance();
     displacement(0) = displacement(0) * m_textState.fontSize * ( m_textState.hScale / 100. );
     displacement(1) = displacement(1) * m_textState.fontSize;
     return displacement;
 }
-PdfeORect PRTextGroupWords::bbox( PRTextWordCoordinates::Enum wordCoord,
+PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum wordCoord,
                                   bool leadTrailSpaces,
                                   bool useBottomCoord ) const
 {
@@ -323,7 +324,7 @@ PdfeORect PRTextGroupWords::bbox( PRTextWordCoordinates::Enum wordCoord,
     return globalSubgroup.bbox( wordCoord, leadTrailSpaces, useBottomCoord );
 }
 
-double PRTextGroupWords::fontSize() const
+double PRGTextGroupWords::fontSize() const
 {
     PdfeFont::Statistics stats = m_pFont->statistics( true );
 
@@ -335,8 +336,8 @@ double PRTextGroupWords::fontSize() const
     return ( meanBBox.height() / stats.meanBBox.GetHeight() );
 }
 
-PdfeMatrix PRTextGroupWords::transMatrix( PRTextWordCoordinates::Enum startCoord,
-                                          PRTextWordCoordinates::Enum endCoord )
+PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoord,
+                                          PRGTextWordCoordinates::Enum endCoord )
 {
     // Compute global rendering matrix (font -> page).
     PdfeMatrix tmpMat, globalTransMat;
@@ -345,34 +346,34 @@ PdfeMatrix PRTextGroupWords::transMatrix( PRTextWordCoordinates::Enum startCoord
     tmpMat(2,1) = m_textState.rise;
     globalTransMat = tmpMat * m_textState.transMat * m_transMatrix;
 
-    if( startCoord == PRTextWordCoordinates::Font &&
-        endCoord == PRTextWordCoordinates::Page ) {
+    if( startCoord == PRGTextWordCoordinates::Font &&
+        endCoord == PRGTextWordCoordinates::Page ) {
         return globalTransMat;
     }
-    else if( startCoord == PRTextWordCoordinates::Font &&
-             endCoord == PRTextWordCoordinates::FontNormalized ) {
+    else if( startCoord == PRGTextWordCoordinates::Font &&
+             endCoord == PRGTextWordCoordinates::FontNormalized ) {
         return m_fontNormTransMatrix;
     }
-    else if( startCoord == PRTextWordCoordinates::Page &&
-             endCoord == PRTextWordCoordinates::Font ) {
+    else if( startCoord == PRGTextWordCoordinates::Page &&
+             endCoord == PRGTextWordCoordinates::Font ) {
         return globalTransMat.inverse();
     }
-    else if( startCoord == PRTextWordCoordinates::Page &&
-             endCoord == PRTextWordCoordinates::FontNormalized ) {
+    else if( startCoord == PRGTextWordCoordinates::Page &&
+             endCoord == PRGTextWordCoordinates::FontNormalized ) {
         return ( globalTransMat.inverse() * m_fontNormTransMatrix );
     }
-    else if( startCoord == PRTextWordCoordinates::FontNormalized &&
-             endCoord == PRTextWordCoordinates::Font ) {
+    else if( startCoord == PRGTextWordCoordinates::FontNormalized &&
+             endCoord == PRGTextWordCoordinates::Font ) {
         return m_fontNormTransMatrix.inverse();
     }
-    else if( startCoord == PRTextWordCoordinates::FontNormalized &&
-             endCoord == PRTextWordCoordinates::Page ) {
+    else if( startCoord == PRGTextWordCoordinates::FontNormalized &&
+             endCoord == PRGTextWordCoordinates::Page ) {
         return ( m_fontNormTransMatrix.inverse() * globalTransMat );
     }
     // Identity in other cases.
     return PdfeMatrix();
 }
-PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
+PdfeMatrix PRGTextGroupWords::getGlobalTransMatrix() const
 {
     // Compute text rendering matrix.
     PdfeMatrix tmpMat, textMat;
@@ -385,7 +386,7 @@ PdfeMatrix PRTextGroupWords::getGlobalTransMatrix() const
     return textMat;
 }
 
-double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
+double PRGTextGroupWords::minDistance( const PRGTextGroupWords& group ) const
 {
     PdfeORect grp1BBox, grp2BBox;
     double dist = std::numeric_limits<double>::max();
@@ -397,12 +398,12 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
         const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRTextWordCoordinates::Page, true, true ) );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRGTextWordCoordinates::Page, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
             const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( PRTextWordCoordinates::Font, true, true );
+            grp1BBox = subGrp1.bbox( PRGTextWordCoordinates::Font, true, true );
 
             dist = std::min( dist, PdfeORect::minDistance( grp1BBox, grp2BBox ) );
         }
@@ -410,7 +411,7 @@ double PRTextGroupWords::minDistance( const PRTextGroupWords& group ) const
     return dist;
 }
 
-double PRTextGroupWords::maxDistance( const PRTextGroupWords& group ) const
+double PRGTextGroupWords::maxDistance( const PRGTextGroupWords& group ) const
 {
     PdfeORect grp1BBox, grp2BBox;
     double dist = 0.0;
@@ -422,21 +423,21 @@ double PRTextGroupWords::maxDistance( const PRTextGroupWords& group ) const
     for( size_t j = 0 ; j < group.nbMSubgroups() ; ++j ) {
         // Subgroup bounding box.
         const Subgroup& subGrp2 = group.mSubgroup( j );
-        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRTextWordCoordinates::Page, true, true ) );
+        grp2BBox = grp1TransMat.map( subGrp2.bbox( PRGTextWordCoordinates::Page, true, true ) );
 
         // Subgroups of the first one.
         for( size_t i = 0 ; i < this->nbMSubgroups() ; ++i ) {
             const Subgroup& subGrp1 = this->mSubgroup( i );
-            grp1BBox = subGrp1.bbox( PRTextWordCoordinates::Font, true, true );
+            grp1BBox = subGrp1.bbox( PRGTextWordCoordinates::Font, true, true );
 
             dist = std::max( dist, PdfeORect::maxDistance( grp1BBox, grp2BBox ) );
         }
     }
     return dist;
 }
-void PRTextGroupWords::addTextLine( PRTextLine* pLine )
+void PRGTextGroupWords::addTextLine( PRGTextLine* pLine )
 {
-    std::vector<PRTextLine*>::iterator it;
+    std::vector<PRGTextLine*>::iterator it;
     it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
 
     // Add if not found.
@@ -444,9 +445,9 @@ void PRTextGroupWords::addTextLine( PRTextLine* pLine )
         m_pTextLines.push_back( pLine );
     }
 }
-void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
+void PRGTextGroupWords::rmTextLine( PRGTextLine* pLine )
 {
-    std::vector<PRTextLine*>::iterator it;
+    std::vector<PRGTextLine*>::iterator it;
     it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
 
     // Remove if found.
@@ -455,14 +456,14 @@ void PRTextGroupWords::rmTextLine( PRTextLine* pLine )
     }
 }
 
-bool PRTextGroupWords::isSpace() const
+bool PRGTextGroupWords::isSpace() const
 {
     // Advance vector of the complete subgroup.
     Subgroup globalSubgroup( *this );
     return globalSubgroup.isSpace();
 }
 
-void PRTextGroupWords::buildMainSubGroups()
+void PRGTextGroupWords::buildMainSubGroups()
 {
     m_mainSubgroups.clear();
 
@@ -470,8 +471,8 @@ void PRTextGroupWords::buildMainSubGroups()
     while( idx < m_words.size() ) {
         // Remove PDF translation words.
         while( idx < m_words.size() &&
-               ( m_words[idx].type() == PRTextWordType::PDFTranslation ||
-                 m_words[idx].type() == PRTextWordType::PDFTranslationCS ) ) {
+               ( m_words[idx].type() == PRGTextWordType::PDFTranslation ||
+                 m_words[idx].type() == PRGTextWordType::PDFTranslationCS ) ) {
             idx++;
         }
 
@@ -479,8 +480,8 @@ void PRTextGroupWords::buildMainSubGroups()
         if( idx < m_words.size() ) {
             Subgroup subgroup( *this, false );
             while( idx < m_words.size() &&
-                   m_words[idx].type() != PRTextWordType::PDFTranslation &&
-                   m_words[idx].type() != PRTextWordType::PDFTranslationCS ) {
+                   m_words[idx].type() != PRGTextWordType::PDFTranslation &&
+                   m_words[idx].type() != PRGTextWordType::PDFTranslationCS ) {
                 subgroup.setInside( idx, true );
                 idx++;
             }
@@ -490,19 +491,19 @@ void PRTextGroupWords::buildMainSubGroups()
 }
 
 //**********************************************************//
-//                PRTextGroupWords::SubGroup                //
+//                PRGTextGroupWords::SubGroup                //
 //**********************************************************//
-PRTextGroupWords::Subgroup::Subgroup()
+PRGTextGroupWords::Subgroup::Subgroup()
 {
     // Initialize to empty subgroup.
     this->init();
 }
-PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords& group , bool allGroup )
+PRGTextGroupWords::Subgroup::Subgroup( const PRGTextGroupWords& group , bool allGroup )
 {
     // Initialize to complete subgroup.
     this->init( group, allGroup );
 }
-PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords::Subgroup& subgroup )
+PRGTextGroupWords::Subgroup::Subgroup( const PRGTextGroupWords::Subgroup& subgroup )
 {
     // Copy members.
     m_pGroup = subgroup.m_pGroup;
@@ -511,17 +512,17 @@ PRTextGroupWords::Subgroup::Subgroup( const PRTextGroupWords::Subgroup& subgroup
     m_isBBoxCache = subgroup.m_isBBoxCache;
 }
 
-void PRTextGroupWords::Subgroup::init()
+void PRGTextGroupWords::Subgroup::init()
 {
     m_pGroup = NULL;
     m_wordsInside.clear();
     m_isBBoxCache = false;
 }
 
-void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGroup )
+void PRGTextGroupWords::Subgroup::init( const PRGTextGroupWords& group, bool allGroup )
 {
     // Complete subgroup.
-    m_pGroup = const_cast<PRTextGroupWords*>( &group );
+    m_pGroup = const_cast<PRGTextGroupWords*>( &group );
     if( allGroup ) {
         m_wordsInside.assign( group.nbWords(), true );
     }
@@ -531,21 +532,21 @@ void PRTextGroupWords::Subgroup::init( const PRTextGroupWords& group, bool allGr
     m_isBBoxCache = false;
 }
 
-size_t PRTextGroupWords::Subgroup::length( bool countSpaces ) const
+size_t PRGTextGroupWords::Subgroup::length( bool countSpaces ) const
 {
     size_t length = 0;
     for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
         // Current word.
-        const PRTextWord& word = m_pGroup->word( i );
+        const PRGTextWord& word = m_pGroup->word( i );
         if( m_wordsInside[i] &&
-            ( word.type() == PRTextWordType::Classic ||
-            ( word.type() == PRTextWordType::Space && countSpaces ) ) ) {
+            ( word.type() == PRGTextWordType::Classic ||
+            ( word.type() == PRGTextWordType::Space && countSpaces ) ) ) {
             length += word.length();
         }
     }
     return length;
 }
-PdfeVector PRTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
+PdfeVector PRGTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
 {
     // Handle the case of an empty group.
     PdfeVector advance;
@@ -571,13 +572,13 @@ PdfeVector PRTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
 
     // Compute advance vector.
     for( long i = idxFirst ; i <= idxLast ; ++i ) {
-        const PRTextWord& word = m_pGroup->word( i );
+        const PRGTextWord& word = m_pGroup->word( i );
         advance += word.advance();
     }
     return advance;
 }
 
-PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoord, bool leadTrailSpaces, bool useBottomCoord ) const
+PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum wordCoord, bool leadTrailSpaces, bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     if( !m_wordsInside.size() ) {
@@ -587,8 +588,8 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
     if( m_isBBoxCache && leadTrailSpaces && useBottomCoord ) {
         PdfeORect bbox( m_bboxCache );
         // Apply transformation if needed.
-        if( wordCoord != PRTextWordCoordinates::Font ) {
-            PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
+        if( wordCoord != PRGTextWordCoordinates::Font ) {
+            PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Font, wordCoord );
             bbox = transMat.map( bbox );
         }
         return bbox;
@@ -620,12 +621,12 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
     PdfeVector advance;
     for( long i = 0 ; i < static_cast<long>( m_wordsInside.size() ) ; ++i ) {
         // Current word and its bounding box.
-        const PRTextWord& word = m_pGroup->word( i );
+        const PRGTextWord& word = m_pGroup->word( i );
         PdfRect wbbox = word.bbox( useBottomCoord );
 
         // If inside the subgroup, update coordinates (remove spaces if needed).
         if( this->inside( i ) && i >= idxFirst && i <= idxLast &&
-                ( leadTrailSpaces || word.type() == PRTextWordType::Classic )  ) {
+                ( leadTrailSpaces || word.type() == PRGTextWordType::Classic )  ) {
             left = std::min( left, advance(0) + wbbox.GetLeft() );
             bottom = std::min( bottom, advance(1) + wbbox.GetBottom() );
             right = std::max( right, advance(0) + wbbox.GetLeft() + wbbox.GetWidth() );
@@ -649,26 +650,26 @@ PdfeORect PRTextGroupWords::Subgroup::bbox( PRTextWordCoordinates::Enum wordCoor
     }
 
     // Apply transformation if needed.
-    if( wordCoord != PRTextWordCoordinates::Font ) {
-        PdfeMatrix transMat = m_pGroup->transMatrix( PRTextWordCoordinates::Font, wordCoord );
+    if( wordCoord != PRGTextWordCoordinates::Font ) {
+        PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Font, wordCoord );
         bbox = transMat.map( bbox );
     }
     return bbox;
 }
 
-bool PRTextGroupWords::Subgroup::isSpace() const
+bool PRGTextGroupWords::Subgroup::isSpace() const
 {
     // Check words.
     for( size_t i = 0 ; i < this->m_wordsInside.size() ; ++i ) {
-        if( m_wordsInside[i] && ( this->m_pGroup->word(i).type() == PRTextWordType::Classic ) ) {
+        if( m_wordsInside[i] && ( this->m_pGroup->word(i).type() == PRGTextWordType::Classic ) ) {
             return false;
         }
     }
     return true;
 }
 
-PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::intersection( const PRTextGroupWords::Subgroup& subgroup1,
-                                                                     const PRTextGroupWords::Subgroup& subgroup2 )
+PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::intersection( const PRGTextGroupWords::Subgroup& subgroup1,
+                                                                     const PRGTextGroupWords::Subgroup& subgroup2 )
 {
     Subgroup subgroup;
     // Check the parent group is the same.
@@ -683,8 +684,8 @@ PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::intersection( const PRTex
     }
     return subgroup;
 }
-PRTextGroupWords::Subgroup PRTextGroupWords::Subgroup::reunion( const PRTextGroupWords::Subgroup& subgroup1,
-                                                                const PRTextGroupWords::Subgroup& subgroup2 )
+PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::reunion( const PRGTextGroupWords::Subgroup& subgroup1,
+                                                                const PRGTextGroupWords::Subgroup& subgroup2 )
 {
     Subgroup subgroup;
     // Check the parent group is the same.

@@ -10,8 +10,10 @@
  ***************************************************************************/
 
 #include "PRDocument.h"
-#include "PRSubDocument.h"
+
 #include "PRException.h"
+#include "PRGeometry/PRGDocument.h"
+#include "PRGeometry/PRGSubDocument.h"
 
 #include "PdfeFontType0.h"
 #include "PdfeFontTrueType.h"
@@ -77,7 +79,7 @@ void PRDocument::clear()
     // Cleat font cache.
     this->clearFontCache();
     // Clear contents.
-    this->clearContent();
+    //this->clearContent();
 }
 
 PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename )
@@ -228,116 +230,5 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     m_fontCache.insert( std::make_pair( fontRef, pFont ) );
     return pFont;
 }
-
-void PRDocument::analyseContent( const ContentParameters& params )
-{
-    // First clear content.
-    this->clearContent();
-
-    // Detect sub-documents and analyse their content.
-    this->detectSubDocuments( params.subDocumentTolerance );
-    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
-        m_subDocuments[i]->analyseContent( params );
-    }
-}
-void PRDocument::clearContent()
-{
-    // Delete PRSubDocuments objects.
-    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
-        m_subDocuments[i]->clearContent();
-        delete m_subDocuments[i];
-        m_subDocuments[i] = NULL;
-    }
-    m_subDocuments.clear();
-}
-void PRDocument::detectSubDocuments( double tolerance )
-{
-    long idx( 0 );
-    long idxFirst;
-    PdfRect cbox;
-    PdfRect cboxst;
-
-    while( idx < m_podofoDocument->GetPageCount() ) {
-        // Initialize the subdocument with the current page.
-        idxFirst = idx;
-        cboxst = PageCropBox( m_podofoDocument->GetPage( idxFirst ) );
-        bool belong = true;
-        //++idx;
-
-        while( idx < m_podofoDocument->GetPageCount() ) {
-            // Check the size of the page (width and height).
-            cbox = PageCropBox( m_podofoDocument->GetPage( idx ) );
-            belong = ( fabs( cboxst.GetWidth() - cbox.GetWidth() ) <= cboxst.GetWidth() * tolerance ) &&
-                    ( fabs( cboxst.GetHeight() - cbox.GetHeight() ) <= cboxst.GetHeight() * tolerance );
-            if( !belong ) {
-                break;
-            }
-            ++idx;
-            // QLOG_INFO() << QString( "Crop box: %1" ).arg( PdfRectToString( cbox ).c_str() ).toLocal8Bit().constData();
-        }
-        // Create the SubDocument and add it to the vector.
-        m_subDocuments.push_back( new PRSubDocument( this, idxFirst, idx-1 ) );
-    }
-}
-
-PdfRect PRDocument::PageMediaBox( PdfPage* pPage )
-{
-    PdfRect mediaBox( pPage->GetMediaBox() );
-    return mediaBox;
-}
-
-PdfRect PRDocument::PageCropBox( PdfPage* pPage )
-{
-    PdfRect mediaBox( PRDocument::PageMediaBox( pPage ) );
-    PdfRect cropBox( pPage->GetCropBox() );
-
-    // Intersection between the two.
-    cropBox = PdfeORect::intersection( mediaBox, cropBox );
-    return cropBox;
-}
-
-size_t PRDocument::nbPages() const
-{
-    return m_podofoDocument->GetPageCount();
-}
-PRPage* PRDocument::page( size_t idx )
-{
-    // Find the sub-document if belongs to.
-    PRSubDocument* subDocument = NULL;
-    for( size_t i = 0 ; i < m_subDocuments.size() && !subDocument ; ++i ) {
-        if( i >= m_subDocuments[i]->firstPageIndex() && i <= m_subDocuments[i]->lastPageIndex() ) {
-            subDocument = m_subDocuments[i];
-        }
-    }
-    if( subDocument ) {
-        return subDocument->page( idx );
-    }
-    return NULL;
-}
-const PRPage* PRDocument::page( size_t idx ) const
-{
-    // Use the non-const implementation!
-    return const_cast<PRPage*>( const_cast<PRDocument*>( this )->page( idx ) );
-}
-
-
-//************************************************************//
-//                PRDocument::ContentParameters               //
-//************************************************************//
-PRDocument::ContentParameters::ContentParameters()
-{
-    this->init();
-}
-void PRDocument::ContentParameters::init()
-{
-    // 2 percent tolerance on the size.
-    subDocumentTolerance = 0.05;
-
-    // Detect lines.
-    textLineDetection = true;
-}
-
-
-
 
 }

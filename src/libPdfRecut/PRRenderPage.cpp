@@ -264,7 +264,7 @@ void PRRenderPage::fTextPositioning( const PdfeStreamState& streamState ) { }
 PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Create the group of words.
-    PRTextGroupWords groupWords( m_document, streamState );
+    PRGTextGroupWords groupWords( m_document, streamState );
 
     // Draw the group of words.
     this->textDrawGroup( groupWords, m_renderParameters );
@@ -378,17 +378,17 @@ void PRRenderPage::drawPdfeORect( const PdfeORect& orect, const PRRenderParamete
     penBrush.applyToPainter( m_pagePainter );
     m_pagePainter->drawPolygon( polygon );
 }
-void PRRenderPage::textDrawGroup( const PRTextGroupWords& groupWords,
+void PRRenderPage::textDrawGroup( const PRGTextGroupWords& groupWords,
                                        const PRRenderParameters& parameters )
 {
     // Render the complete subgroup.
-    this->textDrawSubgroup( PRTextGroupWords::Subgroup( groupWords, true ), parameters );
+    this->textDrawSubgroup( PRGTextGroupWords::Subgroup( groupWords, true ), parameters );
 }
-void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
+void PRRenderPage::textDrawSubgroup( const PRGTextGroupWords::Subgroup& subgroup,
                                      const PRRenderParameters& parameters )
 {
     // Nothing to draw or can not draw...
-    PRTextGroupWords* pGroup = subgroup.group();
+    PRGTextGroupWords* pGroup = subgroup.group();
     if( !m_pageImage || !m_pagePainter ||
         !pGroup || !pGroup->nbWords() ) {
         return;
@@ -402,16 +402,16 @@ void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
     // Paint words.
     PdfeVector advance;
     for( size_t i = 0 ; i < pGroup->nbWords() ; ++i ) {
-        const PRTextWord& word = pGroup->word( i );
+        const PRGTextWord& word = pGroup->word( i );
         // Set pen & brush
-        if( word.type() == PRTextWordType::Classic ) {
+        if( word.type() == PRGTextWordType::Classic ) {
             parameters.textPB.applyToPainter( m_pagePainter );
         }
-        else if( word.type() == PRTextWordType::Space ) {
+        else if( word.type() == PRGTextWordType::Space ) {
             parameters.textSpacePB.applyToPainter( m_pagePainter );
         }
-        else if( word.type() == PRTextWordType::PDFTranslation ||
-                 word.type() == PRTextWordType::PDFTranslationCS ) {
+        else if( word.type() == PRGTextWordType::PDFTranslation ||
+                 word.type() == PRGTextWordType::PDFTranslationCS ) {
             parameters.textPDFTranslationPB.applyToPainter( m_pagePainter );
         }
         // Paint word, if it is inside the subgroup and the width is positive !
@@ -425,7 +425,7 @@ void PRRenderPage::textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
         advance += word.advance();
     }
 }
-void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
+void PRRenderPage::textDrawMainSubgroups( const PRGTextGroupWords& groupWords,
                                           const PRRenderParameters& parameters )
 {
     // Nothing to draw...
@@ -445,12 +445,12 @@ void PRRenderPage::textDrawMainSubgroups( const PRTextGroupWords& groupWords,
         parameters.textPB.applyToPainter( m_pagePainter );
 
         // Paint word, if the width is positive !
-        PdfeORect bbox = groupWords.mSubgroup(i).bbox( PRTextWordCoordinates::Font, true, true );
+        PdfeORect bbox = groupWords.mSubgroup(i).bbox( PRGTextWordCoordinates::Font, true, true );
         PdfeVector lb = bbox.leftBottom();
         m_pagePainter->drawRect( QRectF( lb(0) , lb(1), bbox.width(), bbox.height() ) );
     }
 }
-void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
+void PRRenderPage::textRenderGroup( const PRGTextGroupWords& groupWords )
 {
     //m_pagePainter->setRenderHint( QPainter::Antialiasing, true );
     //m_pagePainter->setRenderHint( QPainter::SmoothPixmapTransform, true );
@@ -466,10 +466,10 @@ void PRRenderPage::textRenderGroup( const PRTextGroupWords& groupWords )
     // Render glyphs of every word.
     PdfeVector advance;
     for( size_t i = 0 ; i < groupWords.nbWords() ; ++i ) {
-        const PRTextWord& word = groupWords.word( i );
+        const PRGTextWord& word = groupWords.word( i );
 
         // Draw only the type correspond to a classic word.
-        if( word.type() == PRTextWordType::Classic ) {
+        if( word.type() == PRGTextWordType::Classic ) {
             PdfeCIDString cidstr = word.cidString();
 
             for( size_t j = 0 ; j < cidstr.length() ; ++j ) {

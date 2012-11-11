@@ -16,8 +16,7 @@
 
 #include "PdfeCanvasAnalysis.h"
 
-//#include "PRDocument.h"
-#include "PRTextWords.h"
+#include "PRGeometry/PRGTextWords.h"
 
 namespace PoDoFo {
 class PdfPage;
@@ -235,25 +234,25 @@ public:
      * \param groupWords Group of words to draw.
      * \param parameters Rendering parameters to use.
      */
-    void textDrawGroup( const PRTextGroupWords& groupWords,
+    void textDrawGroup( const PRGTextGroupWords& groupWords,
                         const PRRenderParameters& parameters );
     /** Draw a subgroup of words on the pdf image painter.
      * \param subgroup Subgroup of words to draw.
      * \param parameters Rendering parameters to use.
      */
-    void textDrawSubgroup( const PRTextGroupWords::Subgroup& subgroup,
+    void textDrawSubgroup( const PRGTextGroupWords::Subgroup& subgroup,
                            const PRRenderParameters& parameters );
-    /** Draw main subgroups of a PRTextGroupWords.
+    /** Draw main subgroups of a PRGTextGroupWords.
      * \param subgroup Group of words to consider.
      * \param parameters Rendering parameters to use.
      */
-    void textDrawMainSubgroups( const PRTextGroupWords& groupWords,
+    void textDrawMainSubgroups( const PRGTextGroupWords& groupWords,
                                 const PRRenderParameters& parameters );
 
     /** Render glyphs from a group of words on the page.
      * \param groupWords Group of words to render.
      */
-    void textRenderGroup( const PRTextGroupWords& groupWords );
+    void textRenderGroup( const PRGTextGroupWords& groupWords );
 
 protected:
     /** Test function on images.

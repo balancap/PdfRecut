@@ -9,8 +9,8 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#ifndef PRTEXTWORDS_H
-#define PRTEXTWORDS_H
+#ifndef PRGTEXTWORDS_H
+#define PRGTEXTWORDS_H
 
 #include "podofo/base/PdfString.h"
 #include "PdfeGraphicsState.h"
@@ -31,12 +31,13 @@ class PdfeStreamState;
 namespace PdfRecut {
 
 class PRDocument;
-class PRTextLine;
+class PRGDocument;
+class PRGTextLine;
 
 //**********************************************************//
-//                         PRTextWord                       //
+//                        PRGTextWord                       //
 //**********************************************************//
-namespace PRTextWordType {
+namespace PRGTextWordType {
 /** Enumeration of the different types of word.
  */
 enum Enum {
@@ -48,7 +49,7 @@ enum Enum {
 };
 }
 
-namespace PRTextWordCoordinates {
+namespace PRGTextWordCoordinates {
 /** Enumeration of the different coordinates system
  * a word bounding box can be expressed in.
  */
@@ -64,28 +65,28 @@ enum Enum {
  * Metrics (advance and bbox) are given in renormalized units, i.e.
  * Fontsize = 1.0, hScale = 100. and char/word space are renormalized using fontsize.
  */
-class PRTextWord
+class PRGTextWord
 {
 public:
     /** Default empty constructor.
      */
-    PRTextWord();
+    PRGTextWord();
     /** Constructor based on a CID string (classic or space words).
      * \param cidstr CID string representing the word.
      * \param type Type of the word.
      * \param pFont Pointer to the font object used for the word.
      */
-    PRTextWord( const PdfeCIDString& cidstr,
-                PRTextWordType::Enum type,
+    PRGTextWord( const PdfeCIDString& cidstr,
+                PRGTextWordType::Enum type,
                 PoDoFoExtended::PdfeFont* pFont );
     /** Constructor of PDF translation space.
      * \param spaceWidth Space width.
      * \param spaceHeight Space height.
      * \param type Type of the space.
      */
-    PRTextWord( double spaceWidth,
+    PRGTextWord( double spaceWidth,
                 double spaceHeight,
-                PRTextWordType::Enum type );
+                PRGTextWordType::Enum type );
 
     /** Initialize to an empty word.
      */
@@ -96,7 +97,7 @@ public:
      * \param pFont Pointer to the font object used for the word.
      */
     void init( const PdfeCIDString& cidstr,
-               PRTextWordType::Enum type,
+               PRGTextWordType::Enum type,
                PoDoFoExtended::PdfeFont* pFont );
     /** Initialization of PDF translation space.
      * \param spaceWidth Space width.
@@ -105,13 +106,13 @@ public:
      */
     void init( double spaceWidth,
                double spaceHeight,
-               PRTextWordType::Enum type );
+               PRGTextWordType::Enum type );
 
 public:
     // Simple getters...
     long length() const                 {   return m_cidString.length();    }
     double charSpace() const            {   return m_charSpace;     }
-    PRTextWordType::Enum type() const   {   return m_type;    }
+    PRGTextWordType::Enum type() const   {   return m_type;    }
     const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
     const PdfeCIDString& cidString() const      {   return m_cidString; }
 
@@ -138,7 +139,7 @@ private:
     /// CID string corresponding to the word.
     PdfeCIDString  m_cidString;
     /// Word type.
-    PRTextWordType::Enum  m_type;
+    PRGTextWordType::Enum  m_type;
 
     /// Advance vector of the word.
     PdfeVector  m_advance;
@@ -150,12 +151,12 @@ private:
 };
 
 //**********************************************************//
-//                      PRTextGroupWords                    //
+//                     PRGTextGroupWords                    //
 //**********************************************************//
 /** Class that represents a group of words read from a PDF stream.
  * A group can be split in subgroups seperated by a PDF translation word.
  */
-class PRTextGroupWords
+class PRGTextGroupWords
 {
 public:
     /// Embedded class that represents a subgroup.
@@ -164,14 +165,14 @@ public:
 public:
     /** Default constructor.
      */
-    PRTextGroupWords();
+    PRGTextGroupWords();
     /**  Construct a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
      * \param transMatrix Transformation matrix from graphics state.
      * \param textState Corresponding text state.
      * \param pFont Font object used to compute words width.
      */
-    PRTextGroupWords( const PoDoFo::PdfVariant& variant,
+    PRGTextGroupWords( const PoDoFo::PdfVariant& variant,
                       const PdfeMatrix& transMatrix,
                       const PoDoFoExtended::PdfeTextState& textState,
                       PoDoFoExtended::PdfeFont* pFont );
@@ -179,7 +180,7 @@ public:
      * \param document Parent document.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
-    PRTextGroupWords( PRDocument* document,
+    PRGTextGroupWords( PRDocument* document,
                       const PoDoFoExtended::PdfeStreamState& streamState );
 
     /** Initialize to an empty group of words.
@@ -221,7 +222,7 @@ public:
     /** Append a word to the group.,
      * \param word Word to append.
      */
-    void appendWord( const PRTextWord& word );
+    void appendWord( const PRGTextWord& word );
 
     /** Compute the length of the group of words.
      * \param countSpaces Also count spaces?
@@ -244,7 +245,7 @@ public:
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( PRTextWordCoordinates::Enum wordCoord,
+    PdfeORect bbox( PRGTextWordCoordinates::Enum wordCoord,
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
     /** Estimate the global font size used for this group.
@@ -258,8 +259,8 @@ public:
      * \param endCoord Ending coordinate system.
      * \return Transformation matrix.
      */
-    PdfeMatrix transMatrix( PRTextWordCoordinates::Enum startCoord,
-                            PRTextWordCoordinates::Enum endCoord );
+    PdfeMatrix transMatrix( PRGTextWordCoordinates::Enum startCoord,
+                            PRGTextWordCoordinates::Enum endCoord );
 
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
@@ -272,27 +273,27 @@ public:
      * \param group Second group.
      * \return Distance computed.
      */
-    double minDistance( const PRTextGroupWords& group ) const;
+    double minDistance( const PRGTextGroupWords& group ) const;
     /** Maximal distance between the object and another group.
      * Use subgroups to compute the distance.
      * Distance computed in the coordinate system of the object.
      * \param group Second group.
      * \return Distance computed.
      */
-    double maxDistance( const PRTextGroupWords& group ) const;
+    double maxDistance( const PRGTextGroupWords& group ) const;
 
     /** Add a text line. The (sub)group must belong to it.
      * \param pLine Pointer to the line to add.
      */
-    void addTextLine( PRTextLine* pLine );
+    void addTextLine( PRGTextLine* pLine );
     /** Remove a text line. The (sub)group must not belong to it.
      * \param pLine Pointer to the line to remove.
      */
-    void rmTextLine( PRTextLine* pLine );
+    void rmTextLine( PRGTextLine* pLine );
     /** Get lines the (sub)group belongs to.
-     * \return Vector of pointers to PRTextLines.
+     * \return Vector of pointers to PRGTextLines.
      */
-    std::vector<PRTextLine*> textLines() const;
+    std::vector<PRGTextLine*> textLines() const;
 
     /** Is the group composed uniquely of space characters?
      */
@@ -327,9 +328,9 @@ public:
 
     /** Get a constant reference to a word.
      * \param idx Index of the word.
-     * \return Constant reference to a PRTextWord.
+     * \return Constant reference to a PRGTextWord.
      */
-    const PRTextWord& word( size_t idx ) const;
+    const PRGTextWord& word( size_t idx ) const;
 
     /** Get the number of main subgroups.
      * \return Number of subgroups.
@@ -338,7 +339,7 @@ public:
 
     /** Get a main subgroup component.
      * \param idx Index of the subgroup.
-     * \return Const reference to a PRTextGroupWords::SubGroup.
+     * \return Const reference to a PRGTextGroupWords::SubGroup.
      */
     const Subgroup& mSubgroup( size_t idx ) const;
 
@@ -366,20 +367,20 @@ private:
     PoDoFoExtended::PdfeTextState  m_textState;
 
     /// Vector of words that make the group.
-    std::vector<PRTextWord>  m_words;
+    std::vector<PRGTextWord>  m_words;
     /// Main subgroups of words.
     std::vector<Subgroup>  m_mainSubgroups;
 
     /// Text lines the group (or a subgroup) belongs to.
-    std::vector<PRTextLine*>  m_pTextLines;
+    std::vector<PRGTextLine*>  m_pTextLines;
 };
 
 //**********************************************************//
-//                 PRTextGroupWords::Subgroup               //
+//                PRGTextGroupWords::Subgroup               //
 //**********************************************************//
 /** Class that represents a subgroup of words.
  */
-class PRTextGroupWords::Subgroup
+class PRGTextGroupWords::Subgroup
 {
 public:
     /** Default empty constructor.
@@ -389,7 +390,7 @@ public:
      * \param group Constant reference to the group. Should not be a temp object !
      * \param allGroup Correspond to the complete group?
      */
-    Subgroup( const PRTextGroupWords& group, bool allGroup = true );
+    Subgroup( const PRGTextGroupWords& group, bool allGroup = true );
     /** Copy constructor.
      * \param subgroup Subgroup to copy.
      */
@@ -402,16 +403,16 @@ public:
      * \param pGroup Constant reference to the group. Should not be a temp object !
      * \param allGroup Correspond to the complete group?
      */
-    void init( const PRTextGroupWords& group, bool allGroup = true );
+    void init( const PRGTextGroupWords& group, bool allGroup = true );
 
     /** Get the parent group.
      * \return Pointer the parent group.
      */
-    PRTextGroupWords* group() const;
+    PRGTextGroupWords* group() const;
     /** Set the parent group.
      * \param pGroup Pointer to the group.
      */
-    void setGroup( PRTextGroupWords* pGroup );
+    void setGroup( PRGTextGroupWords* pGroup );
 
     /** Is a word inside the subgroup? Can raise an exception.
      * \param idxWord Index of the word.
@@ -429,7 +430,7 @@ public:
      * \param idxWord Index of the word.
      * \return Pointer to the word. NULL if it does belong to the subgroup.
      */
-    const PRTextWord* word( size_t idxWord ) const;
+    const PRGTextWord* word( size_t idxWord ) const;
 
     /** Compute the length of the subgroup of words.
      * \param countSpaces Also count spaces?
@@ -450,7 +451,7 @@ public:
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( PRTextWordCoordinates::Enum wordCoord,
+    PdfeORect bbox( PRGTextWordCoordinates::Enum wordCoord,
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
 
@@ -482,7 +483,7 @@ public:
 
 private:
     /// Pointer to the group.
-    PRTextGroupWords*  m_pGroup;
+    PRGTextGroupWords*  m_pGroup;
     /// Vector of boolean telling if words of the group belongs to the subgroup.
     std::vector<bool>  m_wordsInside;
 
@@ -494,9 +495,9 @@ private:
 };
 
 //**********************************************************//
-//                    Inline PRTextWord                     //
+//                    Inline PRGTextWord                     //
 //**********************************************************//
-inline PoDoFo::PdfRect PRTextWord::bbox( bool useBottomCoord ) const
+inline PoDoFo::PdfRect PRGTextWord::bbox( bool useBottomCoord ) const
 {
     if( useBottomCoord ) {
         return m_bbox;
@@ -510,74 +511,74 @@ inline PoDoFo::PdfRect PRTextWord::bbox( bool useBottomCoord ) const
 }
 
 //**********************************************************//
-//                 Inline PRTextGroupWords                  //
+//                 Inline PRGTextGroupWords                  //
 //**********************************************************//
-inline void PRTextGroupWords::setPageIndex( long pageIndex )
+inline void PRGTextGroupWords::setPageIndex( long pageIndex )
 {
     m_pageIndex = pageIndex;
 }
-inline void PRTextGroupWords::setGroupIndex( long groupIndex )
+inline void PRGTextGroupWords::setGroupIndex( long groupIndex )
 {
     m_groupIndex = groupIndex;
 }
-inline std::vector<PRTextLine*> PRTextGroupWords::textLines() const
+inline std::vector<PRGTextLine*> PRGTextGroupWords::textLines() const
 {
     return m_pTextLines;
 }
-inline void PRTextGroupWords::setGSTransMatrix( const PdfeMatrix& transMatrix )
+inline void PRGTextGroupWords::setGSTransMatrix( const PdfeMatrix& transMatrix )
 {
     m_transMatrix = transMatrix; m_words.size();
 }
-inline void PRTextGroupWords::setTextState( const PoDoFoExtended::PdfeTextState& textState )
+inline void PRGTextGroupWords::setTextState( const PoDoFoExtended::PdfeTextState& textState )
 {
     m_textState = textState;
 }
 
-inline size_t PRTextGroupWords::nbWords() const
+inline size_t PRGTextGroupWords::nbWords() const
 {
     return m_words.size();
 }
-inline const PRTextWord& PRTextGroupWords::word( size_t idx ) const
+inline const PRGTextWord& PRGTextGroupWords::word( size_t idx ) const
 {
     return m_words.at(idx);     // Throw out of range exception if necessary.
 }
-inline size_t PRTextGroupWords::nbMSubgroups() const
+inline size_t PRGTextGroupWords::nbMSubgroups() const
 {
     return m_mainSubgroups.size();
 }
-inline const PRTextGroupWords::Subgroup& PRTextGroupWords::mSubgroup( size_t idx ) const
+inline const PRGTextGroupWords::Subgroup& PRGTextGroupWords::mSubgroup( size_t idx ) const
 {
     return m_mainSubgroups.at( idx );
 }
 
 //**********************************************************//
-//            Inline PRTextGroupWords::SubGroup             //
+//            Inline PRGTextGroupWords::SubGroup             //
 //**********************************************************//
-inline PRTextGroupWords* PRTextGroupWords::Subgroup::group() const
+inline PRGTextGroupWords* PRGTextGroupWords::Subgroup::group() const
 {
-    return const_cast<PRTextGroupWords*>( m_pGroup );
+    return const_cast<PRGTextGroupWords*>( m_pGroup );
 }
-inline void PRTextGroupWords::Subgroup::setGroup( PRTextGroupWords* pGroup )
+inline void PRGTextGroupWords::Subgroup::setGroup( PRGTextGroupWords* pGroup )
 {
     m_pGroup = pGroup;
 }
-inline bool PRTextGroupWords::Subgroup::inside( size_t idxWord ) const
+inline bool PRGTextGroupWords::Subgroup::inside( size_t idxWord ) const
 {
     return m_wordsInside.at( idxWord );
 }
-inline void PRTextGroupWords::Subgroup::setInside( size_t idxWord, bool inside )
+inline void PRGTextGroupWords::Subgroup::setInside( size_t idxWord, bool inside )
 {
     m_wordsInside.at( idxWord ) = inside;
     m_isBBoxCache = false;
 }
-inline const PRTextWord* PRTextGroupWords::Subgroup::word( size_t idxWord ) const
+inline const PRGTextWord* PRGTextGroupWords::Subgroup::word( size_t idxWord ) const
 {
     if( m_wordsInside.at( idxWord ) ) {
         return &( m_pGroup->word( idxWord ) );
     }
     return NULL;
 }
-inline bool PRTextGroupWords::Subgroup::isEmpty() const
+inline bool PRGTextGroupWords::Subgroup::isEmpty() const
 {
     for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
         if( m_wordsInside[i] ) {
@@ -589,4 +590,4 @@ inline bool PRTextGroupWords::Subgroup::isEmpty() const
 
 }
 
-#endif // PRTEXTWORDS_H
+#endif // PRGTEXTWORDS_H

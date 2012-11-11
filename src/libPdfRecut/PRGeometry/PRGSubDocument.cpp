@@ -9,9 +9,11 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#include "PRSubDocument.h"
+#include "PRGSubDocument.h"
+
 #include "PRDocument.h"
-#include "PRPage.h"
+#include "PRGDocument.h"
+#include "PRGPage.h"
 
 #include "QsLog/QsLog.h"
 
@@ -21,66 +23,66 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PRSubDocument::PRSubDocument( PRDocument* parent, size_t firstPageIndex, size_t lastPageIndex ) :
-    QObject( parent ), m_firstPageIndex( firstPageIndex ), m_lastPageIndex( lastPageIndex )
+PRGSubDocument::PRGSubDocument( PRGDocument *parent, size_t firstPageIndex, size_t lastPageIndex ) :
+    QObject( parent ),
+    m_firstPageIndex( firstPageIndex ),
+    m_lastPageIndex( lastPageIndex )
 {    
     // Log information.
-    PdfRect cbox = PRDocument::PageCropBox( parent->podofoDocument()->GetPage( firstPageIndex ) );
-    QLOG_INFO() << QString( "<PRSubDocument> Create sub-document with range [%1,%2] and size (%3,%4)" )
+    PdfRect cbox = PRGPage::PageCropBox( parent->parent()->podofoDocument()->GetPage( firstPageIndex ) );
+    QLOG_INFO() << QString( "<PRGSubDocument> Create sub-document with range [%1,%2] and size (%3,%4)" )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( cbox.GetWidth() ).arg( cbox.GetHeight() )
                    .toAscii().constData();
 }
-PRSubDocument::~PRSubDocument()
+PRGSubDocument::~PRGSubDocument()
 {
-    this->clearContent();
+    this->clear();
+}
+PRGDocument* PRGSubDocument::parent() const
+{
+    return static_cast<PRGDocument*>( this->QObject::parent() );
 }
 
-void PRSubDocument::analyseContent( const PRDocument::ContentParameters& params )
+void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
 {
-    this->clearContent();
+    this->clear();
 
     // Create pages corresponding to the sub-document.
     m_pages.resize( m_lastPageIndex-m_firstPageIndex+1, NULL );
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i] = new PRPage( this, m_firstPageIndex + i );
+        m_pages[i] = new PRGPage( this, m_firstPageIndex + i );
     }
 
     // Analyse content of pages.
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i]->analyseContent( params );
+        m_pages[i]->analyse( params );
     }
 
 
 }
-void PRSubDocument::clearContent()
+void PRGSubDocument::clear()
 {
-    // Delete PRPage objects.
+    // Delete PRGPage objects.
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i]->clearContent();
+        m_pages[i]->clear();
         delete m_pages[i];
         m_pages[i] = NULL;
     }
     m_pages.clear();
 }
 
-PRDocument* PRSubDocument::parent() const
-{
-    // TODO: dynamic_cast or static_cast?
-    return static_cast<PRDocument*>( this->QObject::parent() );
-}
-
-PRPage* PRSubDocument::page( size_t idx )
+PRGPage* PRGSubDocument::page( size_t idx )
 {
     if( idx < m_firstPageIndex || idx > m_lastPageIndex || !m_pages.size() ) {
         return NULL;
     }
     return m_pages.at( idx - m_firstPageIndex );
 }
-const PRPage* PRSubDocument::page( size_t idx ) const
+const PRGPage* PRGSubDocument::page( size_t idx ) const
 {
     // Use the non-const implementation!
-    return const_cast<PRPage*>( const_cast<PRSubDocument*>( this )->page( idx ) );
+    return const_cast<PRGPage*>( const_cast<PRGSubDocument*>( this )->page( idx ) );
 }
 
 }

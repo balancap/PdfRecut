@@ -9,8 +9,8 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#ifndef PRTEXTPAGESTRUCTURE_H
-#define PRTEXTPAGESTRUCTURE_H
+#ifndef PRGTEXTPAGE_H
+#define PRGTEXTPAGE_H
 
 #include "PdfeCanvasAnalysis.h"
 
@@ -24,28 +24,29 @@ class PdfVariant;
 
 namespace PdfRecut {
 
-class PRDocument;
-class PRPage;
 class PRRenderPage;
-class PRTextLine;
-class PRTextGroupWords;
+
+class PRDocument;
+class PRGPage;
+class PRGTextLine;
+class PRGTextGroupWords;
 
 /** Class that describes the text organization in PDF page:
  * - Groups of words that belong to the page;
  * - Text lines that can be detected.
  */
-class PRTextPage : public PoDoFoExtended::PdfeCanvasAnalysis
+class PRGTextPage : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
     /** Default constructor
      * \param document Input document.
      * \param pageIndex Index of the page to render.
      */
-    PRTextPage( PRDocument* document,
+    PRGTextPage( PRDocument* document,
                 long pageIndex );
     /** Destructor.
      */
-    virtual ~PRTextPage();
+    virtual ~PRGTextPage();
 
 protected:
     /** Clear content of the object (i.e. different vectors).
@@ -66,7 +67,7 @@ private:
      * \param idxGroupWords Index of the group of words.
      * \return Pointer to the line object.
      */
-    PRTextLine* createLine_Basic( size_t idxGroupWords );
+    PRGTextLine* createLine_Basic( size_t idxGroupWords );
 
     /** Try to merge existing lines.
      * Enlarge inside algorithm: detect elements inside a line and check if they belong to it.
@@ -76,7 +77,7 @@ private:
      * \param minLineWidth Minimum length of lines.
      * \return Pointer the merged line.
      */
-    PRTextLine* mergeLines_EnlargeInside( PRTextLine* pBaseLine,
+    PRGTextLine* mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
                                           double minBaseHeight,
                                           double maxBaseHeight,
                                           double minLineWidth );
@@ -86,7 +87,7 @@ private:
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
-    PRTextLine* mergeLines_EnlargeOutside( PRTextLine* pBaseLine,
+    PRGTextLine* mergeLines_EnlargeOutside( PRGTextLine* pBaseLine,
                                            double scaleXEnlarge,
                                            double scaleYEnlarge,
                                            double maxLineWidth );
@@ -96,31 +97,31 @@ private:
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
-    PRTextLine* mergeLines_Inside( PRTextLine* pLine );
+    PRGTextLine* mergeLines_Inside( PRGTextLine* pLine );
 
     /** Try to merge existing lines. Depreciated.
      * Small elements algorithm: detect small elements close to a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
-    PRTextLine* mergeLines_Small( PRTextLine* pLine );
+    PRGTextLine* mergeLines_Small( PRGTextLine* pLine );
 
     /** Split lines using horizontal blocks.
      * \param pLine Pointer of the line to consider.
      * \return Vector of new lines (the first element corresponds to pLine).
      */
-    std::vector<PRTextLine*> splitLines_hBlocks( PRTextLine* pLine );
+    std::vector<PRGTextLine*> splitLines_hBlocks( PRGTextLine* pLine );
 
     /** Merge a vector of lines into a single one.
      * Use the first element as base (other lines are deleted).
      * \param pLines Vector of pointer of lines to merge.
      * \return Pointer to the resulting line.
      */
-    PRTextLine* mergeVectorLines( const std::vector<PRTextLine*>& pLines );
+    PRGTextLine* mergeVectorLines( const std::vector<PRGTextLine*>& pLines );
 
     /** No copy constructor allowed.
      */
-    PRTextPage( const PRTextPage& rhs );
+    PRGTextPage( const PRGTextPage& rhs );
 
 protected:
     // Reimplement PdfeCanvasAnalysis interface.
@@ -193,11 +194,11 @@ private:
     long  m_nbTextGroups;
 
     /// Groups of words that belong to the page (vector of pointers).
-    std::vector<PRTextGroupWords*>  m_pGroupsWords;
+    std::vector<PRGTextGroupWords*>  m_pGroupsWords;
     /// Text lines detected inside the page (vector of pointers).
-    std::vector<PRTextLine*>  m_pTextLines;
+    std::vector<PRGTextLine*>  m_pTextLines;
 };
 
 }
 
-#endif // PRTEXTPAGESTRUCTURE_H
+#endif // PRGTEXTPAGE_H

@@ -8,35 +8,25 @@ CONFIG += staticlib
 
 DEFINES += LIBPDFRECUT_LIBRARY
 
+## PRGeometry and PRStructure sources files.
+include( $$PWD/PRGeometry/PRGeometry.pri )
+include( $$PWD/PRStructure/PRStructure.pri )
+
 SOURCES += \
     PRDocument.cpp \
-    PRSubDocument.cpp \
-    PRPage.cpp \
     PRException.cpp \
     PRDocumentLayout.cpp \
-    PRDocumentStructure.cpp \
     PRDocumentTools.cpp \
     PRStreamLayoutZone.cpp \
-    PRRenderPage.cpp \
-    PRTextWords.cpp \
-    PRTextLine.cpp \
-    PRTextStructure.cpp \
-    PRTextPage.cpp
+    PRRenderPage.cpp
 
 HEADERS +=\
     PRDocument.h \
-    PRSubDocument.h \
-    PRPage.h \
     PRException.h \
     PRDocumentLayout.h \
-    PRDocumentStructure.h \
     PRDocumentTools.h \
     PRStreamLayoutZone.h \
-    PRRenderPage.h \
-    PRTextLine.h \
-    PRTextStructure.h \
-    PRTextWords.h \
-    PRTextPage.h
+    PRRenderPage.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

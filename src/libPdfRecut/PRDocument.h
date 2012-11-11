@@ -48,9 +48,8 @@ class PRDocument : public QObject
     Q_OBJECT
 
 public:
-    /** Default constructor: initialize parent QObject and filename.
+    /** Default constructor: initialize parent QObject.
      * \param parent Parent QObject.
-     * \param filename Filename of the PDF document.
      */
     explicit PRDocument( QObject* parent = 0 );
     /** Destructor: delete PoDoFo document object, if loaded.
@@ -108,44 +107,10 @@ private:
     PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
 
 public:
-    /// Structure which describes content analysis parameters.
-    struct ContentParameters;
-
     // Contents related member functions.
-    /** Analyse the content of the PDF file.
-     * Create an internal structure (based on PRSubDocument, PRPage, ...) that
-     * describes the geometry of the PDF content.
-     * \param params Parameters used for the analysis.
-     */
-    void analyseContent( const PRDocument::ContentParameters& params );
-    /** Clear the internal structure which describes the PDF content.
-     */
-    void clearContent();
-private:
-    /** Detect sub-documents inside the PDF.
-     * \param tolerance Tolerance used for the size.
-     */
-    void detectSubDocuments( double tolerance );
-
-public:
-    // Some static functions that can be useful.
-    /// Get the media box of a page.
-    static PoDoFo::PdfRect PageMediaBox( PoDoFo::PdfPage* pPage );
-    /// Get the crop box of a page (check the coherence with media box).
-    static PoDoFo::PdfRect PageCropBox( PoDoFo::PdfPage* pPage );
 
 public:
     // Getters...
-    /// Number of sub-documents detected.
-    size_t nbSubDocuments() const {     return m_subDocuments.size();   }
-    /// Get a sub-document object.
-    PRSubDocument* subDocument( size_t idx )                {  return m_subDocuments.at( idx );    }
-    const PRSubDocument* subDocument( size_t idx ) const    {  return m_subDocuments.at( idx );    }
-    /// Number of pages in the document.
-    size_t nbPages() const;
-    /// Get a page object.
-    PRPage* page( size_t idx );
-    const PRPage* page( size_t idx ) const;
     /// Is PoDoFo document loaded.
     bool isDocumentLoaded() const   {   return ( m_podofoDocument != NULL );    }
     /// Get PoDoFo document pointer.
@@ -187,30 +152,7 @@ private:
 
     /// FreeType library instance associated to the document.
     FT_Library  m_ftLibrary;
-
-    // PDF content.
-    /// Vector of sub-documents.
-    std::vector<PRSubDocument*>  m_subDocuments;
 };
-
-//************************************************************//
-//                PRDocument::ContentParameters               //
-//************************************************************//
-/** Structure that describes PRDocument content analysis parameters.
- */
-struct PRDocument::ContentParameters
-{
-    /// Sub-document tolerance (relative) for the page size.
-    double  subDocumentTolerance;
-    /// Perform the text line detection.
-    bool  textLineDetection;
-
-    /// Default constructor.
-    ContentParameters();
-    /// Initialize to default values.
-    void init();
-};
-
 
 }
 

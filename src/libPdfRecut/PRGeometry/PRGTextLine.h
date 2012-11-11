@@ -9,14 +9,14 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#ifndef PRTEXTLINE_H
-#define PRTEXTLINE_H
+#ifndef PRGTEXTLINE_H
+#define PRGTEXTLINE_H
 
-#include "PRTextWords.h"
+#include "PRGTextWords.h"
 
 namespace PdfRecut {
 
-namespace PRTextLineCoordinates {
+namespace PRGTextLineCoordinates {
 /** Enumeration of the different coordinates system
  * a line bounding box can be expressed in.
  */
@@ -26,17 +26,17 @@ enum Enum {
 };
 }
 
-/** Class that represent a line of text in a PDF page.
+/** Class that represent a line of text inside a PDF page.
  */
-class PRTextLine
+class PRGTextLine
 {
 public:
     /** Default constructor.
      */
-    PRTextLine();
+    PRGTextLine();
     /** Destructor...
       */
-    ~PRTextLine();
+    ~PRGTextLine();
 
     /** Initialize to an empty line.
      */
@@ -45,27 +45,27 @@ public:
     /** Add a group of words to the line.
      * \param groupWords Pointer to the group of words to add.
      */
-    void addGroupWords( PRTextGroupWords* pGroupWords );
+    void addGroupWords( PRGTextGroupWords* pGroupWords );
     /** Add a subgroup of words to the line.
      * \param subgroup Reference to the subgroup of words to add.
      */
-    void addSubgroupWords( const PRTextGroupWords::Subgroup& subgroup );
+    void addSubgroupWords( const PRGTextGroupWords::Subgroup& subgroup );
     /** Remove a group of words from the line.
      * \param groupWords Pointer to the group of words to remove.
      */
-    void rmGroupWords( PRTextGroupWords* pGroupWords );
+    void rmGroupWords( PRGTextGroupWords* pGroupWords );
     /** Set a subgroup which is inside the line.
      * Can raise an out of range exception.
      * \param idx Index of the subgroup to modify.
      * \param subgroup Constant reference to the new subgroup.
      */
-    void setSubgroup( size_t idx, const PRTextGroupWords::Subgroup& subgroup );    
+    void setSubgroup( size_t idx, const PRGTextGroupWords::Subgroup& subgroup );
     /** Get a subgroup which is inside the line.
      * Can raise an exception.
      * \param idx Index of the subgroup.
      * \return Constant reference to the subgroup.
      */
-    const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
+    const PRGTextGroupWords::Subgroup& subgroup( size_t idx ) const;
     /** Get the number of subgroups in the line.
      * \return Number of subgroups.
      */
@@ -77,7 +77,7 @@ public:
      * \param pGroup Pointer to the group.
      * \return Index of the corresponding subgroup (-1 if not found).
      */
-    long hasGroupWords( PRTextGroupWords* pGroup ) const;
+    long hasGroupWords( PRGTextGroupWords* pGroup ) const;
 
 public:
     /** Minimum index of group of words inside the line.
@@ -94,7 +94,7 @@ public:
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Oriented rectangle containing the bounding box.
      */
-    PdfeORect bbox( PRTextLineCoordinates::Enum lineCoords,
+    PdfeORect bbox( PRGTextLineCoordinates::Enum lineCoords,
                     bool leadTrailSpaces );
     /** Get the width of the line.
      * \param leadTrailSpaces Include leading and trailing spaces ?
@@ -113,8 +113,8 @@ public:
      * \param endCoord Ending coordinate system.
      * \return Transformation matrix.
      */
-    PdfeMatrix transMatrix( PRTextLineCoordinates::Enum startCoord,
-                            PRTextLineCoordinates::Enum endCoord );
+    PdfeMatrix transMatrix( PRGTextLineCoordinates::Enum startCoord,
+                            PRGTextLineCoordinates::Enum endCoord );
 
     /** Mean font size of the line.
      */
@@ -135,15 +135,15 @@ public:
 
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
-     * \return Vector of PRTextLine::Block*. Objects are owned by the user.
+     * \return Vector of PRGTextLine::Block*. Objects are owned by the user.
      */
-    std::vector<PRTextLine::Block*> horizontalBlocks( double hDistance = 0.0 ) const;
+    std::vector<PRGTextLine::Block*> horizontalBlocks( double hDistance = 0.0 ) const;
 
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
-     * \return List of PRTextLine::Block.
+     * \return List of PRGTextLine::Block.
      */
-    std::list<PRTextLine::Block> horizontalBlocksList( double hDistance = 0.0 ) const;
+    std::list<PRGTextLine::Block> horizontalBlocksList( double hDistance = 0.0 ) const;
 
 private:
     /// Compute inside cache data of the line (bbox, first capital letter, ...).
@@ -158,7 +158,7 @@ public:
      * \param pLine2 Pointer to the second line.
      * \return line1 < line2.
      */
-    static bool compareGroupIndex( PRTextLine* pLine1, PRTextLine* pLine2 );
+    static bool compareGroupIndex( PRGTextLine* pLine1, PRGTextLine* pLine2 );
 
 protected:
     /// Index of the page to which belongs the line.
@@ -167,7 +167,7 @@ protected:
     long  m_lineIndex;
 
     /// Vector of words subgroups which constitute the line.
-    std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
+    std::vector<PRGTextGroupWords::Subgroup>  m_subgroupsWords;
 
     // Cache computed data.
     /// Boolean value used to detect if the line have been modified (add words, ...).
@@ -186,7 +186,7 @@ protected:
 /** Block inside a line: represent a generic collection of subgroups
  * that must belong to a common line.
  */
-class PRTextLine::Block
+class PRGTextLine::Block
 {
 public:
     /** Default constructor.
@@ -198,8 +198,8 @@ public:
      * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
      * \param useBottomCoord Use bottom coordinates for the BBox ?
      */
-    Block( const PRTextLine* pLine,
-           const PRTextGroupWords::Subgroup& subgroup,
+    Block( const PRGTextLine* pLine,
+           const PRGTextGroupWords::Subgroup& subgroup,
            bool leadTrailSpaces,
            bool useBottomCoord );
 
@@ -212,15 +212,15 @@ public:
      * \param leadTrailSpaces Include leading and trailing spaces for BBox ?
      * \param useBottomCoord Use bottom coordinates for the BBox ?
      */
-    void init( const PRTextLine* pLine,
-               const PRTextGroupWords::Subgroup& subgroup,
+    void init( const PRGTextLine* pLine,
+               const PRGTextGroupWords::Subgroup& subgroup,
                bool leadTrailSpaces,
                bool useBottomCoord );
 
     /** Get the parent line.
      * \return Pointer the parent line.
      */
-    PRTextLine* line() const;
+    PRGTextLine* line() const;
 
     /** Is a line subgroup inside the block? Can raise an exception.
      * \param idx Index of the subgroup.
@@ -244,7 +244,7 @@ public:
      * \param idx Index of the subgroup.
      * \return Constant reference to the subgroup.
      */
-    const PRTextGroupWords::Subgroup& subgroup( size_t idx ) const;
+    const PRGTextGroupWords::Subgroup& subgroup( size_t idx ) const;
 
     /** Merge the block with another one.
      * \param block2nd Second block (not modified).
@@ -270,53 +270,53 @@ public:
 
 protected:
     /// Pointer to the parent line.
-    PRTextLine*  m_pLine;
+    PRGTextLine*  m_pLine;
 
     /// Vector of boolean telling if a line subgroup (or a subset) belongs to the block.
     std::vector<bool>  m_subgroupsInside;
     /// Vector of words subgroups which constitute the block.
-    std::vector<PRTextGroupWords::Subgroup>  m_subgroupsWords;
+    std::vector<PRGTextGroupWords::Subgroup>  m_subgroupsWords;
 
     /// Bounding box.
     PoDoFo::PdfRect  m_bbox;
 };
 
 //**********************************************************//
-//                     Inline PRTextLine                    //
+//                     Inline PRGTextLine                    //
 //**********************************************************//
-inline size_t PRTextLine::nbSubgroups() const
+inline size_t PRGTextLine::nbSubgroups() const
 {
     return m_subgroupsWords.size();
 }
-inline const PRTextGroupWords::Subgroup& PRTextLine::subgroup( size_t idx ) const
+inline const PRGTextGroupWords::Subgroup& PRGTextLine::subgroup( size_t idx ) const
 {
     return m_subgroupsWords.at( idx );
 }
 
 //**********************************************************//
-//                  Inline PRTextLine::Block                //
+//                  Inline PRGTextLine::Block                //
 //**********************************************************//
-inline PRTextLine* PRTextLine::Block::line() const
+inline PRGTextLine* PRGTextLine::Block::line() const
 {
     return m_pLine;
 }
-inline bool PRTextLine::Block::inside( size_t idx ) const
+inline bool PRGTextLine::Block::inside( size_t idx ) const
 {
     return m_subgroupsInside.at( idx );
 }
-inline void PRTextLine::Block::setInside( size_t idx, bool inside )
+inline void PRGTextLine::Block::setInside( size_t idx, bool inside )
 {
     m_subgroupsInside.at( idx ) = inside;
 }
-inline size_t PRTextLine::Block::nbSubgroups() const
+inline size_t PRGTextLine::Block::nbSubgroups() const
 {
     return m_subgroupsWords.size();
 }
-inline const PRTextGroupWords::Subgroup& PRTextLine::Block::subgroup( size_t idx ) const
+inline const PRGTextGroupWords::Subgroup& PRGTextLine::Block::subgroup( size_t idx ) const
 {
     return m_subgroupsWords.at( idx );
 }
 
 }
 
-#endif // PRTEXTLINE_H
+#endif // PRGTEXTLINE_H
