@@ -15,6 +15,8 @@
 #include "PRGSubDocument.h"
 #include "PRGPage.h"
 
+#include "QsLog/QsLog.h"
+
 #include <QtCore>
 #include <podofo/podofo.h>
 
@@ -42,14 +44,23 @@ PRDocument* PRGDocument::parent() const
 
 void PRGDocument::analyse(const PRGDocument::GParameters &params)
 {
+    // Time spent analysing the document.
+    QTime timeTask;
+    timeTask.start();
+
     // First clear content.
     this->clear();
+    QLOG_INFO() << QString( "<PRGDocument> Begin analysis of the geometry of the PDF document." )
+                   .toAscii().constData();
 
     // Detect sub-documents and analyse their content.
     this->detectSubDocuments( params.subDocumentTolerance );
     for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
         m_subDocuments[i]->analyse( params );
     }
+    QLOG_INFO() << QString( "<PRGDocument> End analysis of the geometry of the PDF document (%1 seconds)." )
+                   .arg( timeTask.elapsed() / 1000. )
+                   .toAscii().constData();
 }
 void PRGDocument::clear()
 {

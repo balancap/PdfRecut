@@ -158,7 +158,7 @@ void proceedFile( QString filePath )
     renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
-    QString filename;
+    /*QString filename;
     for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
         // Text and render page objects.
         PRRenderPage renderPage( &document, i );
@@ -178,7 +178,10 @@ void proceedFile( QString filePath )
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
         renderPage.image().save( filename );
     }
-    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
+    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;*/
+
+
+    delete pGDocument;
 
 
     // Compute some mean values bbox.
@@ -263,6 +266,9 @@ int main( int argc, char *argv[] )
     else {
         proceedFile( pathIn );
     }
+
+    std::cout << "Press RETURN to finish..." << std::endl;
+    std::cin.get();
 
     /*
     // Graphic state stack

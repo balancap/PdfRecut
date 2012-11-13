@@ -25,8 +25,6 @@ class PdfVariant;
 namespace PdfRecut {
 
 class PRRenderPage;
-
-class PRDocument;
 class PRGPage;
 class PRGTextLine;
 class PRGTextGroupWords;
@@ -38,12 +36,12 @@ class PRGTextGroupWords;
 class PRGTextPage : public PoDoFoExtended::PdfeCanvasAnalysis
 {
 public:
-    /** Default constructor
-     * \param document Input document.
+    /** Default constructor. The text page object must linked to
+     * a parent page PRGPage.
+     * \param page Parent page object.
      * \param pageIndex Index of the page to render.
      */
-    PRGTextPage( PRDocument* document,
-                long pageIndex );
+    PRGTextPage( PRGPage* page );
     /** Destructor.
      */
     virtual ~PRGTextPage();
@@ -57,7 +55,7 @@ public:
     /** Detect the groups of words in the page.
      */
     void detectGroupsWords();
-    /** Detect text lines structure of the page.
+    /** Detect text lines components inside the page.
      */
     void detectLines();
 
@@ -78,9 +76,9 @@ private:
      * \return Pointer the merged line.
      */
     PRGTextLine* mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
-                                          double minBaseHeight,
-                                          double maxBaseHeight,
-                                          double minLineWidth );
+                                           double minBaseHeight,
+                                           double maxBaseHeight,
+                                           double minLineWidth );
 
     /** Try to merge existing lines. Depreciated.
      * Enlarge outside algorithm: detect elements in the neighbourhood of a line and check if they belong to it.
@@ -88,9 +86,9 @@ private:
      * \return Pointer the merged line.
      */
     PRGTextLine* mergeLines_EnlargeOutside( PRGTextLine* pBaseLine,
-                                           double scaleXEnlarge,
-                                           double scaleYEnlarge,
-                                           double maxLineWidth );
+                                            double scaleXEnlarge,
+                                            double scaleYEnlarge,
+                                            double maxLineWidth );
 
     /** Try to merge existing lines. Depreciated.
      * Inside algorithm: detect elements inside a line and check if they belong to it.
@@ -183,14 +181,10 @@ public:
     void renderLines( PRRenderPage& renderPage ) const;
 
 private:
-    /// Pointer to PRDocument object.
-    PRDocument*  m_document;
-    /// Page pointer.
-    PoDoFo::PdfPage*  m_page;
-    /// Page index.
-    long  m_pageIndex;
+    /// Pointer to the parent PRGPage object.
+    PRGPage*  m_page;
 
-    /// Number of text groups read.
+    /// Number of text groups read in the page.
     long  m_nbTextGroups;
 
     /// Groups of words that belong to the page (vector of pointers).

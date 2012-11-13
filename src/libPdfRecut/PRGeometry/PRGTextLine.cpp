@@ -20,7 +20,7 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 //**********************************************************//
-//                         PRGTextLine                       //
+//                        PRGTextLine                       //
 //**********************************************************//
 PRGTextLine::PRGTextLine()
 {
@@ -62,7 +62,7 @@ void PRGTextLine::addSubgroupWords( const PRGTextGroupWords::Subgroup& subgroup 
     if( idx != -1 ) {
         // Union of the subgroups...
         m_subgroupsWords[idx] = PRGTextGroupWords::Subgroup::reunion( m_subgroupsWords[idx],
-                                                                     subgroup );
+                                                                      subgroup );
     }
     else {
         m_subgroupsWords.push_back( subgroup );
@@ -160,14 +160,14 @@ PdfeORect PRGTextLine::bbox( PRGTextLineCoordinates::Enum lineCoords, bool leadT
         bbox = m_bboxNoLTSpaces;
     }
     // Bottom coordinates: TODO.
-//    if( !useBottomCoord ) {
-//        PdfeVector lbPoint = bbox.leftBottom();
+    //    if( !useBottomCoord ) {
+    //        PdfeVector lbPoint = bbox.leftBottom();
 
-//        // Update height and bottom.
-//        bbox.setHeight( bbox.height()+lbPoint(1) );
-//        lbPoint(1) = 0.0;
-//        bbox.setLeftBottom( lbPoint );
-//    }
+    //        // Update height and bottom.
+    //        bbox.setHeight( bbox.height()+lbPoint(1) );
+    //        lbPoint(1) = 0.0;
+    //        bbox.setLeftBottom( lbPoint );
+    //    }
 
     // Transformation if necessary
     if( lineCoords == PRGTextLineCoordinates::Page ) {
@@ -198,7 +198,7 @@ size_t PRGTextLine::length( bool countSpaces )
     return length;
 }
 PdfeMatrix PRGTextLine::transMatrix( PRGTextLineCoordinates::Enum startCoord,
-                                    PRGTextLineCoordinates::Enum endCoord )
+                                     PRGTextLineCoordinates::Enum endCoord )
 {
     // Compute transformation matrix and bbox if necessary.
     if( m_modified ) {
@@ -207,7 +207,7 @@ PdfeMatrix PRGTextLine::transMatrix( PRGTextLineCoordinates::Enum startCoord,
 
     // Get the transformation matrix
     if( startCoord == PRGTextLineCoordinates::Line &&
-        endCoord == PRGTextLineCoordinates::Page ) {
+            endCoord == PRGTextLineCoordinates::Page ) {
         return m_transMatrix;
     }
     else if( startCoord == PRGTextLineCoordinates::Page &&
@@ -467,15 +467,15 @@ bool PRGTextLine::compareGroupIndex( PRGTextLine* pLine1, PRGTextLine* pLine2 )
 }
 
 //**********************************************************//
-//                     PRGTextLine::Block                    //
+//                    PRGTextLine::Block                    //
 //**********************************************************//
 PRGTextLine::Block::Block()
 {
     this->init();
 }
 PRGTextLine::Block::Block( const PRGTextLine* pLine,
-                          const PRGTextGroupWords::Subgroup& subgroup,
-                          bool leadTrailSpaces, bool useBottomCoord )
+                           const PRGTextGroupWords::Subgroup& subgroup,
+                           bool leadTrailSpaces, bool useBottomCoord )
 {
     // Initialize block.
     this->init( pLine, subgroup, leadTrailSpaces, useBottomCoord );
@@ -490,8 +490,8 @@ void PRGTextLine::Block::init()
     m_bbox = PdfRect( 0, 0, 0, 0 );
 }
 void PRGTextLine::Block::init( const PRGTextLine* pLine,
-                              const PRGTextGroupWords::Subgroup& subgroup,
-                              bool leadTrailSpaces, bool useBottomCoord )
+                               const PRGTextGroupWords::Subgroup& subgroup,
+                               bool leadTrailSpaces, bool useBottomCoord )
 {
     // Check the group of words belongs to the line.
     if( !pLine  ) {
@@ -514,7 +514,7 @@ void PRGTextLine::Block::init( const PRGTextLine* pLine,
         m_subgroupsWords[i].init( *pLine->subgroup( i ).group(), false );
     }
     m_subgroupsWords.at( idxSubgroup ) = PRGTextGroupWords::Subgroup::intersection( subgroup,
-                                                                                   pLine->subgroup( idxSubgroup ) );
+                                                                                    pLine->subgroup( idxSubgroup ) );
 
     // Compute bounding box.
     PdfeORect bbox = subgroup.bbox( PRGTextWordCoordinates::Page, leadTrailSpaces, useBottomCoord );
@@ -537,7 +537,7 @@ void PRGTextLine::Block::merge( const PRGTextLine::Block& block2nd )
     for( size_t i = 0 ; i < m_subgroupsInside.size() ; ++i ) {
         m_subgroupsInside[i] = m_subgroupsInside[i] || block2nd.m_subgroupsInside[i];
         m_subgroupsWords[i] = PRGTextGroupWords::Subgroup::reunion( m_subgroupsWords[i],
-                                                                   block2nd.m_subgroupsWords[i] );
+                                                                    block2nd.m_subgroupsWords[i] );
     }
 
     // Compute new bounding box.

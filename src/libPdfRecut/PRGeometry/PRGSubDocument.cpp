@@ -23,7 +23,7 @@ using namespace PoDoFo;
 
 namespace PdfRecut {
 
-PRGSubDocument::PRGSubDocument( PRGDocument *parent, size_t firstPageIndex, size_t lastPageIndex ) :
+PRGSubDocument::PRGSubDocument( PRGDocument* parent, size_t firstPageIndex, size_t lastPageIndex ) :
     QObject( parent ),
     m_firstPageIndex( firstPageIndex ),
     m_lastPageIndex( lastPageIndex )
@@ -53,13 +53,24 @@ void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
         m_pages[i] = new PRGPage( this, m_firstPageIndex + i );
     }
+    // Compute mean bounding box.
+    this->computeMeanCropBox();
 
+    // Log analysis.
+    QLOG_INFO() << QString( "<PRGSubDocument> Begin analysis of sub-document with range [%1,%2] and mean size (%3,%4)" )
+                   .arg( m_firstPageIndex ).arg( m_lastPageIndex )
+                   .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
+                   .toAscii().constData();
     // Analyse content of pages.
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
         m_pages[i]->analyse( params );
     }
 
-
+    // Log analysis.
+    QLOG_INFO() << QString( "<PRGSubDocument> End analysis of sub-document with range [%1,%2] and mean size (%3,%4)" )
+                   .arg( m_firstPageIndex ).arg( m_lastPageIndex )
+                   .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
+                   .toAscii().constData();
 }
 void PRGSubDocument::clear()
 {
@@ -70,6 +81,17 @@ void PRGSubDocument::clear()
         m_pages[i] = NULL;
     }
     m_pages.clear();
+}
+
+void PRGSubDocument::computeMeanCropBox()
+{
+    double width(0), height(0);
+    for( size_t i = 0 ; i < this->nbPages() ; ++i ) {
+        PdfRect cbox = PRGPage::PageCropBox( m_pages[i]->podofoPage() );
+        width += cbox.GetWidth();
+        height += cbox.GetHeight();
+    }
+    m_meanCropBox = PdfRect( 0.0, 0.0, width / this->nbPages(), height / this->nbPages() );
 }
 
 PRGPage* PRGSubDocument::page( size_t idx )

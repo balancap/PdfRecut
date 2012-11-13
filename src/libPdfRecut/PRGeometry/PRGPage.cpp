@@ -28,7 +28,9 @@ PRGPage::PRGPage( PRGSubDocument* parent, size_t pageIndex ) :
     QObject( parent ),
     m_pageIndex( pageIndex ),
     m_page( parent->parent()->parent()->podofoDocument()->GetPage( pageIndex ) ),
-    m_text( NULL )
+    m_textPage( NULL ),
+    m_pathPage( NULL ),
+    m_imagePage( NULL )
 {
 }
 PRGPage::~PRGPage()
@@ -44,12 +46,32 @@ void PRGPage::analyse( const PRGDocument::GParameters& params )
 {
     // Clear existing content.
     this->clear();
+
+    // Create text, path and image page objects.
+    m_textPage = new PRGTextPage( this );
+//    m_pathPage;
+//    m_imagePage;
+
+    // Analyse text content.
+    m_textPage->detectGroupsWords();
+    if( params.textLineDetection ) {
+        m_textPage->detectLines();
+    }
+
+
+//    delete m_textPage;
+//    m_textPage = NULL;
+
 }
 void PRGPage::clear()
 {
     // Delete content objects.
-    delete m_text;
-    m_text = NULL;
+    delete m_textPage;
+//    delete m_pathPage;
+//    delete m_imagePage;
+    m_textPage = NULL;
+//    m_pathPage = NULL;
+//    m_imagePage = NULL;
 }
 
 PdfRect PRGPage::PageMediaBox( PdfPage* pPage )

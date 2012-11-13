@@ -15,6 +15,12 @@
 #include <QObject>
 #include "PRGDocument.h"
 
+#include <podofo/base/PdfRect.h>
+
+namespace PoDoFo {
+class PdfRect;
+}
+
 namespace PdfRecut {
 
 class PRGPage;
@@ -55,6 +61,11 @@ public:
      */
     void clear();
 
+private:
+    /** Compute mean crop box.
+     */
+    void computeMeanCropBox();
+
 public:
     // Getters...
     /// Number of pages in the sub-document.
@@ -79,6 +90,8 @@ private:
     
     /// Vector of PRGPage (pointers) corresponding the page range.
     std::vector<PRGPage*>  m_pages;
+    /// Mean crop box of pages.
+    PoDoFo::PdfRect  m_meanCropBox;
 };
 
 }

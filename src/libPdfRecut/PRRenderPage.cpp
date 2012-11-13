@@ -164,6 +164,11 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     pathMat = gState.transMat * m_pageImgTrans;
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
+    // Fill path with white background, if necessary.
+    if( gOperator.fillingRule() != PdfeFillingRule::Unknown ) {
+        m_pagePainter->fillPath( qCurrentPath, Qt::white );
+    }
+
     // Draw path.
     if( currentPath.clippingPathOp().length() ) {
         m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
@@ -199,7 +204,7 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
 
     // Finally, set clipping path.
     m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
-    m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
+    //m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
 }
 
 void PRRenderPage::fTextObjects( const PdfeStreamState& streamState ) { }

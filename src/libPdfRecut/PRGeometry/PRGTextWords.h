@@ -80,16 +80,16 @@ public:
      * \param pFont Pointer to the font object used for the word.
      */
     PRGTextWord( const PdfeCIDString& cidstr,
-                PRGTextWordType::Enum type,
-                PoDoFoExtended::PdfeFont* pFont );
+                 PRGTextWordType::Enum type,
+                 PoDoFoExtended::PdfeFont* pFont );
     /** Constructor of PDF translation space.
      * \param spaceWidth Space width.
      * \param spaceHeight Space height.
      * \param type Type of the space.
      */
     PRGTextWord( double spaceWidth,
-                double spaceHeight,
-                PRGTextWordType::Enum type );
+                 double spaceHeight,
+                 PRGTextWordType::Enum type );
 
     /** Initialize to an empty word.
      */
@@ -176,15 +176,15 @@ public:
      * \param pFont Font object used to compute words width.
      */
     PRGTextGroupWords( const PoDoFo::PdfVariant& variant,
-                      const PdfeMatrix& transMatrix,
-                      const PoDoFoExtended::PdfeTextState& textState,
-                      PoDoFoExtended::PdfeFont* pFont );
+                       const PdfeMatrix& transMatrix,
+                       const PoDoFoExtended::PdfeTextState& textState,
+                       PoDoFoExtended::PdfeFont* pFont );
     /** Construct a group of words from a PDF stream state.
      * \param document Parent document.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
     PRGTextGroupWords( PRDocument* document,
-                      const PoDoFoExtended::PdfeStreamState& streamState );
+                       const PoDoFoExtended::PdfeStreamState& streamState );
 
     /** Initialize to an empty group of words.
      */
@@ -526,7 +526,6 @@ inline PoDoFo::PdfRect PRGTextWord::bbox( bool useBottomCoord ) const
     if( useBottomCoord ) {
         return m_bbox;
     }
-
     // Set bottom to zero.
     PoDoFo::PdfRect bbox = m_bbox;
     bbox.SetHeight( bbox.GetHeight() + bbox.GetBottom() );

@@ -13,6 +13,10 @@
 
 #include "PRDocument.h"
 #include "PRRenderPage.h"
+
+#include "PRGDocument.h"
+#include "PRGSubDocument.h"
+#include "PRGPage.h"
 #include "PRGTextLine.h"
 #include "PRGTextWords.h"
 
@@ -31,12 +35,9 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
-PRGTextPage::PRGTextPage(PRDocument *document,
-                                          long pageIndex ) :
+PRGTextPage::PRGTextPage( PRGPage* page ) :
     PdfeCanvasAnalysis(),
-    m_document( document ),
-    m_page( document->podofoDocument()->GetPage( pageIndex ) ),
-    m_pageIndex( pageIndex )
+    m_page( page )
 {
     // Clear vectors content.
     m_pGroupsWords.clear();
@@ -51,10 +52,12 @@ void PRGTextPage::clearContent()
 {
     // Delete groups of words.
     std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), delete_ptr_fctor<PRGTextGroupWords>() );
+    m_pGroupsWords.clear();
     m_nbTextGroups = 0;
 
     // Delete text lines.
     std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRGTextLine>() );
+    m_pTextLines.clear();
 }
 
 void PRGTextPage::detectGroupsWords()
@@ -63,7 +66,7 @@ void PRGTextPage::detectGroupsWords()
     this->clearContent();
 
     // Analyse page content.
-    this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
+    this->analyseContents( m_page->podofoPage(), PdfeGraphicsState(), PdfeResources() );
 }
 
 void PRGTextPage::detectLines()
@@ -652,9 +655,9 @@ PRGTextLine* PRGTextPage::mergeVectorLines( const std::vector<PRGTextLine*>& pLi
 PdfeVector PRGTextPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Read the group of words.
-    PRGTextGroupWords* pGroup = new PRGTextGroupWords( m_document, streamState );
+    PRGTextGroupWords* pGroup = new PRGTextGroupWords( m_page->parent()->parent()->parent(), streamState );
     pGroup->setGroupIndex( m_nbTextGroups );
-    pGroup->setPageIndex( m_pageIndex );
+    pGroup->setPageIndex( m_page->pageIndex() );
     ++m_nbTextGroups;
 
     // Empty group -> trash !

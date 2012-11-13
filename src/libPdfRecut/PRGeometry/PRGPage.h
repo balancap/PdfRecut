@@ -24,6 +24,8 @@ namespace PdfRecut {
 
 class PRGSubDocument;
 class PRGTextPage;
+class PRGPathPage;
+class PRGImagePage;
 
 /** Class that represent a page in a PDF document.
  * It describes page's basic objects (text, paths and images),
@@ -69,6 +71,12 @@ public:
     /// Get the crop box of a PoDoFo page (check the coherence with media box).
     static PoDoFo::PdfRect PageCropBox( PoDoFo::PdfPage* pPage );
 
+public:
+    // Getters...
+    /// Get the PoDoFo page object corresponding to the page.
+    PoDoFo::PdfPage* podofoPage() const {   return m_page;      }
+    /// Get page index.
+    size_t pageIndex() const            {   return m_pageIndex; }
 
 private:
     // No copy constructor and operator= allowed.
@@ -81,7 +89,11 @@ private:
     PoDoFo::PdfPage*  m_page;
 
     /// Text elements in the page.
-    PRGTextPage*  m_text;
+    PRGTextPage*  m_textPage;
+    /// Paths in the page.
+    PRGPathPage*  m_pathPage;
+    /// Images in the page.
+    PRGTextPage*  m_imagePage;
 };
 
 }
