@@ -53,7 +53,6 @@ public:
     PRException( PRExceptionCode::Enum code = PRExceptionCode::ErrorOK,
                  const QString& description = "",
                  bool logException = false ) throw();
-
     /** Constructor based on a PoDoFo error.
      * \param error PoDoFo exception error.
      */
@@ -66,7 +65,6 @@ public:
      * \param exception Exception object to copy.
      */
     PRException& operator=( const PRException& exception ) throw();
-
     /** Destructor.
      */
     virtual ~PRException() throw();
@@ -78,13 +76,9 @@ public:
 
 public:
     // Getters...
-    /** Obtain the exception code.
-     * \return Exception code.
-     */
+    /// Obtain the exception code.
     PRExceptionCode::Enum code() const throw();
-    /** Obtain the exception description.
-     * \return Exception description.
-     */
+    /// Obtain the exception description.
     QString description() const throw();
     /** Overload what member function, inheritated from std::exception.
      * \return Description of the exception.
@@ -92,11 +86,11 @@ public:
     virtual const char* what() const throw();
 
 public:
-    /** Obtain the description of an exception error.
+    /** Obtain the name of an exception error.
      * \param code Exception code.
-     * \return Code description (QString).
+     * \return Code name (QString).
      */
-    static QString codeDescription( PRExceptionCode::Enum code );
+    static QString codeName( PRExceptionCode::Enum code );
 
 protected:
     /// Exception code.

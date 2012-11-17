@@ -32,7 +32,6 @@ PRException::PRException( const PoDoFo::PdfError& error ) throw() :
             .arg( PoDoFo::PdfError::ErrorName( error.GetError() ) )
             .arg( PoDoFo::PdfError::ErrorMessage( error.GetError() ) );
 }
-
 PRException::PRException( const PRException& exception ) throw() :
     std::exception( exception ),
     m_code( exception.m_code ),
@@ -52,7 +51,7 @@ PRException::~PRException() throw()
 
 void PRException::log( QsLogging::Level level ) const throw()
 {
-    QString logMessage = QString( "<PRException> (Code %1): %2" ).arg( codeDescription( m_code ) ).arg( m_description );
+    QString logMessage = QString( "<PRException> (Code %1): %2" ).arg( codeName( m_code ) ).arg( m_description );
 
     switch( level ) {
     case QsLogging::TraceLevel:
@@ -89,19 +88,19 @@ const char* PRException::what() const throw()
     return m_description.toLocal8Bit().data();
 }
 
-QString PRException::codeDescription( PRExceptionCode::Enum code )
+QString PRException::codeName( PRExceptionCode::Enum code )
 {
-    switch( code ) {
-    case PRExceptionCode::ErrorOK:
-        return QString( "ErrorOK" );
-    case PRExceptionCode::PoDoFo:
-        return QString( "PoDoFo" );
-    case PRExceptionCode::FreeType:
-        return QString( "FreeType" );
-    case PRExceptionCode::PRAbort:
-        return QString( "Abort" );
-    }
-    return QString( "Unknown" );
+    // List of codes description. To be sync with PRExceptionCode enum.
+    static QStringList strCodes;
+    strCodes << "ErrorOK"
+             << "PoDoFo"
+             << "FreeType"
+             << "PRInvalidHandle"
+             << "PRCache"
+             << "PRAbort"
+             << "PRUnknown";
+
+    return strCodes.at( code );
 }
 
 }
