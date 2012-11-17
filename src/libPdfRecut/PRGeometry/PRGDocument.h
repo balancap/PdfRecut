@@ -13,6 +13,7 @@
 #define PRGDOCUMENT_H
 
 #include <vector>
+#include <list>
 #include <QObject>
 
 namespace PdfRecut {
@@ -33,8 +34,11 @@ class PRGDocument : public QObject
 public:
     /** Default constructor: initialize using a PRDocument parent
      * object.
+     * \param parent Parent PRDocument.
+     * \param subDocumentTolerance Sub-document (relative) tolerance for page size.
      */
-    explicit PRGDocument( PRDocument* parent = 0 );
+    explicit PRGDocument( PRDocument* parent = 0,
+                          double subDocumentTol = 0.05 );
     /** Destructor: delete PoDoFo document object, if loaded.
      */
     virtual ~PRGDocument();
@@ -58,11 +62,24 @@ public:
      */
     void clear();
 
-private:
-    /** Detect sub-documents inside the PDF.
-     * \param tolerance Tolerance used for the size.
+public slots:
+    // Page cache.
+    /** Add a page to the cache. The data from the page
+     * is assumed to be loaded by the caller.
+     * \param page Pointer to the page to add.
      */
-    void detectSubDocuments( double tolerance );
+    void cacheAddPage( PRGPage* page );
+    /** Remove a page from the cache. PRGPage::clearData
+     * is automatically called.
+     * \param page Pointer to the page to remove.
+     */
+    void cacheRmPage( PRGPage* page );
+
+private:
+    /** Create sub-documents inside the PDF.
+     * \param tolerance Tolerance used for page size.
+     */
+    void createSubDocuments( double tolerance );
 
 public:
     // Getters...
@@ -76,6 +93,12 @@ public:
     /// Get a geometry page object.
     PRGPage* page( size_t idx );
     const PRGPage* page( size_t idx ) const;
+    /// Size of the page cache.
+    size_t cachePagesSize() const   {   return m_cachePagesSize;    }
+
+    // and setters.
+    /// Size of the page cache.
+    void setCachePagesSize( size_t size )   {   m_cachePagesSize = size;    }
 
 private:
     // No copy constructor and operator= allowed.
@@ -85,6 +108,11 @@ private:
     // PDF geometrical content.
     /// Vector of sub-documents.
     std::vector<PRGSubDocument*>  m_subDocuments;
+
+    /// Page cache.
+    std::list<PRGPage*>  m_cachePages;
+    /// Size of the page cache (maximum number of elements : 10 by default).
+    size_t  m_cachePagesSize;
 };
 
 //************************************************************//
@@ -94,9 +122,11 @@ private:
  */
 struct PRGDocument::GParameters
 {
-    /// Sub-document tolerance (relative) for the page size.
-    double  subDocumentTolerance;
-    /// Perform the text line detection.
+    /// First page to analyse (default: 0).
+    size_t  firstPageIndex;
+    /// Last page to analyse (default: size_t::max).
+    size_t  lastPageIndex;
+    /// Perform the text line detection (default: true).
     bool  textLineDetection;
 
     /// Default constructor.

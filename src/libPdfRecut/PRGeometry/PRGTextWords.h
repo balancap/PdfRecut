@@ -32,6 +32,7 @@ namespace PdfRecut {
 
 class PRDocument;
 class PRGDocument;
+class PRGTextPage;
 class PRGTextLine;
 
 class PRRenderPage;
@@ -115,7 +116,7 @@ public:
     // Simple getters...
     long length() const                 {   return m_cidString.length();    }
     double charSpace() const            {   return m_charSpace;     }
-    PRGTextWordType::Enum type() const   {   return m_type;    }
+    PRGTextWordType::Enum type() const  {   return m_type;    }
     const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
     const PdfeCIDString& cidString() const      {   return m_cidString; }
 
@@ -169,70 +170,75 @@ public:
     /** Default constructor.
      */
     PRGTextGroupWords();
-    /**  Construct a group of words from a PdfVariant (appended to the group).
-     * \param variant Pdf variant to read (can be string or array).
-     * \param transMatrix Transformation matrix from graphics state.
-     * \param textState Corresponding text state.
-     * \param pFont Font object used to compute words width.
-     */
-    PRGTextGroupWords( const PoDoFo::PdfVariant& variant,
-                       const PdfeMatrix& transMatrix,
-                       const PoDoFoExtended::PdfeTextState& textState,
-                       PoDoFoExtended::PdfeFont* pFont );
     /** Construct a group of words from a PDF stream state.
      * \param document Parent document.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
     PRGTextGroupWords( PRDocument* document,
                        const PoDoFoExtended::PdfeStreamState& streamState );
-
+    /** Construct a group of words from a PDF stream state.
+     * \param textPage Parent text page object.
+     * \param streamState Stream state to consider (must correspond to a text showinG operator).
+     */
+    PRGTextGroupWords( PRGTextPage* textPage,
+                       const PoDoFoExtended::PdfeStreamState& streamState );
+    /** Destructor.
+     */
+    ~PRGTextGroupWords();
     /** Initialize to an empty group of words.
      */
     void init();
-    /** Initialize a group of words from a PdfVariant (appended to the group).
-     * \param variant Pdf variant to read (can be string or array).
-     * \param transMatrix Transformation matrix from graphics state.
-     * \param textState Corresponding text state.
-     * \param pFont Font object used to compute words width.
-     */
-    void init( const PoDoFo::PdfVariant& variant,
-               const PdfeMatrix& transMatrix,
-               const PoDoFoExtended::PdfeTextState& textState,
-               PoDoFoExtended::PdfeFont* pFont );
-    /** Initialize a group of words from a PDF stream state.
+
+public:
+    /** Read data of the group of words from a PDF stream state.
      * \param document Parent document.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
-    void init( PRDocument* document,
-               const PoDoFoExtended::PdfeStreamState& streamState );
-
+    void readData( PRDocument* document,
+                   const PoDoFoExtended::PdfeStreamState& streamState );
+    /** Read data of the group of words from a PDF stream state.
+     * \param textPage Parent text page object.
+     * \param streamState Stream state to consider (must correspond to a text showinG operator).
+     */
+    void readData( PRGTextPage* textPage,
+                   const PoDoFoExtended::PdfeStreamState& streamState );
+private:
     /** Read a group of words from a PdfVariant (appended to the group).
      * \param variant Pdf variant to read (can be string or array).
      * \param pFont Font object used to compute words width.
      */
     void readPdfVariant( const PoDoFo::PdfVariant& variant,
                          PoDoFoExtended::PdfeFont* pFont );
-
-private:
     /** Read a group of words from a PdfString (appended to the group).
      * \param str Pdf string to read (can contain 0 characters !).
      * \param pFont Font object used to compute words width.
      */
     void readPdfString( const PoDoFo::PdfString& str,
                         PoDoFoExtended::PdfeFont* pFont );
-
+public:
+    // Cached data.
+    /** Load group data. Call PRGTextPage::loadData in order to
+     * read PDF page content stream and retrieve related information.
+     * Raise an exception if no page is attached to the group.
+     */
+    void loadData() const;
+    /** Clear group cached data. Only keep main information about the group:
+     * group index/ID, lines and text page.
+     */
+    void clearData() const;
+    /** Is group data loaded ?
+     */
+    bool isDataLoaded() const;
 public:
     /** Append a word to the group.,
      * \param word Word to append.
      */
     void appendWord( const PRGTextWord& word );
-
     /** Compute the length of the group of words.
      * \param countSpaces Also count spaces?
      * \return Length of the group of words.
      */
     size_t length( bool countSpaces ) const;
-
     /** Get the advance vector of the group of words.
      * \return Advance vector of the group.
      */
@@ -241,7 +247,6 @@ public:
      * \return Displacement vector of the group.
      */
     PdfeVector displacement() const;
-
     /** Get the bounding box of the group of words.
      * \param wordCoord Word coordinates system in which the bbox is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
@@ -255,7 +260,6 @@ public:
      * \return Global font size.
      */
     double fontSize() const;
-
     /** Get a transformation matrix from a starting coordinate
      * system to an ending one.
      * \param startCoord Starting coordinate system.
@@ -264,12 +268,10 @@ public:
      */
     PdfeMatrix transMatrix( PRGTextWordCoordinates::Enum startCoord,
                             PRGTextWordCoordinates::Enum endCoord );
-
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
      */
     PdfeMatrix getGlobalTransMatrix() const;
-
     /** Minimal distance between the object and another group.
      * Use subgroups to compute the distance.
      * Distance computed in the coordinate system of the object.
@@ -327,18 +329,16 @@ public:
 
 public:
     // Getters.
-    long pageIndex() const                          {   return m_pageIndex;     }
+    PRGTextPage* textPage() const                   {   return m_textPage;      }
+    long groupStreamID() const                      {   return m_groupStreamID;   }
     long groupIndex() const                         {   return m_groupIndex;    }
-    const PdfeMatrix& gsTransMatrix() const         {   return m_transMatrix;   }
-    const PoDoFoExtended::PdfeTextState& textState() const  {   return m_textState; }
-    const PoDoFo::PdfRect& fontBBox() const         {   return m_fontBBox;  }
-    PoDoFoExtended::PdfeFont* font() const          {   return m_pFont; }
+    const PoDoFoExtended::PdfeTextState& textState() const  {   return data()->textState; }
+    PoDoFo::PdfRect fontBBox() const            {   return data()->fontBBox;  }
+    PoDoFoExtended::PdfeFont* font() const      {   return data()->pFont; }
 
     // Setters
-    void setPageIndex( long pageIndex );
+    void setGroupStreamID( long groupStreamID );
     void setGroupIndex( long groupIndex );
-    void setGSTransMatrix( const PdfeMatrix& transMatrix );
-    void setTextState( const PoDoFoExtended::PdfeTextState& textState );
 
 public:
     /// Get the number of words in the group.
@@ -351,35 +351,52 @@ public:
     const Subgroup& mSubgroup( size_t idx ) const;
 
 private:
-    /// Max char space allowed inside a word: when greater, split the word and replace char space by PDF translation.
-    /// Compared to font mean width.
+    struct Data;
+    /// Get private data member. Load data if can not access.
+    Data* data() const;
+
+private:
+    /// Max char space allowed inside a word: when greater, split the word and
+    /// replace char space by PDF translation. Compared to font mean width.
     static const double MaxCharSpaceScale = 0.4;
 
 private:
-    /// Index of the page to which belongs the group.
-    long  m_pageIndex;
-    /// Index of the group in the page.
+    // Object main information: always kept in memory.
+    /// Pointer to the text page it belongs to.
+    PRGTextPage*  m_textPage;
+    /// ID of the group in the content stream. Can be different from its index in PRGTextPage.
+    long  m_groupStreamID;
+    /// Index of the group in the PRGTextPage collection.
     long  m_groupIndex;
-
-    /// Font used for the group.
-    PoDoFoExtended::PdfeFont*  m_pFont;
-    /// Font bounding box.
-    PoDoFo::PdfRect  m_fontBBox;
-    /// Font renormalization transformation matrix (font coord to renorm coord)..
-    PdfeMatrix  m_fontNormTransMatrix;
-
-    /// Transformation matrix of the graphics state.
-    PdfeMatrix  m_transMatrix;
-    /// Text state for this group of words.
-    PoDoFoExtended::PdfeTextState  m_textState;
-
-    /// Vector of words that make the group.
-    std::vector<PRGTextWord>  m_words;
-    /// Main subgroups of words.
-    std::vector<Subgroup>  m_mainSubgroups;
-
     /// Text lines the group (or a subgroup) belongs to.
     std::vector<PRGTextLine*>  m_pTextLines;
+
+    /** Group data which can be cached (or uncached) depending on needs.
+     * Use this structure to optimize memory allocation.
+     */
+    struct Data {
+        /// Font used in the group.
+        PoDoFoExtended::PdfeFont*  pFont;
+        /// Font bounding box.
+        PoDoFo::PdfRect  fontBBox;
+        /// Font renormalization transformation matrix (font coord to renorm coord)..
+        PdfeMatrix  fontNormTransMatrix;
+
+        /// Transformation matrix of the graphics state.
+        PdfeMatrix  transMatrix;
+        /// Text state for this group of words.
+        PoDoFoExtended::PdfeTextState  textState;
+
+        /// Vector of words that make the group.
+        std::vector<PRGTextWord>  words;
+        /// Main subgroups of words.
+        std::vector<Subgroup>  mainSubgroups;
+
+        /// Initialize to default values.
+        void init();
+    };
+    /// Pointer to cached data.
+    mutable Data*  m_data;
 };
 
 //**********************************************************//
@@ -511,7 +528,7 @@ private:
     /// Vector of boolean telling if words of the group belongs to the subgroup.
     std::vector<bool>  m_wordsInside;
 
-    // Cache private data.
+    // Cache private data. TODO: optimize memory usage.
     /// Cache Bounding box (with spaces and bottom). TODO: improve?
     mutable PdfeORect  m_bboxCache;
     /// Is the bounding box cache?
@@ -536,11 +553,11 @@ inline PoDoFo::PdfRect PRGTextWord::bbox( bool useBottomCoord ) const
 //**********************************************************//
 //                 Inline PRGTextGroupWords                  //
 //**********************************************************//
-inline void PRGTextGroupWords::setPageIndex( long pageIndex )
+inline void PRGTextGroupWords::setGroupStreamID(long groupPageID )
 {
-    m_pageIndex = pageIndex;
+    m_groupStreamID = groupPageID;
 }
-inline void PRGTextGroupWords::setGroupIndex( long groupIndex )
+inline void PRGTextGroupWords::setGroupIndex(long groupIndex )
 {
     m_groupIndex = groupIndex;
 }
@@ -548,30 +565,22 @@ inline std::vector<PRGTextLine*> PRGTextGroupWords::textLines() const
 {
     return m_pTextLines;
 }
-inline void PRGTextGroupWords::setGSTransMatrix( const PdfeMatrix& transMatrix )
-{
-    m_transMatrix = transMatrix; m_words.size();
-}
-inline void PRGTextGroupWords::setTextState( const PoDoFoExtended::PdfeTextState& textState )
-{
-    m_textState = textState;
-}
 
 inline size_t PRGTextGroupWords::nbWords() const
 {
-    return m_words.size();
+    return data()->words.size();
 }
 inline const PRGTextWord& PRGTextGroupWords::word( size_t idx ) const
 {
-    return m_words.at(idx);     // Throw out of range exception if necessary.
+    return data()->words.at(idx);     // Throw out of range exception if necessary.
 }
 inline size_t PRGTextGroupWords::nbMSubgroups() const
 {
-    return m_mainSubgroups.size();
+    return data()->mainSubgroups.size();
 }
 inline const PRGTextGroupWords::Subgroup& PRGTextGroupWords::mSubgroup( size_t idx ) const
 {
-    return m_mainSubgroups.at( idx );
+    return data()->mainSubgroups.at( idx );
 }
 
 //**********************************************************//

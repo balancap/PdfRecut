@@ -15,6 +15,8 @@
 
 #include "PdfeFont.h"
 
+#include "QsLog/QsLog.h"
+
 #include <podofo/podofo.h>
 #include <QtCore>
 #include <QtGui>
@@ -111,9 +113,12 @@ void PRRenderPage::renderElements(const Parameters &parameters )
         m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
         m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
     }
-
     // Perform the analysis and draw.
     this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
+
+    QLOG_INFO() << QString( "<PRRenderPage> Render page (index: %1)." )
+                   .arg( m_pageIndex )
+                   .toAscii().constData();
 }
 
 // Reimplement PdfeCanvasAnalysis interface.

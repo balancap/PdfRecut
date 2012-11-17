@@ -22,6 +22,7 @@ class PdfRect;
 
 namespace PdfRecut {
 
+class PRGDocument;
 class PRGSubDocument;
 class PRGTextPage;
 class PRGPathPage;
@@ -46,10 +47,21 @@ public:
     /** Destructor.
      */
     virtual ~PRGPage();
-    /** Reimplement QObject parent function.
-     * \return Pointer to the parent PRGSubDocument.
+
+public:
+    // Cached data.
+    /** Load page data: text, paths and images.
      */
-    PRGSubDocument* parent() const;
+    void loadData();
+    /** Clear page cached data. Only keep basic
+     * skeleton of page organization.
+     */
+    void clearData();
+signals:
+    /** Qt signal: page data has been (partially?) loaded!
+     * \param page Pointer of the sender page.
+     */
+    void dataLoaded( PRGPage* page );
 
 public:
     // Contents related member functions.
@@ -59,10 +71,6 @@ public:
      * \param params Parameters used for the analysis.
      */
     void analyse( const PRGDocument::GParameters& params );
-    /** Clear the internal structure which describes the sub-document content.
-     */
-    void clear();
-
 
 public:
     // Some static functions that can be useful.
@@ -75,8 +83,14 @@ public:
     // Getters...
     /// Get the PoDoFo page object corresponding to the page.
     PoDoFo::PdfPage* podofoPage() const {   return m_page;      }
+    /// Reimplement QObject parent function with PRGSubDocument.
+    PRGSubDocument* parent() const;
+    /// Parent PRGDocument.
+    PRGDocument* gdocument() const;
     /// Get page index.
     size_t pageIndex() const            {   return m_pageIndex; }
+    /// Get text component of the page.
+    PRGTextPage* text() const           {   return m_textPage;  }
 
 private:
     // No copy constructor and operator= allowed.

@@ -22,6 +22,8 @@
 
 #include "PdfeUtils.h"
 
+#include "QsLog/QsLog.h"
+
 #include <podofo/podofo.h>
 #include <QtCore>
 #include <QtGui>
@@ -36,47 +38,64 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 PRGTextPage::PRGTextPage( PRGPage* page ) :
+    QObject( page ),
     PdfeCanvasAnalysis(),
     m_page( page )
 {
     // Clear vectors content.
     m_pGroupsWords.clear();
     m_pTextLines.clear();
+
+    // Connect signals.
+    QObject::connect( this, SIGNAL(dataLoaded(PRGPage*)),
+                      page, SIGNAL(dataLoaded(PRGPage*)) );
 }
 PRGTextPage::~PRGTextPage()
 {
-    this->clearContent();
+    this->clear();
 }
 
-void PRGTextPage::clearContent()
+void PRGTextPage::loadData()
+{
+    // Analyse page content.
+    m_nbGroupsStream = 0;
+    m_nbGroupsPage = 0;
+    this->analyseContents( m_page->podofoPage(), PdfeGraphicsState(), PdfeResources() );
+    // Send signal.
+    emit dataLoaded( this->page() );
+}
+void PRGTextPage::clearData()
+{
+    // Clear groups data.
+    for( size_t  i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
+        m_pGroupsWords[i]->clearData();
+    }
+}
+
+void PRGTextPage::clear()
 {
     // Delete groups of words.
     std::for_each( m_pGroupsWords.begin(), m_pGroupsWords.end(), delete_ptr_fctor<PRGTextGroupWords>() );
     m_pGroupsWords.clear();
-    m_nbTextGroups = 0;
+    m_nbGroupsStream = 0;
+    m_nbGroupsPage = 0;
 
     // Delete text lines.
     std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRGTextLine>() );
     m_pTextLines.clear();
 }
 
-void PRGTextPage::detectGroupsWords()
-{
-    // Clear content.
-    this->clearContent();
-
-    // Analyse page content.
-    this->analyseContents( m_page->podofoPage(), PdfeGraphicsState(), PdfeResources() );
-}
-
 void PRGTextPage::detectLines()
 {
+    // Clear existing lines.
+    std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRGTextLine>() );
+    m_pTextLines.clear();
+
     // Create basic lines based on groups of words.
     // Basic merge between groups is performed.
     for( size_t i = 0 ; i < m_pGroupsWords.size() ; ++i ) {
         this->createLine_Basic( i );
     }
-
     // Sort lines using group index.
     std::sort( m_pTextLines.begin(), m_pTextLines.end(), PRGTextLine::compareGroupIndex );
 
@@ -654,20 +673,36 @@ PRGTextLine* PRGTextPage::mergeVectorLines( const std::vector<PRGTextLine*>& pLi
 // Reimplement PdfeCanvasAnalysis interface.
 PdfeVector PRGTextPage::fTextShowing( const PdfeStreamState& streamState )
 {
-    // Read the group of words.
-    PRGTextGroupWords* pGroup = new PRGTextGroupWords( m_page->parent()->parent()->parent(), streamState );
-    pGroup->setGroupIndex( m_nbTextGroups );
-    pGroup->setPageIndex( m_page->pageIndex() );
-    ++m_nbTextGroups;
+    PRGTextGroupWords* pGroup;
+    // Create the group of words.
+    if( m_nbGroupsPage >= long( m_pGroupsWords.size() ) ) {
+        pGroup = new PRGTextGroupWords( this, streamState );
+        pGroup->setGroupStreamID( m_nbGroupsStream );
+        pGroup->setGroupIndex( m_nbGroupsPage );
+        ++m_nbGroupsStream;
 
-    // Empty group -> trash !
-    if( !pGroup->nbWords() ) {
-        delete pGroup;
-        return PdfeVector();
+        // Empty group -> trash !
+        if( !pGroup->nbWords() ) {
+            delete pGroup;
+            return PdfeVector();
+        }
+        // Append to the vector of text groups.
+        m_pGroupsWords.push_back( pGroup );
+        ++m_nbGroupsPage;
     }
-    // Append to the vector of text groups.
-    m_pGroupsWords.push_back( pGroup );
-
+    // Read data if necessary.
+    else {
+        pGroup = m_pGroupsWords[ m_nbGroupsPage ];
+        if( pGroup->groupStreamID() == m_nbGroupsStream && !pGroup->isDataLoaded() ) {
+            pGroup->readData( this, streamState );
+            ++m_nbGroupsStream;
+            ++m_nbGroupsPage;
+        }
+        else {
+            ++m_nbGroupsStream;
+            return PdfeVector();
+        }
+    }
     // Return text displacement.
     return pGroup->displacement();
 }
@@ -705,6 +740,9 @@ void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage ) const
         m_pGroupsWords[idx]->render( renderPage, textPB, spacePB, translationPB );
         m_pGroupsWords[idx]->renderGlyphs( renderPage );
     }
+    QLOG_INFO() << QString( "<PRGTextPage> Render page groups of words (index: %1)." )
+                   .arg( m_page->pageIndex() )
+                   .toAscii().constData();
 }
 void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
 {
@@ -750,6 +788,14 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
 //            }
         }
     }
+    QLOG_INFO() << QString( "<PRGTextPage> Render page text lines (index: %1)." )
+                   .arg( m_page->pageIndex() )
+                   .toAscii().constData();
+}
+
+PRGPage* PRGTextPage::parent() const
+{
+    return static_cast<PRGPage*>( this->QObject::parent() );
 }
 
 }

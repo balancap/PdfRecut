@@ -29,10 +29,13 @@ namespace PRExceptionCode {
 /** PRException types that can be raised.
  */
 enum Enum {
-    ErrorOK = 0,    /// The default value indicating no error.
-    PoDoFo,         /// Error from library PoDoFo.
-    FreeType,       /// FreeType error.
-    Abort           /// Current operation aborted.
+    ErrorOK = 0,        /// The default value indicating no error.
+    PoDoFo,             /// Error from library PoDoFo.
+    FreeType,           /// FreeType error.
+    PRInvalidHandle,    /// PdfRecut invalid handle error.
+    PRCache,            /// PdfRecut cache error.
+    PRAbort,            /// PdfRecut current operation aborted.
+    PRUnknown           /// PdfRecut unknown error.
 };
 }
 

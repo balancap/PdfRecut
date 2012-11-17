@@ -98,7 +98,7 @@ QString PRException::codeDescription( PRExceptionCode::Enum code )
         return QString( "PoDoFo" );
     case PRExceptionCode::FreeType:
         return QString( "FreeType" );
-    case PRExceptionCode::Abort:
+    case PRExceptionCode::PRAbort:
         return QString( "Abort" );
     }
     return QString( "Unknown" );

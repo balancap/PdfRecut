@@ -20,6 +20,9 @@
 #include <QtCore>
 #include <podofo/podofo.h>
 
+#include <algorithm>
+#include <limits>
+
 using namespace PoDoFo;
 using namespace PoDoFoExtended;
 
@@ -28,9 +31,12 @@ namespace PdfRecut {
 //************************************************************//
 //                         PRGDocument                         //
 //************************************************************//
-PRGDocument::PRGDocument( PRDocument* parent ) :
-    QObject( parent )
+PRGDocument::PRGDocument( PRDocument* parent, double subDocumentTol ) :
+    QObject( parent ),
+    m_cachePagesSize( 10 )
 {
+    // Create sub-documents.
+    this->createSubDocuments( subDocumentTol );
 }
 PRGDocument::~PRGDocument()
 {
@@ -42,19 +48,16 @@ PRDocument* PRGDocument::parent() const
     return static_cast<PRDocument*>( this->QObject::parent() );
 }
 
-void PRGDocument::analyse(const PRGDocument::GParameters &params)
+void PRGDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Time spent analysing the document.
     QTime timeTask;
     timeTask.start();
 
-    // First clear content.
-    this->clear();
     QLOG_INFO() << QString( "<PRGDocument> Begin analysis of the geometry of the PDF document." )
                    .toAscii().constData();
 
-    // Detect sub-documents and analyse their content.
-    this->detectSubDocuments( params.subDocumentTolerance );
+    // Analyse sub-documents content.
     for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
         m_subDocuments[i]->analyse( params );
     }
@@ -72,7 +75,43 @@ void PRGDocument::clear()
     }
     m_subDocuments.clear();
 }
-void PRGDocument::detectSubDocuments( double tolerance )
+
+void PRGDocument::cacheAddPage( PRGPage* page )
+{
+    // Is the page already in the cache?
+    std::list<PRGPage*>::iterator it;
+    it = std::find( m_cachePages.begin(), m_cachePages.end(), page );
+    if( it == m_cachePages.end() ) {
+        // Push to front and remove back if necessary.
+        m_cachePages.push_front( page );
+        if( m_cachePages.size() > m_cachePagesSize ) {
+            this->cacheRmPage( m_cachePages.back() );
+        }
+        QLOG_INFO() << QString( "<PRGDocument> Cache page data (index: %1)." )
+                       .arg( page->pageIndex() )
+                       .toAscii().constData();
+    }
+    else {
+        // Move the page to the front.
+        m_cachePages.erase( it );
+        m_cachePages.push_front( page );
+    }
+}
+void PRGDocument::cacheRmPage( PRGPage* page )
+{
+    // Remove the page from the cache and clear its data.
+    std::list<PRGPage*>::iterator it;
+    it = std::find( m_cachePages.begin(), m_cachePages.end(), page );
+    if( it != m_cachePages.end() ) {
+        (*it)->clearData();
+        m_cachePages.erase( it );
+//        QLOG_INFO() << QString( "<PRGDocument> Uncache page data (index: %1)." )
+//                       .arg( page->pageIndex() )
+//                       .toAscii().constData();
+    }
+}
+
+void PRGDocument::createSubDocuments( double tolerance )
 {
     // PoDoFo document.
     PdfMemDocument* pDocument = this->parent()->podofoDocument();
@@ -98,7 +137,6 @@ void PRGDocument::detectSubDocuments( double tolerance )
                 break;
             }
             ++idx;
-            // QLOG_INFO() << QString( "Crop box: %1" ).arg( PdfRectToString( cbox ).c_str() ).toLocal8Bit().constData();
         }
         // Create the SubDocument and add it to the vector.
         m_subDocuments.push_back( new PRGSubDocument( this, idxFirst, idx-1 ) );
@@ -114,7 +152,7 @@ PRGPage* PRGDocument::page( size_t idx )
     // Find the sub-document if belongs to.
     PRGSubDocument* subDocument = NULL;
     for( size_t i = 0 ; i < m_subDocuments.size() && !subDocument ; ++i ) {
-        if( i >= m_subDocuments[i]->firstPageIndex() && i <= m_subDocuments[i]->lastPageIndex() ) {
+        if( idx >= m_subDocuments[i]->firstPageIndex() && idx <= m_subDocuments[i]->lastPageIndex() ) {
             subDocument = m_subDocuments[i];
         }
     }
@@ -139,9 +177,9 @@ PRGDocument::GParameters::GParameters()
 }
 void PRGDocument::GParameters::init()
 {
-    // 2 percent tolerance on the size.
-    subDocumentTolerance = 0.05;
-
+    // Page range.
+    firstPageIndex = 0;
+    lastPageIndex = std::numeric_limits<size_t>::max();
     // Detect lines.
     textLineDetection = true;
 }

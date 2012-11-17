@@ -12,6 +12,7 @@
 #include "PRGPage.h"
 
 #include "PRDocument.h"
+#include "PRGDocument.h"
 #include "PRGSubDocument.h"
 #include "PRGTextPage.h"
 
@@ -32,46 +33,54 @@ PRGPage::PRGPage( PRGSubDocument* parent, size_t pageIndex ) :
     m_pathPage( NULL ),
     m_imagePage( NULL )
 {
-}
-PRGPage::~PRGPage()
-{
-    this->clear();
-}
-PRGSubDocument* PRGPage::parent() const
-{
-    return static_cast<PRGSubDocument*>( this->QObject::parent() );
-}
-
-void PRGPage::analyse( const PRGDocument::GParameters& params )
-{
-    // Clear existing content.
-    this->clear();
-
-    // Create text, path and image page objects.
+    // Create content objects.
     m_textPage = new PRGTextPage( this );
 //    m_pathPage;
 //    m_imagePage;
 
-    // Analyse text content.
-    m_textPage->detectGroupsWords();
-    if( params.textLineDetection ) {
-        m_textPage->detectLines();
-    }
-
-
-//    delete m_textPage;
-//    m_textPage = NULL;
+    // Connect signals.
+    QObject::connect( this, SIGNAL(dataLoaded(PRGPage*)),
+                      this->gdocument(), SLOT(cacheAddPage(PRGPage*)));
 
 }
-void PRGPage::clear()
+PRGPage::~PRGPage()
 {
+    // Remove page from document cache.
+    this->gdocument()->cacheRmPage( this );
+
     // Delete content objects.
     delete m_textPage;
 //    delete m_pathPage;
 //    delete m_imagePage;
     m_textPage = NULL;
-//    m_pathPage = NULL;
+//    m_pathPage = NULL;loadData
 //    m_imagePage = NULL;
+}
+
+void PRGPage::loadData()
+{
+    // Load text, paths and images contents.
+    m_textPage->loadData();
+    // Send signal.
+    emit dataLoaded( this );
+}
+void PRGPage::clearData()
+{
+    // Clear page content.
+    if( m_textPage ) {
+        m_textPage->clearData();
+    }
+}
+
+void PRGPage::analyse( const PRGDocument::GParameters& params )
+{
+    // Load page data.
+    this->loadData();
+
+    // Analyse text content.
+    if( params.textLineDetection ) {
+        m_textPage->detectLines();
+    }
 }
 
 PdfRect PRGPage::PageMediaBox( PdfPage* pPage )
@@ -79,7 +88,6 @@ PdfRect PRGPage::PageMediaBox( PdfPage* pPage )
     PdfRect mediaBox( pPage->GetMediaBox() );
     return mediaBox;
 }
-
 PdfRect PRGPage::PageCropBox( PdfPage* pPage )
 {
     PdfRect mediaBox( PRGPage::PageMediaBox( pPage ) );
@@ -88,6 +96,15 @@ PdfRect PRGPage::PageCropBox( PdfPage* pPage )
     // Intersection between the two.
     cropBox = PdfeORect::intersection( mediaBox, cropBox );
     return cropBox;
+}
+
+PRGSubDocument* PRGPage::parent() const
+{
+    return static_cast<PRGSubDocument*>( this->QObject::parent() );
+}
+PRGDocument* PRGPage::gdocument() const
+{
+    return this->parent()->parent();
 }
 
 }

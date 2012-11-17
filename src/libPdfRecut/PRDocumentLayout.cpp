@@ -310,7 +310,7 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( PRExceptionCode::Abort, methodTitle );
+                throw PRException( PRExceptionCode::PRAbort, methodTitle );
             }
 
             // Create a stream which corresponds to the current zone.
@@ -426,7 +426,7 @@ void PRDocumentLayout::printLayoutIn( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( PRExceptionCode::Abort, methodTitle );
+                throw PRException( PRExceptionCode::PRAbort, methodTitle );
             }
 
             const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
@@ -518,7 +518,7 @@ void PRDocumentLayout::printLayoutOut( PRDocument* documentHandle ) const
         {
             // Abort operation.
             if( m_abortOperation ) {
-                throw PRException( PRExceptionCode::Abort, methodTitle );
+                throw PRException( PRExceptionCode::PRAbort, methodTitle );
             }
 
             const PRPageZone& zone = m_pageLayouts[idx].zonesIn[i];
@@ -647,7 +647,7 @@ void PRDocumentLayout::deletePagesAndContents( PoDoFo::PdfMemDocument* document,
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PRException( PRExceptionCode::Abort, methodTitle );
+            throw PRException( PRExceptionCode::PRAbort, methodTitle );
         }
 
         document->GetObjects().RemoveObject( vecObjects[i]->Reference() );
@@ -700,7 +700,7 @@ void PRDocumentLayout::copyOutlineItem( PoDoFo::PdfMemDocument* document,
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PRException( PRExceptionCode::Abort, "Abort outlines copy." );
+        throw PRException( PRExceptionCode::PRAbort, "Abort outlines copy." );
     }
 
     // Get destination and action of the outline item.
@@ -925,7 +925,7 @@ void PRDocumentLayout::copyPageAnnotations( PdfMemDocument* document,
     {
         // Abort operation.
         if( m_abortOperation ) {
-            throw PRException( PRExceptionCode::Abort, "Abort annotations copy." );
+            throw PRException( PRExceptionCode::PRAbort, "Abort annotations copy." );
         }
 
         PdfAnnotation* pageAnn = pageIn->GetAnnotation( i );
@@ -1026,7 +1026,7 @@ std::vector<int> PRDocumentLayout::copyPageLabelsNode( PoDoFo::PdfMemDocument* d
 {
     // Abort operation.
     if( m_abortOperation ) {
-        throw PRException( PRExceptionCode::Abort, "Abort labels copy." );
+        throw PRException( PRExceptionCode::PRAbort, "Abort labels copy." );
     }
 
     PdfObject* nodeKids = node->GetIndirectKey( "Kids" );

@@ -18,6 +18,8 @@
 #include "PRRenderPage.h"
 
 #include "PRGeometry/PRGDocument.h"
+#include "PRGeometry/PRGSubDocument.h"
+#include "PRGeometry/PRGPage.h"
 #include "PRGeometry/PRGTextPage.h"
 
 #include "PdfeFontType1.h"
@@ -149,40 +151,36 @@ void proceedFile( QString filePath )
     document.load( filePath );
 
     // Analyse document geometry.
-    PRGDocument::GParameters gParams;
-    PRGDocument* pGDocument = new PRGDocument( &document );
-    pGDocument->analyse( gParams );
+    PRGDocument::GParameters gparams;
+    gparams.lastPageIndex = 20;
+    PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
+    pGDocument->analyse( gparams );
 
     // Render page and save.
     PRRenderPage::Parameters renderParams;
-    renderParams.resolution = 1.0;
+    renderParams.resolution = 4.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
-    /*QString filename;
-    for( int i = 0 ; i < std::min(50,document.podofoDocument()->GetPageCount()) ; i++ ) {
+    QString filename;
+    for( size_t i = 0 ; i < std::min( gparams.lastPageIndex+1, pGDocument->nbPages() ) ; i++ ) {
         // Text and render page objects.
         PRRenderPage renderPage( &document, i );
-        PRGTextPage textPage( &document, i );
-
-        // Analyse page text
-        textPage.detectGroupsWords();
-        textPage.detectLines();
+        PRGTextPage* textPage = pGDocument->page( i )->text();
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        textPage.renderGroupsWords( renderPage );
-        textPage.renderLines( renderPage );
-        renderPage.renderElements( renderParams );
+        textPage->renderGroupsWords( renderPage );
+//        textPage->renderLines( renderPage );
+//        renderPage.renderElements( renderParams );
 
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
         renderPage.image().save( filename );
     }
-    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;*/
+    cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
 
-    delete pGDocument;
-
+//    delete pGDocument;
 
     // Compute some mean values bbox.
 //    computeBBoxStats( document, PdfeFont14Standard::Helvetica );

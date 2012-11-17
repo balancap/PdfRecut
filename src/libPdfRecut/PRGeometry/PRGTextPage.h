@@ -12,6 +12,7 @@
 #ifndef PRGTEXTPAGE_H
 #define PRGTEXTPAGE_H
 
+#include <QObject>
 #include "PdfeCanvasAnalysis.h"
 
 namespace PoDoFo {
@@ -33,8 +34,10 @@ class PRGTextGroupWords;
  * - Groups of words that belong to the page;
  * - Text lines that can be detected.
  */
-class PRGTextPage : public PoDoFoExtended::PdfeCanvasAnalysis
+class PRGTextPage : public QObject, public PoDoFoExtended::PdfeCanvasAnalysis
 {
+    Q_OBJECT
+
 public:
     /** Default constructor. The text page object must linked to
      * a parent page PRGPage.
@@ -46,18 +49,30 @@ public:
      */
     virtual ~PRGTextPage();
 
-protected:
-    /** Clear content of the object (i.e. different vectors).
+public:
+    // Cached data.
+    /** Load text page data: groups of words. It not existing, it
+     * also create the basic structure that describes page data.
      */
-    void clearContent();
+    void loadData();
+    /** Clear page cached data. It clears data that can be easily retrieve
+     * using page content stream. Basic skeleton of page organisation is kept in memory.
+     */
+    void clearData();
+signals:
+    /** Qt signal: text page data has been loaded!
+     * \param page Pointer to the parent page it belongs to.
+     */
+    void dataLoaded( PRGPage* page );
 
 public:
-    /** Detect the groups of words in the page.
-     */
-    void detectGroupsWords();
     /** Detect text lines components inside the page.
      */
     void detectLines();
+
+    /** Clear completely page content (i.e. groups of words, lines, ...).
+     */
+    void clear();
 
 private:
     /** Create a line for a group of words. Try to gather other groups inside the same line.
@@ -66,7 +81,6 @@ private:
      * \return Pointer to the line object.
      */
     PRGTextLine* createLine_Basic( size_t idxGroupWords );
-
     /** Try to merge existing lines.
      * Enlarge inside algorithm: detect elements inside a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
@@ -79,7 +93,6 @@ private:
                                            double minBaseHeight,
                                            double maxBaseHeight,
                                            double minLineWidth );
-
     /** Try to merge existing lines. Depreciated.
      * Enlarge outside algorithm: detect elements in the neighbourhood of a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
@@ -96,7 +109,6 @@ private:
      * \return Pointer the merged line.
      */
     PRGTextLine* mergeLines_Inside( PRGTextLine* pLine );
-
     /** Try to merge existing lines. Depreciated.
      * Small elements algorithm: detect small elements close to a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
@@ -109,7 +121,6 @@ private:
      * \return Vector of new lines (the first element corresponds to pLine).
      */
     std::vector<PRGTextLine*> splitLines_hBlocks( PRGTextLine* pLine );
-
     /** Merge a vector of lines into a single one.
      * Use the first element as base (other lines are deleted).
      * \param pLines Vector of pointer of lines to merge.
@@ -117,55 +128,34 @@ private:
      */
     PRGTextLine* mergeVectorLines( const std::vector<PRGTextLine*>& pLines );
 
-    /** No copy constructor allowed.
-     */
-    PRGTextPage( const PRGTextPage& rhs );
-
 protected:
     // Reimplement PdfeCanvasAnalysis interface.
-    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
-    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
-    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
-                                    const PoDoFoExtended::PdfePath& currentPath ) { }
-
-    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
-                                const PoDoFoExtended::PdfePath& currentPath ) { }
-
-    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
-                                const PoDoFoExtended::PdfePath& currentPath ) { }
-
-    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
-    virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
-    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
-    /** Reimplementation of text showing function from PRRenderPage.
-     * Used to read text groups of words.
+    /** Reimplementation of text showing function of PdfeCanvasAnalysis.
+     * Used to read text groups of words information.
      */
     virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
 
+    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
+    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
+    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+                                    const PoDoFoExtended::PdfePath& currentPath ) { }
+    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath ) { }
+    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath ) { }
+    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState ) { }
+    virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState ) { }
+    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState ) { }
     virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState ) { }
-
     virtual void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) { }
-
     virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) { }
 
@@ -180,13 +170,25 @@ public:
      */
     void renderLines( PRRenderPage& renderPage ) const;
 
+public:
+    // Getters.
+    /// Parent page object.
+    PRGPage* page() const   {   return m_page;  }
+    /// Reimplement QObject parent function with PRGPage.
+    PRGPage* parent() const;
+
+private:
+    // No copy constructor and operator= allowed.
+    Q_DISABLE_COPY(PRGTextPage)
+
 private:
     /// Pointer to the parent PRGPage object.
     PRGPage*  m_page;
 
-    /// Number of text groups read in the page.
-    long  m_nbTextGroups;
-
+    /// Number of text groups read in the page content stream.
+    long  m_nbGroupsStream;
+    /// Number of groups kept inside the page.
+    long  m_nbGroupsPage;
     /// Groups of words that belong to the page (vector of pointers).
     std::vector<PRGTextGroupWords*>  m_pGroupsWords;
     /// Text lines detected inside the page (vector of pointers).

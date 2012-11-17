@@ -27,12 +27,19 @@ PRGSubDocument::PRGSubDocument( PRGDocument* parent, size_t firstPageIndex, size
     QObject( parent ),
     m_firstPageIndex( firstPageIndex ),
     m_lastPageIndex( lastPageIndex )
-{    
+{
+    // Create pages corresponding to the sub-document.
+    m_pages.resize( m_lastPageIndex-m_firstPageIndex+1, NULL );
+    for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
+        m_pages[i] = new PRGPage( this, m_firstPageIndex + i );
+    }
+    // Compute mean bounding box.
+    this->computeMeanCropBox();
+
     // Log information.
-    PdfRect cbox = PRGPage::PageCropBox( parent->parent()->podofoDocument()->GetPage( firstPageIndex ) );
     QLOG_INFO() << QString( "<PRGSubDocument> Create sub-document with range [%1,%2] and size (%3,%4)" )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
-                   .arg( cbox.GetWidth() ).arg( cbox.GetHeight() )
+                   .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
 }
 PRGSubDocument::~PRGSubDocument()
@@ -46,24 +53,16 @@ PRGDocument* PRGSubDocument::parent() const
 
 void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
 {
-    this->clear();
-
-    // Create pages corresponding to the sub-document.
-    m_pages.resize( m_lastPageIndex-m_firstPageIndex+1, NULL );
-    for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i] = new PRGPage( this, m_firstPageIndex + i );
-    }
-    // Compute mean bounding box.
-    this->computeMeanCropBox();
-
     // Log analysis.
     QLOG_INFO() << QString( "<PRGSubDocument> Begin analysis of sub-document with range [%1,%2] and mean size (%3,%4)" )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
     // Analyse content of pages.
-    for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i]->analyse( params );
+    size_t firstIndex = std::max( params.firstPageIndex, m_firstPageIndex );
+    size_t lastIndex = std::min( params.lastPageIndex, m_pages.size() - 1 + m_firstPageIndex );
+    for( size_t i = firstIndex ; i <= lastIndex ; ++i ) {
+        m_pages[ i - m_firstPageIndex ]->analyse( params );
     }
 
     // Log analysis.
@@ -76,7 +75,6 @@ void PRGSubDocument::clear()
 {
     // Delete PRGPage objects.
     for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i]->clear();
         delete m_pages[i];
         m_pages[i] = NULL;
     }
