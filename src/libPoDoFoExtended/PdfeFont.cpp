@@ -351,14 +351,14 @@ PdfeFont::Statistics PdfeFont::statistics( bool defaultValue ) const
     return stats;
 }
 
-PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
+PdfName PdfeFont::fromCIDToName( pdfe_cid c , bool useEncoding, bool useDiffEncoding, bool useUnicodeCMap ) const
 {
     PdfName cname;
     pdf_utf16be ucode;
 
     // Is the font encoding a difference encoding?
     PdfDifferenceEncoding* pDiffEncoding = dynamic_cast<PdfDifferenceEncoding*>( m_pEncoding );
-    if( pDiffEncoding ) {
+    if( pDiffEncoding && useDiffEncoding ) {
         const PdfEncodingDifference& differences = pDiffEncoding->GetDifferences();
         if( differences.Contains( c, cname, ucode ) ) {
             // Name found!
@@ -366,7 +366,7 @@ PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
         }
     }
     // Try using Pdf encoding and the UnicodeToName map.
-    if( m_pEncoding ) {
+    if( m_pEncoding && useEncoding ) {
         pdf_utf16be ucode = m_pEncoding->GetCharCode( c );
         cname = PdfDifferenceEncoding::UnicodeIDToName( ucode );
 
@@ -377,7 +377,7 @@ PdfName PdfeFont::fromCIDToName( pdfe_cid c ) const
         }
     }
     // Try using unicode CMap.
-    if( !m_unicodeCMap.emptyCodeSpaceRange() ) {
+    if( !m_unicodeCMap.emptyCodeSpaceRange() && useUnicodeCMap ) {
         QString ustr = this->toUnicode( c, true );
         if( ustr.length() == 1 ) {
             ucode = ustr[0].unicode();

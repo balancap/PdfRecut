@@ -152,7 +152,8 @@ void proceedFile( QString filePath )
 
     // Analyse document geometry.
     PRGDocument::GParameters gparams;
-    gparams.lastPageIndex = 20;
+    gparams.lastPageIndex = 40;
+
     PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
     pGDocument->analyse( gparams );
 

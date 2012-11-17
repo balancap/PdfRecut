@@ -330,8 +330,15 @@ pdfe_gid PdfeFontType1::fromCIDToGID( pdfe_cid c ) const
     pdfe_gid gid( 0 );
     bool symbolic = this->fontDescriptor().flags() & PdfeFontDescriptor::FlagSymbolic;
 
-    // Symbolic fonts: directly use font encoding. TODO: clean up?
+    // Symbolic font.
     if( symbolic ){
+        // First try difference encoding.
+        PdfName cname = this->fromCIDToName( c, false, true, false );
+        gid = this->ftGIDFromName( cname );
+        if( gid ) {
+            return gid;
+        }
+        // Directly use font encoding. TODO: clean up?
         // Try different charmaps (except unicode).
         for( int i = 0 ; i < ftFace()->num_charmaps ; i++ ) {
             FT_CharMap charmap = ftFace()->charmaps[i];

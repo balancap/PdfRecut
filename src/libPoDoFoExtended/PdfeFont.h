@@ -252,9 +252,15 @@ public:
      * Default implementation first try using the font encoding and then the unicode code.
      * Needs the encoding object to be initialized.
      * \param c CID of the character.
+     * \param useEncoding Use PDF encoding, if it exists?
+     * \param useDiffEncoding Use difference encoding, if it exists?
+     * \param useUnicodeCMap Use unicode CMap, if it exists?
      * \return Name of the character. Empty if no name found.
      */
-    PoDoFo::PdfName fromCIDToName( pdfe_cid c ) const;
+    PoDoFo::PdfName fromCIDToName( pdfe_cid c,
+                                   bool useEncoding = true,
+                                   bool useDiffEncoding = true,
+                                   bool useUnicodeCMap = true ) const;
 
 protected:
     /** Initialize PdfEncoding of a PdfeFont.
