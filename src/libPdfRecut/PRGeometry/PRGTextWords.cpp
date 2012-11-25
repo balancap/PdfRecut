@@ -356,7 +356,7 @@ double PRGTextGroupWords::fontSize() const
 }
 
 PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoord,
-                                           PRGTextWordCoordinates::Enum endCoord )
+                                           PRGTextWordCoordinates::Enum endCoord ) const
 {
     // Compute global rendering matrix (font -> page).
     PdfeMatrix tmpMat, globalTransMat;

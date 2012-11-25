@@ -14,6 +14,7 @@
 #include "PRDocument.h"
 #include "PRGDocument.h"
 #include "PRGPage.h"
+#include "PRGTextPage.h"
 
 #include "QsLog/QsLog.h"
 
@@ -58,11 +59,19 @@ void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
-    // Analyse content of pages.
+
+    // Page range.
     size_t firstIndex = std::max( params.firstPageIndex, m_firstPageIndex );
-    size_t lastIndex = std::min( params.lastPageIndex, m_pages.size() - 1 + m_firstPageIndex );
-    for( size_t i = firstIndex ; i <= lastIndex ; ++i ) {
-        m_pages[ i - m_firstPageIndex ]->analyse( params );
+    size_t lastIndex = std::min( params.lastPageIndex, m_lastPageIndex );
+
+    if( firstIndex <= lastIndex ) {
+        // Compute basic subdocument statistics.
+        this->computeBasicStats( firstIndex, lastIndex );
+
+        // Analyse page content.
+        for( size_t i = firstIndex ; i <= lastIndex ; ++i ) {
+            m_pages[ i - m_firstPageIndex ]->analyse( params );
+        }
     }
 
     // Log analysis.
@@ -90,6 +99,17 @@ void PRGSubDocument::computeMeanCropBox()
         height += cbox.GetHeight();
     }
     m_meanCropBox = PdfRect( 0.0, 0.0, width / this->nbPages(), height / this->nbPages() );
+}
+void PRGSubDocument::computeBasicStats( size_t firstIndex, size_t lastIndex )
+{
+    // Compute groups of words statistics.
+    for( size_t i = firstIndex ; i <= lastIndex ; ++i ) {
+        PRGPage* page = this->page( i );
+        page->loadData();
+        for( size_t j = 0 ; j < page->text()->nbGroupsWords() ; ++j ) {
+            m_textStatistics.addGroupWords( *(page->text()->groupWords(j)) );
+        }
+    }
 }
 
 PRGPage* PRGSubDocument::page( size_t idx )

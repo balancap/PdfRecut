@@ -117,7 +117,7 @@ public:
     long length() const                 {   return m_cidString.length();    }
     double charSpace() const            {   return m_charSpace;     }
     PRGTextWordType::Enum type() const  {   return m_type;    }
-    const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
+    //const PoDoFo::PdfString& pdfString() const  {   return m_pdfString; }
     const PdfeCIDString& cidString() const      {   return m_cidString; }
 
 public:
@@ -267,7 +267,7 @@ public:
      * \return Transformation matrix.
      */
     PdfeMatrix transMatrix( PRGTextWordCoordinates::Enum startCoord,
-                            PRGTextWordCoordinates::Enum endCoord );
+                            PRGTextWordCoordinates::Enum endCoord ) const;
     /** Get global transformation matrix (font + text + gState).
      * \return PdfeMatrix containing the transformation.
      */
@@ -329,9 +329,9 @@ public:
 
 public:
     // Getters.
-    PRGTextPage* textPage() const                   {   return m_textPage;      }
-    long groupStreamID() const                      {   return m_groupStreamID;   }
-    long groupIndex() const                         {   return m_groupIndex;    }
+    PRGTextPage* textPage() const           {   return m_textPage;      }
+    long groupStreamID() const              {   return m_groupStreamID;   }
+    long groupIndex() const                 {   return m_groupIndex;    }
     const PoDoFoExtended::PdfeTextState& textState() const  {   return data()->textState; }
     PoDoFo::PdfRect fontBBox() const            {   return data()->fontBBox;  }
     PoDoFoExtended::PdfeFont* font() const      {   return data()->pFont; }

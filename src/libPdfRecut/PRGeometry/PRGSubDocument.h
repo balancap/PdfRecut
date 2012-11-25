@@ -14,6 +14,7 @@
 
 #include <QObject>
 #include "PRGDocument.h"
+#include "PRGTextStatistics.h"
 
 #include <podofo/base/PdfRect.h>
 
@@ -65,6 +66,11 @@ private:
     /** Compute mean crop box.
      */
     void computeMeanCropBox();
+    /** Compute basic statistics.
+     * \param firstIndex Index of the first page to consider.
+     * \param lastIndex Index of the last page to consider.
+     */
+    void computeBasicStats( size_t firstIndex, size_t lastIndex );
 
 public:
     // Getters...
@@ -74,9 +80,12 @@ public:
     PRGPage* page( size_t idx );
     const PRGPage* page( size_t idx ) const;
     /// First page index in the sub-document.
-    size_t firstPageIndex() const   {   return m_firstPageIndex;    }
+    size_t firstPageIndex() const   {   return m_firstPageIndex;   }
     /// Last page index in the sub-document.
     size_t lastPageIndex() const    {   return m_lastPageIndex;    }
+    /// Get text statistics.
+    PRGTextStatistics& textStatistics()             {   return m_textStatistics;    }
+    const PRGTextStatistics& textStatistics() const {   return m_textStatistics;    }
 
 private:
     // No copy constructor and operator= allowed.
@@ -92,6 +101,8 @@ private:
     std::vector<PRGPage*>  m_pages;
     /// Mean crop box of pages.
     PoDoFo::PdfRect  m_meanCropBox;
+    /// Text statistics of the sub-document.
+    PRGTextStatistics  m_textStatistics;
 };
 
 }

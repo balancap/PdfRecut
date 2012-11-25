@@ -173,9 +173,14 @@ public:
 public:
     // Getters.
     /// Parent page object.
-    PRGPage* page() const   {   return m_page;  }
+    PRGPage* page() const           {   return m_page;  }
     /// Reimplement QObject parent function with PRGPage.
     PRGPage* parent() const;
+    /// Get the number of groups of words.
+    size_t nbGroupsWords() const    {   return m_pGroupsWords.size();   }
+    /// Get a group.
+    PRGTextGroupWords* groupWords( size_t idx )             {   return m_pGroupsWords.at(idx);  }
+    const PRGTextGroupWords* groupWords( size_t idx ) const {   return m_pGroupsWords.at(idx);  }
 
 private:
     // No copy constructor and operator= allowed.

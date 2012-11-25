@@ -10,8 +10,10 @@
  ***************************************************************************/
 
 #include "PRGTextStatistics.h"
+#include "PRGTextWords.h"
 
 #include "PdfeUtils.h"
+#include "PdfeFont.h"
 
 #include <algorithm>
 
@@ -34,16 +36,48 @@ void PRGTextStatistics::init()
 {
     this->clear();
     // Create variable vector.
-    m_variables.resize( PRGTextVariables::number(), NULL );
-    for( size_t i = 0 ; i < m_variables.size() ; ++i ) {
-        m_variables[i] = new PRGTextStatistics::Variable();
+    m_pVariables.resize( PRGTextVariables::number(), NULL );
+    for( size_t i = 0 ; i < m_pVariables.size() ; ++i ) {
+        m_pVariables[i] = new PRGTextStatistics::Variable();
     }
 }
 void PRGTextStatistics::clear()
 {
     // Delete variables.
-    std::for_each( m_variables.begin(), m_variables.end(), delete_ptr_fctor<PRGTextStatistics::Variable>() );
-    m_variables.clear();
+    std::for_each( m_pVariables.begin(), m_pVariables.end(), delete_ptr_fctor<PRGTextStatistics::Variable>() );
+    m_pVariables.clear();
+}
+
+void PRGTextStatistics::addGroupWords( const PRGTextGroupWords& group )
+{
+    // Group transformation matrix and font.
+    PdfeMatrix transMat = group.transMatrix( PRGTextWordCoordinates::Font,
+                                             PRGTextWordCoordinates::Page );
+    PdfeFont* pFont = group.font();
+    for( size_t i = 0 ; i < group.nbWords() ; ++i ) {
+        // Word to study.
+        const PRGTextWord& word = group.word( i );
+        if( word.type() == PRGTextWordType::Classic ||
+                word.type() == PRGTextWordType::Space ) {
+
+            for( size_t j = 0 ; j < word.cidString().length() ; ++j ) {
+                pdfe_cid c = word.cidString()[j];
+                QString utfc = pFont->toUnicode( c );
+                // Character bounding box.
+                PdfeORect bbox( pFont->bbox( c, false ) );
+                bbox = transMat.map( bbox );
+
+                // Add character statistics.
+                m_pVariables[ PRGTextVariables::CharAllWidth ]->addValue( bbox.width() );
+                m_pVariables[ PRGTextVariables::CharAllHeight ]->addValue( bbox.height() );
+                // Letters and numbers characters.
+                if( utfc.length() == 1 && utfc[0].isLetterOrNumber() ) {
+                    m_pVariables[ PRGTextVariables::CharLNWidth]->addValue( bbox.width() );
+                    m_pVariables[ PRGTextVariables::CharLNHeight ]->addValue( bbox.height() );
+                }
+            }
+        }
+    }
 }
 
 //**********************************************************//

@@ -17,22 +17,26 @@
 
 namespace PdfRecut {
 
+class PRGTextGroupWords;
+
 namespace PRGTextVariables
 {
 /** Enumeration of text variables that are considered
  * in a PDF document.
  */
 enum Enum {
-    CharWidth = 0,
-    CharHeight,
+    CharAllWidth = 0,   /// All characters width.
+    CharAllHeight,      /// All characters height.
+    CharLNWidth,        /// Letters or numbers width.
+    CharLNHeight,       /// Letters or numbers height.
     LineHWidth,
     LineVWidth,
     LineInnerSpace
 };
 /** Get the number of text variables.
  */
-size_t number() {
-    static size_t nb = 5;
+inline size_t number() {
+    static size_t nb = 7;
     return nb;
 }
 }
@@ -64,6 +68,16 @@ public:
     /** Class that represents a variable studied.
      */
     class Variable;
+public:
+    /** Add measures corresponding to a group of words.
+     * \param group Reference to the group to consider.
+     */
+    void addGroupWords( const PRGTextGroupWords& group );
+    /** Get a text variable object.
+     * \param vartype Text variable to return.
+     * \return Constant reference to the variable object.
+     */
+    const Variable& variable( PRGTextVariables::Enum vartype ) const   {   return *m_pVariables[vartype];   }
 
 private:
     // No copy constructor and assignement operator.
@@ -72,7 +86,7 @@ private:
 
 private:
     /// Vector of text variables.
-    std::vector<Variable*>  m_variables;
+    std::vector<Variable*>  m_pVariables;
 };
 
 //**********************************************************//
@@ -96,8 +110,8 @@ public:
      * \return Unbiased estimation of the variance.
      */
     double variance();
-
     /** Add a measured value for the variable.
+     * \param val Measure to add.
      */
     void addValue( double val );
 
