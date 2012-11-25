@@ -740,7 +740,7 @@ void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage ) const
         m_pGroupsWords[idx]->render( renderPage, textPB, spacePB, translationPB );
         m_pGroupsWords[idx]->renderGlyphs( renderPage );
     }
-    QLOG_INFO() << QString( "<PRGTextPage> Render page groups of words (index: %1)." )
+    QLOG_INFO() << QString( "<PRGTextPage> Render page's groups of words (index: %1)." )
                    .arg( m_page->pageIndex() )
                    .toAscii().constData();
 }
@@ -788,7 +788,7 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
 //            }
         }
     }
-    QLOG_INFO() << QString( "<PRGTextPage> Render page text lines (index: %1)." )
+    QLOG_INFO() << QString( "<PRGTextPage> Render page's text lines (index: %1)." )
                    .arg( m_page->pageIndex() )
                    .toAscii().constData();
 }

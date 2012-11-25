@@ -7,7 +7,8 @@ SOURCES += \
     $$PWD/PRGPage.cpp \
     $$PWD/PRGTextPage.cpp \
     $$PWD/PRGTextLine.cpp \
-    $$PWD/PRGTextWords.cpp
+    $$PWD/PRGTextWords.cpp \
+    $$PWD/PRGTextStatistics.cpp
 
 HEADERS +=\
     $$PWD/PRGDocument.h \
@@ -15,4 +16,5 @@ HEADERS +=\
     $$PWD/PRGPage.h \
     $$PWD/PRGTextPage.h \
     $$PWD/PRGTextLine.h \
-    $$PWD/PRGTextWords.h
+    $$PWD/PRGTextWords.h \
+    $$PWD/PRGTextStatistics.h

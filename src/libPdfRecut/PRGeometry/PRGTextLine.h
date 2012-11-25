@@ -282,7 +282,7 @@ protected:
 };
 
 //**********************************************************//
-//                     Inline PRGTextLine                    //
+//                     Inline PRGTextLine                   //
 //**********************************************************//
 inline size_t PRGTextLine::nbSubgroups() const
 {

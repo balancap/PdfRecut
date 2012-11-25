@@ -74,7 +74,6 @@ public:
         delete m_pPen;
         delete m_pBrush;
     }
-
     /** Is the Pen/Brush mepty, i.e. both pen and brush are set to NULL.
      */
     bool isEmpty() const
@@ -138,7 +137,6 @@ public:
     /** Clear rendering components (image and painter).
      */
     void clearRendering();
-
     /** Get rendered image of the page.
      * \return Image.
      */
@@ -192,53 +190,34 @@ public:
     void renderElements( const PRRenderPage::Parameters& parameters );
 
 protected:
+    // PdfeCanvasAnalysis interface.
     virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
                                     const PoDoFoExtended::PdfePath& currentPath );
-
     virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
                                 const PoDoFoExtended::PdfePath& currentPath );
-
     virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
                                 const PoDoFoExtended::PdfePath& currentPath );
-
     virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
-
     virtual void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState ) {}
-
     virtual void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) {}
-
     virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
-
 public:
-    // Basic drawing routines.
-    // Operate in page coordinate system.
+    // Basic drawing routines. Operate in page coordinate system.
     /** Draw a painter path on the page.
      * \param path QPainterPath to draw.
      * \param penBrush Pen/Brush to use for rendering.

@@ -152,14 +152,14 @@ void proceedFile( QString filePath )
 
     // Analyse document geometry.
     PRGDocument::GParameters gparams;
-    gparams.lastPageIndex = 40;
+    gparams.lastPageIndex = 50;
 
     PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
     pGDocument->analyse( gparams );
 
     // Render page and save.
     PRRenderPage::Parameters renderParams;
-    renderParams.resolution = 4.0;
+    renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
     QString filename;
