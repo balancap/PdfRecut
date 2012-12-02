@@ -185,9 +185,9 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
         // Get glyph bounding box.
         cbbox = m_glyphs[c - m_firstCID].bbox();
         // Empty glyph bbox: call default implementation.
-        if( cbbox.GetHeight() == 0 ) {
-            return PdfeFont::bbox( c, useFParams );
-        }
+//        if( cbbox.GetHeight() == 0 ) {
+//            return PdfeFont::bbox( c, useFParams );
+//        }
 
         // Apply font transformation to char bbox.
         PdfeORect oBBox( cbbox );

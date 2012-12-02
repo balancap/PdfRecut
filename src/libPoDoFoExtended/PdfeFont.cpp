@@ -170,7 +170,6 @@ PdfRect PdfeFont::bbox( const PdfeCIDString& str ) const
 
     for( size_t i = 0 ; i < str.length() ; ++i ) {
         pdfe_cid c = str[i];
-
         // Glyph bounding box.
         cbbox = this->bbox( c, true );
 
@@ -181,7 +180,7 @@ PdfRect PdfeFont::bbox( const PdfeCIDString& str ) const
         top = std::max( top, advance(1) + cbbox.GetBottom() + cbbox.GetHeight() );
 
         // Update advance vector.
-        advance += this->advance( c, true );
+        advance = advance + this->advance( c, true );
     }
     // Got a problem! Default empty bounding box.
     if( left > right || bottom > top ) {
