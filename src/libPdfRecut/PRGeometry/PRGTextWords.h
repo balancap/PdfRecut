@@ -58,8 +58,9 @@ namespace PRGTextWordCoordinates {
  * a word bounding box can be expressed in.
  */
 enum Enum {
-    Font = 0,           /// Default font coordinates.
-    FontNormalized,     /// Renormalized font coordinates.
+    Word = 0,           /// Default word coordinates.
+    WordFontRescaled,   /// Rescaled word coordinates using font statistics.
+    WordDocRescaled,    /// Rescaled word coordinates using document statistics.
     Page                /// Page coordinates.
 };
 }
@@ -124,9 +125,7 @@ public:
     /** Get word advance/displacement vector.
      * \return Advance vector of the word.
      */
-    PdfeVector advance() const {
-        return m_advance;
-    }
+    PdfeVector advance() const  {   return m_advance;   }
     /** Get word bounding box.
      * \param useBottomCoord Use the bottom coordinate of bbox?
      * \return Rectangle containing the bounding box.
@@ -215,6 +214,14 @@ private:
      */
     void readPdfString( const PoDoFo::PdfString& str,
                         PoDoFoExtended::PdfeFont* pFont );
+    /** Build the private vector of main subgroups.
+     * Main subgroups are separated by PDF translation words.
+     */
+    void buildMainSubGroups();
+    /** Compute transformation matrices.
+     */
+    void computeTransMatrices();
+
 public:
     // Cached data.
     /** Load group data. Call PRGTextPage::loadData in order to
@@ -305,12 +312,6 @@ public:
     bool isSpace() const;
 
 public:
-    /** Build the private vector of main subgroups.
-     * Main subgroups are separated by PDF translation words.
-     */
-    void buildMainSubGroups();
-
-public:
     // Rendering routines.
     /** Render a group of words inside a page.
      * \param renderPage Object on which words are rendered.
@@ -380,7 +381,9 @@ private:
         /// Font bounding box.
         PoDoFo::PdfRect  fontBBox;
         /// Font renormalization transformation matrix (font coord to renorm coord)..
-        PdfeMatrix  fontNormTransMatrix;
+        PdfeMatrix  fontNormTMatrix;
+        /// Font doc stats transformation matrix (font coord to renorm coord)..
+        PdfeMatrix  fontDocStatsTMatrix;
 
         /// Transformation matrix of the graphics state.
         PdfeMatrix  transMatrix;

@@ -51,7 +51,7 @@ void PRGTextStatistics::clear()
 void PRGTextStatistics::addGroupWords( const PRGTextGroupWords& group )
 {
     // Group transformation matrix and font.
-    PdfeMatrix transMat = group.transMatrix( PRGTextWordCoordinates::Font,
+    PdfeMatrix transMat = group.transMatrix( PRGTextWordCoordinates::Word,
                                              PRGTextWordCoordinates::Page );
     PdfeFont* pFont = group.font();
     for( size_t i = 0 ; i < group.nbWords() ; ++i ) {
@@ -101,13 +101,17 @@ double PRGTextStatistics::Variable::mean() const
     // Classic estimator.
     return ( m_sumValues / m_nbMeasures );
 }
-double PRGTextStatistics::Variable::variance()
+double PRGTextStatistics::Variable::variance() const
 {
     if( m_nbMeasures <= 1 ) {
         return 0.;
     }
     // Unbiased estimator.
     return ( m_sumSquaredValues - m_sumValues ) / ( m_nbMeasures - 1 );
+}
+size_t PRGTextStatistics::Variable::size() const
+{
+    return m_nbMeasures;
 }
 void PRGTextStatistics::Variable::addValue( double val )
 {

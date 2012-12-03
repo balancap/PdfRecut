@@ -171,7 +171,7 @@ PRGTextLine* PRGTextPage::createLine_Basic( size_t idxGroupWords )
 
     // Transformation from Page to Renormalized font coordinates.
     PdfeMatrix rGroupTransMat = rGroupWords.transMatrix( PRGTextWordCoordinates::Page,
-                                                         PRGTextWordCoordinates::FontNormalized );
+                                                         PRGTextWordCoordinates::WordFontRescaled );
 
     // Vector of lines to merge.
     std::vector<PRGTextLine*> pLinesToMerge;
@@ -211,7 +211,7 @@ PRGTextLine* PRGTextPage::createLine_Basic( size_t idxGroupWords )
 
             // Compare to every subgroup of the right group.
             for( size_t j = 0 ; j < rGroupWords.nbMSubgroups() ; ++j ) {
-                PdfeORect rSubGroupBBoxLocal = rGroupWords.mSubgroup(j).bbox( PRGTextWordCoordinates::FontNormalized, true, true );
+                PdfeORect rSubGroupBBoxLocal = rGroupWords.mSubgroup(j).bbox( PRGTextWordCoordinates::WordFontRescaled, true, true );
 
                 // Estimate the horizontal distance and vertical overlap.
                 PdfeVector lRBPoint, lRTPoint, rLBPoint, rLTPoint;
@@ -243,7 +243,7 @@ PRGTextLine* PRGTextPage::createLine_Basic( size_t idxGroupWords )
             }
         }
         // Add group width (without leading and trailing spaces).
-        lGroupsCumulWidth += lGroupWords.bbox( PRGTextWordCoordinates::FontNormalized, false, true ).width();
+        lGroupsCumulWidth += lGroupWords.bbox( PRGTextWordCoordinates::WordFontRescaled, false, true ).width();
         if( lGroupsCumulWidth > MaxCumulWidth ) {
             break;
         }
@@ -459,7 +459,7 @@ PRGTextLine* PRGTextPage::mergeLines_Inside( PRGTextLine* pLine )
                     bool groupMerge = ( distBegin <= MaxDistanceInside ||
                                         distEnd <= MaxDistanceInside ) &&
                             ( m_pGroupsWords[i]->length( false ) <= MaxLengthInside ||
-                              m_pGroupsWords[i]->bbox( PRGTextWordCoordinates::Font, false, true ).width() <= MaxWidthInside );
+                              m_pGroupsWords[i]->bbox( PRGTextWordCoordinates::Word, false, true ).width() <= MaxWidthInside );
 
                     // Merge lines...
                     if( groupMerge ) {
@@ -517,7 +517,7 @@ PRGTextLine *PRGTextPage::mergeLines_Small( PRGTextLine *pLine )
             PRGTextLine* pLine2nd = pGroup2nd->textLines().at(0);
 
 //            widthCumulBefore += pGroup2nd->width( true );
-            widthCumulBefore += pGroup2nd->bbox( PRGTextWordCoordinates::Font, false, true ).width();
+            widthCumulBefore += pGroup2nd->bbox( PRGTextWordCoordinates::Word, false, true ).width();
 
             // Consider the group ?
             if( widthCumulBefore <= MaxWidthCumul && distMaxBefore <= MaxDistCumul &&
@@ -553,7 +553,7 @@ PRGTextLine *PRGTextPage::mergeLines_Small( PRGTextLine *pLine )
             PRGTextGroupWords* pGroup2nd = m_pGroupsWords[j];
             PRGTextLine* pLine2nd = pGroup2nd->textLines().at((0));
 
-            widthCumulAfter += pGroup2nd->bbox( PRGTextWordCoordinates::Font, false, true ).width();
+            widthCumulAfter += pGroup2nd->bbox( PRGTextWordCoordinates::Word, false, true ).width();
 
             // Consider the group ?
             if( widthCumulAfter <= MaxWidthCumul && distMaxAfter <= MaxDistCumul &&

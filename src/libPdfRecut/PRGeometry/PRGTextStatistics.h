@@ -109,7 +109,11 @@ public:
     /** Estimate the variance.
      * \return Unbiased estimation of the variance.
      */
-    double variance();
+    double variance() const;
+    /** Get the size of the sampling for the variable.
+     * \return Size of the sampling.
+     */
+    size_t size() const;
     /** Add a measured value for the variable.
      * \param val Measure to add.
      */
