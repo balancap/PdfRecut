@@ -216,7 +216,7 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     if( fontSubType == PdfName("Type0") ) {
         pFont = new PdfeFontType0( fontObj, m_ftLibrary );
     }
-    else if( fontSubType == PdfName("Type1") ) {
+    else if( fontSubType == PdfName("Type1") || fontSubType == PdfName("MMType1") ) {
         pFont = new PdfeFontType1( fontObj, m_ftLibrary );
     }
     else if( fontSubType == PdfName("TrueType") ) {
