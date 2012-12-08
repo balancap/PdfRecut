@@ -74,11 +74,17 @@ public:
         delete m_pPen;
         delete m_pBrush;
     }
-    /** Is the Pen/Brush mepty, i.e. both pen and brush are set to NULL.
+    /** Initialize to an empty object.
+     */
+    void init() {
+        delete m_pPen;      m_pPen = NULL;
+        delete m_pBrush;    m_pBrush = NULL;
+    }
+    /** Is the Pen/Brush empty, i.e. both pen and brush are set to NULL.
      */
     bool isEmpty() const
     {
-        return ( m_pPen || m_pBrush );
+        return !( m_pPen || m_pBrush );
     }
     /** Apply pen and brush to a painter.
      */
@@ -101,8 +107,14 @@ public:
     QBrush* brush() const   {   return m_pBrush;    }
 
     // Setters... Pointers given belongs to the PRPenBrush object.
-    void setPen( QPen* pen )        {   m_pPen = pen;       }
-    void setBrush( QBrush* brush )  {   m_pBrush = brush;   }
+    void setPen( QPen* pen ) {
+        delete m_pPen;
+        m_pPen = pen;
+    }
+    void setBrush( QBrush* brush ) {
+        delete m_pBrush;
+        m_pBrush = brush;
+    }
 
 private:
     /// Pointer to a draw pen object. If NULL, pen is not used.

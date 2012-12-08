@@ -225,7 +225,6 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     else if( fontSubType == PdfName("Type3") ) {
         pFont = new PdfeFontType3( fontObj, m_ftLibrary );
     }
-
     // Insert font in the cache.
     m_fontCache.insert( std::make_pair( fontRef, pFont ) );
     return pFont;

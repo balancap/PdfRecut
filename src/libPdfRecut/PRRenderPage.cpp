@@ -155,10 +155,9 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
-    if( !m_renderParameters.pathPB.isEmpty() ) {
+    if( m_renderParameters.pathPB.isEmpty() ) {
         return;
     }
-
     // Qt painter path to create from Pdf path.
     bool closeSubpaths = gOperator.isClosePainting();
     bool evenOddRule = gOperator.isEvenOddRule();

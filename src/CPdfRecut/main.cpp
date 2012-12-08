@@ -160,6 +160,8 @@ void proceedFile( QString filePath )
 
     // Render page and save.
     PRRenderPage::Parameters renderParams;
+    renderParams.textSpacePB.init();
+    renderParams.textPDFTranslationPB.init();
     renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
 
@@ -172,8 +174,8 @@ void proceedFile( QString filePath )
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
 //        textPage->renderGroupsWords( renderPage );
-        textPage->renderLines( renderPage );
-//        renderPage.renderElements( renderParams );
+//        textPage->renderLines( renderPage );
+        renderPage.renderElements( renderParams );
 
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
