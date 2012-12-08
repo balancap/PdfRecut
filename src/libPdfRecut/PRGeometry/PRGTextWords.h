@@ -255,12 +255,12 @@ public:
      */
     PdfeVector displacement() const;
     /** Get the bounding box of the group of words.
-     * \param wordCoord Word coordinates system in which the bbox is expressed.
+     * \param endCoord End coordinates system in which the bbox is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces (for the all group) ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( PRGTextWordCoordinates::Enum wordCoord,
+    PdfeORect bbox( PRGTextWordCoordinates::Enum endCoords,
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
     /** Estimate the global font size used for this group.
@@ -380,13 +380,13 @@ private:
         PoDoFoExtended::PdfeFont*  pFont;
         /// Font bounding box.
         PoDoFo::PdfRect  fontBBox;
-        /// Font renormalization transformation matrix (font coord to renorm coord)..
-        PdfeMatrix  fontNormTMatrix;
-        /// Font doc stats transformation matrix (font coord to renorm coord)..
-        PdfeMatrix  fontDocStatsTMatrix;
+        /// Font rescaling transformation matrix (word coord to font rescaled coord).
+        PdfeMatrix  transMatFontRescale;
+        /// Document rescaling transformation matrix (word coord to doc rescaled coord).
+        PdfeMatrix  transMatDocRescale;
 
         /// Transformation matrix of the graphics state.
-        PdfeMatrix  transMatrix;
+        PdfeMatrix  transMatGS;
         /// Text state for this group of words.
         PoDoFoExtended::PdfeTextState  textState;
 
@@ -464,21 +464,19 @@ public:
      * \return Length of the subgroup of words.
      */
     size_t length( bool countSpaces = true ) const;
-
     /** Get the advance/displacement vector of the subgroup of words.
      * Consider advance vectors of every words inside the interval [first,last].
      * \param useGroupOrig Use the first word of the group as origin.
      * \return Advance vector of the group.
      */
     PdfeVector advance( bool useGroupOrig ) const;
-
     /** Get the bounding box of the subgroup of words.
-     * \param wordCoord Word coordinates system in which the bbox is expressed.
+     * \param endCoords End coordinates system in which the bbox is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \param useBottomCoord Use the bottom coordinate of the bbox (unless set botom to 0).
      * \return Oriented rectangle (PdfeORect object).
      */
-    PdfeORect bbox( PRGTextWordCoordinates::Enum wordCoord,
+    PdfeORect bbox( PRGTextWordCoordinates::Enum endCoords,
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
 

@@ -11,6 +11,11 @@
 
 #include "PRGTextLine.h"
 
+#include "PRGSubDocument.h"
+#include "PRGPage.h"
+#include "PRGTextPage.h"
+#include "PRGTextStatistics.h"
+
 #include <podofo/podofo.h>
 #include <limits>
 
@@ -22,9 +27,10 @@ namespace PdfRecut {
 //**********************************************************//
 //                        PRGTextLine                       //
 //**********************************************************//
-PRGTextLine::PRGTextLine()
+PRGTextLine::PRGTextLine( PRGTextPage* textPage )
 {
     this->init();
+    m_textPage = textPage;
 }
 PRGTextLine::~PRGTextLine()
 {
@@ -32,15 +38,11 @@ PRGTextLine::~PRGTextLine()
 
 void PRGTextLine::init()
 {
-    m_pageIndex = -1;
+    m_textPage = NULL;
     m_lineIndex = -1;
     m_subgroupsWords.clear();
-    m_modified = false;
-
-    // Cache data.
-    m_bbox = PdfRect( 0, 0, 0, 0 );
-    m_bboxNoLTSpaces = PdfRect( 0, 0, 0, 0 );
-    m_transMatrix.fill( 0.0 );
+    m_resetCachedData = false;
+    m_data.init();
 }
 
 void PRGTextLine::addGroupWords( PRGTextGroupWords* pGroupWords )
@@ -69,9 +71,8 @@ void PRGTextLine::addSubgroupWords( const PRGTextGroupWords::Subgroup& subgroup 
     }
     // Add the line to the group.
     pGroup->addTextLine( this );
-
     // Line has changed...
-    m_modified = true;
+    this->modified();
 }
 void PRGTextLine::rmGroupWords( PRGTextGroupWords* pGroupWords )
 {
@@ -79,12 +80,10 @@ void PRGTextLine::rmGroupWords( PRGTextGroupWords* pGroupWords )
     long idx = this->hasGroupWords( pGroupWords );
     if( idx != -1 ) {
         m_subgroupsWords.erase( m_subgroupsWords.begin()+idx );
-
         // Remove the line from the group.
         pGroupWords->rmTextLine( this );
-
         // Line has changed...
-        m_modified = true;
+        this->modified();
     }
 }
 void PRGTextLine::setSubgroup( size_t idx, const PRGTextGroupWords::Subgroup& subgroup )
@@ -94,13 +93,11 @@ void PRGTextLine::setSubgroup( size_t idx, const PRGTextGroupWords::Subgroup& su
     if( !pGroup ) {
         return;
     }
-
     // Set subgroup and add reference of the line to the group.
     m_subgroupsWords.at( idx ) = subgroup;
     pGroup->addTextLine( this );
-
     // Line has changed...
-    m_modified = true;
+    this->modified();
 }
 long PRGTextLine::hasGroupWords( PRGTextGroupWords* pGroup ) const
 {
@@ -111,23 +108,6 @@ long PRGTextLine::hasGroupWords( PRGTextGroupWords* pGroup ) const
         }
     }
     return -1;
-}
-void PRGTextLine::clearEmptySubgroups()
-{
-    std::vector<PRGTextGroupWords::Subgroup>::iterator it;
-    for( it = m_subgroupsWords.begin() ; it != m_subgroupsWords.end() ; ) {
-        // Empty subgroup.
-        if( it->isEmpty() ) {
-            // Remove the subgroup and the reference to the line.
-            it->group()->rmTextLine( this );
-            it = m_subgroupsWords.erase( it );
-        }
-        else {
-            ++it;
-        }
-    }
-    // Line has changed...
-    m_modified = true;
 }
 
 long PRGTextLine::minGroupIndex() const
@@ -147,17 +127,17 @@ long PRGTextLine::maxGroupIndex() const
     return maxGroupIdx;
 }
 
-PdfeORect PRGTextLine::bbox( PRGTextLineCoordinates::Enum lineCoords, bool leadTrailSpaces )
+PdfeORect PRGTextLine::bbox( PRGTextLineCoordinates::Enum endCoords, bool leadTrailSpaces ) const
 {
-    // Compute the bounding box if necessary.
-    if( m_modified ) {
-        this->computeCacheData();
-    }
+    Data* pData = this->data();
 
     // Classic or without leading and trailing spaces bbox.
-    PdfeORect bbox( m_bbox );
-    if( !leadTrailSpaces ) {
-        bbox = m_bboxNoLTSpaces;
+    PdfeORect bbox;
+    if( leadTrailSpaces ) {
+        bbox = pData->bbox;
+    }
+    else {
+        bbox = pData->bboxNoLTSpaces;
     }
     // Bottom coordinates: TODO.
     //    if( !useBottomCoord ) {
@@ -170,26 +150,37 @@ PdfeORect PRGTextLine::bbox( PRGTextLineCoordinates::Enum lineCoords, bool leadT
     //    }
 
     // Transformation if necessary
-    if( lineCoords == PRGTextLineCoordinates::Page ) {
-        bbox = m_transMatrix.map( bbox );
+    if( endCoords != PRGTextLineCoordinates::Line ) {
+        bbox = this->transMatrix( PRGTextLineCoordinates::Line,
+                                  endCoords).map( bbox );
     }
     return bbox;
 }
 
-double PRGTextLine::width( bool leadTrailSpaces )
+double PRGTextLine::width( PRGTextLineCoordinates::Enum endCoords, bool leadTrailSpaces ) const
 {
-    // Compute the bbox if necessary.
-    if( m_modified ) {
-        this->computeCacheData();
-    }
-    if( leadTrailSpaces ) {
-        return m_bbox.GetWidth();
+    PdfeORect bbox = this->bbox( endCoords, leadTrailSpaces );
+    return bbox.width();
+}
+double PRGTextLine::widthCumulative( PRGTextLineCoordinates::Enum endCoords, bool incSpaces ) const
+{
+    Data* pData = this->data();
+    double width;
+    if( incSpaces ) {
+        width = pData->widthCumul;
     }
     else {
-        return m_bboxNoLTSpaces.GetWidth();
+        width = pData->widthCumulNoSpaces;
     }
+    // Coordinates system expected?
+    if( endCoords != PRGTextLineCoordinates::Line ) {
+        PdfeORect orect( width, 1.0 );
+        orect = this->transMatrix( PRGTextLineCoordinates::Line, endCoords ).map( orect );
+        return orect.width();
+    }
+    return width;
 }
-size_t PRGTextLine::length( bool countSpaces )
+size_t PRGTextLine::length( bool countSpaces ) const
 {
     size_t length = 0;
     for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
@@ -198,32 +189,40 @@ size_t PRGTextLine::length( bool countSpaces )
     return length;
 }
 PdfeMatrix PRGTextLine::transMatrix( PRGTextLineCoordinates::Enum startCoord,
-                                     PRGTextLineCoordinates::Enum endCoord )
+                                     PRGTextLineCoordinates::Enum endCoord ) const
 {
-    // Compute transformation matrix and bbox if necessary.
-    if( m_modified ) {
-        this->computeCacheData();
-    }
-
-    // Get the transformation matrix
+    Data* pData = this->data();
+    // Compute the transformation matrix
     if( startCoord == PRGTextLineCoordinates::Line &&
             endCoord == PRGTextLineCoordinates::Page ) {
-        return m_transMatrix;
+        return pData->transMatPage;
+    }
+    else if( startCoord == PRGTextLineCoordinates::Line &&
+             endCoord == PRGTextLineCoordinates::LineDocRescaled ) {
+        return pData->transMatDocRescale;
     }
     else if( startCoord == PRGTextLineCoordinates::Page &&
              endCoord == PRGTextLineCoordinates::Line ) {
-        return m_transMatrix.inverse();
+        return pData->transMatPage.inverse();
+    }
+    else if( startCoord == PRGTextLineCoordinates::Page &&
+             endCoord == PRGTextLineCoordinates::LineDocRescaled ) {
+        return (pData->transMatPage.inverse() * pData->transMatDocRescale);
+    }
+    else if( startCoord == PRGTextLineCoordinates::LineDocRescaled &&
+             endCoord == PRGTextLineCoordinates::Line ) {
+        return pData->transMatDocRescale.inverse();
+    }
+    else if( startCoord == PRGTextLineCoordinates::LineDocRescaled &&
+             endCoord == PRGTextLineCoordinates::Page ) {
+        return (pData->transMatDocRescale.inverse() * pData->transMatPage);
     }
     // Identity in default case.
     return PdfeMatrix();
 }
-double PRGTextLine::meanFontSize()
+double PRGTextLine::meanFontSize() const
 {
-    // Compute transformation matrix and bbox if necessary.
-    if( m_modified ) {
-        this->computeCacheData();
-    }
-    return m_meanFontSize;
+    return this->data()->meanFontSize;
 }
 
 bool PRGTextLine::isEmpty() const
@@ -346,27 +345,36 @@ std::list<PRGTextLine::Block> PRGTextLine::horizontalBlocksList(double hDistance
     return hBlocksList;
 }
 
-void PRGTextLine::computeCacheData()
+void PRGTextLine::clearEmptySubgroups()
 {
-    // Remove empty subgroups.
-    this->clearEmptySubgroups();
-
-    // Compute bounding box and transformation matrix.
+    std::vector<PRGTextGroupWords::Subgroup>::iterator it;
+    for( it = m_subgroupsWords.begin() ; it != m_subgroupsWords.end() ; ) {
+        // Empty subgroup.
+        if( it->isEmpty() ) {
+            // Remove the subgroup and the reference to the line.
+            it->group()->rmTextLine( this );
+            it = m_subgroupsWords.erase( it );
+        }
+        else {
+            ++it;
+        }
+    }
+}
+void PRGTextLine::computeCacheData() const
+{
+    // Reset cache data.
+    m_data.init();
+    // Compute bounding box and transformation matrices.
     this->computeBBoxes();
-
     // Reset modified parameter.
-    m_modified = false;
+    m_resetCachedData = false;
 }
 void PRGTextLine::computeBBoxes() const
 {
-    // Not element inside.
+    // Not element inside the line.
     if( m_subgroupsWords.empty() ) {
-        m_modified = false;
-        m_bbox = PdfRect( 0, 0, 0, 0 );
-        m_bboxNoLTSpaces = PdfRect( 0, 0, 0, 0 );
-        m_transMatrix = PdfeMatrix();
+        return;
     }
-
     // We assume that words have a zero angle between them.
     // That should usually be the case...
 
@@ -395,7 +403,7 @@ void PRGTextLine::computeBBoxes() const
     double totalWidth = 0.0;
 
     // Mean font size.
-    m_meanFontSize = 0.0;
+    m_data.meanFontSize = 0.0;
 
     // Big loop on subgroups of words.
     PdfeORect subGpBBox;
@@ -408,6 +416,7 @@ void PRGTextLine::computeBBoxes() const
         bottom = std::min( bottom,  subGpBBox.leftBottomY() );
         right = std::max( right, subGpBBox.rightTopX() );
         top = std::max( top, subGpBBox.leftTopY() );
+        m_data.widthCumul += subGpBBox.width();
 
         // Update no LT line bbox coordinates, if the width is positive.
         subGpBBox = m_subgroupsWords[i].bbox( PRGTextWordCoordinates::Page, false, true );
@@ -419,44 +428,72 @@ void PRGTextLine::computeBBoxes() const
             rightNoLT = std::max( rightNoLT, subGpBBox.rightTopX() );
             topNoLT = std::max( topNoLT, subGpBBox.leftTopY() );
         }
+        if( !m_subgroupsWords[i].isSpace() ) {
+            m_data.widthCumulNoSpaces += subGpBBox.width();
+        }
 
         // Update mean base coordinate and font size.
         subGpBBox = m_subgroupsWords[i].bbox( PRGTextWordCoordinates::Page, true, false );
         subGpBBox = invTransMat.map( subGpBBox );
         double width = subGpBBox.width();
-
         totalWidth += width;
         meanBaseCoord += subGpBBox.leftBottomY() * width;
-        m_meanFontSize += m_subgroupsWords[i].group()->fontSize() * width;
+        m_data.meanFontSize += m_subgroupsWords[i].group()->fontSize() * width;
     }
     meanBaseCoord = meanBaseCoord / totalWidth;
-    m_meanFontSize = m_meanFontSize / totalWidth;
+    m_data.meanFontSize = m_data.meanFontSize / totalWidth;
 
     // Transformation matrix used for the line. Set such the (0,0) corresponds to (left, meanBaseCoord),
     // and the rotation component is transMat.
-    PdfeMatrix rescaleMat;
-    rescaleMat(2,0) = left;
-    rescaleMat(2,1) = meanBaseCoord;
-    m_transMatrix = rescaleMat * transMat;
+    PdfeMatrix translationMat;
+    translationMat(2,0) = left;
+    translationMat(2,1) = meanBaseCoord;
+    m_data.transMatPage = translationMat * transMat;
 
     // Set bounding boxes.
     if( right >= left && top >= bottom ) {
-        m_bbox.SetLeft( 0.0 );
-        m_bbox.SetBottom( bottom - meanBaseCoord );
-        m_bbox.SetWidth( right - left );
-        m_bbox.SetHeight( top - bottom );
+        m_data.bbox.SetLeft( 0.0 );
+        m_data.bbox.SetBottom( bottom - meanBaseCoord );
+        m_data.bbox.SetWidth( right - left );
+        m_data.bbox.SetHeight( top - bottom );
     }
     else {
-        m_bbox = PdfRect( 0,0,0,0 );
+        m_data.bbox = PdfRect( 0,0,0,0 );
     }
     if( rightNoLT >= leftNoLT && topNoLT >= bottomNoLT ) {
-        m_bboxNoLTSpaces.SetLeft( leftNoLT - left  );
-        m_bboxNoLTSpaces.SetBottom( bottomNoLT - meanBaseCoord );
-        m_bboxNoLTSpaces.SetWidth( rightNoLT - leftNoLT );
-        m_bboxNoLTSpaces.SetHeight( topNoLT - bottomNoLT );
+        m_data.bboxNoLTSpaces.SetLeft( leftNoLT - left  );
+        m_data.bboxNoLTSpaces.SetBottom( bottomNoLT - meanBaseCoord );
+        m_data.bboxNoLTSpaces.SetWidth( rightNoLT - leftNoLT );
+        m_data.bboxNoLTSpaces.SetHeight( topNoLT - bottomNoLT );
     }
     else {
-        m_bboxNoLTSpaces = PdfRect( 0,0,0,0 );
+        m_data.bboxNoLTSpaces = PdfRect( 0,0,0,0 );
+    }
+
+    // Document rescale transformation matrix.
+    // Use Sub-document text statistics.
+    m_data.transMatDocRescale.init();
+    if( m_textPage ) {
+        // Retrieve mean character width used for rescaling.
+        const PRGTextStatistics& textStats = m_textPage->page()->parent()->textStatistics();
+        const size_t minSamplingSize = 200;
+        double meanWidth;
+
+        // Letters and numbers are sufficient?
+        if( textStats.variable( PRGTextVariables::CharLNWidth ).size() >= minSamplingSize ) {
+            meanWidth = textStats.variable( PRGTextVariables::CharLNWidth ).mean();
+        }
+        // Take all characters.
+        else {
+            meanWidth = textStats.variable( PRGTextVariables::CharAllWidth ).mean();
+        }
+        // Line transformation matrix is only a rotation.
+        // => do not need to apply it to get mean width in line coordinates.
+        if( meanWidth ) {
+            m_data.transMatDocRescale(0,0)
+                    = m_data.transMatDocRescale(1,1)
+                    = 1. / meanWidth;
+        }
     }
 }
 
@@ -565,6 +602,20 @@ bool PRGTextLine::Block::horizontalComp( const PRGTextLine::Block& block1, const
 bool PRGTextLine::Block::horizontalCompPtr( PRGTextLine::Block* pBlock1, PRGTextLine::Block* pBlock2 )
 {
     return (  pBlock1->m_bbox.GetLeft() < pBlock2->m_bbox.GetLeft() );
+}
+
+//**********************************************************//
+//                     PRGTextLine::Data                    //
+//**********************************************************//
+void PRGTextLine::Data::init()
+{
+    transMatPage.init();
+    transMatDocRescale.init();
+    bbox = PdfRect( 0,0,0,0 );
+    bboxNoLTSpaces = PdfRect( 0,0,0,0 );
+    widthCumul = 0.0;
+    widthCumulNoSpaces = 0.0;
+    meanFontSize = 0.0;
 }
 
 }

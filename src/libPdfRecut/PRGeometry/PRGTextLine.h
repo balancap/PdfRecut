@@ -16,12 +16,15 @@
 
 namespace PdfRecut {
 
+class PRGTextPage;
+
 namespace PRGTextLineCoordinates {
 /** Enumeration of the different coordinates system
  * a line bounding box can be expressed in.
  */
 enum Enum {
     Line = 0,           /// Default line coordinates.
+    LineDocRescaled,    /// Rescaled word coordinates using document statistics.
     Page                /// Page coordinates.
 };
 }
@@ -32,12 +35,12 @@ class PRGTextLine
 {
 public:
     /** Default constructor.
+     * \param textPage Parent text page object.
      */
-    PRGTextLine();
+    PRGTextLine( PRGTextPage* textPage );
     /** Destructor...
       */
     ~PRGTextLine();
-
     /** Initialize to an empty line.
      */
     void init();
@@ -70,9 +73,6 @@ public:
      * \return Number of subgroups.
      */
     size_t nbSubgroups() const;
-    /** Clear empty subgroups in the line.
-     */
-    void clearEmptySubgroups();
     /** Does the group belongs to the line.
      * \param pGroup Pointer to the group.
      * \return Index of the corresponding subgroup (-1 if not found).
@@ -90,22 +90,30 @@ public:
     long maxGroupIndex() const;
 
     /** Get the line bounding box.
-     * \param lineCoords Coordinates system in which the bounding box is expressed.
+     * \param endCoords Coordinates system in which the bounding box is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Oriented rectangle containing the bounding box.
      */
-    PdfeORect bbox( PRGTextLineCoordinates::Enum lineCoords,
-                    bool leadTrailSpaces );
+    PdfeORect bbox( PRGTextLineCoordinates::Enum endCoords,
+                    bool leadTrailSpaces ) const;
     /** Get the width of the line.
+     * \param endCoords Coordinates system in which the width is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
      * \return Width in local coordinates.
      */
-    double width( bool leadTrailSpaces );
+    double width( PRGTextLineCoordinates::Enum endCoords,
+                  bool leadTrailSpaces ) const;
+    /** Get the cumulative width, i.e. sum of words width.
+     * \param endCoords Coordinates system in which the width is expressed.
+     * \param incSpaces Include spaces in the computation.
+     */
+    double widthCumulative( PRGTextLineCoordinates::Enum endCoords,
+                            bool incSpaces ) const;
     /** Get the length of the line.
      * \param countSpaces Also count spaces?
      * \return Length of the line.
      */
-    size_t length( bool countSpaces );
+    size_t length( bool countSpaces ) const;
 
     /** Get a transformation matrix from a starting coordinate
      * system to an ending one.
@@ -114,12 +122,11 @@ public:
      * \return Transformation matrix.
      */
     PdfeMatrix transMatrix( PRGTextLineCoordinates::Enum startCoord,
-                            PRGTextLineCoordinates::Enum endCoord );
+                            PRGTextLineCoordinates::Enum endCoord ) const;
 
     /** Mean font size of the line.
      */
-    double meanFontSize();
-
+    double meanFontSize() const;
     /** Is the line empty?
      * \return Answer!
      */
@@ -130,57 +137,86 @@ public:
     bool isSpace() const;
 
 public:
+    // Getters.
+    PRGTextPage* textPage() const   {   return m_textPage;      }
+    long lineIndex() const          {   return m_lineIndex;     }
+
+    // Setters
+    void setLineIndex( long lineIndex ) {   m_lineIndex = lineIndex;    }
+
+public:
     /// Embedded class that represent a block of a line.
     class Block;
-
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
      * \return Vector of PRGTextLine::Block*. Objects are owned by the user.
      */
     std::vector<PRGTextLine::Block*> horizontalBlocks( double hDistance = 0.0 ) const;
-
     /** Obtain horizontal blocks defined by the line.
      * \param hDistance Horizontal distance used for blocks merging.
      * \return List of PRGTextLine::Block.
      */
     std::list<PRGTextLine::Block> horizontalBlocksList( double hDistance = 0.0 ) const;
 
-private:
-    /// Compute inside cache data of the line (bbox, first capital letter, ...).
-    void computeCacheData();
-
-    /// Compute bounding boxes and the transformation matrix.
-    void computeBBoxes() const;
-
 public:
-    /** Sort two lines using the index of their groups.
+    /** Compare two lines using the index of their groups.
      * \param pLine1 Pointer to the first line.
      * \param pLine2 Pointer to the second line.
      * \return line1 < line2.
      */
     static bool compareGroupIndex( PRGTextLine* pLine1, PRGTextLine* pLine2 );
 
-protected:
-    /// Index of the page to which belongs the line.
-    long  m_pageIndex;
+private:
+    struct Data;
+    /// Get private data member. Re-compute data if necessary.
+    Data* data() const;
+    /// Line has been modified.
+    void modified();
+    /// Clear empty subgroups in the line.
+    void clearEmptySubgroups();
+
+    /// Compute inside cache data of the line (bbox, first capital letter, ...).
+    void computeCacheData() const;
+    /// Compute bounding boxes and transformation matrices.
+    void computeBBoxes() const;
+
+private:
+    /// Pointer to the text page it belongs to.
+    PRGTextPage*  m_textPage;
     /// Index of the line in the page.
     long  m_lineIndex;
 
     /// Vector of words subgroups which constitute the line.
     std::vector<PRGTextGroupWords::Subgroup>  m_subgroupsWords;
 
-    // Cache computed data.
-    /// Boolean value used to detect if the line have been modified (add words, ...).
-    mutable bool  m_modified;
+    // Cache data.
+    /// Does the cache data need to be re-computed?
+    mutable bool  m_resetCachedData;
+    /** Structure that gathers line cached data.
+     */
+    struct Data {
+        /// Transformation matrix (into page coordinates). Related to the bounding box.
+        PdfeMatrix  transMatPage;
+        /// Document statistics transformation matrix (line coord to doc rescaled coord)..
+        PdfeMatrix  transMatDocRescale;
 
-    /// Transformation matrix (into page coordinates). Related to the bounding box.
-    mutable PdfeMatrix  m_transMatrix;
-    /// Line bounding box.
-    mutable PoDoFo::PdfRect  m_bbox;
-    /// Line bounding box (with no leading and trailing spaces).
-    mutable PoDoFo::PdfRect  m_bboxNoLTSpaces;
-    /// Mean font size of the line.
-    mutable double  m_meanFontSize;
+        /// Line bounding box.
+        PoDoFo::PdfRect  bbox;
+        /// Line bounding box (with no leading and trailing spaces).
+        PoDoFo::PdfRect  bboxNoLTSpaces;
+
+        /// Cumulative width.
+        double  widthCumul;
+        /// Cumulative width, without spaces.
+        double  widthCumulNoSpaces;
+        /// Mean font size of the line.
+        double  meanFontSize;
+
+        /// Initialize to default values.
+        void init();
+    };
+    /// Cached data.
+    mutable Data  m_data;
 };
 
 /** Block inside a line: represent a generic collection of subgroups
@@ -291,6 +327,19 @@ inline size_t PRGTextLine::nbSubgroups() const
 inline const PRGTextGroupWords::Subgroup& PRGTextLine::subgroup( size_t idx ) const
 {
     return m_subgroupsWords.at( idx );
+}
+inline PRGTextLine::Data* PRGTextLine::data() const
+{
+    if( m_resetCachedData ) {
+        this->computeCacheData();
+        m_resetCachedData = false;
+    }
+    return &m_data;
+}
+inline void PRGTextLine::modified()
+{
+    this->clearEmptySubgroups();
+    m_resetCachedData = true;
 }
 
 //**********************************************************//

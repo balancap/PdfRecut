@@ -151,7 +151,7 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& s
     m_data = new PRGTextGroupWords::Data();
 
     // Set transformation matrix and text state.
-    m_data->transMatrix = gState.transMat;
+    m_data->transMatGS = gState.transMat;
     m_data->textState = gState.textState;
 
     // Font data.
@@ -309,9 +309,9 @@ void PRGTextGroupWords::computeTransMatrices()
 {
     // Font renormalization matrix: use width scaling.
     PdfeFont::Statistics stats = data()->pFont->statistics( true );
-    data()->fontNormTMatrix.init();
-    data()->fontNormTMatrix(0,0) = 1 / stats.meanBBox.GetWidth();
-    data()->fontNormTMatrix(1,1) = 1 / stats.meanBBox.GetWidth();
+    data()->transMatFontRescale.init();
+    data()->transMatFontRescale(0,0) = 1 / stats.meanBBox.GetWidth();
+    data()->transMatFontRescale(1,1) = 1 / stats.meanBBox.GetWidth();
 
     // Sub-document statistics rescaling matrix.
     if( m_textPage ) {
@@ -335,18 +335,18 @@ void PRGTextGroupWords::computeTransMatrices()
 
         // Set rescaling matrix.
         if( orect.width() && orect.height() ) {
-            data()->fontDocStatsTMatrix.init();
-            data()->fontDocStatsTMatrix(0,0)
-                    = data()->fontDocStatsTMatrix(1,1)
+            data()->transMatDocRescale.init();
+            data()->transMatDocRescale(0,0)
+                    = data()->transMatDocRescale(1,1)
                     = 2. / ( orect.width() + orect.height() );
         }
         else {
-            data()->fontDocStatsTMatrix = data()->fontNormTMatrix;
+            data()->transMatDocRescale = data()->transMatFontRescale;
         }
     }
     else {
         // Default: font renormalization.
-        data()->fontDocStatsTMatrix = data()->fontNormTMatrix;
+        data()->transMatDocRescale = data()->transMatFontRescale;
     }
 }
 
@@ -401,13 +401,13 @@ PdfeVector PRGTextGroupWords::displacement() const
     displacement(1) = displacement(1) * textState.fontSize;
     return displacement;
 }
-PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum wordCoord,
+PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum endCoords,
                                    bool leadTrailSpaces,
                                    bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
     Subgroup globalSubgroup( *this );
-    return globalSubgroup.bbox( wordCoord, leadTrailSpaces, useBottomCoord );
+    return globalSubgroup.bbox( endCoords, leadTrailSpaces, useBottomCoord );
 }
 
 double PRGTextGroupWords::fontSize() const
@@ -431,7 +431,7 @@ PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoo
     tmpMat(0,0) = textState.fontSize * ( textState.hScale / 100. );
     tmpMat(1,1) = textState.fontSize;
     tmpMat(2,1) = textState.rise;
-    globalTransMat = tmpMat * textState.transMat * data()->transMatrix;
+    globalTransMat = tmpMat * textState.transMat * data()->transMatGS;
 
     if( startCoord == PRGTextWordCoordinates::Word &&
             endCoord == PRGTextWordCoordinates::Page ) {
@@ -439,11 +439,11 @@ PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoo
     }
     else if( startCoord == PRGTextWordCoordinates::Word &&
              endCoord == PRGTextWordCoordinates::WordFontRescaled ) {
-        return data()->fontNormTMatrix;
+        return data()->transMatFontRescale;
     }
     else if( startCoord == PRGTextWordCoordinates::Word &&
              endCoord == PRGTextWordCoordinates::WordDocRescaled ) {
-        return data()->fontDocStatsTMatrix;
+        return data()->transMatDocRescale;
     }
     else if( startCoord == PRGTextWordCoordinates::Page &&
              endCoord == PRGTextWordCoordinates::Word ) {
@@ -451,35 +451,35 @@ PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoo
     }
     else if( startCoord == PRGTextWordCoordinates::Page &&
              endCoord == PRGTextWordCoordinates::WordFontRescaled ) {
-        return ( globalTransMat.inverse() * data()->fontNormTMatrix );
+        return ( globalTransMat.inverse() * data()->transMatFontRescale );
     }
     else if( startCoord == PRGTextWordCoordinates::Page &&
              endCoord == PRGTextWordCoordinates::WordDocRescaled ) {
-        return ( globalTransMat.inverse() * data()->fontDocStatsTMatrix );
+        return ( globalTransMat.inverse() * data()->transMatDocRescale );
     }
     else if( startCoord == PRGTextWordCoordinates::WordFontRescaled &&
              endCoord == PRGTextWordCoordinates::Word ) {
-        return data()->fontNormTMatrix.inverse();
+        return data()->transMatFontRescale.inverse();
     }
     else if( startCoord == PRGTextWordCoordinates::WordFontRescaled &&
              endCoord == PRGTextWordCoordinates::WordDocRescaled ) {
-        return ( data()->fontNormTMatrix.inverse() * data()->fontDocStatsTMatrix );
+        return ( data()->transMatFontRescale.inverse() * data()->transMatDocRescale );
     }
     else if( startCoord == PRGTextWordCoordinates::WordFontRescaled &&
              endCoord == PRGTextWordCoordinates::Page ) {
-        return ( data()->fontNormTMatrix.inverse() * globalTransMat );
+        return ( data()->transMatFontRescale.inverse() * globalTransMat );
     }
     else if( startCoord == PRGTextWordCoordinates::WordDocRescaled &&
              endCoord == PRGTextWordCoordinates::Word ) {
-        return data()->fontDocStatsTMatrix.inverse();
+        return data()->transMatDocRescale.inverse();
     }
     else if( startCoord == PRGTextWordCoordinates::WordDocRescaled &&
              endCoord == PRGTextWordCoordinates::WordFontRescaled ) {
-        return ( data()->fontDocStatsTMatrix.inverse() * data()->fontNormTMatrix );
+        return ( data()->transMatDocRescale.inverse() * data()->transMatFontRescale );
     }
     else if( startCoord == PRGTextWordCoordinates::WordDocRescaled &&
              endCoord == PRGTextWordCoordinates::Page ) {
-        return ( data()->fontDocStatsTMatrix.inverse() * globalTransMat );
+        return ( data()->transMatDocRescale.inverse() * globalTransMat );
     }
     // Identity in other cases.
     return PdfeMatrix();
@@ -493,7 +493,7 @@ PdfeMatrix PRGTextGroupWords::getGlobalTransMatrix() const
     //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
     tmpMat(1,1) = textState.fontSize;
     tmpMat(2,1) = textState.rise;
-    textMat = tmpMat * textState.transMat * data()->transMatrix;
+    textMat = tmpMat * textState.transMat * data()->transMatGS;
 
     return textMat;
 }
@@ -597,10 +597,10 @@ void PRGTextGroupWords::Data::init()
     // Initialize data members to default values.
     pFont = NULL;
     fontBBox = PdfRect( 0,0,0,0 );
-    fontNormTMatrix.init();
-    fontDocStatsTMatrix.init();
+    transMatFontRescale.init();
+    transMatDocRescale.init();
 
-    transMatrix.init();
+    transMatGS.init();
     textState.init();
 
     words.clear();
@@ -695,7 +695,9 @@ PdfeVector PRGTextGroupWords::Subgroup::advance( bool useGroupOrig ) const
     return advance;
 }
 
-PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum wordCoord, bool leadTrailSpaces, bool useBottomCoord ) const
+PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum endCoords,
+                                             bool leadTrailSpaces,
+                                             bool useBottomCoord ) const
 {
     // Handle the case of an empty group.
     if( !m_wordsInside.size() ) {
@@ -705,8 +707,8 @@ PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum wordCo
     if( m_isBBoxCache && leadTrailSpaces && useBottomCoord ) {
         PdfeORect bbox( m_bboxCache );
         // Apply transformation if needed.
-        if( wordCoord != PRGTextWordCoordinates::Word ) {
-            PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Word, wordCoord );
+        if( endCoords != PRGTextWordCoordinates::Word ) {
+            PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Word, endCoords );
             bbox = transMat.map( bbox );
         }
         return bbox;
@@ -767,8 +769,8 @@ PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum wordCo
     }
 
     // Apply transformation if needed.
-    if( wordCoord != PRGTextWordCoordinates::Word ) {
-        PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Word, wordCoord );
+    if( endCoords != PRGTextWordCoordinates::Word ) {
+        PdfeMatrix transMat = m_pGroup->transMatrix( PRGTextWordCoordinates::Word, endCoords );
         bbox = transMat.map( bbox );
     }
     return bbox;

@@ -96,7 +96,7 @@ QImage PRRenderPage::image()
     }
 }
 
-void PRRenderPage::renderElements(const Parameters &parameters )
+void PRRenderPage::renderElements( const Parameters& parameters )
 {
     // Initialize image and painter.
     this->initRendering( parameters.resolution );
