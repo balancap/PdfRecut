@@ -163,12 +163,14 @@ public:
     // Rendering routines.
     /** Render the groups of words present in the page.
      * \param renderPage PRRenderPage on which words are rendered.
+     * \param renderGlyphs Render text glyphs?
      */
-    void renderGroupsWords( PRRenderPage& renderPage ) const;
+    void renderGroupsWords( PRRenderPage& renderPage, bool renderGlyphs ) const;
     /** Render lines of text present in the page.
      * \param renderPage PRRenderPage on which lines are rendered.
+     * \param renderGlyphs Render text glyphs?
      */
-    void renderLines( PRRenderPage& renderPage ) const;
+    void renderLines( PRRenderPage& renderPage, bool renderGlyphs ) const;
 
 public:
     // Getters.

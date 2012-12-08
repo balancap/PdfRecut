@@ -708,7 +708,8 @@ PdfeVector PRGTextPage::fTextShowing( const PdfeStreamState& streamState )
 }
 
 // Rendering routines.
-void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage ) const
+void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage,
+                                     bool renderGlyphs ) const
 {
     // Rendering Pen/Brush.
     PRPenBrush textPB, spacePB, translationPB;
@@ -738,13 +739,16 @@ void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage ) const
 
         // Draw the group on the page.
         m_pGroupsWords[idx]->render( renderPage, textPB, spacePB, translationPB );
-        m_pGroupsWords[idx]->renderGlyphs( renderPage );
+        if( renderGlyphs ) {
+            m_pGroupsWords[idx]->renderGlyphs( renderPage );
+        }
     }
     QLOG_INFO() << QString( "<PRGTextPage> Render page's groups of words (index: %1)." )
                    .arg( m_page->pageIndex() )
                    .toAscii().constData();
 }
-void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
+void PRGTextPage::renderLines( PRRenderPage& renderPage,
+                               bool renderGlyphs ) const
 {
     // Rendering Pen/Brush.
     PRPenBrush textPB, spacePB, translationPB, linePB;
@@ -759,7 +763,6 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
     // Draw lines
     for( size_t idx = 0 ; idx < m_pTextLines.size() ; ++idx ) {
         PRGTextLine* pline = m_pTextLines[idx];
-
         // Set colors.
         lineColorWord.setHsv( idx*36 % 360, 255, 255 );
         lineColorSpace.setHsv( idx*36 % 360, 100, 255 );
@@ -775,10 +778,12 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage ) const
             // Subgroups of words inside the line.
             for( size_t idx = 0 ; idx < pline->nbSubgroups() ; ++idx ) {
                 pline->subgroup( idx ).render( renderPage, textPB, spacePB, translationPB );
+                if( renderGlyphs ) {
+                    pline->subgroup( idx ).group()->renderGlyphs( renderPage );
+                }
             }
             // Line bounding box.
             renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false ), linePB );
-
             // Line blocks.
 //            std::vector<PRGTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );
 //            PdfeMatrix transMat = m_pTextLines[idx]->transMatrix();

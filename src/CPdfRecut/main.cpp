@@ -174,8 +174,8 @@ void proceedFile( QString filePath )
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
 //        textPage->renderGroupsWords( renderPage );
-//        textPage->renderLines( renderPage );
-        renderPage.renderElements( renderParams );
+        textPage->renderLines( renderPage, false );
+//        renderPage.renderElements( renderParams, false );
 
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
