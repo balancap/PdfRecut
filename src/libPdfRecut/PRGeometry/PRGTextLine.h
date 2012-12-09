@@ -274,19 +274,16 @@ public:
      * \return Number of subgroups.
      */
     size_t nbSubgroups() const;
-
     /** Get a subgroup of the block.
      * Can raise an exception.
      * \param idx Index of the subgroup.
      * \return Constant reference to the subgroup.
      */
     const PRGTextGroupWords::Subgroup& subgroup( size_t idx ) const;
-
     /** Merge the block with another one.
      * \param block2nd Second block (not modified).
      */
     void merge( const Block& block2nd );
-
     /** Get the bounding box, in the line coordinate system.
      * \return PdfRect containing the bounding box.
      */
@@ -297,7 +294,6 @@ public:
      * \param block2 Second block.
      */
     static bool horizontalComp( const Block& block1, const Block& block2 );
-
     /** Horizontally compare two block (use pointers).
      * \param block1 Pointer to the first block.
      * \param block2 Pointer to the second block.

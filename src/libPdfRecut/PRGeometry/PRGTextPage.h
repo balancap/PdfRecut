@@ -83,33 +83,34 @@ private:
     PRGTextLine* createLine_Basic( size_t idxGroupWords );
     /** Try to merge existing lines.
      * Enlarge inside algorithm: detect elements inside a line and check if they belong to it.
+     * Unit are expressed in text document rescaled coordinates.
      * \param pLine Pointer of the line to consider.
-     * \param minBaseHeight Minimum height used in the enlargement algorithm.
-     * \param maxBaseHeight Maximum height used in the enlargement algorithm.
-     * \param minLineWidth Minimum length of lines.
+     * \param xEnlarge Width to add for X enlargement of bbox.
+     * \param yEnlarge Height to add for Y enlargement of bbox.
+     * \param minLineWidth Minimum length of the line.
      * \return Pointer the merged line.
      */
     PRGTextLine* mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
-                                           double minBaseHeight,
-                                           double maxBaseHeight,
+                                           double xEnlarge,
+                                           double yEnlarge,
                                            double minLineWidth );
     /** Try to merge existing lines. Depreciated.
      * Enlarge outside algorithm: detect elements in the neighbourhood of a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
-    PRGTextLine* mergeLines_EnlargeOutside( PRGTextLine* pBaseLine,
-                                            double scaleXEnlarge,
-                                            double scaleYEnlarge,
-                                            double maxLineWidth );
+    PRGTextLine* mergeLines_EnlargeOutside(PRGTextLine* pBaseLine,
+                                            double xEnlarge,
+                                            double yEnlarge,
+                                            double maxLineWidthCumul );
 
-    /** Try to merge existing lines. Depreciated.
+    /** Try to merge existing lines. DEPRECIATED.
      * Inside algorithm: detect elements inside a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
      */
     PRGTextLine* mergeLines_Inside( PRGTextLine* pLine );
-    /** Try to merge existing lines. Depreciated.
+    /** Try to merge existing lines. DEPRECIATED.
      * Small elements algorithm: detect small elements close to a line and check if they belong to it.
      * \param pLine Pointer of the line to consider.
      * \return Pointer the merged line.
@@ -168,9 +169,10 @@ public:
     void renderGroupsWords( PRRenderPage& renderPage, bool renderGlyphs ) const;
     /** Render lines of text present in the page.
      * \param renderPage PRRenderPage on which lines are rendered.
+     * \param renderWords Render subgroups of words that make the line.
      * \param renderGlyphs Render text glyphs?
      */
-    void renderLines( PRRenderPage& renderPage, bool renderGlyphs ) const;
+    void renderLines( PRRenderPage& renderPage, bool renderWords, bool renderGlyphs ) const;
 
 public:
     // Getters.
