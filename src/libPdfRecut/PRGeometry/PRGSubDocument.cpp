@@ -55,7 +55,7 @@ PRGDocument* PRGSubDocument::parent() const
 void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Log analysis.
-    QLOG_INFO() << QString( "<PRGSubDocument> Begin analysis of sub-document with range [%1,%2] and mean size (%3,%4)" )
+    QLOG_INFO() << QString( "<PRGSubDocument> Begin analysis of sub-document with range [%1,%2] and mean size (%3,%4)." )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
@@ -75,7 +75,7 @@ void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
     }
 
     // Log analysis.
-    QLOG_INFO() << QString( "<PRGSubDocument> End analysis of sub-document with range [%1,%2] and mean size (%3,%4)" )
+    QLOG_INFO() << QString( "<PRGSubDocument> End analysis of sub-document with range [%1,%2] and mean size (%3,%4)." )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
@@ -102,6 +102,9 @@ void PRGSubDocument::computeMeanCropBox()
 }
 void PRGSubDocument::computeBasicStats( size_t firstIndex, size_t lastIndex )
 {
+    QLOG_INFO() << QString( "<PRGSubDocument> Begin text statistics on sub-document." )
+                   .toAscii().constData();
+
     // Compute groups of words statistics.
     for( size_t i = firstIndex ; i <= lastIndex ; ++i ) {
         PRGPage* page = this->page( i );
@@ -110,6 +113,8 @@ void PRGSubDocument::computeBasicStats( size_t firstIndex, size_t lastIndex )
             m_textStatistics.addGroupWords( *(page->text()->groupWords(j)) );
         }
     }
+    QLOG_INFO() << QString( "<PRGSubDocument> End text statistics on sub-document." )
+                   .toAscii().constData();
 }
 
 PRGPage* PRGSubDocument::page( size_t idx )

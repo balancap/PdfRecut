@@ -18,6 +18,7 @@
 
 #include <podofo/podofo.h>
 #include <limits>
+#include <algorithm>
 
 using namespace PoDoFo;
 using namespace PoDoFoExtended;
@@ -345,6 +346,14 @@ std::list<PRGTextLine::Block> PRGTextLine::horizontalBlocksList(double hDistance
     return hBlocksList;
 }
 
+void PRGTextLine::modified()
+{
+    // Clear and sort subgroups
+    this->clearEmptySubgroups();
+    std::sort( m_subgroupsWords.begin(), m_subgroupsWords.end(), PRGTextGroupWords::Subgroup::compareGroupIndex );
+
+    m_resetCachedData = true;
+}
 void PRGTextLine::clearEmptySubgroups()
 {
     std::vector<PRGTextGroupWords::Subgroup>::iterator it;

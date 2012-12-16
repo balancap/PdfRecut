@@ -575,6 +575,15 @@ bool PRGTextGroupWords::isSpace() const
     return globalSubgroup.isSpace();
 }
 
+bool PRGTextGroupWords::compareGroupIndex( const PRGTextGroupWords& group1, const PRGTextGroupWords& group2 )
+{
+    return ( group1.m_groupIndex < group2.m_groupIndex );
+}
+bool PRGTextGroupWords::compareGroupIndexPtr( PRGTextGroupWords* pGroup1, PRGTextGroupWords* pGroup2 )
+{
+    return ( pGroup1->m_groupIndex < pGroup2->m_groupIndex );
+}
+
 void PRGTextGroupWords::render( PRRenderPage& renderPage,
                                 const PRPenBrush& textPB,
                                 const PRPenBrush& spacePB,
@@ -787,6 +796,16 @@ bool PRGTextGroupWords::Subgroup::isSpace() const
     return true;
 }
 
+bool PRGTextGroupWords::Subgroup::compareGroupIndex( const PRGTextGroupWords::Subgroup& subgroup1,
+                                                     const PRGTextGroupWords::Subgroup& subgroup2 )
+{
+    return ( subgroup1.m_pGroup->groupIndex() < subgroup2.m_pGroup->groupIndex() );
+}
+bool PRGTextGroupWords::Subgroup::compareGroupIndexPtr( PRGTextGroupWords::Subgroup* pSubgroup1,
+                                                        PRGTextGroupWords::Subgroup* pSubgroup2 )
+{
+    return ( pSubgroup1->m_pGroup->groupIndex() < pSubgroup2->m_pGroup->groupIndex() );
+}
 PRGTextGroupWords::Subgroup PRGTextGroupWords::Subgroup::intersection( const PRGTextGroupWords::Subgroup& subgroup1,
                                                                        const PRGTextGroupWords::Subgroup& subgroup2 )
 {

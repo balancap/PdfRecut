@@ -85,6 +85,10 @@ void PRGTextPage::clear()
 
 void PRGTextPage::detectLines()
 {
+    QLOG_INFO() << QString( "<PRGTextPage> Detection of page's text lines (index: %1)." )
+                   .arg( m_page->pageIndex() )
+                   .toAscii().constData();
+
     // Clear existing lines.
     std::for_each( m_pTextLines.begin(), m_pTextLines.end(), delete_ptr_fctor<PRGTextLine>() );
     m_pTextLines.clear();

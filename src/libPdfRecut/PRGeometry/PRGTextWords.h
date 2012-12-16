@@ -264,6 +264,7 @@ public:
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
     /** Estimate the global font size used for this group.
+     * Use font statistics to peform the computation.
      * \return Global font size.
      */
     double fontSize() const;
@@ -310,6 +311,15 @@ public:
     /** Is the group composed uniquely of space characters?
      */
     bool isSpace() const;
+
+public:
+    /** Compare two groups using their index.
+     * \param group1 Reference to the first group.
+     * \param group2 Reference to the second group.
+     * \return Group 1 index < Group 2 index.
+     */
+    static bool compareGroupIndex( const PRGTextGroupWords& group1, const PRGTextGroupWords& group2 );
+    static bool compareGroupIndexPtr( PRGTextGroupWords* pGroup1, PRGTextGroupWords* pGroup2 );
 
 public:
     // Rendering routines.
@@ -360,6 +370,11 @@ private:
     /// Max char space allowed inside a word: when greater, split the word and
     /// replace char space by PDF translation. Compared to font mean width.
     static const double MaxCharSpaceScale = 0.4;
+
+private:
+    // No copy constructor and operator= allowed.
+    PRGTextGroupWords( const PRGTextGroupWords& );
+    PRGTextGroupWords& operator=( const PRGTextGroupWords& );
 
 private:
     // Object main information: always kept in memory.
@@ -490,6 +505,13 @@ public:
     bool isSpace() const;
 
 public:
+    /** Compare two subgroups using the index of the group.
+     * \param subgroup1 First subgroup.
+     * \param subgroup2 Second subgroup.
+     * \return Subgroup 1 group index < Subgroup 2 group index.
+     */
+    static bool compareGroupIndex( const Subgroup& subgroup1, const Subgroup& subgroup2 );
+    static bool compareGroupIndexPtr( Subgroup* pSubgroup1, Subgroup* pSubgroup2 );
     /** Intersection of two subgroups.
      * The parent group must be the same (return empty subgroup else).
      * \param subgroup1 First subgroup.
@@ -497,7 +519,6 @@ public:
      * \return New subgroup corresponding to the intersection.
      */
     static Subgroup intersection( const Subgroup& subgroup1, const Subgroup& subgroup2 );
-
     /** Reunion of two subgroups.
      * The parent group must be the same (return empty subgroup else).
      * \param subgroup1 First subgroup.

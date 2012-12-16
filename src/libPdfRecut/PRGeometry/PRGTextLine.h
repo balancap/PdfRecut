@@ -332,11 +332,6 @@ inline PRGTextLine::Data* PRGTextLine::data() const
     }
     return &m_data;
 }
-inline void PRGTextLine::modified()
-{
-    this->clearEmptySubgroups();
-    m_resetCachedData = true;
-}
 
 //**********************************************************//
 //                  Inline PRGTextLine::Block                //
