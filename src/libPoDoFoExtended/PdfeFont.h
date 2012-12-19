@@ -114,11 +114,9 @@ public:
      * \param ftLibrary FreeType library.
      */
     PdfeFont( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary );
-
     /** Initialize the object to default parameters.
      */
     void init();
-
     /** Virtual destructor.
      */
     virtual ~PdfeFont();

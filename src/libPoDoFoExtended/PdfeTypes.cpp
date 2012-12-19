@@ -248,7 +248,6 @@ PoDoFo::PdfRect PdfeORect::intersection(const PoDoFo::PdfRect& lhs,
                              rhs.GetLeft() + rhs.GetWidth() );
     double top = std::min( lhs.GetBottom() + lhs.GetHeight(),
                            rhs.GetBottom() + rhs.GetHeight() );
-
     return PoDoFo::PdfRect( left, bottom,
                             std::max( 0.0, right - left ),
                             std::max( 0.0, top - bottom ) );
@@ -261,7 +260,6 @@ PoDoFo::PdfRect PdfeORect::reunion(const PoDoFo::PdfRect &lhs, const PoDoFo::Pdf
                              rhs.GetLeft() + rhs.GetWidth() );
     double top = std::max( lhs.GetBottom() + lhs.GetHeight(),
                            rhs.GetBottom() + rhs.GetHeight() );
-
     return PoDoFo::PdfRect( left, bottom,
                             right - left,
                             top - bottom );

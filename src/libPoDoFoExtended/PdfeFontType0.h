@@ -212,11 +212,11 @@ protected:
         void init();
         /** Initialize given a PdfArray from a PdfFont object,
          * a FreeType font face and the default font bounding box.
-         * \param widths PdfArray containing CID and widths informations.
+         * \param pWidths PdfArray containing CID and widths informations.
          * \param defWidth Default width.
          * \param fontBBox Font bounding box, used for default height.
          */
-        void init( const PoDoFo::PdfArray& widths,
+        void init( const PoDoFo::PdfObject* pWidths,
                    double defaultWidth,
                    const PoDoFo::PdfRect& fontBBox );
 

@@ -15,8 +15,40 @@
 #include <cstdlib>
 #include <functional>
 
-// File defining misc classes that can be useful...
+#include <podofo/base/PdfObject.h>
+#include <podofo/base/PdfVecObjects.h>
+
+// File defining misc classes/functions that can be useful...
 namespace PoDoFoExtended {
+
+/** Get the indirect reference of a PoDoFo object. I.e. check if the object
+ * is a reference, which is resolved in that case.
+ * \param pObj Pointer to the object.
+ * \return Pointer to the indirect object.
+ */
+inline const PoDoFo::PdfObject* PdfeIndirectObject( const PoDoFo::PdfObject* pObj,
+                                                    const PoDoFo::PdfVecObjects* pOwner = NULL )
+{
+    if( pObj->IsReference() ) {
+        pOwner = ( pObj->GetOwner() ? pObj->GetOwner() : pOwner );
+        if( !pOwner ) {
+            PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidHandle,
+                                     "Object is a reference but does not have an owner!" );
+        }
+        while( pObj->IsReference() ) {
+            pObj = pOwner->GetObject( pObj->GetReference() );
+        }
+        return pObj;
+    }
+    return pObj;
+}
+inline PoDoFo::PdfObject* PdfeIndirectObject( PoDoFo::PdfObject* pObj,
+                                              const PoDoFo::PdfVecObjects* pOwner = NULL )
+{
+    return const_cast<PoDoFo::PdfObject*>(
+                PdfeIndirectObject( const_cast<PoDoFo::PdfObject*>( pObj ), pOwner ) );
+}
+
 
 /** Delete functional object. Delete the object and set the pointer to NULL.
  * Example : std::for_each( foobar.begin(), foobar.end(), delete_ptr_fctor<int>() );

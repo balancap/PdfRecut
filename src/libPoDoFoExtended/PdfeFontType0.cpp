@@ -205,12 +205,7 @@ void PdfeFontCID::init( PoDoFo::PdfObject* pFont )
 
     // Read width of glyphs CID.
     double defaultWidth = static_cast<double>( pFont->GetDictionary().GetKeyAsLong( "DW", 1000L ) );
-    if( pWidths ) {
-        m_hBBoxes.init( pWidths->GetArray(), defaultWidth, m_fontDescriptor.fontBBox() );
-    }
-    else {
-        m_hBBoxes.init( PdfArray(), defaultWidth, m_fontDescriptor.fontBBox() );
-    }
+    m_hBBoxes.init( pWidths, defaultWidth, m_fontDescriptor.fontBBox() );
 }
 void PdfeFontCID::initCharactersBBox( FT_Face ftFace )
 {
@@ -297,18 +292,22 @@ void PdfeFontCID::HBBoxArray::init()
     m_defaultAdvance = PdfeVector( 1000., 0. );
     m_defaultBBox = PdfRect( 0., 0., 1000., 500. );
 }
-void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
+void PdfeFontCID::HBBoxArray::init( const PdfObject* pWidths,
                                     double defaultWidth,
                                     const PdfRect& fontBBox )
 {
     this->init();
-
     // Default height used (from fontBBox) and default bounding box.
     double defaultHeight = fontBBox.GetHeight()+fontBBox.GetBottom();
     m_defaultAdvance = PdfeVector( defaultWidth, 0. );
     m_defaultBBox = PdfRect( 0., 0., defaultWidth, defaultHeight );
 
+    if( !pWidths || !pWidths->IsArray() ) {
+        return;
+    }
     size_t i = 0;
+    const PdfObject* pObj;
+    const PdfArray& widths = pWidths->GetArray();
     while( i < widths.size() ) {
         // Increase size of vectors.
         m_firstCID.push_back( 0 );
@@ -317,12 +316,14 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
         m_advanceCID.push_back( std::vector<PdfeVector>() );
 
         // First CID value.
-        m_firstCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );
+        pObj = PdfeIndirectObject( &widths[i], pWidths->GetOwner() );
+        m_firstCID.back() = static_cast<pdfe_cid>( pObj->GetNumber() );
         ++i;
 
         // Read array of widths.
-        if( widths[i].IsArray() ) {
-            const PdfArray& widthsCID = widths[i].GetArray();
+        pObj = PdfeIndirectObject( &widths[i], pWidths->GetOwner() );
+        if( pObj->IsArray() ) {
+            const PdfArray& widthsCID = pObj->GetArray();
 
             // Resize advance bbox vector with default height set.
             m_advanceCID.back().resize( widthsCID.size(),
@@ -340,14 +341,14 @@ void PdfeFontCID::HBBoxArray::init( const PdfArray& widths,
         }
         // Read width for a range of CIDs.
         else {
-            m_lastCID.back() = static_cast<pdfe_cid>( widths[i].GetNumber() );
+            m_lastCID.back() = static_cast<pdfe_cid>( pObj->GetNumber() );
             ++i;
 
             // Create advance vector and bounding box for each glyph.
             m_advanceCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
-                                        PdfeVector( widths[i].GetReal(), 0. ) );
+                                        PdfeVector( pObj->GetReal(), 0. ) );
             m_bboxCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
-                                     PdfRect( 0., 0., widths[i].GetReal(), defaultHeight ) );
+                                     PdfRect( 0., 0., pObj->GetReal(), defaultHeight ) );
             ++i;
         }
     }
