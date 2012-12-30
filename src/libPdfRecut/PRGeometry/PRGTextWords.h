@@ -14,6 +14,7 @@
 
 #include "podofo/base/PdfString.h"
 #include "PdfeGraphicsState.h"
+#include <QString>
 
 namespace PoDoFo {
 class PdfPage;
@@ -37,6 +38,12 @@ class PRGTextLine;
 
 class PRRenderPage;
 class PRPenBrush;
+
+/** Is a QString uniquely composed of letters and numbers?
+ * \param ustr Unicode string.
+ * \return Answer! False if the string is empty.
+ */
+bool QStringIsLettersNumbers( const QString& ustr );
 
 //**********************************************************//
 //                        PRGTextWord                       //
@@ -112,7 +119,6 @@ public:
     void init( double spaceWidth,
                double spaceHeight,
                PRGTextWordType::Enum type );
-
 public:
     // Simple getters...
     long length() const                 {   return m_cidString.length();    }
@@ -131,12 +137,19 @@ public:
      * \return Rectangle containing the bounding box.
      */
     PoDoFo::PdfRect bbox( bool useBottomCoord ) const;
+    /** Get the unicode string corresponding to the word.
+     * \return QString containing the unicode word. Empty if can not
+     * translate into unicode.
+     */
+    QString toUnicode() const;
 
 private:
     /// Minimal height scale factor for a word (compared to space height).
     static const double MinimalHeightScale = 0.3;
 
 private:
+    /// Pointer to the font object.
+    PoDoFoExtended::PdfeFont*  m_pFont;
     /// Pdf string corresponding to the word. TODO: not working !
     PoDoFo::PdfString  m_pdfString;
     /// CID string corresponding to the word.
@@ -263,6 +276,13 @@ public:
     PdfeORect bbox( PRGTextWordCoordinates::Enum endCoords,
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
+    /** Get the unicode string corresponding to the group of words.
+     * \param smartSpaces Smart spaces: try to remove unnecessary space characters
+     * i.e. small PDF displacements that do not correspond to actual spaces between words.
+     * \return QString containing the unicode string. Empty if can not
+     * translate into unicode.
+     */
+    QString toUnicode( bool smartSpaces = true ) const;
     /** Estimate the global font size used for this group.
      * Use font statistics to peform the computation.
      * \return Global font size.
@@ -455,7 +475,6 @@ public:
      * \param pGroup Pointer to the group.
      */
     void setGroup( PRGTextGroupWords* pGroup );
-
     /** Is a word inside the subgroup? Can raise an exception.
      * \param idxWord Index of the word.
      * \return The word belongs to the subgroup?
@@ -467,7 +486,6 @@ public:
      * \param inside Is the word inside the subgroup.
      */
     void setInside( size_t idxWord, bool inside );
-
     /** Get a pointer to a word. Can raise an exception.
      * \param idxWord Index of the word.
      * \return Pointer to the word. NULL if it does belong to the subgroup.
@@ -494,6 +512,13 @@ public:
     PdfeORect bbox( PRGTextWordCoordinates::Enum endCoords,
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
+    /** Get the unicode string corresponding to the group of words.
+     * \param smartSpaces Smart spaces: try to remove unnecessary space characters
+     * i.e. small PDF displacements that do not correspond to actual spaces between words.
+     * \return QString containing the unicode string. Empty if can not
+     * translate into unicode.
+     */
+    QString toUnicode( bool smartSpaces = true ) const;
 
     /** Is the subgroup empty? Meaning to that no word belongs to it.
      * \return True if empty, false otherwise.
@@ -575,9 +600,9 @@ inline PoDoFo::PdfRect PRGTextWord::bbox( bool useBottomCoord ) const
 //**********************************************************//
 //                 Inline PRGTextGroupWords                  //
 //**********************************************************//
-inline void PRGTextGroupWords::setGroupStreamID(long groupPageID )
+inline void PRGTextGroupWords::setGroupStreamID(long groupStreamID )
 {
-    m_groupStreamID = groupPageID;
+    m_groupStreamID = groupStreamID;
 }
 inline void PRGTextGroupWords::setGroupIndex(long groupIndex )
 {

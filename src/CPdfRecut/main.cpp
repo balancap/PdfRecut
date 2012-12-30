@@ -175,8 +175,8 @@ void proceedFile( QString filePath )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        textPage->renderGroupsWords( renderPage, false );
-        textPage->renderLines( renderPage, false, false );
+        textPage->renderGroupsWords( renderPage, true );
+//        textPage->renderLines( renderPage, false, false );
 //        renderPage.renderElements( renderParams );
 
         // Save image to file.

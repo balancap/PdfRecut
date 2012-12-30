@@ -202,7 +202,6 @@ private:
     /// Compute rescaled data. Assume bbox are already computed.
     void computeRescaledData() const;
 
-
 private:
     /// Pointer to the text page it belongs to.
     PRGTextPage*  m_textPage;

@@ -99,7 +99,6 @@ QString PRException::codeName( PRExceptionCode::Enum code )
              << "PRCache"
              << "PRAbort"
              << "PRUnknown";
-
     return strCodes.at( code );
 }
 

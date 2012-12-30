@@ -32,6 +32,19 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
+bool QStringIsLettersNumbers( const QString& ustr )
+{
+    if( ustr.isEmpty() ) {
+        return false;
+    }
+    for( int i = 0 ; i < ustr.length() ; ++i ) {
+        if( !ustr.at( i ).isLetterOrNumber() ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 //**********************************************************//
 //                        PRGTextWord                       //
 //**********************************************************//
@@ -50,6 +63,7 @@ PRGTextWord::PRGTextWord( double spaceWidth, double spaceHeight, PRGTextWordType
 
 void PRGTextWord::init()
 {
+    m_pFont = NULL;
     m_pdfString = PoDoFo::PdfString();
     m_cidString = PdfeCIDString();
     m_type = PRGTextWordType::Unknown;
@@ -63,6 +77,7 @@ void PRGTextWord::init( const PdfeCIDString& cidstr, PRGTextWordType::Enum type,
     this->init();
 
     // Copy members.
+    m_pFont = pFont;
     m_cidString = cidstr;
     m_type = type;
     m_charSpace = pFont->charSpace();
@@ -96,6 +111,21 @@ void PRGTextWord::init( double spaceWidth, double spaceHeight, PRGTextWordType::
     m_type = type;
     m_advance = PdfeVector( spaceWidth, 0.0 );
     m_bbox = PdfRect( 0.0, 0.0, spaceWidth, spaceHeight );
+}
+QString PRGTextWord::toUnicode() const
+{
+    QString ustr;
+    if( m_type == PRGTextWordType::Classic ) {
+        ustr = m_pFont->toUnicode( m_cidString );
+    }
+    else if( m_type == PRGTextWordType::Space ||
+             m_type == PRGTextWordType::PDFTranslation ||
+             m_type == PRGTextWordType::PDFTranslationCS ) {
+        ustr = QString( " " );
+    }
+    // Unknown character...
+    //qDebug() << QChar(0xFFFD);
+    return ustr;
 }
 
 //**********************************************************//
@@ -375,7 +405,6 @@ void PRGTextGroupWords::appendWord( const PRGTextWord& word )
 {
     // Append the word to the vector.
     data()->words.push_back( word );
-
     // Construct subgroups vector.
     this->buildMainSubGroups();
 }
@@ -383,15 +412,13 @@ void PRGTextGroupWords::appendWord( const PRGTextWord& word )
 size_t PRGTextGroupWords::length( bool countSpaces ) const
 {
     // Length of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.length( countSpaces );
+    return Subgroup( *this ).length( countSpaces );
 }
 
 PdfeVector PRGTextGroupWords::advance() const
 {
     // Advance vector of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.advance( true );
+    return Subgroup( *this ).advance( true );
 }
 PdfeVector PRGTextGroupWords::displacement() const
 {
@@ -406,10 +433,13 @@ PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum endCoords,
                                    bool useBottomCoord ) const
 {
     // Bounding box of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.bbox( endCoords, leadTrailSpaces, useBottomCoord );
+    return Subgroup( *this ).bbox( endCoords, leadTrailSpaces, useBottomCoord );
 }
-
+QString PRGTextGroupWords::toUnicode( bool smartSpaces ) const
+{
+    // Unicode translation of the complete subgroup.
+    return Subgroup( *this ).toUnicode( smartSpaces );
+}
 double PRGTextGroupWords::fontSize() const
 {
     PdfeFont::Statistics stats = data()->pFont->statistics( true );
@@ -417,7 +447,6 @@ double PRGTextGroupWords::fontSize() const
     // Apply global transformation matrix on meanBBox.
     PdfeORect meanBBox( stats.meanBBox );
     meanBBox = this->getGlobalTransMatrix().map( meanBBox );
-
     // Estimation of the font size...
     return ( meanBBox.height() / stats.meanBBox.GetHeight() );
 }
@@ -522,7 +551,6 @@ double PRGTextGroupWords::minDistance( const PRGTextGroupWords& group ) const
     }
     return dist;
 }
-
 double PRGTextGroupWords::maxDistance( const PRGTextGroupWords& group ) const
 {
     PdfeORect grp1BBox, grp2BBox;
@@ -561,7 +589,6 @@ void PRGTextGroupWords::rmTextLine( PRGTextLine* pLine )
 {
     std::vector<PRGTextLine*>::iterator it;
     it = std::find( m_pTextLines.begin(), m_pTextLines.end(), pLine );
-
     // Remove if found.
     if( it != m_pTextLines.end() ) {
         m_pTextLines.erase( it );
@@ -571,8 +598,7 @@ void PRGTextGroupWords::rmTextLine( PRGTextLine* pLine )
 bool PRGTextGroupWords::isSpace() const
 {
     // Advance vector of the complete subgroup.
-    Subgroup globalSubgroup( *this );
-    return globalSubgroup.isSpace();
+    return Subgroup( *this ).isSpace();
 }
 
 bool PRGTextGroupWords::compareGroupIndex( const PRGTextGroupWords& group1, const PRGTextGroupWords& group2 )
@@ -589,13 +615,11 @@ void PRGTextGroupWords::render( PRRenderPage& renderPage,
                                 const PRPenBrush& spacePB,
                                 const PRPenBrush& translationPB ) const
 {
-    Subgroup globalSubgroup( *this );
-    globalSubgroup.render( renderPage, textPB, spacePB, translationPB );
+    Subgroup( *this ).render( renderPage, textPB, spacePB, translationPB );
 }
 void PRGTextGroupWords::renderGlyphs( PRRenderPage& renderPage ) const
 {
-    Subgroup globalSubgroup( *this );
-    globalSubgroup.renderGlyphs( renderPage );
+    Subgroup( *this ).renderGlyphs( renderPage );
 }
 
 //**********************************************************//
@@ -783,6 +807,10 @@ PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum endCoo
         bbox = transMat.map( bbox );
     }
     return bbox;
+}
+QString PRGTextGroupWords::Subgroup::toUnicode( bool smartSpaces ) const
+{
+    return QString();
 }
 
 bool PRGTextGroupWords::Subgroup::isSpace() const
