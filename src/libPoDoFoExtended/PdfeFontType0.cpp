@@ -340,6 +340,7 @@ void PdfeFontCID::HBBoxArray::init( const PdfObject* pWidths,
             ++i;
 
             // Create advance vector and bounding box for each glyph.
+            pObj = PdfeIndirectObject( &widths[i], pWidths->GetOwner() );
             m_advanceCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
                                         PdfeVector( pObj->GetReal(), 0. ) );
             m_bboxCID.back().resize( m_lastCID.back()-m_firstCID.back()+1,
