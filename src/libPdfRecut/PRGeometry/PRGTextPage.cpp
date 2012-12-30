@@ -280,7 +280,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
     pLinesToMerge.push_back( pBaseLine );
 
     // Line bounding box (no spaces) and transformation matrix.
-    PdfeORect baseLineOBBox = pBaseLine->bbox( PRGTextLineCoordinates::LineDocRescaled, false );
+    PdfeORect baseLineOBBox = pBaseLine->bbox( PRGTextLineCoordinates::LineDocRescaled, false, false );
     PdfeMatrix baseTransMat = pBaseLine->transMatrix( PRGTextLineCoordinates::Page,
                                                       PRGTextLineCoordinates::LineDocRescaled );
     // Line too small or full of spaces, do not consider it...
@@ -303,7 +303,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
         }
 
         // Line bounding box in base coordinates system (check it is not empty).
-        PdfeORect lineOBBox = pLine->bbox( PRGTextLineCoordinates::Page, false );
+        PdfeORect lineOBBox = pLine->bbox( PRGTextLineCoordinates::Page, false, false );
         if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 ) {
             continue;
         }
@@ -354,7 +354,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeOutside(PRGTextLine* pBaseLine,
     pLinesToMerge.push_back( pBaseLine );
 
     // Line bounding box (no spaces) and transformation matrix.
-    PdfeORect baseLineOBBox = pBaseLine->bbox( PRGTextLineCoordinates::LineDocRescaled, false );
+    PdfeORect baseLineOBBox = pBaseLine->bbox( PRGTextLineCoordinates::LineDocRescaled, false, false );
     PdfeMatrix baseTransMat = pBaseLine->transMatrix( PRGTextLineCoordinates::Page,
                                                       PRGTextLineCoordinates::LineDocRescaled );
     // Line too small, do not consider it...
@@ -373,7 +373,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeOutside(PRGTextLine* pBaseLine,
                 continue;
             }
             // Line bounding box in base coordinates system (check it is not empty).
-            PdfeORect lineOBBox = pLine->bbox( PRGTextLineCoordinates::Page, false );
+            PdfeORect lineOBBox = pLine->bbox( PRGTextLineCoordinates::Page, false, false );
             lineOBBox = baseTransMat.map( lineOBBox );
             if( lineOBBox.width() <= 0.0 || lineOBBox.height() <= 0.0 ||
                     pLine->widthCumulative( PRGTextLineCoordinates::LineDocRescaled, false ) >= maxLineWidthCumul ) {
@@ -483,7 +483,7 @@ PRGTextLine *PRGTextPage::mergeLines_Small( PRGTextLine *pLine )
     }
     PdfeMatrix lineTransMat = pLine->transMatrix( PRGTextLineCoordinates::Page,
                                                   PRGTextLineCoordinates::Line );
-    PdfeORect lineBBox = pLine->bbox( PRGTextLineCoordinates::Line, true );
+    PdfeORect lineBBox = pLine->bbox( PRGTextLineCoordinates::Line, true, false );
     PdfeVector lineLBPoint = lineBBox.leftBottom();
 
     // Vector of lines to merge.
@@ -517,7 +517,7 @@ PRGTextLine *PRGTextPage::mergeLines_Small( PRGTextLine *pLine )
                 distMaxBefore = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
 
                 // Line bounding box.
-                PdfeORect lineBBox2nd = pLine2nd->bbox( PRGTextLineCoordinates::Page, true );
+                PdfeORect lineBBox2nd = pLine2nd->bbox( PRGTextLineCoordinates::Page, true, false );
                 lineBBox2nd = lineTransMat.map( lineBBox2nd );
 
                 // Compute the expected height of the merge line.
@@ -553,7 +553,7 @@ PRGTextLine *PRGTextPage::mergeLines_Small( PRGTextLine *pLine )
                 distMaxAfter = std::max( distMaxBefore, pGroupLine->maxDistance( *pGroup2nd ) );
 
                 // Line bounding box.
-                PdfeORect lineBBox2nd = pLine2nd->bbox( PRGTextLineCoordinates::Page, true );
+                PdfeORect lineBBox2nd = pLine2nd->bbox( PRGTextLineCoordinates::Page, true, false );
                 lineBBox2nd = lineTransMat.map( lineBBox2nd );
 
                 // Compute the expected height of the merge line.
@@ -773,7 +773,7 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage,
                 }
             }
             // Line bounding box.
-            renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false ), linePB );
+            renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false, false ), linePB );
             // Line blocks.
 //            std::vector<PRGTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );
 //            PdfeMatrix transMat = m_pTextLines[idx]->transMatrix();

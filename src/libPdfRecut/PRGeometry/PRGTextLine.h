@@ -65,7 +65,7 @@ public:
     void setSubgroup( size_t idx, const PRGTextGroupWords::Subgroup& subgroup );
     /** Get a subgroup which is inside the line.
      * Can raise an exception.
-     * \param idx Index of the subgroup.
+     * \param idx Index of the subgroup in the line.
      * \return Constant reference to the subgroup.
      */
     const PRGTextGroupWords::Subgroup& subgroup( size_t idx ) const;
@@ -78,6 +78,10 @@ public:
      * \return Index of the corresponding subgroup (-1 if not found).
      */
     long hasGroupWords( PRGTextGroupWords* pGroup ) const;
+    /** Does the line has a large capital letter?
+     * \return Index of the corresponding subgroup (-1 if none).
+     */
+    long hasLCL() const;
 
 public:
     /** Minimum index of group of words inside the line.
@@ -91,11 +95,18 @@ public:
 
     /** Get the line bounding box.
      * \param endCoords Coordinates system in which the bounding box is expressed.
-     * \param leadTrailSpaces Include leading and trailing spaces ?
+     * \param incLTSpaces Include leading and trailing spaces?
+     * \param incLCL Include large capital letter?
      * \return Oriented rectangle containing the bounding box.
      */
     PdfeORect bbox( PRGTextLineCoordinates::Enum endCoords,
-                    bool leadTrailSpaces ) const;
+                    bool incLTSpaces,
+                    bool incLCL ) const;
+    /** Get the bounding box of the large capital letter (if it exists).
+     * \param endCoords Coordinates system in which the bounding box is expressed.
+     * \return Oriented rectangle containing the bounding box.
+     */
+    PdfeORect bboxLCL( PRGTextLineCoordinates::Enum endCoords ) const;
     /** Get the width of the line.
      * \param endCoords Coordinates system in which the width is expressed.
      * \param leadTrailSpaces Include leading and trailing spaces ?
@@ -180,6 +191,18 @@ private:
     /// Compute bounding boxes and transformation matrices.
     void computeBBoxes() const;
 
+    /// Compute line transformation matrix.
+    void computeTransMat() const;
+    /// Compute some statistics (i.e. mean height).
+    void computeStatistics() const;
+    /// Find large capital letter in the
+    void findLargeCapitalLetter() const;
+    /// Compute line bounding box.
+    void computeBBox() const;
+    /// Compute rescaled data. Assume bbox are already computed.
+    void computeRescaledData() const;
+
+
 private:
     /// Pointer to the text page it belongs to.
     PRGTextPage*  m_textPage;
@@ -200,15 +223,25 @@ private:
         /// Document statistics transformation matrix (line coord to doc rescaled coord)..
         PdfeMatrix  transMatDocRescale;
 
-        /// Line bounding box.
+        /// Line bounding box (without LCL).
         PoDoFo::PdfRect  bbox;
-        /// Line bounding box (with no leading and trailing spaces).
+        /// Line bounding box (no leading and trailing spaces).
         PoDoFo::PdfRect  bboxNoLTSpaces;
+        /// Bounding box of the large capital letter (if it exists).
+        PoDoFo::PdfRect  bboxLCL;
+
+        /** Index of the subgroup corresponding to the large capital letter (LCL), i.e.
+         * the large letter than may appear at the beggining of a line. -1 if none.
+         */
+        long  idxLargeCapitalLetter;
 
         /// Cumulative width.
         double  widthCumul;
         /// Cumulative width, without spaces.
         double  widthCumulNoSpaces;
+
+        /// Mean height of the line (based on subgroups height).
+        double  meanHeight;
         /// Mean font size of the line.
         double  meanFontSize;
 
