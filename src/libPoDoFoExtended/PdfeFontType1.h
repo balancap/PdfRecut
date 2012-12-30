@@ -36,25 +36,21 @@ public:
      * \param ftLibrary FreeType library.
      */
     PdfeFontType1( PdfeFont14Standard::Enum stdFontType, FT_Library ftLibrary );
-
     /** Initialize the object to default parameters.
      */
     void init();
-
     /** Virtual destructor.
      */
     virtual ~PdfeFontType1();
 
-protected:
+private:
     /** No default constructor.
      */
     PdfeFontType1() { }
-
     /** Initialize the size of characters according to the font object.
      * \param pFont Pointer to the object where is defined the type 1 font.
      */
     void initCharactersBBox( const PoDoFo::PdfObject* pFont );
-
     /** Initialize the font as one of the 14 standard font.
      * \param fontName Font name.
      * \param pFont Pointer to the object where is defined the standard type 1 font (can be NULL).
@@ -68,26 +64,22 @@ public:
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const;
-
     /** Get the font bounding box.
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const;
-
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Advance vector.
      */
     virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const;
-
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
-
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
@@ -95,7 +87,6 @@ public:
     virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
         return this->PdfeFont::toCIDString( str );
     }
-
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
@@ -114,7 +105,12 @@ public:
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const {
         return this->PdfeFont::isSpace( c );
     }
-
+    /** Get default width used for space characters of the font.
+     * \return Space width.
+     */
+    virtual double spaceWidth() const {
+        return this->PdfeFont::spaceWidth();
+    }
     /** Get default height used for space characters of the font.
      * \return Space height.
      */
@@ -128,7 +124,6 @@ public:
     virtual Statistics statistics( bool defaultValue = false ) const {
         return this->PdfeFont::statistics( defaultValue );
     }
-
     /** Convert a character CID to the corresponding glyph GID.
      * Need the freetype face, unicode CMap and encoding to be initialized.
      * \param c Character CID;

@@ -87,9 +87,10 @@ PdfeFontType3::PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary ) :
 
     // Space characters vector.
     this->initSpaceCharacters( m_firstCID, m_lastCID, true );
-
     // Glyph vectors.
     this->initGlyphs( pFont );
+    // Default space bounding box.
+    this->initSpaceBBox();
 
     // Log font information.
     this->initLogInformation();
@@ -100,6 +101,7 @@ void PdfeFontType3::init()
     m_fontDescriptor.init();
 
     m_fontBBox = PdfRect( 0.0, 0.0, 0.0, 0.0 );
+    m_spaceBBox = PdfRect( 0.0, 0.0, 0.0, 0.0 );
     m_fontMatrix.init();
 
     // Last CID < First CID to avoid problems.
@@ -140,7 +142,32 @@ void PdfeFontType3::initGlyphs( const PdfObject* pFont )
         }
     }
 }
+void PdfeFontType3::initSpaceBBox()
+{
+    m_spaceBBox.SetLeft( 0.0 );
+    m_spaceBBox.SetBottom( 0.0 );
 
+    // Compute mean characters width.
+    size_t nbCID = 0;
+    double spaceWidth = 0;
+    for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
+        if( m_advanceCID[c - m_firstCID](0) > 0) {
+            spaceWidth += m_advanceCID[c - m_firstCID](0);
+            ++nbCID;
+        }
+    }
+    if( spaceWidth > 0 ) {
+        spaceWidth = spaceWidth / nbCID;
+    }
+    else {
+        spaceWidth = m_fontBBox.GetHeight();
+    }
+    // Multiply by a magic! constant factor.
+    spaceWidth = spaceWidth * 0.8;
+
+    m_spaceBBox.SetWidth( spaceWidth );
+    m_spaceBBox.SetHeight( spaceWidth );
+}
 PdfeFontType3::~PdfeFontType3()
 {
 }
@@ -204,33 +231,13 @@ PdfRect PdfeFontType3::bbox( pdfe_cid c, bool useFParams ) const
     }
     return cbbox;
 }
-
+double PdfeFontType3::spaceWidth() const
+{
+    return m_spaceBBox.GetWidth();
+}
 double PdfeFontType3::spaceHeight() const
 {
-    static double spaceHeight(-1);
-
-    // Compute mean width.
-    if( spaceHeight <= 0 ) {
-        size_t nbCID = 0;
-        double spaceHeight = 0;
-
-        for( pdfe_cid c = m_firstCID ; c <= m_lastCID ; ++c ) {
-            if( m_advanceCID[c - m_firstCID](0) > 0) {
-                spaceHeight += m_advanceCID[c - m_firstCID](0);
-                ++nbCID;
-            }
-        }
-        if( spaceHeight > 0 ) {
-            spaceHeight = spaceHeight / nbCID;
-        }
-        else {
-            spaceHeight = m_fontBBox.GetHeight();
-        }
-
-        // Multiply by a magic! constant factor.
-        spaceHeight = spaceHeight * 0.8;
-    }
-    return spaceHeight;
+    return m_spaceBBox.GetHeight();
 }
 pdfe_gid PdfeFontType3::fromCIDToGID(pdfe_cid c) const
 {    // Outside bounds: return 0.

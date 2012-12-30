@@ -175,32 +175,27 @@ public:
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const = 0;
-
     /** Get the font bounding box.
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const = 0;
-
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Advance vector.
      */
     virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const = 0;
-
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const = 0;
-
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
      */
     virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const = 0;
-
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
@@ -210,18 +205,19 @@ public:
     virtual QString toUnicode( pdfe_cid c,
                                bool useUCMap = true,
                                bool firstTryEncoding = false ) const = 0;
-
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
      */
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const = 0;
-
+    /** Get default width used for space characters of the font.
+     * \return Space width.
+     */
+    virtual double spaceWidth() const = 0;
     /** Get default height used for space characters of the font.
      * \return Space height.
      */
     virtual double spaceHeight() const = 0;
-
     /** Convert a character CID to the corresponding glyph GID.
      * Need the freetype face, unicode CMap and encoding to be initialized.
      * \param c Character CID;
@@ -293,7 +289,6 @@ protected:
      * \param clearContents Clear existing contents.
      */
     void initSpaceCharacters( pdfe_cid firstCID, pdfe_cid lastCID, bool clearContents = true );
-
     /** Log the initialization of PdfeFont object, and corresponding font information.
      */
     void initLogInformation();
@@ -305,14 +300,12 @@ protected:
      */
     void applyFontParameters( double& width,
                               bool space32 ) const;
-
     /** Apply font parameter to a character advance vector.
      * \param Reference to the advance vector to modify.
      * \param space32 Is the character a 32 type space?
      */
     void applyFontParameters( PdfeVector& advance,
                               bool space32 ) const;
-
     /** Apply font parameter to a character bounding box.
      * \param Reference to the bbox to modify.
      * \param space32 Is the character a 32 type space?
@@ -341,14 +334,12 @@ public:
      */
     static PoDoFo::PdfRect ftGlyphBBox( FT_Face ftFace,
                                         pdfe_gid gid );
-
     /** Obtain the bounding box of a glyph, using FreeType (not static).
      * \param gid Glyph index.
      * \return Bounding box of the glyph (in 1000 units scale).
      * Set to zero if anything wrong happened.
      */
     PoDoFo::PdfRect ftGlyphBBox( pdfe_gid gid );
-
     /** Render a glyph using FreeType.
      * \param gid Glyph index.
      * \param charHeight Size chosen for the glyph.
@@ -376,7 +367,6 @@ protected:
      * \return GID of the character. O if not found.
      */
     pdfe_gid ftGIDFromCharCode(pdfe_cid charCode , bool charmap30 = false ) const;
-
     /** Retrieve the GID corresponding to a given character code.
      * Basically call FT_Get_Name_Index.
      * \param charName Character name.

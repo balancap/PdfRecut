@@ -32,24 +32,24 @@ public:
      * \param pFont Pointer to the object where is defined the type 3 font.
      */
     PdfeFontType3( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
-
     /** Initialize the object to default parameters.
      */
     void init();
-
     /** Virtual destructor.
      */
     virtual ~PdfeFontType3();
 
-protected:
+private:
     /** Private default constructor.
      */
     PdfeFontType3();
-
-   /** Initialize the vector of glyphs and their bounding box.
+    /** Initialize the vector of glyphs and their bounding box.
      * \param pFont Pointer to the object where is defined the type 3 font.
      */
     void initGlyphs( const PoDoFo::PdfObject* pFont );
+    /** Initialize space bounding box, using font statistics.
+     */
+    void initSpaceBBox();
 
 public:
     // Implementation of PdfeFont interface.
@@ -57,26 +57,22 @@ public:
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const;
-
     /** Get the font bounding box.
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const;
-
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Advance vector.
      */
     virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const;
-
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
-
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
@@ -84,7 +80,6 @@ public:
     virtual PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const {
         return this->PdfeFont::toCIDString( str );
     }
-
     /** Convert a character to a unicode QString.
      * \param  c Character identifier (CID).
      * \param useUCMap Try to use the unicode CMap to convert.
@@ -96,7 +91,6 @@ public:
                                bool firstTryEncoding = false ) const {
         return this->PdfeFont::toUnicode( c, useUCMap, firstTryEncoding );
     }
-
     /** Is a CID character a white space character.
      * \param  c Character identifier (CID).
      * \return Classification of the character.
@@ -104,7 +98,10 @@ public:
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const {
         return this->PdfeFont::isSpace( c );
     }
-
+    /** Get default width used for space characters of the font.
+     * \return Space width.
+     */
+    virtual double spaceWidth() const;
     /** Get default height used for space characters of the font.
      * \return Space height.
      */
@@ -117,7 +114,6 @@ public:
         // No default value for Type 3 fonts.
         return this->PdfeFont::statistics( false );
     }
-
     /** Convert a character CID to the corresponding glyph GID.
      * Need the freetype face, unicode CMap and encoding to be initialized.
      * \param c Character CID;
@@ -136,12 +132,13 @@ private:
     pdfe_cid  m_firstCID;
     /// Last character defined in font's width array.
     pdfe_cid  m_lastCID;
-
     /// Array of advance vectors.
     std::vector<PdfeVector>  m_advanceCID;
 
     /// Font descriptor.
     PdfeFontDescriptor  m_fontDescriptor;
+    /// Default space bounding box.
+    PoDoFo::PdfRect  m_spaceBBox;
 
     /// Vector of type 3 glyphs.
     std::vector<PdfeGlyphType3>  m_glyphs;
@@ -170,7 +167,6 @@ public:
     PdfeGlyphType3( const PoDoFo::PdfName& glyphName,
                     PoDoFo::PdfObject* glyphStream,
                     PoDoFo::PdfObject* fontResources );
-
     /** Get glyph bounding box.
      * \return PdfRect containing the bbox.
      */
@@ -184,45 +180,27 @@ protected:
 protected:
     // Reimplement PdfeCanvasAnalysis interface.
     virtual void fGeneralGState( const PdfeStreamState& streamState ) { }
-
     virtual void fSpecialGState( const PdfeStreamState& streamState ) { }
-
     virtual void fPathConstruction( const PdfeStreamState& streamState,
                                     const PdfePath& currentPath ) { }
-
     virtual void fPathPainting( const PdfeStreamState& streamState,
                                 const PdfePath& currentPath );
-
     virtual void fClippingPath( const PdfeStreamState& streamState,
                                 const PdfePath& currentPath ) { }
-
     virtual void fTextObjects( const PdfeStreamState& streamState ) { }
-
     virtual void fTextState( const PdfeStreamState& streamState ) { }
-
     virtual void fTextPositioning( const PdfeStreamState& streamState ) { }
-
     virtual PdfeVector fTextShowing( const PdfeStreamState& streamState ) { return PdfeVector(); }
-
     virtual void fType3Fonts( const PdfeStreamState& streamState );
-
     virtual void fColor( const PdfeStreamState& streamState ) { }
-
     virtual void fShadingPatterns( const PdfeStreamState& streamState ) { }
-
     virtual void fInlineImages( const PdfeStreamState& streamState ) { }
-
     virtual void fXObjects( const PdfeStreamState& streamState ) { }
-
     virtual void fMarkedContents( const PdfeStreamState& streamState ) { }
-
     virtual void fCompatibility( const PdfeStreamState& streamState ) { }
-
     virtual void fUnknown( const PdfeStreamState& streamState );
-
     virtual void fFormBegin( const PdfeStreamState& streamState,
                              PoDoFo::PdfXObject* form ) { }
-
     virtual void fFormEnd( const PdfeStreamState& streamState,
                            PoDoFo::PdfXObject* form ) { }
 

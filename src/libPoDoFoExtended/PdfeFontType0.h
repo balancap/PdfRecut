@@ -30,16 +30,14 @@ public:
      * \param pFont Pointer to the object where is defined the type 0 font.
      */
     PdfeFontType0( PoDoFo::PdfObject* pFont, FT_Library ftLibrary );
-
     /** Initialize the object to default parameters.
      */
     void init();
-
     /** Virtual destructor.
      */
     virtual ~PdfeFontType0();
 
-protected:
+private:
     /** No default constructor.
      */
     PdfeFontType0() { }
@@ -50,26 +48,22 @@ public:
      * \return Constant reference to a PdfeFontDescriptor object.
      */
     virtual const PdfeFontDescriptor& fontDescriptor() const;
-
     /** Get the font bounding box.
      * \return PoDoFo::PdfRect containing the font bounding box.
      */
     virtual PoDoFo::PdfRect fontBBox() const;
-
     /** Get the advance vector of a character (horizontal or vertical usually).
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Advance vector.
      */
     virtual PdfeVector advance( pdfe_cid c, bool useFParams ) const;
-
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \param useFParams Use font parameters (char and word space, font size, ...).
      * \return Bounding box of the character.
      */
     virtual PoDoFo::PdfRect bbox( pdfe_cid c, bool useFParams ) const;
-
     /** Convert a simple PDF string to a CID string (only perform a copy for simple fonts).
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return CID String corresponding.
@@ -90,11 +84,18 @@ public:
     virtual PdfeFontSpace::Enum isSpace( pdfe_cid c ) const {
         return this->PdfeFont::isSpace( c );
     }
-
+    /** Get default width used for space characters of the font.
+     * \return Space width.
+     */
+    virtual double spaceWidth() const {
+        return this->PdfeFont::spaceWidth();
+    }
     /** Get default height used for space characters of the font.
      * \return Space height.
      */
-    virtual double spaceHeight() const;
+    virtual double spaceHeight() const {
+        return this->PdfeFont::spaceHeight();
+    }
     /** Compute some font statistics.
      * \param defaultValue Use some predefined default values (for Type 0/1 and TrueType fonts).
      * \return PdfeFont::Statistics object containing data.
@@ -102,7 +103,6 @@ public:
     virtual Statistics statistics( bool defaultValue = false ) const {
         return this->PdfeFont::statistics( defaultValue );
     }
-
     /** Convert a character CID to the corresponding glyph GID.
      * Need the freetype face, unicode CMap and encoding to be initialized.
      * \param c Character CID;
@@ -132,16 +132,13 @@ public:
     /** Default constructor.
      */
     PdfeFontCID();
-
     /** Initialize the object to default parameters.
      */
     void init();
-
     /** Initialize a PdfeFontCID from a PdfObject.
      * \param pFont Pointer to the object where is defined the CID font.
      */
     void init( PoDoFo::PdfObject* pFont );
-
     /** Initialize characters bounding box using a FreeType face.
      * \param FreeType face use to retrieve glyph information.
      */

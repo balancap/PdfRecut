@@ -297,6 +297,12 @@ PdfeFontSpace::Enum PdfeFont::isSpace( pdfe_cid c ) const
     return PdfeFontSpace::None;
 }
 // Default implementation.
+double PdfeFont::spaceWidth() const
+{
+    // Default value for Type 1, TrueType and Type 0 fonts.
+    return 0.5;
+}
+// Default implementation.
 double PdfeFont::spaceHeight() const
 {
     // Default value for Type 1, TrueType and Type 0 fonts.
@@ -693,17 +699,14 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( pdfe_gid gid, unsigned int charHei
             colorTable << qRgba(0, 0, 0, i);
         }
     }
-
     // Set character size.
     int error = FT_Set_Char_Size( m_ftFace,
                                   0, charHeight * 64,
                                   0, resolution );
-
     // Error : return empty image.
     if( error ) {
         return GlyphImage();
     }
-
     // Load glyph and render it.
     error = FT_Load_Glyph( m_ftFace, gid, FT_LOAD_DEFAULT);
     if( error ) {
@@ -713,7 +716,6 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( pdfe_gid gid, unsigned int charHei
     if( error ) {
         return GlyphImage();
     }
-
     // Create QImage from the glyph bitmap.
     GlyphImage glyph;
     glyph.image = QImage( m_ftFace->glyph->bitmap.buffer,
@@ -722,7 +724,6 @@ PdfeFont::GlyphImage PdfeFont::ftGlyphRender( pdfe_gid gid, unsigned int charHei
                           m_ftFace->glyph->bitmap.pitch,
                           QImage::Format_Indexed8 );
     glyph.image.setColorTable(colorTable);
-
     // TODO: set transformation matrix.
     // pixel_size = point_size * resolution / 72
     // pixel_coord = grid_coord * pixel_size / EM_size
@@ -839,7 +840,6 @@ QByteArray PdfeFont::standard14FontData( PdfeFont14Standard::Enum stdFontType )
     if( stdFontsData[ stdFontType ].size() ) {
         return stdFontsData[ stdFontType ];
     }
-
     // Else: load file.
     QString fontpath = PdfeFont::standard14FontPath( stdFontType );
     QFile fontfile( fontpath );
@@ -853,9 +853,8 @@ QByteArray PdfeFont::standard14FontData( PdfeFont14Standard::Enum stdFontType )
 
 const std::vector<QChar>& PdfeFont::spaceCharacters()
 {
-    // Static variable containing elements.
+    // Static variable containing space elements.
     static std::vector<QChar> spaceChars;
-
     // Insert characters in the vector if empty (should happen once).
     if( !spaceChars.size() ) {
         spaceChars.push_back( QChar( 0x0020 ) );    // Space

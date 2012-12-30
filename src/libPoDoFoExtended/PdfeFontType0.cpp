@@ -142,11 +142,6 @@ QString PdfeFontType0::toUnicode( pdfe_cid c, bool useUCMap, bool firstTryEncodi
     // Might be empty...
     return ustr;
 }
-double PdfeFontType0::spaceHeight() const
-{
-    // Default implementation.
-    return this->PdfeFont::spaceHeight();
-}
 pdfe_gid PdfeFontType0::fromCIDToGID( pdfe_cid c ) const
 {
     return m_fontCID->fromCIDToGID( c );
