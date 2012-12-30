@@ -210,6 +210,15 @@ size_t PRGTextLine::length( bool countSpaces ) const
     }
     return length;
 }
+QString PRGTextLine::toUnicode( bool incSpaces, bool smartSpaces ) const
+{
+    QString ustr;
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
+        ustr.append( m_subgroupsWords[i].toUnicode( incSpaces, smartSpaces ) );
+    }
+    return ustr;
+}
+
 PdfeMatrix PRGTextLine::transMatrix( PRGTextLineCoordinates::Enum startCoord,
                                      PRGTextLineCoordinates::Enum endCoord ) const
 {
@@ -443,6 +452,7 @@ void PRGTextLine::computeStatistics() const
 }
 void PRGTextLine::findLargeCapitalLetter() const
 {
+    // Find the LCL in the 3 first subgroups.
     const size_t maxSubgroupIdx = std::min( long(3), long(m_subgroupsWords.size()) );
     const size_t maxLength = 2;
     const double minScale = 1.6;

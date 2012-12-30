@@ -32,19 +32,6 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
-bool QStringIsLettersNumbers( const QString& ustr )
-{
-    if( ustr.isEmpty() ) {
-        return false;
-    }
-    for( int i = 0 ; i < ustr.length() ; ++i ) {
-        if( !ustr.at( i ).isLetterOrNumber() ) {
-            return false;
-        }
-    }
-    return true;
-}
-
 //**********************************************************//
 //                        PRGTextWord                       //
 //**********************************************************//
@@ -96,7 +83,7 @@ void PRGTextWord::init( const PdfeCIDString& cidstr, PRGTextWordType::Enum type,
     }
     else {
         // Check minimal height.
-        double minHeight = pFont->spaceHeight() * MinimalHeightScale;
+        double minHeight = pFont->spaceHeight() * MinHeightScale;
         if( m_bbox.GetHeight() < minHeight ) {
             m_bbox.SetBottom( m_bbox.GetBottom() - minHeight / 4 );
             m_bbox.SetHeight( m_bbox.GetHeight() + minHeight );
@@ -808,9 +795,38 @@ PdfeORect PRGTextGroupWords::Subgroup::bbox( PRGTextWordCoordinates::Enum endCoo
     }
     return bbox;
 }
-QString PRGTextGroupWords::Subgroup::toUnicode( bool smartSpaces ) const
+QString PRGTextGroupWords::Subgroup::toUnicode( bool incSpaces, bool smartSpaces ) const
 {
-    return QString();
+    QString ustr;
+    double spaceWidth = m_pGroup->font()->spaceWidth();
+
+    // Get the unicode string of inside words.
+    for( size_t i = 0 ; i < m_wordsInside.size() ; ++i ) {
+        if( m_wordsInside[i] ) {
+            QString ustrWord = m_pGroup->word( i ).toUnicode();
+            PRGTextWordType::Enum typeWord =  m_pGroup->word( i ).type();
+
+            if( incSpaces ) {
+                // Smart space?
+                if( smartSpaces &&
+                        ( typeWord == PRGTextWordType::PDFTranslation ||
+                          typeWord == PRGTextWordType::PDFTranslationCS ) ) {
+                    // Check the width is sufficiently large.
+                    double widthWord = m_pGroup->word( i ).bbox( true ).GetWidth();
+                    if( widthWord >= spaceWidth * MinSpaceWidthScale ) {
+                        ustr.append( ustrWord );
+                    }
+                }
+                else {
+                    ustr.append( ustrWord );
+                }
+            }
+            else if( typeWord == PRGTextWordType::Classic ) {
+                ustr.append( ustrWord );
+            }
+        }
+    }
+    return ustr;
 }
 
 bool PRGTextGroupWords::Subgroup::isSpace() const

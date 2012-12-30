@@ -125,6 +125,14 @@ public:
      * \return Length of the line.
      */
     size_t length( bool countSpaces ) const;
+    /** Get the unicode string corresponding to the line.
+     * \param incSpaces Include space characters?
+     * \param smartSpaces Smart spaces: try to remove unnecessary space characters
+     * i.e. small PDF displacements that do not correspond to actual spaces between words.
+     * \return QString containing the unicode string. Empty if can not
+     * translate into unicode.
+     */
+    QString toUnicode( bool incSpaces = true, bool smartSpaces = true ) const;
 
     /** Get a transformation matrix from a starting coordinate
      * system to an ending one.

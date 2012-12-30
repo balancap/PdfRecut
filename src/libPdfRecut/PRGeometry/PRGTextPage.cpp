@@ -781,6 +781,8 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage,
 //                PdfeORect bbox = transMat.map( hBlocks[j]->bbox() );
 //                this->textDrawPdfeORect( bbox, linePen );
 //            }
+            // Line text.
+            //QLOG_INFO() << pline->toUnicode( true, true );
         }
     }
     QLOG_INFO() << QString( "<PRGTextPage> Render page's text lines (index: %1)." )

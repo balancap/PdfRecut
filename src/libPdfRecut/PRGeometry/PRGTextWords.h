@@ -39,12 +39,6 @@ class PRGTextLine;
 class PRRenderPage;
 class PRPenBrush;
 
-/** Is a QString uniquely composed of letters and numbers?
- * \param ustr Unicode string.
- * \return Answer! False if the string is empty.
- */
-bool QStringIsLettersNumbers( const QString& ustr );
-
 //**********************************************************//
 //                        PRGTextWord                       //
 //**********************************************************//
@@ -144,8 +138,8 @@ public:
     QString toUnicode() const;
 
 private:
-    /// Minimal height scale factor for a word (compared to space height).
-    static const double MinimalHeightScale = 0.3;
+    /// Minimal height scale factor for a word (compared to default space height).
+    static const double MinHeightScale = 0.3;
 
 private:
     /// Pointer to the font object.
@@ -513,12 +507,13 @@ public:
                     bool leadTrailSpaces = true,
                     bool useBottomCoord = true ) const;
     /** Get the unicode string corresponding to the group of words.
+     * \param incSpaces Include space characters?
      * \param smartSpaces Smart spaces: try to remove unnecessary space characters
      * i.e. small PDF displacements that do not correspond to actual spaces between words.
      * \return QString containing the unicode string. Empty if can not
      * translate into unicode.
      */
-    QString toUnicode( bool smartSpaces = true ) const;
+    QString toUnicode( bool incSpaces = true, bool smartSpaces = true ) const;
 
     /** Is the subgroup empty? Meaning to that no word belongs to it.
      * \return True if empty, false otherwise.
@@ -551,6 +546,12 @@ public:
      * \return New subgroup corresponding to the union.
      */
     static Subgroup reunion( const Subgroup& subgroup1, const Subgroup& subgroup2 );
+
+private:
+    /** Minimal space width (compared to default font space width).
+     * Used in toUnicode member functions.
+     */
+    static const double MinSpaceWidthScale = 0.3;
 
 public:
     // Rendering routines.
