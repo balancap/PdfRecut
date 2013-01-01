@@ -774,6 +774,14 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage,
             }
             // Line bounding box.
             renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false, false ), linePB );
+
+            // Line first capital letter.
+            if( pline->hasLCL() >= 0 ) {
+                renderPage.drawPdfeORect( pline->bboxLCL( PRGTextLineCoordinates::Page ), spacePB );
+                renderPage.drawPdfeORect( pline->bboxLCL( PRGTextLineCoordinates::Page ), linePB );
+                //QLOG_INFO() << pline->subgroup( pline->hasLCL() ).toUnicode( true, true );
+            }
+
             // Line blocks.
 //            std::vector<PRGTextLine::Block*> hBlocks = m_pTextLines[idx]->horizontalBlocks( 2.0 );
 //            PdfeMatrix transMat = m_pTextLines[idx]->transMatrix();

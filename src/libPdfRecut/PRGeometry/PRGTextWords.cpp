@@ -422,10 +422,10 @@ PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum endCoords,
     // Bounding box of the complete subgroup.
     return Subgroup( *this ).bbox( endCoords, leadTrailSpaces, useBottomCoord );
 }
-QString PRGTextGroupWords::toUnicode( bool smartSpaces ) const
+QString PRGTextGroupWords::toUnicode( bool incSpaces, bool smartSpaces ) const
 {
     // Unicode translation of the complete subgroup.
-    return Subgroup( *this ).toUnicode( smartSpaces );
+    return Subgroup( *this ).toUnicode( incSpaces, smartSpaces );
 }
 double PRGTextGroupWords::fontSize() const
 {

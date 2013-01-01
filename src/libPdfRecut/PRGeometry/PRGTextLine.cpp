@@ -16,6 +16,8 @@
 #include "PRGTextPage.h"
 #include "PRGTextStatistics.h"
 
+#include "PRUtils.h"
+
 #include <podofo/podofo.h>
 #include <limits>
 #include <algorithm>
@@ -112,7 +114,7 @@ long PRGTextLine::hasGroupWords( PRGTextGroupWords* pGroup ) const
 }
 long PRGTextLine::hasLCL() const
 {
-    return  this->data()->idxLargeCapitalLetter;
+    return this->data()->idxLargeCapitalLetter;
 }
 
 long PRGTextLine::minGroupIndex() const
@@ -409,12 +411,20 @@ void PRGTextLine::computeCacheData() const
         return;
     }
 
-    // Compute bounding box and transformation matrices.
+    // Compute transformation matrices/statistics and bbox.
+    // Assume there is no LCL.
     this->computeTransMat();
     this->computeStatistics();
-    this->findLargeCapitalLetter();
     this->computeBBox();
     this->computeRescaledData();
+
+    // Detect LCL, and update information if necessary.
+    this->findLargeCapitalLetter();
+    if( m_data.idxLargeCapitalLetter != -1 ) {
+        this->computeStatistics();
+        this->computeBBox();
+        this->computeRescaledData();
+    }
 
     // Reset modified parameter.
     m_resetCachedData = false;
@@ -452,15 +462,30 @@ void PRGTextLine::computeStatistics() const
 }
 void PRGTextLine::findLargeCapitalLetter() const
 {
-    // Find the LCL in the 3 first subgroups.
-    const size_t maxSubgroupIdx = std::min( long(3), long(m_subgroupsWords.size()) );
-    const size_t maxLength = 2;
-    const double minScale = 1.6;
+    // Find the LCL: should be a single character closed to left coordinates
+    // of the line bbox and sufficiently large.
+    const size_t maxLength = 1;
+    const double minScale = 1.7;
+    const double meanWidth = 1. / m_data.transMatDocRescale(0,0);
+    const PdfeMatrix invTransMat = m_data.transMatPage.inverse();
 
+    // Look at every subgroup.
     m_data.idxLargeCapitalLetter = -1;
+    for( size_t i = 0 ; i < m_subgroupsWords.size() ; ++i ) {
+        if( m_subgroupsWords[i].length( false ) <= maxLength ) {
+            PdfeORect bbox = m_subgroupsWords[i].bbox( PRGTextWordCoordinates::Page, false, true );
+            bbox = invTransMat.map( bbox );
+            QString ustr = m_subgroupsWords[i].toUnicode( false, false );
 
-    for( size_t i = 0 ; i < maxSubgroupIdx ; ++i ) {
-        PdfeORect bbox = m_subgroupsWords[i].bbox( PRGTextWordCoordinates::Page, true, true );
+            // Does the subgroup satisfy the necessary conditions?
+            if( m_data.meanHeight * minScale <= bbox.height() &&
+                    bbox.leftBottomX() <= m_data.bbox.GetLeft() + meanWidth &&
+                    //bbox.width() >= meanWidth &&
+                    QStringIsLettersNumbers( ustr ) ) {
+                m_data.idxLargeCapitalLetter = i;
+                return;
+            }
+        }
     }
 }
 void PRGTextLine::computeBBox() const
@@ -485,11 +510,7 @@ void PRGTextLine::computeBBox() const
         bbox = invTransMat.map( bbox );
 
         // Check if it is the large capital letter.
-        if( i == m_data.idxLargeCapitalLetter ) {
-            m_data.bboxLCL = PdfRect( bbox.leftBottomX(), bbox.leftBottomY(),
-                                      bbox.width(), bbox.height() );
-        }
-        else {
+        if( i != m_data.idxLargeCapitalLetter ) {
             left = std::min( left, bbox.leftBottomX() );
             bottom = std::min( bottom,  bbox.leftBottomY() );
             right = std::max( right, bbox.rightTopX() );
@@ -501,6 +522,11 @@ void PRGTextLine::computeBBox() const
         bbox = m_subgroupsWords[i].bbox( PRGTextWordCoordinates::Page, false, true );
         bbox = invTransMat.map( bbox );
 
+        // Update LCL bounding box.
+        if( i == m_data.idxLargeCapitalLetter ) {
+            m_data.bboxLCL = PdfRect( bbox.leftBottomX(), bbox.leftBottomY(),
+                                      bbox.width(), bbox.height() );
+        }
         if( bbox.width() > 0 && bbox.height() > 0 &&
                 i != m_data.idxLargeCapitalLetter ) {
             leftNoLT = std::min( leftNoLT, bbox.leftBottomX() );

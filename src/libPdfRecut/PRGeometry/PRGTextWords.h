@@ -271,12 +271,13 @@ public:
                     bool leadTrailSpaces,
                     bool useBottomCoord ) const;
     /** Get the unicode string corresponding to the group of words.
+     * \param incSpaces Include space characters?
      * \param smartSpaces Smart spaces: try to remove unnecessary space characters
      * i.e. small PDF displacements that do not correspond to actual spaces between words.
      * \return QString containing the unicode string. Empty if can not
      * translate into unicode.
      */
-    QString toUnicode( bool smartSpaces = true ) const;
+    QString toUnicode( bool incSpaces, bool smartSpaces ) const;
     /** Estimate the global font size used for this group.
      * Use font statistics to peform the computation.
      * \return Global font size.
@@ -513,7 +514,7 @@ public:
      * \return QString containing the unicode string. Empty if can not
      * translate into unicode.
      */
-    QString toUnicode( bool incSpaces = true, bool smartSpaces = true ) const;
+    QString toUnicode( bool incSpaces, bool smartSpaces ) const;
 
     /** Is the subgroup empty? Meaning to that no word belongs to it.
      * \return True if empty, false otherwise.
