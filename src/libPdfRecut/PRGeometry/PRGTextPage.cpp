@@ -203,6 +203,12 @@ PRGTextLine* PRGTextPage::createLine_Basic( size_t idxGroupWords )
         if( std::find( pLinesToMerge.begin(), pLinesToMerge.end(), lGroupLines[0] ) != pLinesToMerge.end() ) {
             continue;
         }
+        // Check if the left group corresponds to a LCL of a line.
+        long idxLCL = lGroupLines[0]->hasLCL();
+        if( idxLCL != -1 &&
+                lGroupLines[0]->subgroup( idxLCL ).group() == m_pGroupsWords[ idx ] ) {
+            continue;
+        }
 
         // Investigate every subgroup of the left group.
         for( long i = lGroupWords.nbMSubgroups()-1 ; i >=0 ; --i ) {
@@ -774,7 +780,6 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage,
             }
             // Line bounding box.
             renderPage.drawPdfeORect( pline->bbox( PRGTextLineCoordinates::Page, false, false ), linePB );
-
             // Line first capital letter.
             if( pline->hasLCL() >= 0 ) {
                 renderPage.drawPdfeORect( pline->bboxLCL( PRGTextLineCoordinates::Page ), spacePB );
