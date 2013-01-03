@@ -155,7 +155,8 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // No painting require.
-    if( m_renderParameters.pathPB.isEmpty() ) {
+    if( m_renderParameters.pathPB.isEmpty() &&
+            m_renderParameters.clippingPathPB.isEmpty() ) {
         return;
     }
     // Qt painter path to create from Pdf path.
@@ -176,11 +177,12 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     // Draw path.
     if( currentPath.clippingPathOp().length() ) {
         m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
+        m_pagePainter->drawPath( qCurrentPath );
     }
     else {
         m_renderParameters.pathPB.applyToPainter( m_pagePainter );
+        m_pagePainter->drawPath( qCurrentPath );
     }
-    m_pagePainter->drawPath( qCurrentPath );
 }
 
 void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,

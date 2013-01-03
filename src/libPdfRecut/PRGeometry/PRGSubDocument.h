@@ -79,7 +79,7 @@ public:
     /// Get a page object.
     PRGPage* page( size_t idx );
     const PRGPage* page( size_t idx ) const;
-    /// First page index in the sub-document.
+    /// First page index in the sub-document.tous
     size_t firstPageIndex() const   {   return m_firstPageIndex;   }
     /// Last page index in the sub-document.
     size_t lastPageIndex() const    {   return m_lastPageIndex;    }

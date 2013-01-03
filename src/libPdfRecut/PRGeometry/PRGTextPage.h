@@ -69,7 +69,6 @@ public:
     /** Detect text lines components inside the page.
      */
     void detectLines();
-
     /** Clear completely page content (i.e. groups of words, lines, ...).
      */
     void clear();
