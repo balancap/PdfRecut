@@ -142,25 +142,21 @@ public:
      * \return CID String corresponding.
      */
     PdfeCIDString toCIDString( const PoDoFo::PdfString& str ) const;
-
     /** Retrieve the characters codes which are mapped to a given CID by the CMap.
      * \param c CID to match.
      * \return Vector of corresponding char codes.
      */
     std::vector<CharCode> toCharCode( pdfe_cid c ) const;
-
     /** Convert a code representing a character to a unicode QString using the CMap.
      * \param code Code for a character.
      * \return  Unicode QString corresponding.
      */
     QString toUnicode( const CharCode& code ) const;
-
     /** Convert a simple string to a unicode QString using the CMap.
      * \param str PoDoFo::PdfString to convert (can contain 0 characters !).
      * \return  Unicode QString corresponding.
      */
     QString toUnicode( const PoDoFo::PdfString& str ) const;
-
     /** Does the CMap has an empty code space range?
      * \return Answer!
      */

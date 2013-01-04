@@ -46,10 +46,13 @@ public:
     /** Create en empty object.
      */
     PdfeResources();
+    /** Initialize to an empty collection of resources.
+     */
+    void init();
     /** Copy constructor.
      * \param resources Object to copy.
      */
-    PdfeResources(const PdfeResources& rhs );
+    PdfeResources( const PdfeResources& rhs );
     /** Operator=.
      * \param resources Object to copy.
      */
@@ -59,7 +62,6 @@ public:
      * \param resourcesDict Dictionary to push (not owned by the PdfResources object).
      */
     void pushBack( PoDoFo::PdfObject* resourcesObj );
-
     /** Get the vector of resources dictionaries.
      * \return Vector of pointers.
      */
@@ -71,18 +73,16 @@ public:
      * \param PdfObject Value corresponding to the key.
      */
     void addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
-
     /** Get a key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
-     * \return PdfObject corresponding to the key. Null, if not found.
+     * \return PdfObject corresponding to the key. NULL, if not found.
      */
     PoDoFo::PdfObject* getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
-
     /** Get an indirect key in resources (try each resource object by order of importance).
      * \param resource Resource type where to search the key.
      * \param key Key to find.
-     * \return PdfObject corresponding to the key. Null, if not found.
+     * \return PdfObject corresponding to the key. NULL, if not found.
      */
     PoDoFo::PdfObject* getIndirectKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
 

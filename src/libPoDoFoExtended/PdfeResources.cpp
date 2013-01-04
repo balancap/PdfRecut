@@ -29,6 +29,10 @@ PdfeResources::PdfeResources()
 {
     // Nothing to do!
 }
+void PdfeResources::init()
+{
+    m_resources.clear();
+}
 PdfeResources::PdfeResources(const PdfeResources& rhs ) :
     m_resources( rhs.m_resources )
 {

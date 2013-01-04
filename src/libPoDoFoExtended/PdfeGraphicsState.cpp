@@ -93,6 +93,8 @@ bool PdfeGraphicsState::importExtGState( const PdfeResources& resources, const s
         textState.fontName = "";
         textState.fontSize = array[1].GetReal();
     }
+
+    // TODO: complete!
     return true;
 }
 bool PdfeGraphicsState::importFontReference( const PdfeResources& resources )
