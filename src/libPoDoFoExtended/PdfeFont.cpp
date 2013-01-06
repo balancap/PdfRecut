@@ -214,7 +214,7 @@ PoDoFo::PdfRect PdfeFont::bbox( pdfe_cid c, bool useFParams ) const
     return cbbox;
 }
 
-QString PdfeFont::toUnicode(const PdfeCIDString& str, bool useUCMap, bool firstTryEncoding ) const
+QString PdfeFont::toUnicode( const PdfeCIDString& str, bool useUCMap, bool firstTryEncoding ) const
 {
     // Default implementation: get the unicode string of every CID in the string..
     QString ustr;
@@ -224,7 +224,7 @@ QString PdfeFont::toUnicode(const PdfeCIDString& str, bool useUCMap, bool firstT
     }
     return ustr;
 }
-QString PdfeFont::toUnicode(const PoDoFo::PdfString& str, bool useUCMap , bool firstTryEncoding ) const
+QString PdfeFont::toUnicode( const PoDoFo::PdfString& str, bool useUCMap , bool firstTryEncoding ) const
 {
     QString ustr;
 

@@ -13,10 +13,12 @@
 #define PDFECONTENTSSTREAM_H
 
 #include "PdfeGraphicsState.h"
+
 #include "PdfeResources.h"
 
 namespace PoDoFo {
 class PdfObject;
+class PdfCanvas;
 }
 
 namespace PoDoFoExtended {
@@ -54,14 +56,49 @@ public:
     /** Destructor.
      */
     ~PdfeContentsStream();
+public:
+    // Simple modifications of the contents stream.
+    /** Find a node with a given ID.
+     * \param nodeID ID of the node to find.
+     * \return Pointer to the node. NULL if not found.
+     */
+    Node* find( pdfe_nodeid nodeid ) const;
+    /** Insert a node in the stream.
+     * \param node Node to insert (will be copied).
+     * \param pNodePrev Pointer to the node which corresponds
+     * to the previous node in the stream. If NULL, pNodeOutinsert the node
+     * at the beginning of the stream.
+     * \return Pointer to the newly inserted node.
+     */
+    Node* insert( const Node& node, Node* pNodePrev );
+    /** Erase a node in the stream.
+     * \param pnode Pointer to the node to erase.
+     * \param smartErase Erase relative nodes in the stream to
+     * keep a consistent contents stream.
+     */
+    void erase( Node* pnode, bool smartErase );
+
+public:
+    /** Load the contents stream of a canvas (can be a page, a form,
+     * a Type 3 font glyph,...).
+     * \param pCanvas Canvas whose contents stream is loaded.
+     * \param loadFormsStream Are streams from XObjects forms also loaded?
+     * If yes, the stream is integrated into the parent stream. Otherwise,
+     * only the graphics operator Do appears.
+     */
+    void load( PoDoFo::PdfCanvas* pcanvas,
+               bool loadFormsStream );
+
+
+
 
 private:
     /** Deep copy of nodes from another contents stream.
      */
     void copyNodes( const PdfeContentsStream& stream );
-    /** Remove contents nodes.
+    /** Delete contents nodes.
      */
-    void rmNodes();
+    void deleteNodes();
 
 private:
     /// Pointer to the first node of the stream.
@@ -71,7 +108,7 @@ private:
 
     /// Numbers of nodes in the stream.
     size_t  m_nbNodes;
-    /// Maximal node ID in the stream.
+    /// Maximal node ID + 1 in the stream.
     pdfe_nodeid  m_maxNodeID;
 
     /// Initial graphics state used for the stream.
@@ -100,6 +137,12 @@ public:
     /** Basic constructor. Create an empty node.
      */
     Node();
+    /** Constructor. Create a node with given ID,
+     * operator and operands.
+     */
+    Node( pdfe_nodeid nodeid,
+          const PdfeGraphicOperator& goperator,
+          const std::vector<std::string>& goperands );
     /** Initialize the node to an empty object.
      */
     void init();
@@ -157,15 +200,6 @@ public:
     /// Set operands related to the node's operator.
     void setOperands( const std::vector<std::string>& rhs );
 
-private:
-    // Setters... Keep them private for now...
-    /// Set node ID in the stream.
-    void setID( pdfe_nodeid nodeid );
-    /// Set previous node in the stream.
-    void setPrev( Node* pnode );
-    /// Set next node in the stream.
-    void setNext( Node* pnode );
-
     /// Set opening node. Check the type before modification.
     void setOpeningNode( Node* pnode );
     /// Set closing node. Check the type before modification.
@@ -174,6 +208,15 @@ private:
     void setPaintingNode( Node* pnode );
     /// Set resources. Check it is an XObjects form before modification.
     void setResources( PoDoFo::PdfObject* presources );
+
+private:
+    // Setters... Keep them private for now...
+    /// Set node ID in the stream.
+    void setID( pdfe_nodeid nodeid );
+    /// Set previous node in the stream.
+    void setPrev( Node* pnode );
+    /// Set next node in the stream.
+    void setNext( Node* pnode );
 
 private:
     /// ID of the node in the stream. Should be unique.
