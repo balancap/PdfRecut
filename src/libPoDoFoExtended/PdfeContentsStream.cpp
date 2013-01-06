@@ -84,7 +84,7 @@ PdfeContentsStream::Node* PdfeContentsStream::find( pdfe_nodeid nodeid ) const
     }
     return NULL;
 }
-PdfeContentsStream::Node *PdfeContentsStream::insert( const PdfeContentsStream::Node& node,
+PdfeContentsStream::Node* PdfeContentsStream::insert( const PdfeContentsStream::Node& node,
                                                       PdfeContentsStream::Node* pNodePrev )
 {
     // Copy the input node and set ID.
@@ -134,11 +134,13 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
     std::vector<std::string> goperands;
 
     // Nodes stacks, for specific links.
-    std::vector<Node*> nodes_BT;
-    std::vector<Node*> nodes_q;
-    std::vector<Node*> nodes_BI;
-    std::vector<Node*> nodes_BX;
-    std::vector<Node*> nodes_path;
+    std::vector<Node*> pNodes_BT;
+    std::vector<Node*> pNodes_q;
+    std::vector<Node*> pNodes_BI;
+    std::vector<Node*> pNodes_BX;
+    std::vector<Node*> pNodes_path;
+    Node* pNode_BeginSubpath;
+
     // Temp nodes pointers.
     Node* pNode = NULL;
     Node* pNodePrev = NULL;
@@ -157,13 +159,13 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             // Create specific links.
             if( goperator.cat == PdfeGCategory::SpecialGState ) {
                 if( goperator.code == PdfeGOperator::q ) {
-                    nodes_q.push_back( pNode );
+                    pNodes_q.push_back( pNode );
                 }
                 else if( goperator.code == PdfeGOperator::Q ) {
-                    if( !nodes_q.empty() ) {
-                        nodes_q.back()->setClosingNode( pNode );
-                        pNode->setOpeningNode( nodes_q.back() );
-                        nodes_q.pop_back();
+                    if( !pNodes_q.empty() ) {
+                        pNodes_q.back()->setClosingNode( pNode );
+                        pNode->setOpeningNode( pNodes_q.back() );
+                        pNodes_q.pop_back();
                     }
                     else {
                         QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'Q' operator in a contents stream (node ID: )." )
@@ -172,15 +174,27 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                 }
             }
             else if( goperator.cat == PdfeGCategory::PathConstruction ) {
-                nodes_path.push_back( pNode );
+                // Begin of subpath.
+                if( !pNode_BeginSubpath ) {
+                    pNode_BeginSubpath = pNode;
+                    if( goperator.code != PdfeGOperator::m &&
+                            goperator.code != PdfeGOperator::re ) {
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Begin subpath a construction operator different from 'm/re' (node ID: )." )
+                                       .arg( pNode->id() ).toAscii().constData();
+                        // TODO: keep track of the current point and add a node with 'm'.
+                    }
+                }
+                pNode->setBeginSubpathNode( pNode_BeginSubpath );
+                // Path painting nodes stack.
+                pNodes_path.push_back( pNode );
             }
             else if( goperator.cat == PdfeGCategory::PathPainting ) {
-                if( !nodes_path.empty() ) {
+                if( !pNodes_path.empty() ) {
                     // Update path construction nodes.
-                    for( size_t i = 0 ; i < nodes_path.size() ; ++i ) {
-                        nodes_path[i]->setPaintingNode( pNode );
+                    for( size_t i = 0 ; i < pNodes_path.size() ; ++i ) {
+                        pNodes_path[i]->setPaintingNode( pNode );
                     }
-                    nodes_path.clear();
+                    pNodes_path.clear();
                 }
                 else {
                     QLOG_WARN() << QString( "<PdfeContentsStream> Path painting with no path defined (node ID: )." )
@@ -189,13 +203,13 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             }
             else if( goperator.cat == PdfeGCategory::TextObjects ) {
                 if( goperator.code == PdfeGOperator::BT ) {
-                    nodes_BT.push_back( pNode );
+                    pNodes_BT.push_back( pNode );
                 }
                 else if( goperator.code == PdfeGOperator::ET ) {
-                    if( !nodes_BT.empty() ) {
-                        nodes_BT.back()->setClosingNode( pNode );
-                        pNode->setOpeningNode( nodes_BT.back() );
-                        nodes_BT.pop_back();
+                    if( !pNodes_BT.empty() ) {
+                        pNodes_BT.back()->setClosingNode( pNode );
+                        pNode->setOpeningNode( pNodes_BT.back() );
+                        pNodes_BT.pop_back();
                     }
                     else {
                         QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BT' operator in a contents stream (node ID: )." )
@@ -205,13 +219,13 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             }
             else if( goperator.cat == PdfeGCategory::InlineImages ) {
                 if( goperator.code == PdfeGOperator::BI ) {
-                    nodes_BI.push_back( pNode );
+                    pNodes_BI.push_back( pNode );
                 }
                 else if( goperator.code == PdfeGOperator::EI ) {
-                    if( !nodes_BI.empty() ) {
-                        nodes_BI.back()->setClosingNode( pNode );
-                        pNode->setOpeningNode( nodes_BI.back() );
-                        nodes_BI.pop_back();
+                    if( !pNodes_BI.empty() ) {
+                        pNodes_BI.back()->setClosingNode( pNode );
+                        pNode->setOpeningNode( pNodes_BI.back() );
+                        pNodes_BI.pop_back();
                     }
                     else {
                         QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BI' operator in a contents stream (node ID: )." )
@@ -221,13 +235,13 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             }
             else if( goperator.cat == PdfeGCategory::Compatibility ) {
                 if( goperator.code == PdfeGOperator::BX ) {
-                    nodes_BX.push_back( pNode );
+                    pNodes_BX.push_back( pNode );
                 }
                 else if( goperator.code == PdfeGOperator::EX ) {
-                    if( !nodes_BX.empty() ) {
-                        nodes_BX.back()->setClosingNode( pNode );
-                        pNode->setOpeningNode( nodes_BX.back() );
-                        nodes_BX.pop_back();
+                    if( !pNodes_BX.empty() ) {
+                        pNodes_BX.back()->setClosingNode( pNode );
+                        pNode->setOpeningNode( pNodes_BX.back() );
+                        pNodes_BX.pop_back();
                     }
                     else {
                         QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BX' operator in a contents stream (node ID: )." )
@@ -244,11 +258,14 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             if( goperator.cat != PdfeGCategory::PathConstruction &&
                     goperator.cat != PdfeGCategory::PathPainting &&
                     goperator.cat != PdfeGCategory::ClippingPath &&
-                    !nodes_path.empty() ) {
-                nodes_path.clear();
+                    !pNodes_path.empty() ) {
+                pNodes_path.clear();
                 QLOG_WARN() << QString( "<PdfeContentsStream> Path constructed but not painted (node ID: )." )
                                .arg( pNode->id() ).toAscii().constData();
 
+            }
+            if( goperator.cat != PdfeGCategory::PathConstruction ) {
+                pNode_BeginSubpath = NULL;
             }
             // Clear operands stack and update previous node.
             goperands.clear();
@@ -268,16 +285,17 @@ void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
     m_maxNodeID = stream.m_maxNodeID;
     if( stream.m_pFirstNode ) {
         // Nodes map, for specific links.
-        std::map<Node*,Node*> nodesOpening;
-        std::map<Node*,std::vector<Node*> > nodesPath;
+        std::map<Node*,Node*> pNodesOpening;
+        std::map<Node*,Node*> pNodesBeginSubpath;
+        std::map<Node*,std::vector<Node*> > pNodesPath;
 
         // First node.
         Node* pNodePrev = NULL;
         Node* pNodeNext = NULL;
-        Node* pNodeOut = stream.m_pFirstNode;
+        Node* pNodeIn = stream.m_pFirstNode;
         // Deep copy of nodes.
-        while( pNodeOut ) {
-            pNodeNext = new Node( *pNodeOut );
+        while( pNodeIn ) {
+            pNodeNext = new Node( *pNodeIn );
             if( pNodePrev ) {
                 pNodePrev->setNext( pNodeNext );
                 pNodeNext->setPrev( pNodePrev );
@@ -287,38 +305,48 @@ void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
             }
 
             // Opening/closing nodes.
-            if( pNodeOut->isOpeningNode() ) {
-                nodesOpening.at( pNodeOut ) = pNodeNext;
+            if( pNodeIn->isOpeningNode() ) {
+                pNodesOpening.at( pNodeIn ) = pNodeNext;
             }
-            else if( pNodeOut->isClosingNode() ) {
+            else if( pNodeIn->isClosingNode() ) {
                 std::map<Node*,Node*>::iterator it =
-                        nodesOpening.find( pNodeOut->openingNode() );
-                if( it != nodesOpening.end() ) {
+                        pNodesOpening.find( pNodeIn->openingNode() );
+                if( it != pNodesOpening.end() ) {
                     pNodeNext->setOpeningNode( it->second );
                     it->second->setClosingNode( pNodeNext );
-                    nodesOpening.erase( it );
+                    pNodesOpening.erase( it );
                 }
             }
             // Path construction/painting nodes.
-            else if( pNodeOut->category() == PdfeGCategory::PathConstruction ) {
-                if( pNodeOut->paintingNode() ) {
-                    nodesPath.at( pNodeOut->paintingNode() ).push_back( pNodeNext );
+            else if( pNodeIn->category() == PdfeGCategory::PathConstruction ) {
+                // Beginning of the subpath.
+                if( pNodeIn->isBeginSubpathNode() ) {
+                    pNodesBeginSubpath.at( pNodeIn ) = pNodeNext;
+                }
+                std::map<Node*,Node*>::iterator it =
+                        pNodesBeginSubpath.find( pNodeIn->beginSubpathNode() );
+                if( it != pNodesBeginSubpath.end() ) {
+                    pNodeNext->setBeginSubpathNode( it->second );
+                }
+                // Painting nodes associated.
+                if( pNodeIn->paintingNode() ) {
+                    pNodesPath.at( pNodeIn->paintingNode() ).push_back( pNodeNext );
                 }
             }
-            else if( pNodeOut->category() == PdfeGCategory::PathPainting ) {
+            else if( pNodeIn->category() == PdfeGCategory::PathPainting ) {
                 std::map<Node*,std::vector<Node*> >::iterator it =
-                        nodesPath.find( pNodeOut );
-                if( it != nodesPath.end() ) {
+                        pNodesPath.find( pNodeIn );
+                if( it != pNodesPath.end() ) {
                     std::vector<Node*>& pnodes = it->second;
                     for( size_t i = 0 ; i < pnodes.size() ; ++i ) {
                         pnodes[i]->setPaintingNode( pNodeNext );
                     }
-                    nodesPath.erase( it );
+                    pNodesPath.erase( it );
                 }
             }
             // Update nodes pointers.
             pNodePrev = pNodeNext;
-            pNodeOut = pNodeOut->next();
+            pNodeIn = pNodeIn->next();
         }
         m_pLastNode = pNodeNext;
     }
@@ -346,7 +374,8 @@ PdfeContentsStream::Node::Node() :
     m_nodeID( 0 ),
     m_pPrevNode( NULL ), m_pNextNode( NULL ),
     m_goperator(), m_goperands(),
-    m_pOpeningNode( NULL )
+    m_pOpeningNode( NULL ),
+    m_pBeginSubpathNode( NULL )
 {
 }
 PdfeContentsStream::Node::Node( pdfe_nodeid nodeid,
@@ -355,7 +384,8 @@ PdfeContentsStream::Node::Node( pdfe_nodeid nodeid,
     m_nodeID( nodeid ),
     m_pPrevNode( NULL ), m_pNextNode( NULL ),
     m_goperator( goperator ), m_goperands( goperands ),
-    m_pOpeningNode( NULL )
+    m_pOpeningNode( NULL ),
+    m_pBeginSubpathNode( NULL )
 {
 }
 void PdfeContentsStream::Node::init()
@@ -363,19 +393,21 @@ void PdfeContentsStream::Node::init()
     m_nodeID = 0;
     m_pPrevNode = m_pNextNode = NULL;
     m_pOpeningNode = NULL;
+    m_pBeginSubpathNode = NULL;
     m_goperator.init();
     m_goperands.clear();
 }
 PdfeContentsStream::Node::Node( const PdfeContentsStream::Node& rhs ) :
     m_nodeID( rhs.m_nodeID ),
     m_pPrevNode( NULL ), m_pNextNode( NULL ),
-    m_goperator( rhs.m_goperator ), m_goperands( rhs.m_goperands )
+    m_goperator( rhs.m_goperator ), m_goperands( rhs.m_goperands ),
+    m_pOpeningNode( NULL ),
+    m_pBeginSubpathNode( NULL )
 {
     if( m_goperator.code == PdfeGOperator::Do ) {
-        m_pResourcesObj = rhs.m_pResourcesObj;
-    }
-    else {
-        m_pResourcesObj = NULL;
+        m_pFormResources = rhs.m_pFormResources;
+        m_formXObject.isForm = rhs.m_formXObject.isForm;
+        m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
     }
 }
 PdfeContentsStream::Node& PdfeContentsStream::Node::operator=( const PdfeContentsStream::Node& rhs )
@@ -384,25 +416,25 @@ PdfeContentsStream::Node& PdfeContentsStream::Node::operator=( const PdfeContent
     m_pPrevNode = m_pNextNode = NULL;
     m_goperator = rhs.m_goperator;
     m_goperands = rhs.m_goperands;
+    m_pOpeningNode = NULL;
+    m_pBeginSubpathNode = NULL;
     if( m_goperator.code == PdfeGOperator::Do ) {
-        m_pResourcesObj = rhs.m_pResourcesObj;
-    }
-    else {
-        m_pResourcesObj = NULL;
+        m_pFormResources = rhs.m_pFormResources;
+        m_formXObject.isForm = rhs.m_formXObject.isForm;
+        m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
     }
     return *this;
 }
-
 PdfeContentsStream::Node::~Node()
 {
     // None...
 }
-
 void PdfeContentsStream::Node::clear()
 {
     m_goperator.init();
     m_goperands.clear();
     m_pOpeningNode = NULL;
+    m_pBeginSubpathNode = NULL;
 }
 
 // Getters...
@@ -420,6 +452,14 @@ PdfeContentsStream::Node* PdfeContentsStream::Node::closingNode() const
     }
     return NULL;
 }
+
+PdfeContentsStream::Node* PdfeContentsStream::Node::beginSubpathNode() const
+{
+    if( m_goperator.cat == PdfeGCategory::PathConstruction ) {
+        return m_pBeginSubpathNode;
+    }
+    return NULL;
+}
 PdfeContentsStream::Node* PdfeContentsStream::Node::paintingNode() const
 {
     if( m_goperator.cat == PdfeGCategory::PathConstruction ) {
@@ -427,10 +467,19 @@ PdfeContentsStream::Node* PdfeContentsStream::Node::paintingNode() const
     }
     return NULL;
 }
+
+bool PdfeContentsStream::Node::isFormXObject() const
+{
+    return ( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm );
+}
+bool PdfeContentsStream::Node::isFormXObjectLoaded() const
+{
+    return ( m_goperator.code == PdfeGOperator::Do && m_formXObject.isLoaded );
+}
 PdfObject* PdfeContentsStream::Node::resources() const
 {
-    if( m_goperator.code == PdfeGOperator::Do ) {
-        return m_pResourcesObj;
+    if( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm ) {
+        return m_pFormResources;
     }
     return NULL;
 }
@@ -468,17 +517,33 @@ void PdfeContentsStream::Node::setClosingNode( PdfeContentsStream::Node* pnode )
         m_pClosingNode = pnode;
     }
 }
-void PdfeContentsStream::Node::setPaintingNode( PdfeContentsStream::Node* pnode )
+void PdfeContentsStream::Node::setBeginSubpathNode( PdfeContentsStream::Node* pnode )
 {
     if( this->category() == PdfeGCategory::PathConstruction &&
             pnode->category() == PdfeGCategory::PathConstruction ) {
+        m_pBeginSubpathNode = pnode;
+    }
+}
+void PdfeContentsStream::Node::setPaintingNode( PdfeContentsStream::Node* pnode )
+{
+    if( this->category() == PdfeGCategory::PathConstruction &&
+            pnode->category() == PdfeGCategory::PathPainting ) {
         m_pPaintingNode = pnode;
     }
 }
-void PdfeContentsStream::Node::setResources( PdfObject* presources )
+
+void PdfeContentsStream::Node::setFormXObject( bool isloaded, PdfObject* presources )
 {
     if( m_goperator.code == PdfeGOperator::Do ) {
-        m_pResourcesObj = presources;
+        m_formXObject.isForm = true;
+        m_formXObject.isLoaded = isloaded;
+        m_pFormResources = presources;
+    }
+}
+void PdfeContentsStream::Node::setFormResources( PdfObject* presources )
+{
+    if( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm ) {
+        m_pFormResources = presources;
     }
 }
 

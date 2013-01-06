@@ -174,6 +174,7 @@ public:
     Node* prev() const      {   return m_pPrevNode;     }
     /// Nex node (pointer, can be NULL).
     Node* next() const      {   return m_pNextNode;     }
+
     /// Graphics operator (const reference).
     const PdfeGraphicOperator& goperator() const        {   return m_goperator;     }
     /// Graphics operands (represented by string).
@@ -182,9 +183,9 @@ public:
     PdfeGOperator::Enum type() const        {   return m_goperator.code;    }
     /// Node category.
     PdfeGCategory::Enum category() const    {   return m_goperator.cat;     }
-
     /// Is the node empty, i.e. correspond to unknown type.
     bool isEmpty() const;
+
     /// Is it an opening node? i.e. BT, q, BI or BX.
     bool isOpeningNode() const;
     /// Is it a closing node? i.e. ET, Q, EI or EX.
@@ -193,8 +194,18 @@ public:
     Node* openingNode() const;
     /// Associated closing node. Need to be an operator BT, q, BI or BX. NULL otherwise.
     Node* closingNode() const;
+
+    /// Does the node correspond to a the beginning of a subpath (m/re)?
+    bool isBeginSubpathNode() const;
+    /// Node corresponding to the beginning of the subpath.
+    Node* beginSubpathNode() const;
     /// Painting node. NULL if not a path construction node.
     Node* paintingNode() const;
+
+    /// Does the node corresponds to a form XObject?
+    bool isFormXObject() const;
+    /// Is the XObject form loaded? False if not a form XObject.
+    bool isFormXObjectLoaded() const;
     /// Resources object. Only for XObjects forms. NULL otherwise.
     PoDoFo::PdfObject* resources() const;
 
@@ -209,10 +220,17 @@ public:
     void setOpeningNode( Node* pnode );
     /// Set closing node. Check the type before modification.
     void setClosingNode( Node* pnode );
+
+    /// Set begin subpath node. Check it is a path construction node.
+    void setBeginSubpathNode( Node* pnode );
     /// Set painting node. Check it is a path construction node.
     void setPaintingNode( Node* pnode );
-    /// Set resources. Check it is an XObjects form before modification.
-    void setResources( PoDoFo::PdfObject* presources );
+
+    /// Set information on a form XObject: isLoaded and resources.
+    void setFormXObject( bool isloaded,
+                         PoDoFo::PdfObject* presources );
+    /// Set form resources. Check it is an XObjects form before modification.
+    void setFormResources( PoDoFo::PdfObject* presources );
 
 private:
     // Setters... Keep them private for now...
@@ -244,7 +262,17 @@ private:
         /// Painting node. Only for path construction nodes.
         Node*  m_pPaintingNode;
         /// Resources object. Only for XObjects forms (Do).
-        PoDoFo::PdfObject*  m_pResourcesObj;
+        PoDoFo::PdfObject*  m_pFormResources;
+    };
+    union {
+        /// Node with which begins the subpath. Only for construction path nodes.
+        Node*  m_pBeginSubpathNode;
+        struct {
+            /// Is the node an XObjects form?
+            bool  isForm;
+            /// Is an XObjects form loaded?
+            bool  isLoaded;
+        } m_formXObject;
     };
 };
 
@@ -268,6 +296,11 @@ inline bool PdfeContentsStream::Node::isClosingNode() const
             m_goperator.code == PdfeGOperator::Q  ||
             m_goperator.code == PdfeGOperator::EI ||
             m_goperator.code == PdfeGOperator::EX;
+}
+inline bool PdfeContentsStream::Node::isBeginSubpathNode() const
+{
+    return  m_goperator.cat == PdfeGCategory::PathConstruction &&
+            this == m_pBeginSubpathNode;
 }
 
 }
