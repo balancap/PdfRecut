@@ -52,6 +52,10 @@ public:
     struct GParameters;
 
     // Contents related member functions.
+    /** Load pages contents streams. Might use some memory (~150mB) for large
+     * PDF documents.
+     */
+    void loadPagesContents();
     /** Analyse the geomtry of the PDF file.
      * Create an internal structure (based on PRGSubDocument, PRGPage, ...) that
      * describes the geometry of the PDF content.
@@ -80,6 +84,7 @@ private:
      * \param tolerance Tolerance used for page size.
      */
     void createSubDocuments( double tolerance );
+
 
 public:
     // Getters...

@@ -52,6 +52,12 @@ PRGDocument* PRGSubDocument::parent() const
     return static_cast<PRGDocument*>( this->QObject::parent() );
 }
 
+void PRGSubDocument::loadPagesContents()
+{
+    for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
+        m_pages[i]->loadContents();
+    }
+}
 void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Log analysis.
@@ -59,7 +65,6 @@ void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )
                    .arg( m_meanCropBox.GetWidth() ).arg( m_meanCropBox.GetHeight() )
                    .toAscii().constData();
-
     // Page range.
     size_t firstIndex = std::max( params.firstPageIndex, m_firstPageIndex );
     size_t lastIndex = std::min( params.lastPageIndex, m_lastPageIndex );
@@ -73,7 +78,6 @@ void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
             m_pages[ i - m_firstPageIndex ]->analyse( params );
         }
     }
-
     // Log analysis.
     QLOG_INFO() << QString( "<PRGSubDocument> End analysis of sub-document with range [%1,%2] and mean size (%3,%4)." )
                    .arg( m_firstPageIndex ).arg( m_lastPageIndex )

@@ -57,7 +57,7 @@ public:
      */
     ~PdfeContentsStream();
 public:
-    // Simple modifications of the contents stream.
+    // Basic modifications of the contents stream.
     /** Find a node with a given ID.
      * \param nodeID ID of the node to find.
      * \return Pointer to the node. NULL if not found.
@@ -90,7 +90,12 @@ public:
                bool loadFormsStream );
 
 
-
+public:
+    // Simples getters...
+    /// Is the stream empty?
+    bool isEmpty() const    {   return (m_nbNodes == 0);    }
+    /// Get the numbers of nodes in the stream.
+    size_t nbNodes() const  {   return m_nbNodes;           }
 
 private:
     /** Deep copy of nodes from another contents stream.

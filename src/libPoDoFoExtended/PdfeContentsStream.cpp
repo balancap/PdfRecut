@@ -142,7 +142,6 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
     // Temp nodes pointers.
     Node* pNode = NULL;
     Node* pNodePrev = NULL;
-    Node* pNodeLink = NULL;
 
     // Analyse page stream / Also known as the big dirty loop !
     while( tokenizer.ReadNext( tokenType, goperator, strVariant ) ) {

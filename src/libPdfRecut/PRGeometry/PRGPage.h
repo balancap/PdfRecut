@@ -14,6 +14,7 @@
 
 #include <QObject>
 #include "PRGDocument.h"
+#include "PdfeContentsStream.h"
 
 namespace PoDoFo {
 class PdfPage;
@@ -49,7 +50,13 @@ public:
     virtual ~PRGPage();
 
 public:
-    // Cached data.
+    // Contents and cached data.
+    /** Load page contents stream.
+     */
+    void loadContents() const;
+    /** Clear page contents stream.
+     */
+    void clearContents();
     /** Load page data: text, paths and images.
      */
     void loadData();
@@ -57,7 +64,12 @@ public:
      * skeleton of page organization.
      */
     void clearData();
+
 signals:
+    /** Qt signal: page stream contents has been loaded!
+     * \param page Pointer of the sender page.
+     */
+    void contentsLoaded( const PRGPage* page ) const;
     /** Qt signal: page data has been (partially?) loaded!
      * \param page Pointer of the sender page.
      */
@@ -89,6 +101,16 @@ public:
     PRGDocument* gdocument() const;
     /// Get page index.
     size_t pageIndex() const            {   return m_pageIndex; }
+
+    /// Is page contents loaded?
+    bool isContentsLoaded() const       {   return m_pContentsStream;   }
+    /// Get a constant reference to page contents stream.
+    const PoDoFoExtended::PdfeContentsStream& contents() const {
+        if( !m_pContentsStream ) {
+            this->loadContents();
+        }
+        return *m_pContentsStream;
+    }
     /// Get text component of the page.
     PRGTextPage* text() const           {   return m_textPage;  }
 
@@ -101,6 +123,8 @@ private:
     size_t  m_pageIndex;
     /// Pointer to the PoDoFo page;
     PoDoFo::PdfPage*  m_page;
+    /// Page contents stream (mutable since considered as cached data).
+    mutable PoDoFoExtended::PdfeContentsStream*  m_pContentsStream;
 
     /// Text elements in the page.
     PRGTextPage*  m_textPage;

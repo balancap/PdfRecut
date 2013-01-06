@@ -52,6 +52,9 @@ public:
 
 public:
     // Contents related member functions.
+    /** Load pages contents streams.
+     */
+    void loadPagesContents();
     /** Analyse the geometry of the sub-document
      * Create an internal structure (based on PRGPage,...) that
      * describes the geometry of the PDF content.

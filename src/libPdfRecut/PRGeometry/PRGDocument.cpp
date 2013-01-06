@@ -48,6 +48,12 @@ PRDocument* PRGDocument::parent() const
     return static_cast<PRDocument*>( this->QObject::parent() );
 }
 
+void PRGDocument::loadPagesContents()
+{
+    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
+        m_subDocuments[i]->loadPagesContents();
+    }
+}
 void PRGDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Time spent analysing the document.

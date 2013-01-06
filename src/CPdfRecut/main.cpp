@@ -156,7 +156,9 @@ void proceedFile( QString filePath )
     gparams.lastPageIndex = 50;
 
     PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
-    pGDocument->analyse( gparams );
+    pGDocument->loadPagesContents();
+
+    /*pGDocument->analyse( gparams );
 
     // Render page and save.
     PRRenderPage::Parameters renderParams;
@@ -183,9 +185,12 @@ void proceedFile( QString filePath )
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
         renderPage.image().save( filename );
-    }
+    }*/
+
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
+    std::cout << "Press RETURN to finish..." << std::endl;
+    std::cin.get();
 
 //    delete pGDocument;
 
@@ -271,9 +276,6 @@ int main( int argc, char *argv[] )
     else {
         proceedFile( pathIn );
     }
-
-    std::cout << "Press RETURN to finish..." << std::endl;
-    std::cin.get();
 
     /*
     // Graphic state stack
