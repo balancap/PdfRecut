@@ -296,7 +296,6 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                 mat[3].ToString( goperands_cm[3] );
                                 mat[4].ToString( goperands_cm[4] );
                                 mat[5].ToString( goperands_cm[5] );
-
                                 pNode = this->insert( Node( 0, PdfeGraphicOperator( "cm" ),
                                                             goperands_cm ),
                                                       pNode );
