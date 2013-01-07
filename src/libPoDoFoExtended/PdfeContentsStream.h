@@ -89,6 +89,17 @@ public:
     void load( PoDoFo::PdfCanvas* pcanvas,
                bool loadFormsStream );
 
+private:
+    /** Private version of the canvas loading. Can be called recursively, in
+     * particular to load form XObjects.
+     * \param pNodePrev Node after which is loaded the form stream.
+     * \param iniResources Resources to use.
+     * \return Last node to be inserted.
+     */
+    Node* load( PoDoFo::PdfCanvas* pcanvas,
+                bool loadFormsStream,
+                Node* pNodePrev,
+                const PdfeResources& iniResources );
 
 public:
     // Simples getters...

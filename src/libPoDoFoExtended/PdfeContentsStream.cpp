@@ -124,7 +124,14 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
 {
     // Reinitialize the contents stream.
     this->init();
-
+    // Load canvas.
+    this->load( pcanvas, loadFormsStream, NULL, PdfeResources() );
+}
+PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
+                                                    bool loadFormsStream,
+                                                    PdfeContentsStream::Node* pNodePrev,
+                                                    const PdfeResources& iniResources )
+{
     // Contents stream tokenizer.
     PdfeStreamTokenizer tokenizer( pcanvas );
     // Tmp variable to store node informations.
@@ -140,10 +147,12 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
     std::vector<Node*> pNodes_BX;
     std::vector<Node*> pNodes_path;
     Node* pNode_BeginSubpath;
-
     // Temp nodes pointers.
     Node* pNode = NULL;
-    Node* pNodePrev = NULL;
+
+    // Add canvas resources.
+    PdfeResources resources( iniResources );
+    resources.pushBack( pcanvas->GetResources() );
 
     // Analyse page stream / Also known as the big dirty loop !
     while( tokenizer.ReadNext( tokenType, goperator, strVariant ) ) {
@@ -168,7 +177,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                         pNodes_q.pop_back();
                     }
                     else {
-                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'Q' operator in a contents stream (node ID: )." )
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'Q' operator in a contents stream (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                     }
                 }
@@ -179,12 +188,15 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                     pNode_BeginSubpath = pNode;
                     if( goperator.code != PdfeGOperator::m &&
                             goperator.code != PdfeGOperator::re ) {
-                        QLOG_WARN() << QString( "<PdfeContentsStream> Begin subpath a construction operator different from 'm/re' (node ID: )." )
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Begin subpath a construction operator different from 'm/re' (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                         // TODO: keep track of the current point and add a node with 'm'.
                     }
                 }
                 pNode->setBeginSubpathNode( pNode_BeginSubpath );
+                if( goperator.code == PdfeGOperator::h ) {
+                    pNode_BeginSubpath = NULL;
+                }
                 // Path painting nodes stack.
                 pNodes_path.push_back( pNode );
             }
@@ -197,7 +209,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                     pNodes_path.clear();
                 }
                 else {
-                    QLOG_WARN() << QString( "<PdfeContentsStream> Path painting with no path defined (node ID: )." )
+                    QLOG_WARN() << QString( "<PdfeContentsStream> Path painting with no path defined (node ID: %1)." )
                                    .arg( pNode->id() ).toAscii().constData();
                 }
             }
@@ -212,7 +224,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                         pNodes_BT.pop_back();
                     }
                     else {
-                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BT' operator in a contents stream (node ID: )." )
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BT' operator in a contents stream (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                     }
                 }
@@ -228,7 +240,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                         pNodes_BI.pop_back();
                     }
                     else {
-                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BI' operator in a contents stream (node ID: )." )
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BI' operator in a contents stream (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                     }
                 }
@@ -244,14 +256,72 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                         pNodes_BX.pop_back();
                     }
                     else {
-                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BX' operator in a contents stream (node ID: )." )
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Missing closing 'BX' operator in a contents stream (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                     }
                 }
             }
             // XObjects forms: resources and loading.
             else if( goperator.cat == PdfeGCategory::XObjects ) {
-                // TODO...
+                // Get XObject pointer and subtype.
+                std::string xobjName = goperands.back().substr( 1 );
+                PdfObject* pXObject = resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
+                std::string xobjSubtype = pXObject->GetIndirectKey( "Subtype" )->GetName().GetName();
+
+                // Form XObject.
+                if( xobjSubtype == "Form" ) {
+                    // PdfXObject corresponding created and update node information.
+                    PdfXObject xobject( pXObject );
+                    pNode->setFormXObject( loadFormsStream, xobject.GetResources() );
+
+                    // Load form XObject.
+                    if( loadFormsStream ) {
+                        // Save the current graphics state on the stack 'q'.
+                        pNode = this->insert( Node( 0, PdfeGraphicOperator( "q" ),
+                                                    std::vector<std::string>() ),
+                                              pNode );
+                        // Get transformation matrix of the form.
+                        PdfeMatrix formMat;
+                        if( pXObject->GetDictionary().HasKey( "Matrix" ) ) {
+                            PdfArray& mat = pXObject->GetIndirectKey( "Matrix" )->GetArray();
+                            formMat(0,0) = mat[0].GetReal();    formMat(0,1) = mat[1].GetReal();
+                            formMat(1,0) = mat[2].GetReal();    formMat(1,1) = mat[3].GetReal();
+                            formMat(2,0) = mat[4].GetReal();    formMat(2,1) = mat[5].GetReal();
+                            // Insert in the stream it if not the identity.
+                            if( formMat != PdfeMatrix() ) {
+                                std::vector<std::string> goperands_cm( 6 );
+                                mat[0].ToString( goperands_cm[0] );
+                                mat[1].ToString( goperands_cm[1] );
+                                mat[2].ToString( goperands_cm[2] );
+                                mat[3].ToString( goperands_cm[3] );
+                                mat[4].ToString( goperands_cm[4] );
+                                mat[5].ToString( goperands_cm[5] );
+
+                                pNode = this->insert( Node( 0, PdfeGraphicOperator( "cm" ),
+                                                            goperands_cm ),
+                                                      pNode );
+                            }
+                        }
+                        // Load form XObject.
+                        pNode = this->load( &xobject, loadFormsStream, pNode, resources );
+
+                        // Restore the current graphics state on the stack 'Q'.
+                        pNode = this->insert( Node( 0, PdfeGraphicOperator( "Q" ),
+                                                    std::vector<std::string>() ),
+                                              pNode );
+                    }
+                }
+                else if( xobjSubtype == "PS" ) {
+
+                    QLOG_WARN() << QString( "<PdfeContentsStream> Postscript XObject inserted. Currently not supported. (node ID: %1)." )
+                                   .arg( pNode->id() ).toAscii().constData();
+                }
+                else {
+                }
+            }
+            else if( goperator.code == PdfeGOperator::Unknown ) {
+                QLOG_WARN() << QString( "<PdfeContentsStream> Unknown graphics operator in the contents stream (node ID: %1)." )
+                               .arg( pNode->id() ).toAscii().constData();
             }
 
             // Clear path construction stack.
@@ -260,7 +330,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
                     goperator.cat != PdfeGCategory::ClippingPath &&
                     !pNodes_path.empty() ) {
                 pNodes_path.clear();
-                QLOG_WARN() << QString( "<PdfeContentsStream> Path constructed but not painted (node ID: )." )
+                QLOG_WARN() << QString( "<PdfeContentsStream> Path constructed but not painted (node ID: %1)." )
                                .arg( pNode->id() ).toAscii().constData();
 
             }
@@ -276,6 +346,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
             goperands.push_back( strVariant );
         }
     }
+    return pNode;
 }
 
 void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
