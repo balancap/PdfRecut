@@ -73,10 +73,11 @@ public:
     Node* insert( const Node& node, Node* pNodePrev );
     /** Erase a node in the stream.
      * \param pnode Pointer to the node to erase.
-     * \param smartErase Erase relative nodes in the stream to
+     * \param smarterase Erase related nodes in the stream to
      * keep a consistent contents stream.
+     * \return Return the node right after the erased one.
      */
-    void erase( Node* pnode, bool smartErase );
+    Node* erase(Node* pnode, bool smarterase );
 
 public:
     /** Load the contents stream of a canvas (can be a page, a form,

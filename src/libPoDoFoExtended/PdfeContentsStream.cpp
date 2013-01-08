@@ -114,18 +114,223 @@ PdfeContentsStream::Node* PdfeContentsStream::insert( const PdfeContentsStream::
     }
     return pNode;
 }
-void PdfeContentsStream::erase( PdfeContentsStream::Node* pnode,
-                                bool smartErase )
+PdfeContentsStream::Node* PdfeContentsStream::erase( PdfeContentsStream::Node* pnode,
+                                                     bool smarterase )
 {
-    // TODO...
+    if( !pnode ) {
+        return NULL ;
+    }
+    // Simple erase of the node.
+    if( !smarterase ) {
+        // Case of the first node...
+        if( !pnode->prev() ) {
+            m_pFirstNode = pnode->next();
+        }
+        else {
+            pnode->prev()->setNext( pnode->next() );
+        }
+        // Case of the last node in the stream.
+        if( !pnode->next() ) {
+            m_pLastNode = pnode->prev();
+        }
+        else {
+            pnode->next()->setPrev( pnode->prev() );
+        }
+        --m_nbNodes;
+        Node* pNodeNext = pnode->next();
+        delete pnode;
+        return pNodeNext;
+    }
+    // Smart erase: study the structure of the stream and remove other related nodes.
+    if( pnode->category() == PdfeGCategory::SpecialGState && pnode->type() != PdfeGOperator::cm ) {
+        // Erase the entire content between 'q' and 'Q'.
+        Node* pNodeFirst;
+        Node* pNodeLast;
+        if( pnode->type() == PdfeGOperator::q ) {
+            pNodeFirst = pnode;
+            pNodeLast = pnode->closingNode();
+        }
+        else {
+            pNodeFirst = pnode->openingNode();
+            pNodeLast = pnode;
+        }
+        if( pNodeFirst && pNodeLast ) {
+            pnode = pNodeFirst;
+            while( pnode != pNodeLast ) {
+                pnode = this->erase( pnode, false );
+            }
+            pNodeLast = pNodeLast->next();
+            this->erase( pnode, false );
+            return pNodeLast;
+        }
+        else {
+            QLOG_WARN() << QString( "<PdfeContentsStream> Can not erase completely the contents between 'q' and 'Q' nodes (node ID: %1)." )
+                           .arg( pnode->id() ).toAscii().constData();
+            return this->erase( pnode, false );
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::PathConstruction ) {
+        Node* pNodeBegin = pnode->beginSubpathNode();
+        if( pNodeBegin ) {
+            // Erase the subpath it belongs to.
+            pnode = pNodeBegin;
+            while( pnode->beginSubpathNode() == pNodeBegin ) {
+                pnode = this->erase( pnode, false );
+            }
+            // Erase painting operator if nothing else left.
+            if( pnode->category() != PdfeGCategory::PathConstruction && ( !pnode->prev() ||
+                    pnode->prev()->category() != PdfeGCategory::PathConstruction ) ) {
+                // Clipping operator.
+                if( pnode->category() == PdfeGCategory::ClippingPath ) {
+                    pnode = this->erase( pnode, false );
+                }
+                if( pnode->category() == PdfeGCategory::PathPainting ) {
+                    return this->erase( pnode, false );
+                }
+                else {
+                    QLOG_WARN() << QString( "<PdfeContentsStream> No path painting node to erase (node ID: %1)." )
+                                   .arg( pnode->id() ).toAscii().constData();
+                    return pnode;
+                }
+            }
+        }
+        else {
+            QLOG_WARN() << QString( "<PdfeContentsStream> No beginning node defined for the subpath (node ID: %1)." )
+                           .arg( pnode->id() ).toAscii().constData();
+            return this->erase( pnode, false );
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::PathPainting ) {
+        // Remove painting operator and path construction.
+        Node* pNodePrev = pnode->prev();
+        // Clipping operator.
+        if( pNodePrev && pNodePrev->category() == PdfeGCategory::ClippingPath ) {
+            this->erase( pNodePrev, false );
+            pNodePrev = pnode->prev();
+        }
+        // Path construction.
+        while( pNodePrev && pNodePrev->category() == PdfeGCategory::PathConstruction ) {
+            this->erase( pNodePrev, false );
+            pNodePrev = pnode->prev();
+        }
+        return this->erase( pnode, false );
+    }
+    else if( pnode->category() == PdfeGCategory::ClippingPath ) {
+        // Erase node and complete path.
+        pnode = this->erase( pnode, false );
+        if( pnode->category() == PdfeGCategory::PathPainting ) {
+            return this->erase( pnode, true );
+        }
+        else {
+            QLOG_WARN() << QString( "<PdfeContentsStream> No path painting node associated to the clipping path (node ID: %1)." )
+                           .arg( pnode->id() ).toAscii().constData();
+            return pnode;
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::TextObjects ) {
+        // Erase the entire content between 'BT' and 'ET'.
+        Node* pNodeFirst;
+        Node* pNodeLast;
+        if( pnode->type() == PdfeGOperator::BT ) {
+            pNodeFirst = pnode;
+            pNodeLast = pnode->closingNode();
+        }
+        else {
+            pNodeFirst = pnode->openingNode();
+            pNodeLast = pnode;
+        }
+        if( pNodeFirst && pNodeLast ) {
+            pnode = pNodeFirst;
+            while( pnode != pNodeLast ) {
+                pnode = this->erase( pnode, false );
+            }
+            pNodeLast = pNodeLast->next();
+            this->erase( pnode, false );
+            return pNodeLast;
+        }
+        else {
+            QLOG_WARN() << QString( "<PdfeContentsStream> Can not erase completely the contents between 'BT' and 'ET' nodes (node ID: %1)." )
+                           .arg( pnode->id() ).toAscii().constData();
+            return this->erase( pnode, false );
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::InlineImages ) {
+        // Erase BI, ID and EI. TODO: check...
+        if( pnode->type() == PdfeGOperator::BI ) {
+            this->erase( pnode->next()->next(), false );
+            this->erase( pnode->next(), false );
+            return this->erase( pnode, false );
+        }
+        else if( pnode->type() == PdfeGOperator::ID ) {
+            this->erase( pnode->prev(), false );
+            this->erase( pnode->next(), false );
+            return this->erase( pnode, false );
+        }
+        else {
+            this->erase( pnode->prev()->prev(), false );
+            this->erase( pnode->prev(), false );
+            return this->erase( pnode, false );
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::XObjects ) {
+        // Is it a loaded form?
+        if( pnode->isFormXObject() && pnode->isFormXObjectLoaded() ) {
+            // Erase 'Do' node and the content which follows 'q/Q'.
+            if( pnode->next()->type() == PdfeGOperator::q ) {
+                this->erase( pnode->next(), true );
+            }
+            else {
+                QLOG_WARN() << QString( "<PdfeContentsStream> Form XObject's content not loaded (and thus not erased) (node ID: %1)." )
+                               .arg( pnode->id() ).toAscii().constData();
+            }
+            return this->erase( pnode, false );
+        }
+        else {
+            // Simple treatment.
+            return this->erase( pnode, false );
+        }
+    }
+    else if( pnode->category() == PdfeGCategory::MarkedContents ) {
+        // TODO?
+    }
+    else if( pnode->category() == PdfeGCategory::Compatibility ) {
+        // Erase the entire content between 'BX' and 'EX'.
+        Node* pNodeFirst;
+        Node* pNodeLast;
+        if( pnode->type() == PdfeGOperator::BX ) {
+            pNodeFirst = pnode;
+            pNodeLast = pnode->closingNode();
+        }
+        else {
+            pNodeFirst = pnode->openingNode();
+            pNodeLast = pnode;
+        }
+        if( pNodeFirst && pNodeLast ) {
+            pnode = pNodeFirst;
+            while( pnode != pNodeLast ) {
+                pnode = this->erase( pnode, false );
+            }
+            pNodeLast = pNodeLast->next();
+            this->erase( pnode, false );
+            return pNodeLast;
+        }
+        else {
+            QLOG_WARN() << QString( "<PdfeContentsStream> Can not erase completely the contents between 'BX' and 'EX' nodes (node ID: %1)." )
+                           .arg( pnode->id() ).toAscii().constData();
+            return this->erase( pnode, false );
+        }
+    }
+    // Simple erase as default behaviour.
+    return this->erase( pnode, false );
 }
 
 void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
 {
     // Reinitialize the contents stream.
     this->init();
-    // Load canvas.
+    // Load canvas and set initial resources.
     this->load( pcanvas, loadFormsStream, NULL, PdfeResources() );
+    m_initialResources.pushBack( pcanvas->GetResources() );
 }
 PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     bool loadFormsStream,
@@ -277,7 +482,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                     // Load form XObject.
                     if( loadFormsStream ) {
                         // Save the current graphics state on the stack 'q'.
-                        pNode = this->insert( Node( 0, PdfeGraphicOperator( "q" ),
+                        pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::q ),
                                                     std::vector<std::string>() ),
                                               pNode );
                         // Get transformation matrix of the form.
@@ -296,7 +501,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                 mat[3].ToString( goperands_cm[3] );
                                 mat[4].ToString( goperands_cm[4] );
                                 mat[5].ToString( goperands_cm[5] );
-                                pNode = this->insert( Node( 0, PdfeGraphicOperator( "cm" ),
+                                pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::cm ),
                                                             goperands_cm ),
                                                       pNode );
                             }
@@ -305,7 +510,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                         pNode = this->load( &xobject, loadFormsStream, pNode, resources );
 
                         // Restore the current graphics state on the stack 'Q'.
-                        pNode = this->insert( Node( 0, PdfeGraphicOperator( "Q" ),
+                        pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
                                                     std::vector<std::string>() ),
                                               pNode );
                     }
