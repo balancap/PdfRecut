@@ -128,7 +128,7 @@ PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamStat
 {
     // Initialize to empty and read data.
     this->init();
-    if( streamState.gOperator.cat == PdfeGCategory::TextShowing ) {
+    if( streamState.gOperator.category() == PdfeGCategory::TextShowing ) {
         this->readData( document, streamState );
     }
 }
@@ -137,7 +137,7 @@ PRGTextGroupWords::PRGTextGroupWords( PRGTextPage* textPage, const PdfeStreamSta
 {
     // Initialize to empty and read data.
     this->init();
-    if( streamState.gOperator.cat == PdfeGCategory::TextShowing ) {
+    if( streamState.gOperator.category() == PdfeGCategory::TextShowing ) {
         this->readData( textPage, streamState );
     }
 }

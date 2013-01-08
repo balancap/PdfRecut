@@ -92,7 +92,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
     m_bufStream.str("");
     m_bufString.clear();
 
-    if( gOperator.code == PdfeGOperator::gs ) {
+    if( gOperator.type() == PdfeGOperator::gs ) {
         // Specific case of command "gs": add resource suffixe.
         m_bufString += "/";
         m_bufString += gOperands.back().substr( 1 );
@@ -107,7 +107,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
     else {
         // Copy variables and operator.
         this->copyVariables( gOperands, m_bufString );
-        m_bufString += gOperator.name;
+        m_bufString += gOperator.str();
         m_bufString += "\n";
     }
     m_streamOut->Append( m_bufString );
@@ -123,7 +123,7 @@ void PRStreamLayoutZone::fSpecialGState( const PdfeStreamState& streamState )
 
     // Copy variables and operator.
     this->copyVariables( gOperands, m_bufString );
-    m_bufString += gOperator.name;
+    m_bufString += gOperator.str();
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
@@ -244,7 +244,7 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamState& streamState,
         m_bufStream << clippingPathOp << "\n";
     }
     // Painting operator.
-    m_bufStream << gOperator.name << "\n";
+    m_bufStream << gOperator.str() << "\n";
     m_streamOut->Append( m_bufStream.str() );
 }
 
@@ -259,7 +259,7 @@ void PRStreamLayoutZone::fTextObjects( const PdfeStreamState& streamState )
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
 
     // Copy operator.
-    m_bufString = gOperator.name;
+    m_bufString = gOperator.str();
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
@@ -270,7 +270,7 @@ void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& gOperands = streamState.gOperands;
 
-    if( gOperator.code == PdfeGOperator::Tf ) {
+    if( gOperator.type() == PdfeGOperator::Tf ) {
         // Font: add resource prefix to name.
         m_bufString = "/";
         m_bufString += gOperands[0].substr( 1 );
@@ -288,7 +288,7 @@ void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
         // Copy variables and operator.
         m_bufString.clear();
         this->copyVariables( gOperands, m_bufString );
-        m_bufString += gOperator.name;
+        m_bufString += gOperator.str();
         m_bufString += "\n";
     }
     m_streamOut->Append( m_bufString );
@@ -303,7 +303,7 @@ void PRStreamLayoutZone::fTextPositioning( const PdfeStreamState& streamState )
     // Copy variables and operator.
     m_bufString.clear();
     this->copyVariables( gOperands, m_bufString );
-    m_bufString += gOperator.name;
+    m_bufString += gOperator.str();
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
@@ -323,7 +323,7 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState 
         // Copy variables and operator.
         m_bufString.clear();
         this->copyVariables( gOperands, m_bufString );
-        m_bufString += gOperator.name;
+        m_bufString += gOperator.str();
         m_bufString += "\n";
         m_streamOut->Append( m_bufString );
     }
@@ -331,10 +331,10 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState 
     {
         // In the case of operators ' or ", write non-showing code.
         m_bufStream.str( "" );
-        if( gOperator.code == PdfeGOperator::Quote ) {
+        if( gOperator.type() == PdfeGOperator::Quote ) {
             m_bufStream << "T*\n";
         }
-        else if( gOperator.code == PdfeGOperator::DoubleQuote ) {
+        else if( gOperator.type() == PdfeGOperator::DoubleQuote ) {
             m_bufStream << gState.textState.wordSpace << "Tw\n"
                         << gState.textState.charSpace << "Tc\n";
         }
@@ -354,7 +354,7 @@ void PRStreamLayoutZone::fType3Fonts( const PdfeStreamState& streamState )
 
     // Copy variables and operator...
     this->copyVariables( gOperands, m_bufString );
-    m_bufString += gOperator.name;
+    m_bufString += gOperator.str();
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }
@@ -377,7 +377,7 @@ void PRStreamLayoutZone::fColor( const PdfeStreamState& streamState )
         m_bufString +=  gOperands.back();
         m_bufString += this->getSuffixe();
         m_bufString += " ";
-        m_bufString += gOperator.name;
+        m_bufString += gOperator.str();
         m_bufString += "\n";
 
         // Add key to out resources.
@@ -389,7 +389,7 @@ void PRStreamLayoutZone::fColor( const PdfeStreamState& streamState )
         // Else, simply copy variables.
         this->copyVariables( gOperands, m_bufString );
 
-        m_bufString += gOperator.name;
+        m_bufString += gOperator.str();
         m_bufString += "\n";
     }
     m_streamOut->Append( m_bufString );
@@ -424,11 +424,11 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
     const std::vector<std::string>& gOperands = streamState.gOperands;
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
-    if( gOperator.code == PdfeGOperator::ID ) {
+    if( gOperator.type() == PdfeGOperator::ID ) {
         // Save variables.
         m_keyValuesII = gOperands;
     }
-    else if( gOperator.code == PdfeGOperator::EI ) {
+    else if( gOperator.type() == PdfeGOperator::EI ) {
         // Check if the inline image is inside the zone.
         PdfePath pathII;
         pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
@@ -559,7 +559,7 @@ void PRStreamLayoutZone::fCompatibility( const PdfeStreamState& streamState )
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
 
     // Graphic compatibility mode.
-    m_bufString = gOperator.name;
+    m_bufString = gOperator.str();
     m_bufString += "\n";
     m_streamOut->Append( m_bufString );
 }

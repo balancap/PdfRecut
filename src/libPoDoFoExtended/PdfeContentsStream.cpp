@@ -166,11 +166,11 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                   pNodePrev );
 
             // Create specific links.
-            if( goperator.cat == PdfeGCategory::SpecialGState ) {
-                if( goperator.code == PdfeGOperator::q ) {
+            if( goperator.category() == PdfeGCategory::SpecialGState ) {
+                if( goperator.type() == PdfeGOperator::q ) {
                     pNodes_q.push_back( pNode );
                 }
-                else if( goperator.code == PdfeGOperator::Q ) {
+                else if( goperator.type() == PdfeGOperator::Q ) {
                     if( !pNodes_q.empty() ) {
                         pNodes_q.back()->setClosingNode( pNode );
                         pNode->setOpeningNode( pNodes_q.back() );
@@ -182,25 +182,25 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                     }
                 }
             }
-            else if( goperator.cat == PdfeGCategory::PathConstruction ) {
+            else if( goperator.category() == PdfeGCategory::PathConstruction ) {
                 // Begin of subpath.
                 if( !pNode_BeginSubpath ) {
                     pNode_BeginSubpath = pNode;
-                    if( goperator.code != PdfeGOperator::m &&
-                            goperator.code != PdfeGOperator::re ) {
+                    if( goperator.type() != PdfeGOperator::m &&
+                            goperator.type() != PdfeGOperator::re ) {
                         QLOG_WARN() << QString( "<PdfeContentsStream> Begin subpath a construction operator different from 'm/re' (node ID: %1)." )
                                        .arg( pNode->id() ).toAscii().constData();
                         // TODO: keep track of the current point and add a node with 'm'.
                     }
                 }
                 pNode->setBeginSubpathNode( pNode_BeginSubpath );
-                if( goperator.code == PdfeGOperator::h ) {
+                if( goperator.type() == PdfeGOperator::h ) {
                     pNode_BeginSubpath = NULL;
                 }
                 // Path painting nodes stack.
                 pNodes_path.push_back( pNode );
             }
-            else if( goperator.cat == PdfeGCategory::PathPainting ) {
+            else if( goperator.category() == PdfeGCategory::PathPainting ) {
                 if( !pNodes_path.empty() ) {
                     // Update path construction nodes.
                     for( size_t i = 0 ; i < pNodes_path.size() ; ++i ) {
@@ -213,11 +213,11 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                    .arg( pNode->id() ).toAscii().constData();
                 }
             }
-            else if( goperator.cat == PdfeGCategory::TextObjects ) {
-                if( goperator.code == PdfeGOperator::BT ) {
+            else if( goperator.category() == PdfeGCategory::TextObjects ) {
+                if( goperator.type() == PdfeGOperator::BT ) {
                     pNodes_BT.push_back( pNode );
                 }
-                else if( goperator.code == PdfeGOperator::ET ) {
+                else if( goperator.type() == PdfeGOperator::ET ) {
                     if( !pNodes_BT.empty() ) {
                         pNodes_BT.back()->setClosingNode( pNode );
                         pNode->setOpeningNode( pNodes_BT.back() );
@@ -229,11 +229,11 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                     }
                 }
             }
-            else if( goperator.cat == PdfeGCategory::InlineImages ) {
-                if( goperator.code == PdfeGOperator::BI ) {
+            else if( goperator.category() == PdfeGCategory::InlineImages ) {
+                if( goperator.type() == PdfeGOperator::BI ) {
                     pNodes_BI.push_back( pNode );
                 }
-                else if( goperator.code == PdfeGOperator::EI ) {
+                else if( goperator.type() == PdfeGOperator::EI ) {
                     if( !pNodes_BI.empty() ) {
                         pNodes_BI.back()->setClosingNode( pNode );
                         pNode->setOpeningNode( pNodes_BI.back() );
@@ -245,11 +245,11 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                     }
                 }
             }
-            else if( goperator.cat == PdfeGCategory::Compatibility ) {
-                if( goperator.code == PdfeGOperator::BX ) {
+            else if( goperator.category() == PdfeGCategory::Compatibility ) {
+                if( goperator.type() == PdfeGOperator::BX ) {
                     pNodes_BX.push_back( pNode );
                 }
-                else if( goperator.code == PdfeGOperator::EX ) {
+                else if( goperator.type() == PdfeGOperator::EX ) {
                     if( !pNodes_BX.empty() ) {
                         pNodes_BX.back()->setClosingNode( pNode );
                         pNode->setOpeningNode( pNodes_BX.back() );
@@ -262,7 +262,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                 }
             }
             // XObjects forms: resources and loading.
-            else if( goperator.cat == PdfeGCategory::XObjects ) {
+            else if( goperator.category() == PdfeGCategory::XObjects ) {
                 // Get XObject pointer and subtype.
                 std::string xobjName = goperands.back().substr( 1 );
                 PdfObject* pXObject = resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
@@ -318,22 +318,22 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                 else {
                 }
             }
-            else if( goperator.code == PdfeGOperator::Unknown ) {
+            else if( goperator.type() == PdfeGOperator::Unknown ) {
                 QLOG_WARN() << QString( "<PdfeContentsStream> Unknown graphics operator in the contents stream (node ID: %1)." )
                                .arg( pNode->id() ).toAscii().constData();
             }
 
             // Clear path construction stack.
-            if( goperator.cat != PdfeGCategory::PathConstruction &&
-                    goperator.cat != PdfeGCategory::PathPainting &&
-                    goperator.cat != PdfeGCategory::ClippingPath &&
+            if( goperator.category() != PdfeGCategory::PathConstruction &&
+                    goperator.category() != PdfeGCategory::PathPainting &&
+                    goperator.category() != PdfeGCategory::ClippingPath &&
                     !pNodes_path.empty() ) {
                 pNodes_path.clear();
                 QLOG_WARN() << QString( "<PdfeContentsStream> Path constructed but not painted (node ID: %1)." )
                                .arg( pNode->id() ).toAscii().constData();
 
             }
-            if( goperator.cat != PdfeGCategory::PathConstruction ) {
+            if( goperator.category() != PdfeGCategory::PathConstruction ) {
                 pNode_BeginSubpath = NULL;
             }
             // Clear operands stack and update previous node.
@@ -474,7 +474,7 @@ PdfeContentsStream::Node::Node( const PdfeContentsStream::Node& rhs ) :
     m_pOpeningNode( NULL ),
     m_pBeginSubpathNode( NULL )
 {
-    if( m_goperator.code == PdfeGOperator::Do ) {
+    if( m_goperator.type() == PdfeGOperator::Do ) {
         m_pFormResources = rhs.m_pFormResources;
         m_formXObject.isForm = rhs.m_formXObject.isForm;
         m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
@@ -488,7 +488,7 @@ PdfeContentsStream::Node& PdfeContentsStream::Node::operator=( const PdfeContent
     m_goperands = rhs.m_goperands;
     m_pOpeningNode = NULL;
     m_pBeginSubpathNode = NULL;
-    if( m_goperator.code == PdfeGOperator::Do ) {
+    if( m_goperator.type() == PdfeGOperator::Do ) {
         m_pFormResources = rhs.m_pFormResources;
         m_formXObject.isForm = rhs.m_formXObject.isForm;
         m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
@@ -525,14 +525,14 @@ PdfeContentsStream::Node* PdfeContentsStream::Node::closingNode() const
 
 PdfeContentsStream::Node* PdfeContentsStream::Node::beginSubpathNode() const
 {
-    if( m_goperator.cat == PdfeGCategory::PathConstruction ) {
+    if( m_goperator.category() == PdfeGCategory::PathConstruction ) {
         return m_pBeginSubpathNode;
     }
     return NULL;
 }
 PdfeContentsStream::Node* PdfeContentsStream::Node::paintingNode() const
 {
-    if( m_goperator.cat == PdfeGCategory::PathConstruction ) {
+    if( m_goperator.category() == PdfeGCategory::PathConstruction ) {
         return m_pPaintingNode;
     }
     return NULL;
@@ -540,15 +540,15 @@ PdfeContentsStream::Node* PdfeContentsStream::Node::paintingNode() const
 
 bool PdfeContentsStream::Node::isFormXObject() const
 {
-    return ( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm );
+    return ( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm );
 }
 bool PdfeContentsStream::Node::isFormXObjectLoaded() const
 {
-    return ( m_goperator.code == PdfeGOperator::Do && m_formXObject.isLoaded );
+    return ( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isLoaded );
 }
 PdfObject* PdfeContentsStream::Node::resources() const
 {
-    if( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm ) {
+    if( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm ) {
         return m_pFormResources;
     }
     return NULL;
@@ -604,7 +604,7 @@ void PdfeContentsStream::Node::setPaintingNode( PdfeContentsStream::Node* pnode 
 
 void PdfeContentsStream::Node::setFormXObject( bool isloaded, PdfObject* presources )
 {
-    if( m_goperator.code == PdfeGOperator::Do ) {
+    if( m_goperator.type() == PdfeGOperator::Do ) {
         m_formXObject.isForm = true;
         m_formXObject.isLoaded = isloaded;
         m_pFormResources = presources;
@@ -612,7 +612,7 @@ void PdfeContentsStream::Node::setFormXObject( bool isloaded, PdfObject* presour
 }
 void PdfeContentsStream::Node::setFormResources( PdfObject* presources )
 {
-    if( m_goperator.code == PdfeGOperator::Do && m_formXObject.isForm ) {
+    if( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm ) {
         m_pFormResources = presources;
     }
 }

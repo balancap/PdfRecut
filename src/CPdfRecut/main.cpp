@@ -157,8 +157,8 @@ void proceedFile( QString filePath )
 
     PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
     pGDocument->loadPagesContents();
-
-    /*pGDocument->analyse( gparams );
+/*
+    pGDocument->analyse( gparams );
 
     // Render page and save.
     PRRenderPage::Parameters renderParams;
@@ -178,15 +178,15 @@ void proceedFile( QString filePath )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        renderPage.renderElements( renderParams );
+        renderPage.renderElements( renderParams );
 //        textPage->renderGroupsWords( renderPage, true );
-        textPage->renderLines( renderPage, false, false );
+//        textPage->renderLines( renderPage, false, false );
 
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
         renderPage.image().save( filename );
-    }*/
-
+    }
+*/
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
     std::cout << "Press RETURN to finish..." << std::endl;

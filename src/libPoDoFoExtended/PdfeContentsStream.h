@@ -191,9 +191,9 @@ public:
     /// Graphics operands (represented by string).
     const std::vector<std::string>& goperands() const   {   return m_goperands;     }
     /// Node type.
-    PdfeGOperator::Enum type() const        {   return m_goperator.code;    }
+    PdfeGOperator::Enum type() const        {   return m_goperator.type();    }
     /// Node category.
-    PdfeGCategory::Enum category() const    {   return m_goperator.cat;     }
+    PdfeGCategory::Enum category() const    {   return m_goperator.category();     }
     /// Is the node empty, i.e. correspond to unknown type.
     bool isEmpty() const;
 
@@ -292,25 +292,25 @@ private:
 //**********************************************************//
 inline bool PdfeContentsStream::Node::isEmpty() const
 {
-    return m_goperator.code == PdfeGOperator::Unknown;
+    return m_goperator.type() == PdfeGOperator::Unknown;
 }
 inline bool PdfeContentsStream::Node::isOpeningNode() const
 {
-    return  m_goperator.code == PdfeGOperator::BT ||
-            m_goperator.code == PdfeGOperator::q  ||
-            m_goperator.code == PdfeGOperator::BI ||
-            m_goperator.code == PdfeGOperator::BX;
+    return  m_goperator.type() == PdfeGOperator::BT ||
+            m_goperator.type() == PdfeGOperator::q  ||
+            m_goperator.type() == PdfeGOperator::BI ||
+            m_goperator.type() == PdfeGOperator::BX;
 }
 inline bool PdfeContentsStream::Node::isClosingNode() const
 {
-    return  m_goperator.code == PdfeGOperator::ET ||
-            m_goperator.code == PdfeGOperator::Q  ||
-            m_goperator.code == PdfeGOperator::EI ||
-            m_goperator.code == PdfeGOperator::EX;
+    return  m_goperator.type() == PdfeGOperator::ET ||
+            m_goperator.type() == PdfeGOperator::Q  ||
+            m_goperator.type() == PdfeGOperator::EI ||
+            m_goperator.type() == PdfeGOperator::EX;
 }
 inline bool PdfeContentsStream::Node::isBeginSubpathNode() const
 {
-    return  m_goperator.cat == PdfeGCategory::PathConstruction &&
+    return  m_goperator.category() == PdfeGCategory::PathConstruction &&
             this == m_pBeginSubpathNode;
 }
 

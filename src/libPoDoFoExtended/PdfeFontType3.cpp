@@ -306,7 +306,7 @@ void PdfeGlyphType3::fPathPainting( const PdfeStreamState& streamState,
 void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
 {
     // Update d1 bounding box if possible.
-    if( streamState.gOperator.code == PdfeGOperator::d1 ) {
+    if( streamState.gOperator.type() == PdfeGOperator::d1 ) {
         double left, right, bottom, top;
         size_t nbvars = streamState.gOperands.size();
 

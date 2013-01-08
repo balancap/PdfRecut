@@ -121,6 +121,7 @@ inline const char* str( PdfeGOperator::Enum type ) {
     }
     return names[ PdfeGOperator::Unknown ];
 }
+// TODO: number of arguments for each operator.
 }
 namespace PdfeFillingRule {
 /// Enumeration of PDF Filling rules.
@@ -135,15 +136,6 @@ enum Enum {
  */
 class PdfeGraphicOperator
 {
-public:
-    // DEPRECIATED...
-    /// Pdf name of the operator
-    char  name[6];
-    /// Enum code of the operator
-    PdfeGOperator::Enum  code;
-    /// Enum code of the category it belongs to.
-    PdfeGCategory::Enum  cat;
-
 public:
     /** Default constructor.
      */
@@ -185,20 +177,12 @@ public:
     /// Set the operator from its type.
     void set( PdfeGOperator::Enum type ) {
         m_type = type;
-        // DEPRECIATED
-        code = m_type;
-        cat = this->category();
-        strcpy( name, this->str() );
     }
     /// Set the operator from its string representation.
     void set( const char* str ) {
         for( unsigned int i = 0 ; i < PdfeGOperator::size() ; ++i ) {
             if( !strcmp( str,  PdfeGOperator::str( PdfeGOperator::Enum( i ) ) ) ) {
                 m_type = PdfeGOperator::Enum( i );
-                // DEPRECIATED
-                code = m_type;
-                cat = this->category();
-                strcpy( name, this->str() );
                 return;
             }
         }
