@@ -67,6 +67,6 @@ unix {
     INCLUDEPATH += /usr/include/freetype2
 
     LIBS += -L$$PWD/../../../PoDoFo/linux64/lib64
-    LIBS += -lpodofod -lfreetype -lfontconfig -ljpeg -lz
+    LIBS += -lpodofo -lfreetype -lfontconfig -ljpeg -lz
     LIBS += -lpoppler-qt4
 }

@@ -165,8 +165,11 @@ void PdfeFontType3::initSpaceBBox()
     // Multiply by a magic! constant factor.
     spaceWidth = spaceWidth * 0.8;
 
-    m_spaceBBox.SetWidth( spaceWidth );
-    m_spaceBBox.SetHeight( spaceWidth );
+    // Apply font matrix.
+    PdfeORect bbox( spaceWidth, spaceWidth );
+    bbox = m_fontMatrix.map( bbox );
+    m_spaceBBox.SetWidth( bbox.width() );
+    m_spaceBBox.SetHeight( bbox.height() );
 }
 PdfeFontType3::~PdfeFontType3()
 {
