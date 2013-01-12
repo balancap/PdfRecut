@@ -12,6 +12,7 @@
 #include "PdfeContentsStream.h"
 #include "PdfeStreamTokenizer.h"
 
+#include <QtCore>
 #include <QsLog/QsLog.h>
 #include <podofo/podofo.h>
 
@@ -332,6 +333,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
     this->load( pcanvas, loadFormsStream, NULL, PdfeResources() );
     m_initialResources.pushBack( pcanvas->GetResources() );
 }
+
 PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     bool loadFormsStream,
                                                     PdfeContentsStream::Node* pNodePrev,
@@ -351,7 +353,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
     std::vector<Node*> pNodes_BI;
     std::vector<Node*> pNodes_BX;
     std::vector<Node*> pNodes_path;
-    Node* pNode_BeginSubpath;
+    Node* pNode_BeginSubpath = NULL;
     // Temp nodes pointers.
     Node* pNode = NULL;
 
@@ -486,14 +488,14 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     std::vector<std::string>() ),
                                               pNode );
                         // Get transformation matrix of the form.
-                        PdfeMatrix formMat;
+                        PdfeMatrix formTransMat;
                         if( pXObject->GetDictionary().HasKey( "Matrix" ) ) {
                             PdfArray& mat = pXObject->GetIndirectKey( "Matrix" )->GetArray();
-                            formMat(0,0) = mat[0].GetReal();    formMat(0,1) = mat[1].GetReal();
-                            formMat(1,0) = mat[2].GetReal();    formMat(1,1) = mat[3].GetReal();
-                            formMat(2,0) = mat[4].GetReal();    formMat(2,1) = mat[5].GetReal();
+                            formTransMat(0,0) = mat[0].GetReal();    formTransMat(0,1) = mat[1].GetReal();
+                            formTransMat(1,0) = mat[2].GetReal();    formTransMat(1,1) = mat[3].GetReal();
+                            formTransMat(2,0) = mat[4].GetReal();    formTransMat(2,1) = mat[5].GetReal();
                             // Insert in the stream it if not the identity.
-                            if( formMat != PdfeMatrix() ) {
+                            if( formTransMat != PdfeMatrix() ) {
                                 std::vector<std::string> goperands_cm( 6 );
                                 mat[0].ToString( goperands_cm[0] );
                                 mat[1].ToString( goperands_cm[1] );
@@ -551,6 +553,32 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
         }
     }
     return pNode;
+}
+void PdfeContentsStream::writeToFile( QString filename ) const
+{
+    QFile data( filename );
+    if( data.open( QFile::WriteOnly | QFile::Truncate ) ) {
+        QTextStream out( &data );
+
+        Node* pnode = m_pFirstNode;
+        while( pnode ) {
+            // Write node description.
+            out << qSetFieldWidth( 5 ) << left
+                << pnode->id()
+                << pnode->goperator().str()
+                << qSetFieldWidth( 0 ) << left;
+            for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
+                out << pnode->operands().at( i ).c_str() << " ";
+            }
+            out << endl;
+
+            pnode = pnode->next();
+        }
+    }
+    else {
+        QLOG_WARN() << QString( "<PdfeContentsStream> Can not open file (%1) to write stream description." )
+                       .arg( filename ).toAscii().constData();
+    }
 }
 
 void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
@@ -662,6 +690,7 @@ PdfeContentsStream::Node::Node( pdfe_nodeid nodeid,
     m_pOpeningNode( NULL ),
     m_pBeginSubpathNode( NULL )
 {
+    // TODO: check the number of operands.
 }
 void PdfeContentsStream::Node::init()
 {
@@ -772,7 +801,7 @@ void PdfeContentsStream::Node::setNext( PdfeContentsStream::Node* pnode )
 {
     m_pNextNode = pnode;
 }
-void PdfeContentsStream::Node::setOperator( const PdfeGraphicOperator& rhs )
+void PdfeContentsStream::Node::setGOperator( const PdfeGraphicOperator& rhs )
 {
     m_goperator = rhs;
 }
@@ -820,6 +849,24 @@ void PdfeContentsStream::Node::setFormResources( PdfObject* presources )
     if( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm ) {
         m_pFormResources = presources;
     }
+}
+
+// PoDoFo::PdfVariant specialization.
+template <>
+const PoDoFo::PdfVariant PdfeContentsStream::Node::operand( size_t idx ) const
+{
+    PdfVariant variant;
+    PdfTokenizer tokenizer( m_goperands.at( idx ).c_str(), m_goperands.at( idx ).length() );
+    tokenizer.GetNextVariant( variant, NULL );
+    return variant;
+}
+template <>
+void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant& value )
+{
+    if( idx >= m_goperands.size() ) {
+        m_goperands.resize( idx + 1 );
+    }
+    value.ToString( m_goperands.at( idx ) ,ePdfWriteMode_Compact );
 }
 
 }

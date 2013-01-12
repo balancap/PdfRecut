@@ -12,13 +12,16 @@
 #ifndef PDFECONTENTSSTREAM_H
 #define PDFECONTENTSSTREAM_H
 
-#include "PdfeGraphicsState.h"
+#include <istream>
 
+#include "PdfeGraphicsState.h"
 #include "PdfeResources.h"
+#include "PdfeMisc.h"
 
 namespace PoDoFo {
 class PdfObject;
 class PdfCanvas;
+class PdfVariant;
 }
 
 namespace PoDoFoExtended {
@@ -89,6 +92,12 @@ public:
      */
     void load( PoDoFo::PdfCanvas* pcanvas,
                bool loadFormsStream );
+    /** Write the stream into a text file. The text description
+     * does not correspond to the official PDF reference but should be
+     * easily human-readable.
+     * \param filename Filename of the text file.
+     */
+    void writeToFile( QString filename ) const;
 
 private:
     /** Private version of the canvas loading. Can be called recursively, in
@@ -108,6 +117,10 @@ public:
     bool isEmpty() const    {   return (m_nbNodes == 0);    }
     /// Get the numbers of nodes in the stream.
     size_t nbNodes() const  {   return m_nbNodes;           }
+    /// First node of the stream.
+    Node* firstNode() const {   return m_pFirstNode;        }
+    /// Last node of the stream.
+    Node* lastNode() const  {   return m_pLastNode;         }
 
 private:
     /** Deep copy of nodes from another contents stream.
@@ -190,11 +203,13 @@ public:
     /// Graphics operator (const reference).
     const PdfeGraphicOperator& goperator() const        {   return m_goperator;     }
     /// Graphics operands (represented by string).
-    const std::vector<std::string>& goperands() const   {   return m_goperands;     }
+    const std::vector<std::string>& operands() const    {   return m_goperands;     }
+    /// Number of operands.
+    size_t nbOperands() const               {   return m_goperands.size();      }
     /// Node type.
-    PdfeGOperator::Enum type() const        {   return m_goperator.type();    }
+    PdfeGOperator::Enum type() const        {   return m_goperator.type();      }
     /// Node category.
-    PdfeGCategory::Enum category() const    {   return m_goperator.category();     }
+    PdfeGCategory::Enum category() const    {   return m_goperator.category();  }
     /// Is the node empty, i.e. correspond to unknown type.
     bool isEmpty() const;
 
@@ -223,9 +238,9 @@ public:
 
 public:
     // Setters...
-    /// Set operator of the node.
-    void setOperator( const PdfeGraphicOperator& rhs );
-    /// Set operands related to the node's operator.
+    /// Set the graphics operator of the node.
+    void setGOperator( const PdfeGraphicOperator& rhs );
+    /// Set graphics operands related to the node's operator.
     void setOperands( const std::vector<std::string>& rhs );
 
     /// Set opening node. Check the type before modification.
@@ -243,6 +258,23 @@ public:
                          PoDoFo::PdfObject* presources );
     /// Set form resources. Check it is an XObjects form before modification.
     void setFormResources( PoDoFo::PdfObject* presources );
+
+public:
+    // Operands getters and setters...
+    /** Get the value of an operand. Set the returned type
+     * through the template parameter. Raise an exception if out of range.
+     * \param idx Index of the operand.
+     * \return Value, converted to a given type.
+     */
+    template <class T>
+    const T operand( size_t idx ) const;
+
+    /** Set the value of an operand. Resize the operands vector if necessary.
+     * \param idx Index of the operand to set.
+     * \param value New value to set.
+     */
+    template <class T>
+    void setOperand( size_t idx, const T& value );
 
 private:
     // Setters... Keep them private for now...
@@ -314,6 +346,49 @@ inline bool PdfeContentsStream::Node::isBeginSubpathNode() const
     return  m_goperator.category() == PdfeGCategory::PathConstruction &&
             this == m_pBeginSubpathNode;
 }
+
+template <class T>
+const T PdfeContentsStream::Node::operand( size_t idx ) const
+{
+    T value;
+    std::istringstream istream( m_goperands.at( idx ) );
+    if( !( istream >> value ) ) {
+        //std::cout << "Error: " << str << std::endl;
+        PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, m_goperands.at( idx ).c_str() );
+    }
+    return value;
+}
+template <class T>
+void PdfeContentsStream::Node::setOperand( size_t idx, const T& value )
+{
+    if( idx >= m_goperands.size() ) {
+        m_goperands.resize( idx + 1 );
+    }
+    PdfeOStringStream ostream;
+    ostream << value;
+    m_goperands.at( idx ) = ostream.str();
+}
+
+// std::string specialization.
+template <>
+inline const std::string PdfeContentsStream::Node::operand( size_t idx ) const
+{
+    return m_goperands.at( idx );
+}
+template <>
+inline void PdfeContentsStream::Node::setOperand( size_t idx, const std::string& value )
+{
+    if( idx >= m_goperands.size() ) {
+        m_goperands.resize( idx + 1 );
+    }
+    m_goperands.at( idx ) = value;
+}
+// PoDoFo::PdfVariant specialization.
+template <>
+const PoDoFo::PdfVariant PdfeContentsStream::Node::operand( size_t idx ) const;
+template <>
+void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant& value );
+
 
 }
 

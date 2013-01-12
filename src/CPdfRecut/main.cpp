@@ -185,6 +185,10 @@ void proceedFile( QString filePath )
         // Save image to file.
         filename = QString("./img/page%1.png").arg( i, 3, 10, QLatin1Char('0') );
         renderPage.image().save( filename );
+
+        // Save stream to file.
+        filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        pGDocument->page( i )->contents().writeToFile( filename );
     }
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
