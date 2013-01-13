@@ -58,19 +58,33 @@ public:
      */
     PdfeResources& operator=( const PdfeResources& rhs );
 
-    /** Push back a resources dictionary.
-     * \param resourcesDict Dictionary to push (not owned by the PdfResources object).
+public:
+    // Resources PDF objects.
+    /** Push back a resources dictionary inside the collection
+     * \param pResourcesObj Dictionary to add (not owned by the PdfResources object).
      */
-    void pushBack( PoDoFo::PdfObject* resourcesObj );
+    void push_back( PoDoFo::PdfObject* pResourcesObj );
+    /** Remove a resources object from the collection.
+     * \param pResourcesObj Resources dictionary to remove.
+     * \return True if found and successively removed.
+     */
+    bool remove( PoDoFo::PdfObject* pResourcesObj );
+    /** Is a resources object inside the collection?
+     * \param pResourcesObj Object to find in the collection.
+     * \return Found?
+     */
+    bool inside( const PoDoFo::PdfObject* pResourcesObj ) const;
     /** Get the vector of resources dictionaries.
      * \return Vector of pointers.
      */
     const std::vector<PoDoFo::PdfObject*>& resources() const;
 
-    /** Add a key in resources.
+public:
+    // Resources contents.
+    /** Add a pair key/value to resources. The PdfObject is copied
      * \param resource Resource type where to add the key.
-     * \param key Key to add.
-     * \param PdfObject Value corresponding to the key.
+     * \param key Key of the object to add.
+     * \param PdfObject Value corresponding to the key. Copied.
      */
     void addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
     /** Get a key in resources (try each resource object by order of importance).
