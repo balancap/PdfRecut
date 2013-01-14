@@ -275,7 +275,7 @@ PdfeContentsStream::Node* PdfeContentsStream::erase( PdfeContentsStream::Node* p
     }
     else if( pnode->category() == PdfeGCategory::XObjects ) {
         // Is it a loaded form?
-        if( pnode->isFormXObject() && pnode->isFormXObjectLoaded() ) {
+        if( pnode->xobjectType() == PdfeXObjectType::Form && pnode->isFormXObjectLoaded() ) {
             // Erase 'Do' node and the content which follows 'q/Q'.
             if( pnode->next()->type() == PdfeGOperator::q ) {
                 this->erase( pnode->next(), true );
@@ -284,6 +284,8 @@ PdfeContentsStream::Node* PdfeContentsStream::erase( PdfeContentsStream::Node* p
                 QLOG_WARN() << QString( "<PdfeContentsStream> Form XObject's content not loaded (and thus not erased) (node ID: %1)." )
                                .arg( pnode->id() ).toAscii().constData();
             }
+            // Erase the two 'Do' nodes (opening and closing).
+            pnode = this->erase( pnode, false );
             return this->erase( pnode, false );
         }
         else {
@@ -331,7 +333,7 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
     this->init();
     // Load canvas and set initial resources.
     this->load( pcanvas, loadFormsStream, NULL, PdfeResources() );
-    m_initialResources.pushBack( pcanvas->GetResources() );
+    m_initialResources.push_back( pcanvas->GetResources() );
 }
 
 PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
@@ -359,7 +361,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
 
     // Add canvas resources.
     PdfeResources resources( iniResources );
-    resources.pushBack( pcanvas->GetResources() );
+    resources.push_back( pcanvas->GetResources() );
 
     // Analyse page stream / Also known as the big dirty loop !
     while( tokenizer.ReadNext( tokenType, goperator, strVariant ) ) {
@@ -479,10 +481,11 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                 if( xobjSubtype == "Form" ) {
                     // PdfXObject corresponding created and update node information.
                     PdfXObject xobject( pXObject );
-                    pNode->setFormXObject( loadFormsStream, xobject.GetResources() );
+                    pNode->setXObject( PdfeXObjectType::Form, pXObject );
 
                     // Load form XObject.
                     if( loadFormsStream ) {
+                        pNode->setFormXObject( true, true, false );
                         // Save the current graphics state on the stack 'q'.
                         pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::q ),
                                                     std::vector<std::string>() ),
@@ -510,19 +513,32 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                         }
                         // Load form XObject.
                         pNode = this->load( &xobject, loadFormsStream, pNode, resources );
-
                         // Restore the current graphics state on the stack 'Q'.
                         pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
                                                     std::vector<std::string>() ),
                                               pNode );
+                        // Closing form XObject node.
+                        pNode = this->insert( Node( 0, goperator, goperands ),
+                                              pNode );
+                        pNode->setXObject( PdfeXObjectType::Form, pXObject );
+                        pNode->setFormXObject( true, false, true );
+                    }
+                    else {
+                        pNode->setFormXObject( false, false, false );
                     }
                 }
                 else if( xobjSubtype == "PS" ) {
-
+                    pNode->setXObject( PdfeXObjectType::PS, pXObject );
                     QLOG_WARN() << QString( "<PdfeContentsStream> Postscript XObject inserted. Currently not supported. (node ID: %1)." )
                                    .arg( pNode->id() ).toAscii().constData();
                 }
+                else if( xobjSubtype == "Image" ) {
+                    pNode->setXObject( PdfeXObjectType::Image, pXObject );
+                }
                 else {
+                    pNode->setXObject( PdfeXObjectType::Unknown, pXObject );
+                    QLOG_WARN() << QString( "<PdfeContentsStream> Unknown XObject type. (node ID: %1)." )
+                                   .arg( pNode->id() ).toAscii().constData();
                 }
             }
             else if( goperator.type() == PdfeGOperator::Unknown ) {
@@ -709,9 +725,8 @@ PdfeContentsStream::Node::Node( const PdfeContentsStream::Node& rhs ) :
     m_pBeginSubpathNode( NULL )
 {
     if( m_goperator.type() == PdfeGOperator::Do ) {
-        m_pFormResources = rhs.m_pFormResources;
-        m_formXObject.isForm = rhs.m_formXObject.isForm;
-        m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
+        m_pXObject = rhs.m_pXObject;
+        m_formXObject = rhs.m_formXObject;
     }
 }
 PdfeContentsStream::Node& PdfeContentsStream::Node::operator=( const PdfeContentsStream::Node& rhs )
@@ -723,9 +738,8 @@ PdfeContentsStream::Node& PdfeContentsStream::Node::operator=( const PdfeContent
     m_pOpeningNode = NULL;
     m_pBeginSubpathNode = NULL;
     if( m_goperator.type() == PdfeGOperator::Do ) {
-        m_pFormResources = rhs.m_pFormResources;
-        m_formXObject.isForm = rhs.m_formXObject.isForm;
-        m_formXObject.isLoaded = rhs.m_formXObject.isLoaded;
+        m_pXObject = rhs.m_pXObject;
+        m_formXObject = rhs.m_formXObject;
     }
     return *this;
 }
@@ -772,20 +786,23 @@ PdfeContentsStream::Node* PdfeContentsStream::Node::paintingNode() const
     return NULL;
 }
 
-bool PdfeContentsStream::Node::isFormXObject() const
+PdfeXObjectType::Enum PdfeContentsStream::Node::xobjectType() const
 {
-    return ( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm );
+    if( m_goperator.type() == PdfeGOperator::Do ) {
+        return PdfeXObjectType::Enum( m_formXObject.type );
+    }
+    return PdfeXObjectType::Unknown;
+}
+PdfObject* PdfeContentsStream::Node::xobject() const
+{
+    if( m_goperator.type() == PdfeGOperator::Do ) {
+        return m_pXObject;
+    }
+    return NULL;
 }
 bool PdfeContentsStream::Node::isFormXObjectLoaded() const
 {
     return ( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isLoaded );
-}
-PdfObject* PdfeContentsStream::Node::resources() const
-{
-    if( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm ) {
-        return m_pFormResources;
-    }
-    return NULL;
 }
 
 // Setters...
@@ -836,18 +853,24 @@ void PdfeContentsStream::Node::setPaintingNode( PdfeContentsStream::Node* pnode 
     }
 }
 
-void PdfeContentsStream::Node::setFormXObject( bool isloaded, PdfObject* presources )
+void PdfeContentsStream::Node::setXObject( PdfeXObjectType::Enum type, PdfObject* pXObject )
 {
     if( m_goperator.type() == PdfeGOperator::Do ) {
-        m_formXObject.isForm = true;
-        m_formXObject.isLoaded = isloaded;
-        m_pFormResources = presources;
+        m_pXObject = pXObject;
+        m_formXObject.type = static_cast<unsigned char>( type );
+        if( type != PdfeXObjectType::Form ) {
+            m_formXObject.isOpening
+                    = m_formXObject.isClosing
+                    = false;
+        }
     }
 }
-void PdfeContentsStream::Node::setFormResources( PdfObject* presources )
+void PdfeContentsStream::Node::setFormXObject( bool isLoaded, bool isOpening, bool isClosing )
 {
-    if( m_goperator.type() == PdfeGOperator::Do && m_formXObject.isForm ) {
-        m_pFormResources = presources;
+    if( m_goperator.type() == PdfeGOperator::Do ) {
+        m_formXObject.isLoaded = isLoaded;
+        m_formXObject.isOpening = isOpening;
+        m_formXObject.isClosing = isClosing;
     }
 }
 

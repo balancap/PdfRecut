@@ -114,13 +114,17 @@ private:
 public:
     // Simples getters...
     /// Is the stream empty?
-    bool isEmpty() const    {   return (m_nbNodes == 0);    }
+    bool isEmpty() const    {   return ( m_nbNodes == 0 );  }
     /// Get the numbers of nodes in the stream.
     size_t nbNodes() const  {   return m_nbNodes;           }
     /// First node of the stream.
     Node* firstNode() const {   return m_pFirstNode;        }
     /// Last node of the stream.
     Node* lastNode() const  {   return m_pLastNode;         }
+    /// Initial graphics state.
+    const PdfeGraphicsState& initialGState() const  {   return m_initialGState;     }
+    /// Initial resources of the stream.
+    const PdfeResources& initialResources() const   {   return m_initialResources;  }
 
 private:
     /** Deep copy of nodes from another contents stream.
@@ -213,9 +217,9 @@ public:
     /// Is the node empty, i.e. correspond to unknown type.
     bool isEmpty() const;
 
-    /// Is it an opening node? i.e. BT, q, BI or BX.
+    /// Is it an opening node? i.e. BT, q, BI or BX and form XObject.
     bool isOpeningNode() const;
-    /// Is it a closing node? i.e. ET, Q, EI or EX.
+    /// Is it a closing node? i.e. ET, Q, EI or EX and form XObject.
     bool isClosingNode() const;
     /// Associated opening node. Need to be an operator ET, Q, EI or EX. NULL otherwise.
     Node* openingNode() const;
@@ -229,12 +233,12 @@ public:
     /// Painting node. NULL if not a path construction node.
     Node* paintingNode() const;
 
-    /// Does the node corresponds to a form XObject?
-    bool isFormXObject() const;
+    /// XObject type (Unknown if not a 'Do' node).
+    PdfeXObjectType::Enum xobjectType() const;
+    /// XObject PoDoFo::PdfObject. NULL if not a 'Do' node.
+    PoDoFo::PdfObject* xobject() const;
     /// Is the XObject form loaded? False if not a form XObject.
     bool isFormXObjectLoaded() const;
-    /// Resources object. Only for XObjects forms. NULL otherwise.
-    PoDoFo::PdfObject* resources() const;
 
 public:
     // Setters...
@@ -253,11 +257,10 @@ public:
     /// Set painting node. Check it is a path construction node.
     void setPaintingNode( Node* pnode );
 
-    /// Set information on a form XObject: isLoaded and resources.
-    void setFormXObject( bool isloaded,
-                         PoDoFo::PdfObject* presources );
-    /// Set form resources. Check it is an XObjects form before modification.
-    void setFormResources( PoDoFo::PdfObject* presources );
+    /// Set information on an XObject: type and xobject pointer.
+    void setXObject( PdfeXObjectType::Enum type, PoDoFo::PdfObject* pXObject );
+    /// Set loading/opening/closing information on a form XObject.
+    void setFormXObject( bool isLoaded, bool isOpening, bool isClosing );
 
 public:
     // Operands getters and setters...
@@ -268,7 +271,6 @@ public:
      */
     template <class T>
     const T operand( size_t idx ) const;
-
     /** Set the value of an operand. Resize the operands vector if necessary.
      * \param idx Index of the operand to set.
      * \param value New value to set.
@@ -305,17 +307,22 @@ private:
         Node*  m_pClosingNode;
         /// Painting node. Only for path construction nodes.
         Node*  m_pPaintingNode;
-        /// Resources object. Only for XObjects forms (Do).
-        PoDoFo::PdfObject*  m_pFormResources;
+        /// XObject PoDoFo object.
+        PoDoFo::PdfObject*  m_pXObject;
     };
     union {
         /// Node with which begins the subpath. Only for construction path nodes.
         Node*  m_pBeginSubpathNode;
+        /// Structure gathering information on form XObjects.
         struct {
-            /// Is the node an XObjects form?
-            bool  isForm;
-            /// Is an XObjects form loaded?
+            /// XObject type (converted from PdfeXObjectType).
+            unsigned char type;
+            /// Is the form XObject loaded in the stream?
             bool  isLoaded;
+            /// Does it correspond to the opening node, if loaded.
+            bool  isOpening;
+            /// Does it correspond to the closing node, if loaded.
+            bool  isClosing;
         } m_formXObject;
     };
 };
@@ -332,14 +339,18 @@ inline bool PdfeContentsStream::Node::isOpeningNode() const
     return  m_goperator.type() == PdfeGOperator::BT ||
             m_goperator.type() == PdfeGOperator::q  ||
             m_goperator.type() == PdfeGOperator::BI ||
-            m_goperator.type() == PdfeGOperator::BX;
+            m_goperator.type() == PdfeGOperator::BX ||
+            ( m_goperator.type() == PdfeGOperator::Do &&
+              m_formXObject.isOpening );
 }
 inline bool PdfeContentsStream::Node::isClosingNode() const
 {
     return  m_goperator.type() == PdfeGOperator::ET ||
             m_goperator.type() == PdfeGOperator::Q  ||
             m_goperator.type() == PdfeGOperator::EI ||
-            m_goperator.type() == PdfeGOperator::EX;
+            m_goperator.type() == PdfeGOperator::EX ||
+            ( m_goperator.type() == PdfeGOperator::Do &&
+              m_formXObject.isClosing );
 }
 inline bool PdfeContentsStream::Node::isBeginSubpathNode() const
 {
@@ -388,7 +399,6 @@ template <>
 const PoDoFo::PdfVariant PdfeContentsStream::Node::operand( size_t idx ) const;
 template <>
 void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant& value );
-
 
 }
 

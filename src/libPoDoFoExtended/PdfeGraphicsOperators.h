@@ -131,6 +131,15 @@ enum Enum {
     Unknown
 };
 }
+namespace PdfeXObjectType {
+/// Enumeration of XObject types.
+enum Enum {
+    Image = 0,      /// Image content.
+    Form,           /// Form XObject.
+    PS,             /// PostScript object.
+    Unknown
+};
+}
 
 /** Class gathering information on a graphics operator.
  */
