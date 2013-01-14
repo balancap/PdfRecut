@@ -296,7 +296,7 @@ void PdfeGlyphType3::computeBBox()
 //**********************************************//
 //         PdfeCanvasAnalysis interface         //
 //**********************************************//
-void PdfeGlyphType3::fPathPainting( const PdfeStreamState& streamState,
+void PdfeGlyphType3::fPathPainting( const PdfeStreamStateOld& streamState,
                                     const PdfePath& currentPath )
 {
     // TODO: implement the computation of cbox.
@@ -306,7 +306,7 @@ void PdfeGlyphType3::fPathPainting( const PdfeStreamState& streamState,
 //               std::ostream_iterator<std::string>( std::cout, " " ) );
 //    std::cout << std::endl;
 }
-void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
+void PdfeGlyphType3::fType3Fonts( const PdfeStreamStateOld& streamState )
 {
     // Update d1 bounding box if possible.
     if( streamState.gOperator.type() == PdfeGOperator::d1 ) {
@@ -323,7 +323,7 @@ void PdfeGlyphType3::fType3Fonts( const PdfeStreamState& streamState )
     }
 }
 
-void PdfeGlyphType3::fUnknown( const PdfeStreamState& streamState )
+void PdfeGlyphType3::fUnknown( const PdfeStreamStateOld& streamState )
 {
 }
 

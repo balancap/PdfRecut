@@ -26,7 +26,7 @@ namespace PoDoFoExtended {
 
 /** Simple structure that gathers information related to the current state of a stream.
  */
-struct PdfeStreamState
+struct PdfeStreamStateOld
 {
     /// Canvas analysed.
     PoDoFo::PdfCanvas* canvas;
@@ -75,47 +75,47 @@ protected:
                           const PdfeResources& initialResources );
 
     // PdfeCanvasAnalysis interface.
-    virtual void fGeneralGState( const PdfeStreamState& streamState ) = 0;
+    virtual void fGeneralGState( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fSpecialGState( const PdfeStreamState& streamState ) = 0;
+    virtual void fSpecialGState( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fPathConstruction( const PdfeStreamState& streamState,
+    virtual void fPathConstruction( const PdfeStreamStateOld& streamState,
                                     const PdfePath& currentPath ) = 0;
 
-    virtual void fPathPainting( const PdfeStreamState& streamState,
+    virtual void fPathPainting( const PdfeStreamStateOld& streamState,
                                 const PdfePath& currentPath ) = 0;
 
-    virtual void fClippingPath( const PdfeStreamState& streamState,
+    virtual void fClippingPath( const PdfeStreamStateOld& streamState,
                                 const PdfePath& currentPath ) = 0;
 
-    virtual void fTextObjects( const PdfeStreamState& streamState ) = 0;
+    virtual void fTextObjects( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fTextState( const PdfeStreamState& streamState ) = 0;
+    virtual void fTextState( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fTextPositioning( const PdfeStreamState& streamState ) = 0;
+    virtual void fTextPositioning( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual PdfeVector fTextShowing( const PdfeStreamState& streamState ) = 0;
+    virtual PdfeVector fTextShowing( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fType3Fonts( const PdfeStreamState& streamState ) = 0;
+    virtual void fType3Fonts( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fColor( const PdfeStreamState& streamState ) = 0;
+    virtual void fColor( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fShadingPatterns( const PdfeStreamState& streamState ) = 0;
+    virtual void fShadingPatterns( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fInlineImages( const PdfeStreamState& streamState ) = 0;
+    virtual void fInlineImages( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fXObjects( const PdfeStreamState& streamState ) = 0;
+    virtual void fXObjects( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fMarkedContents( const PdfeStreamState& streamState ) = 0;
+    virtual void fMarkedContents( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fCompatibility( const PdfeStreamState& streamState ) = 0;
+    virtual void fCompatibility( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fUnknown( const PdfeStreamState& streamState ) = 0;
+    virtual void fUnknown( const PdfeStreamStateOld& streamState ) = 0;
 
-    virtual void fFormBegin( const PdfeStreamState& streamState,
+    virtual void fFormBegin( const PdfeStreamStateOld& streamState,
                              PoDoFo::PdfXObject* form ) = 0;
 
-    virtual void fFormEnd( const PdfeStreamState& streamState,
+    virtual void fFormEnd( const PdfeStreamStateOld& streamState,
                            PoDoFo::PdfXObject* form ) = 0;
 
 protected:

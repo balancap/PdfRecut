@@ -45,7 +45,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
     PdfeStreamTokenizer tokenizer( canvas );
 
     // Stream state.
-    PdfeStreamState streamState;
+    PdfeStreamStateOld streamState;
     // Current path.
     PdfePath currentPath;
 
@@ -65,7 +65,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
     streamState.canvas = canvas;
     streamState.resources = initialResources;
-    streamState.resources.pushBack( canvas->GetResources() );
+    streamState.resources.push_back( canvas->GetResources() );
 
     // Analyse page stream / Also known as the big dirty loop !
     while( tokenizer.ReadNext( eType, streamState.gOperator, strVariant ) )

@@ -203,29 +203,29 @@ public:
 
 protected:
     // PdfeCanvasAnalysis interface.
-    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                                     const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                                 const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                                 const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
-    virtual void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState ) {}
-    virtual void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
+    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fTextState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fColor( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fInlineImages( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fXObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fCompatibility( const PoDoFoExtended::PdfeStreamStateOld& streamState );
+    virtual void fUnknown( const PoDoFoExtended::PdfeStreamStateOld& streamState ) {}
+    virtual void fFormBegin( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                              PoDoFo::PdfXObject* form ) {}
-    virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
+    virtual void fFormEnd( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                            PoDoFo::PdfXObject* form ) {}
 
 public:

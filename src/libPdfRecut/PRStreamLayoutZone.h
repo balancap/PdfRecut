@@ -45,47 +45,47 @@ public:
 
     void generateStream();
 
-    void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fGeneralGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fSpecialGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+    void fPathConstruction( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                             const PoDoFoExtended::PdfePath& currentPath );
 
-    void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+    void fPathPainting( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                         const PoDoFoExtended::PdfePath& currentPath );
 
-    void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+    void fClippingPath( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                         const PoDoFoExtended::PdfePath& currentPath );
 
-    void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fTextObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fTextState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fTextPositioning( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
+    PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fType3Fonts( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fColor( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fShadingPatterns( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fInlineImages( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fXObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fMarkedContents( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fCompatibility( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState );
+    void fUnknown( const PoDoFoExtended::PdfeStreamStateOld& streamState );
 
-    void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
+    void fFormBegin( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                      PoDoFo::PdfXObject* form );
 
-    void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
+    void fFormEnd( const PoDoFoExtended::PdfeStreamStateOld& streamState,
                    PoDoFo::PdfXObject* form );
 
     /** Get the list of form objects from the page.

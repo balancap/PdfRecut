@@ -83,7 +83,7 @@ void PRStreamLayoutZone::generateStream()
     //    std::cout << bufs.str() << std::endl;
 }
 
-void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fGeneralGState( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -113,7 +113,7 @@ void PRStreamLayoutZone::fGeneralGState( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fSpecialGState( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fSpecialGState( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -128,13 +128,13 @@ void PRStreamLayoutZone::fSpecialGState( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fPathConstruction( const PdfeStreamState& streamState,
+void PRStreamLayoutZone::fPathConstruction( const PdfeStreamStateOld& streamState,
                                             const PdfePath& currentPath )
 {
     // Everything is done in painting function !
 }
 
-void PRStreamLayoutZone::fPathPainting( const PdfeStreamState& streamState,
+void PRStreamLayoutZone::fPathPainting( const PdfeStreamStateOld& streamState,
                                         const PdfePath& currentPath )
 {
     // Simpler references.
@@ -248,12 +248,12 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamState& streamState,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PRStreamLayoutZone::fClippingPath( const PdfeStreamState& streamState,
+void PRStreamLayoutZone::fClippingPath( const PdfeStreamStateOld& streamState,
                                         const PdfePath& currentPath  )
 {
 }
 
-void PRStreamLayoutZone::fTextObjects( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fTextObjects( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -264,7 +264,7 @@ void PRStreamLayoutZone::fTextObjects( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fTextState( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -294,7 +294,7 @@ void PRStreamLayoutZone::fTextState( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fTextPositioning( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fTextPositioning( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -308,7 +308,7 @@ void PRStreamLayoutZone::fTextPositioning( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState )
+PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -344,7 +344,7 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamState& streamState 
     return PdfeVector();
 }
 
-void PRStreamLayoutZone::fType3Fonts( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fType3Fonts( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -359,7 +359,7 @@ void PRStreamLayoutZone::fType3Fonts( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fColor( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fColor( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -395,7 +395,7 @@ void PRStreamLayoutZone::fColor( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fShadingPatterns( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fShadingPatterns( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -417,7 +417,7 @@ void PRStreamLayoutZone::fShadingPatterns( const PdfeStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fInlineImages( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -454,7 +454,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fXObjects( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fXObjects( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -499,7 +499,7 @@ void PRStreamLayoutZone::fXObjects( const PdfeStreamState& streamState )
     }
 }
 
-void PRStreamLayoutZone::fFormBegin( const PdfeStreamState& streamState,
+void PRStreamLayoutZone::fFormBegin( const PdfeStreamStateOld& streamState,
                                      PoDoFo::PdfXObject* form )
 {
     // Push form.
@@ -538,7 +538,7 @@ void PRStreamLayoutZone::fFormBegin( const PdfeStreamState& streamState,
     m_streamOut->Append( m_bufStream.str() );
 }
 
-void PRStreamLayoutZone::fFormEnd( const PdfeStreamState& streamState,
+void PRStreamLayoutZone::fFormEnd( const PdfeStreamStateOld& streamState,
                                    PoDoFo::PdfXObject* form )
 {
     // Pop form.
@@ -548,12 +548,12 @@ void PRStreamLayoutZone::fFormEnd( const PdfeStreamState& streamState,
     m_streamOut->Append( "Q\n" );
 }
 
-void PRStreamLayoutZone::fMarkedContents( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fMarkedContents( const PdfeStreamStateOld& streamState )
 {
     // Vous dîtes ?
 }
 
-void PRStreamLayoutZone::fCompatibility( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fCompatibility( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -564,7 +564,7 @@ void PRStreamLayoutZone::fCompatibility( const PdfeStreamState& streamState )
     m_streamOut->Append( m_bufString );
 }
 
-void PRStreamLayoutZone::fUnknown( const PdfeStreamState& streamState )
+void PRStreamLayoutZone::fUnknown( const PdfeStreamStateOld& streamState )
 {
     // Euh...
 }

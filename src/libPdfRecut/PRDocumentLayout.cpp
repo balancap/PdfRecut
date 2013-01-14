@@ -291,7 +291,7 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
 
         // Resources associated to the page.
         PdfeResources resourcesOut;
-        resourcesOut.pushBack( pageOut->GetResources() );
+        resourcesOut.push_back( pageOut->GetResources() );
 
         // Set cropbox.
         m_pageLayouts[idx].cropBox.ToVariant( pagebox );

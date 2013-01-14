@@ -664,7 +664,7 @@ PRGTextLine* PRGTextPage::mergeVectorLines( const std::vector<PRGTextLine*>& pLi
 }
 
 // Reimplement PdfeCanvasAnalysis interface.
-PdfeVector PRGTextPage::fTextShowing( const PdfeStreamState& streamState )
+PdfeVector PRGTextPage::fTextShowing( const PdfeStreamStateOld& streamState )
 {
     PRGTextGroupWords* pGroup;
     // Create the group of words.

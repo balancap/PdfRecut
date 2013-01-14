@@ -123,7 +123,7 @@ PRGTextGroupWords::PRGTextGroupWords() :
 {
     this->init();
 }
-PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamState& streamState ) :
+PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamStateOld& streamState ) :
     m_textPage( NULL ), m_data( NULL )
 {
     // Initialize to empty and read data.
@@ -132,7 +132,7 @@ PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamStat
         this->readData( document, streamState );
     }
 }
-PRGTextGroupWords::PRGTextGroupWords( PRGTextPage* textPage, const PdfeStreamState& streamState ) :
+PRGTextGroupWords::PRGTextGroupWords( PRGTextPage* textPage, const PdfeStreamStateOld& streamState ) :
     m_textPage( NULL ), m_data( NULL )
 {
     // Initialize to empty and read data.
@@ -157,7 +157,7 @@ void PRGTextGroupWords::init()
 
     this->clearData();
 }
-void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& streamState )
+void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
@@ -184,7 +184,7 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& s
     // Read group of words.
     this->readPdfVariant( variant, pFont );
 }
-void PRGTextGroupWords::readData( PRGTextPage* textPage, const PdfeStreamState& streamState )
+void PRGTextGroupWords::readData( PRGTextPage* textPage, const PdfeStreamStateOld& streamState )
 {
     // Initialize using parent document.
     m_textPage = textPage;

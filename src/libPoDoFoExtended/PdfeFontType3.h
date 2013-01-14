@@ -179,29 +179,29 @@ protected:
 
 protected:
     // Reimplement PdfeCanvasAnalysis interface.
-    virtual void fGeneralGState( const PdfeStreamState& streamState ) { }
-    virtual void fSpecialGState( const PdfeStreamState& streamState ) { }
-    virtual void fPathConstruction( const PdfeStreamState& streamState,
+    virtual void fGeneralGState( const PdfeStreamStateOld& streamState ) { }
+    virtual void fSpecialGState( const PdfeStreamStateOld& streamState ) { }
+    virtual void fPathConstruction( const PdfeStreamStateOld& streamState,
                                     const PdfePath& currentPath ) { }
-    virtual void fPathPainting( const PdfeStreamState& streamState,
+    virtual void fPathPainting( const PdfeStreamStateOld& streamState,
                                 const PdfePath& currentPath );
-    virtual void fClippingPath( const PdfeStreamState& streamState,
+    virtual void fClippingPath( const PdfeStreamStateOld& streamState,
                                 const PdfePath& currentPath ) { }
-    virtual void fTextObjects( const PdfeStreamState& streamState ) { }
-    virtual void fTextState( const PdfeStreamState& streamState ) { }
-    virtual void fTextPositioning( const PdfeStreamState& streamState ) { }
-    virtual PdfeVector fTextShowing( const PdfeStreamState& streamState ) { return PdfeVector(); }
-    virtual void fType3Fonts( const PdfeStreamState& streamState );
-    virtual void fColor( const PdfeStreamState& streamState ) { }
-    virtual void fShadingPatterns( const PdfeStreamState& streamState ) { }
-    virtual void fInlineImages( const PdfeStreamState& streamState ) { }
-    virtual void fXObjects( const PdfeStreamState& streamState ) { }
-    virtual void fMarkedContents( const PdfeStreamState& streamState ) { }
-    virtual void fCompatibility( const PdfeStreamState& streamState ) { }
-    virtual void fUnknown( const PdfeStreamState& streamState );
-    virtual void fFormBegin( const PdfeStreamState& streamState,
+    virtual void fTextObjects( const PdfeStreamStateOld& streamState ) { }
+    virtual void fTextState( const PdfeStreamStateOld& streamState ) { }
+    virtual void fTextPositioning( const PdfeStreamStateOld& streamState ) { }
+    virtual PdfeVector fTextShowing( const PdfeStreamStateOld& streamState ) { return PdfeVector(); }
+    virtual void fType3Fonts( const PdfeStreamStateOld& streamState );
+    virtual void fColor( const PdfeStreamStateOld& streamState ) { }
+    virtual void fShadingPatterns( const PdfeStreamStateOld& streamState ) { }
+    virtual void fInlineImages( const PdfeStreamStateOld& streamState ) { }
+    virtual void fXObjects( const PdfeStreamStateOld& streamState ) { }
+    virtual void fMarkedContents( const PdfeStreamStateOld& streamState ) { }
+    virtual void fCompatibility( const PdfeStreamStateOld& streamState ) { }
+    virtual void fUnknown( const PdfeStreamStateOld& streamState );
+    virtual void fFormBegin( const PdfeStreamStateOld& streamState,
                              PoDoFo::PdfXObject* form ) { }
-    virtual void fFormEnd( const PdfeStreamState& streamState,
+    virtual void fFormEnd( const PdfeStreamStateOld& streamState,
                            PoDoFo::PdfXObject* form ) { }
 
 public:

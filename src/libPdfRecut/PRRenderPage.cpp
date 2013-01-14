@@ -122,8 +122,8 @@ void PRRenderPage::renderElements( const Parameters& parameters )
 }
 
 // Reimplement PdfeCanvasAnalysis interface.
-void PRRenderPage::fGeneralGState( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
+void PRRenderPage::fGeneralGState( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fSpecialGState( const PdfeStreamStateOld& streamState )
 {
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
     if( gOperator.type() == PdfeGOperator::q ) {
@@ -144,10 +144,10 @@ void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
         }
     }
 }
-void PRRenderPage::fPathConstruction( const PdfeStreamState& streamState,
+void PRRenderPage::fPathConstruction( const PdfeStreamStateOld& streamState,
                                       const PdfePath& currentPath ) { }
 
-void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
+void PRRenderPage::fPathPainting( const PdfeStreamStateOld& streamState,
                                   const PdfePath& currentPath )
 {
     // Simpler references.
@@ -185,7 +185,7 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     }
 }
 
-void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
+void PRRenderPage::fClippingPath( const PdfeStreamStateOld& streamState,
                                   const PdfePath& currentPath )
 {
     // Simpler references.
@@ -213,11 +213,11 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
     //m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
 }
 
-void PRRenderPage::fTextObjects( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fTextState( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fTextPositioning( const PdfeStreamState& streamState ) { }
+void PRRenderPage::fTextObjects( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fTextState( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fTextPositioning( const PdfeStreamStateOld& streamState ) { }
 
-PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
+PdfeVector PRRenderPage::fTextShowing( const PdfeStreamStateOld& streamState )
 {
     // Create the group of words.
     PRGTextGroupWords groupWords( m_document, streamState );
@@ -230,11 +230,11 @@ PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
     return groupWords.displacement();
 }
 
-void PRRenderPage::fType3Fonts( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fColor( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fShadingPatterns( const PdfeStreamState& streamState ) { }
+void PRRenderPage::fType3Fonts( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fColor( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fShadingPatterns( const PdfeStreamStateOld& streamState ) { }
 
-void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
+void PRRenderPage::fInlineImages( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -253,7 +253,7 @@ void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
     }
 }
 
-void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
+void PRRenderPage::fXObjects( const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
     //const PdfeGraphicOperator& gOperator = streamState.gOperator;
@@ -308,8 +308,8 @@ void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
                                           bbox[3].GetReal()-bbox[1].GetReal() ) );
     }
 }
-void PRRenderPage::fMarkedContents( const PdfeStreamState& streamState ) { }
-void PRRenderPage::fCompatibility( const PdfeStreamState& streamState ) { }
+void PRRenderPage::fMarkedContents( const PdfeStreamStateOld& streamState ) { }
+void PRRenderPage::fCompatibility( const PdfeStreamStateOld& streamState ) { }
 
 //**********************************************************//
 //                 Drawing member functions                 //
