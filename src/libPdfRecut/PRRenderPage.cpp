@@ -34,19 +34,34 @@ int PRRenderPage::imgNbs = 0;
 //                       PRRenderPage                       //
 //**********************************************************//
 PRRenderPage::PRRenderPage( PRDocument* document,
-                            long pageIndex ) :
-    PdfeCanvasAnalysis(),
+                            long pageIndex,
+                            const PdfeContentsStream* pContents ) :
+    PdfeContentsAnalysis(),
     m_document( document ),
     m_page( document->podofoDocument()->GetPage( pageIndex ) ),
     m_pageIndex( pageIndex ),
+    m_pContentsStream( NULL ),
     m_pageImage( NULL ),
     m_pagePainter( NULL )
 {
+    // Page contents.
+    if( pContents ) {
+        m_pContentsStream = const_cast<PdfeContentsStream*>( pContents );
+        m_ownContentsStream = false;
+    }
+    else {
+        m_pContentsStream = new PdfeContentsStream();
+        m_pContentsStream->load( m_page, false, false );
+        m_ownContentsStream = true;
+    }
 }
 PRRenderPage::~PRRenderPage()
 {
     delete m_pagePainter;
     delete m_pageImage;
+    if( m_ownContentsStream ) {
+        delete m_pContentsStream;
+    }
 }
 
 void PRRenderPage::initRendering( double resolution )
@@ -67,7 +82,6 @@ void PRRenderPage::initRendering( double resolution )
                               int( m_pageRect.GetHeight() * resolution ),
                               QImage::Format_RGB32 );
     m_pageImage->fill( QColor( Qt::white ).rgb() );
-
     // QPainter used to draw the page.
     m_pagePainter = new QPainter( m_pageImage );
     m_pagePainter->setRenderHint( QPainter::Antialiasing, false );
@@ -100,7 +114,6 @@ void PRRenderPage::renderElements( const Parameters& parameters )
 {
     // Initialize image and painter.
     this->initRendering( parameters.resolution );
-
     // Render parameters.
     m_renderParameters = parameters;
 
@@ -114,26 +127,23 @@ void PRRenderPage::renderElements( const Parameters& parameters )
         m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
     }
     // Perform the analysis and draw.
-    this->analyseContents( m_page, PdfeGraphicsState(), PdfeResources() );
-
+    this->analyseContents( *m_pContentsStream );
     QLOG_INFO() << QString( "<PRRenderPage> Render page (index: %1)." )
                    .arg( m_pageIndex )
                    .toAscii().constData();
 }
 
-// Reimplement PdfeCanvasAnalysis interface.
-void PRRenderPage::fGeneralGState( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fSpecialGState( const PdfeStreamStateOld& streamState )
+// Reimplement PdfeContentsAnalysis interface.
+void PRRenderPage::fSpecialGState( const PdfeStreamState& streamState )
 {
-    const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    if( gOperator.type() == PdfeGOperator::q ) {
+    const PdfeContentsStream::Node* pnode = streamState.pNode;
+    if( pnode->type() == PdfeGOperator::q ) {
         // Push on the clipping paths stm_documentack.
         m_clippingPathStack.push_back( m_clippingPathStack.back() );
     }
-    else if( gOperator.type() == PdfeGOperator::Q ) {
+    else if( pnode->type() == PdfeGOperator::Q ) {
         // Pop on the graphics state stack.
         m_clippingPathStack.pop_back();
-
         // Restore previous clipping path.
         if( m_clippingPathStack.back().isEmpty() ) {
             m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::NoClip );
@@ -144,15 +154,11 @@ void PRRenderPage::fSpecialGState( const PdfeStreamStateOld& streamState )
         }
     }
 }
-void PRRenderPage::fPathConstruction( const PdfeStreamStateOld& streamState,
-                                      const PdfePath& currentPath ) { }
-
-void PRRenderPage::fPathPainting( const PdfeStreamStateOld& streamState,
+void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
                                   const PdfePath& currentPath )
 {
-    // Simpler references.
-    const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    const PdfeContentsStream::Node* pnode = streamState.pNode;
+    const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // No painting require.
     if( m_renderParameters.pathPB.isEmpty() &&
@@ -160,20 +166,19 @@ void PRRenderPage::fPathPainting( const PdfeStreamStateOld& streamState,
         return;
     }
     // Qt painter path to create from Pdf path.
-    bool closeSubpaths = gOperator.isClosePainting();
-    bool evenOddRule = gOperator.isEvenOddRule();
+    bool closeSubpaths = pnode->goperator().isClosePainting();
+    bool evenOddRule = pnode->goperator().isEvenOddRule();
     QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths, evenOddRule );
 
     // Compute path rendering matrix.
     PdfeMatrix pathMat;
-    pathMat = gState.transMat * m_pageImgTrans;
+    pathMat = gstate.transMat * m_pageImgTrans;
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
     // Fill path with white background, if necessary.
-    if( gOperator.fillingRule() != PdfeFillingRule::Unknown ) {
+    if( pnode->goperator().fillingRule() != PdfeFillingRule::Unknown ) {
         m_pagePainter->fillPath( qCurrentPath, Qt::white );
     }
-
     // Draw path.
     if( currentPath.clippingPathOp().length() ) {
         m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
@@ -184,20 +189,18 @@ void PRRenderPage::fPathPainting( const PdfeStreamStateOld& streamState,
         m_pagePainter->drawPath( qCurrentPath );
     }
 }
-
-void PRRenderPage::fClippingPath( const PdfeStreamStateOld& streamState,
+void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
                                   const PdfePath& currentPath )
 {
-    // Simpler references.
-    const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicOperator& goperator = streamState.pNode->goperator();
+    const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // Get Qt painter path which represents the clipping path.
-    bool evenOddRule = gOperator.isEvenOddRule();
+    bool evenOddRule = goperator.isEvenOddRule();
     QPainterPath qClippingPath = currentPath.toQPainterPath( true, evenOddRule );
 
     // Apply transformation, to have a common coordinates system.
-    QTransform qTrans = gState.transMat.toQTransform();
+    QTransform qTrans = gstate.transMat.toQTransform();
     qClippingPath = qTrans.map( qClippingPath );
 
     // Intersect the clipping path with the current one.
@@ -210,13 +213,8 @@ void PRRenderPage::fClippingPath( const PdfeStreamStateOld& streamState,
 
     // Finally, set clipping path.
     m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
-    //m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
+//    m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
 }
-
-void PRRenderPage::fTextObjects( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fTextState( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fTextPositioning( const PdfeStreamStateOld& streamState ) { }
-
 PdfeVector PRRenderPage::fTextShowing( const PdfeStreamStateOld& streamState )
 {
     // Create the group of words.
@@ -229,22 +227,16 @@ PdfeVector PRRenderPage::fTextShowing( const PdfeStreamStateOld& streamState )
     // Return text displacement.
     return groupWords.displacement();
 }
-
-void PRRenderPage::fType3Fonts( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fColor( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fShadingPatterns( const PdfeStreamStateOld& streamState ) { }
-
-void PRRenderPage::fInlineImages( const PdfeStreamStateOld& streamState )
+void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
 {
     // Simpler references.
-    const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicOperator& goperator = streamState.pNode->goperator();
+    const PdfeGraphicsState& gstate = streamState.gstates.back();
 
-    if( gOperator.type() == PdfeGOperator::EI )
-    {
+    if( goperator.type() == PdfeGOperator::EI ) {
         // Compute path rendering matrix.
         PdfeMatrix pathMat;
-        pathMat = gState.transMat * m_pageImgTrans;
+        pathMat = gstate.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the inline image: corresponds to a rectangle (0,0,1,1).
@@ -252,35 +244,32 @@ void PRRenderPage::fInlineImages( const PdfeStreamStateOld& streamState )
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
 }
-
-void PRRenderPage::fXObjects( const PdfeStreamStateOld& streamState )
+void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
     //const PdfeGraphicOperator& gOperator = streamState.gOperator;
-    const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    const std::vector<std::string>& operands = streamState.pNode->operands();
+    const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // Name of the XObject and dictionary entry.
-    std::string xobjName = gOperands.back().substr( 1 );
+    std::string xobjName = operands.back().substr( 1 );
     PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
     PdfeMatrix pathMat;
 
     // Distinction between different type of XObjects
-    if( !xobjSubtype.compare( "Image" ) )
-    {
+    if( !xobjSubtype.compare( "Image" ) ) {
         //testPdfImage( xobjPtr );
 
         // Compute path rendering matrix.
-        pathMat = gState.transMat * m_pageImgTrans;
+        pathMat = gstate.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
         m_renderParameters.imagePB.applyToPainter( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( 0.0, 0.0, 1.0, 1.0 ) );
     }
-    else if( !xobjSubtype.compare( "Form" ) )
-    {
+    else if( !xobjSubtype.compare( "Form" ) ) {
         // Get transformation matrix in form's dictionary
         PdfeMatrix formMat;
         if( xobjPtr->GetDictionary().HasKey( "Matrix" ) ) {
@@ -297,7 +286,7 @@ void PRRenderPage::fXObjects( const PdfeStreamStateOld& streamState )
         PdfArray& bbox = xobjPtr->GetIndirectKey( "BBox" )->GetArray();
 
         // Draw form according to its properties.
-        pathMat = formMat * gState.transMat * m_pageImgTrans;
+        pathMat = formMat * gstate.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
@@ -308,8 +297,6 @@ void PRRenderPage::fXObjects( const PdfeStreamStateOld& streamState )
                                           bbox[3].GetReal()-bbox[1].GetReal() ) );
     }
 }
-void PRRenderPage::fMarkedContents( const PdfeStreamStateOld& streamState ) { }
-void PRRenderPage::fCompatibility( const PdfeStreamStateOld& streamState ) { }
 
 //**********************************************************//
 //                 Drawing member functions                 //

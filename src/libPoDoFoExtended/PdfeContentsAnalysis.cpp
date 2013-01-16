@@ -389,11 +389,11 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
 void PdfeContentsAnalysis::fGeneralGState( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fSpecialGState( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fPathConstruction( const PdfeStreamState&,
-                                const PdfePath& ) { }
+                                              const PdfePath& ) { }
 void PdfeContentsAnalysis::fPathPainting( const PdfeStreamState&,
-                            const PdfePath& ) { }
+                                          const PdfePath& ) { }
 void PdfeContentsAnalysis::fClippingPath( const PdfeStreamState&,
-                            const PdfePath& ) { }
+                                          const PdfePath& ) { }
 void PdfeContentsAnalysis::fTextObjects( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fTextState( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fTextPositioning( const PdfeStreamState& ) { }
@@ -409,8 +409,8 @@ void PdfeContentsAnalysis::fMarkedContents( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fCompatibility( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fUnknown( const PdfeStreamState& ) { }
 void PdfeContentsAnalysis::fFormBegin( const PdfeStreamState&,
-                         PoDoFo::PdfXObject* ) { }
+                                       PoDoFo::PdfXObject* ) { }
 void PdfeContentsAnalysis::fFormEnd( const PdfeStreamState&,
-                       PoDoFo::PdfXObject* ) { }
+                                     PoDoFo::PdfXObject* ) { }
 
 }

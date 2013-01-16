@@ -89,9 +89,11 @@ public:
      * \param loadFormsStream Are streams from XObjects forms also loaded?
      * If yes, the stream is integrated into the parent stream. Otherwise,
      * only the graphics operator Do appears.
+     * \param fixStream Fix mistakes detected in the stream.
      */
     void load( PoDoFo::PdfCanvas* pcanvas,
-               bool loadFormsStream );
+               bool loadFormsStream,
+               bool fixStream );
     /** Write the stream into a text file. The text description
      * does not correspond to the official PDF reference but should be
      * easily human-readable.
@@ -108,6 +110,7 @@ private:
      */
     Node* load( PoDoFo::PdfCanvas* pcanvas,
                 bool loadFormsStream,
+                bool fixStream,
                 Node* pNodePrev,
                 const PdfeResources& iniResources );
 

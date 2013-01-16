@@ -17,6 +17,7 @@
 #include <QtCore/QRectF>
 
 #include "PdfeCanvasAnalysis.h"
+#include "PdfeContentsAnalysis.h"
 
 namespace PoDoFo {
 class PdfPage;
@@ -129,15 +130,17 @@ private:
 /** Class used as interface to render elements of PDF Page.
  * Can perform a basic rendering of all elements inside a page.
  */
-class PRRenderPage : public PoDoFoExtended::PdfeCanvasAnalysis
+class PRRenderPage : public PoDoFoExtended::PdfeContentsAnalysis
 {
 public:
     /** Default constructor.
      * \param document Parent document object.
      * \param pageIndex Index of the page which is rendered.
+     * \param pContents Contents stream of the page. If NULL, then loaded.
      */
     PRRenderPage( PRDocument* document,
-                  long pageIndex );
+                  long pageIndex,
+                  const PoDoFoExtended::PdfeContentsStream* pContents );
     /** Destructor: release image resources.
      */
     virtual ~PRRenderPage();
@@ -202,31 +205,35 @@ public:
     void renderElements( const PRRenderPage::Parameters& parameters );
 
 protected:
+    // PdfeContentsAnalysis interface.
+    //virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamState& streamState );
+    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamState& streamState,
+    //                                const PoDoFoExtended::PdfePath& currentPath );
+    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath );
+    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamState& streamState,
+                                const PoDoFoExtended::PdfePath& currentPath );
+    //virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
+    virtual void fInlineImages( const PoDoFoExtended::PdfeStreamState& streamState );
+    virtual void fXObjects( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fCompatibility( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fUnknown( const PoDoFoExtended::PdfeStreamState& streamState );
+    //virtual void fFormBegin( const PoDoFoExtended::PdfeStreamState& streamState,
+    //                         PoDoFo::PdfXObject* form );
+    //virtual void fFormEnd( const PoDoFoExtended::PdfeStreamState& streamState,
+    //                       PoDoFo::PdfXObject* form );
+
+
     // PdfeCanvasAnalysis interface.
-    virtual void fGeneralGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fSpecialGState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fPathConstruction( const PoDoFoExtended::PdfeStreamStateOld& streamState,
-                                    const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fPathPainting( const PoDoFoExtended::PdfeStreamStateOld& streamState,
-                                const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fClippingPath( const PoDoFoExtended::PdfeStreamStateOld& streamState,
-                                const PoDoFoExtended::PdfePath& currentPath );
-    virtual void fTextObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fTextState( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fColor( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fInlineImages( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fXObjects( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fMarkedContents( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fCompatibility( const PoDoFoExtended::PdfeStreamStateOld& streamState );
-    virtual void fUnknown( const PoDoFoExtended::PdfeStreamStateOld& streamState ) {}
-    virtual void fFormBegin( const PoDoFoExtended::PdfeStreamStateOld& streamState,
-                             PoDoFo::PdfXObject* form ) {}
-    virtual void fFormEnd( const PoDoFoExtended::PdfeStreamStateOld& streamState,
-                           PoDoFo::PdfXObject* form ) {}
+    virtual PdfeVector fTextShowing(const PoDoFoExtended::PdfeStreamStateOld &streamState );
 
 public:
     // Basic drawing routines. Operate in page coordinate system.
@@ -267,9 +274,12 @@ private:
     PoDoFo::PdfPage*  m_page;
     /// Page index.
     long  m_pageIndex;
-
     /// PdfRect corresponding to the rectangle of the page drawn (usually page crop box).
     PoDoFo::PdfRect  m_pageRect;
+    /// Page contents. Either loaded or obtained.
+    PoDoFoExtended::PdfeContentsStream*  m_pContentsStream;
+    /// Do we own the contents stream?
+    bool  m_ownContentsStream;
 
     /// QImage in which is drawn the page.
     QImage*  m_pageImage;

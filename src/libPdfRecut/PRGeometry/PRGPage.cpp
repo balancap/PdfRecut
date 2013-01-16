@@ -69,7 +69,7 @@ void PRGPage::loadContents() const
     if( !m_pContentsStream ) {
         m_pContentsStream = new PdfeContentsStream();
     }
-    m_pContentsStream->load( this->podofoPage(), true );
+    m_pContentsStream->load( this->podofoPage(), true, false );
     emit contentsLoaded( this );
 }
 void PRGPage::clearContents()

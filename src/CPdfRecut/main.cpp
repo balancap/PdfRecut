@@ -166,6 +166,7 @@ void proceedFile( QString filePath )
     renderParams.textSpacePB.init();
     renderParams.textPDFTranslationPB.init();
 //    renderParams.pathPB.init();
+//    renderParams.formPB.init();
 
     renderParams.resolution = 1.0;
 //    renderParams.clippingPath.addRect( 50, 50, 300, 400 );
@@ -173,13 +174,13 @@ void proceedFile( QString filePath )
     QString filename;
     for( size_t i = 0 ; i < std::min( gparams.lastPageIndex+1, pGDocument->nbPages() ) ; i++ ) {
         // Text and render page objects.
-        PRRenderPage renderPage( &document, i );
+        PRRenderPage renderPage( &document, i, NULL );
         PRGTextPage* textPage = pGDocument->page( i )->text();
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-//        renderPage.renderElements( renderParams );
-        textPage->renderGroupsWords( renderPage, false );
+        renderPage.renderElements( renderParams );
+//        textPage->renderGroupsWords( renderPage, false );
 //        textPage->renderLines( renderPage, false, false );
 
         // Save image to file.

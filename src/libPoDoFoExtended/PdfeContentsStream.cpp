@@ -327,17 +327,18 @@ PdfeContentsStream::Node* PdfeContentsStream::erase( PdfeContentsStream::Node* p
     return this->erase( pnode, false );
 }
 
-void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream )
+void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream, bool fixStream )
 {
     // Reinitialize the contents stream.
     this->init();
     // Load canvas and set initial resources.
-    this->load( pcanvas, loadFormsStream, NULL, PdfeResources() );
+    this->load( pcanvas, loadFormsStream, fixStream, NULL, PdfeResources() );
     m_initialResources.push_back( pcanvas->GetResources() );
 }
 
 PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     bool loadFormsStream,
+                                                    bool fixStream,
                                                     PdfeContentsStream::Node* pNodePrev,
                                                     const PdfeResources& iniResources )
 {
@@ -512,7 +513,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                             }
                         }
                         // Load form XObject.
-                        pNode = this->load( &xobject, loadFormsStream, pNode, resources );
+                        pNode = this->load( &xobject, loadFormsStream, fixStream, pNode, resources );
                         // Restore the current graphics state on the stack 'Q'.
                         pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
                                                     std::vector<std::string>() ),
@@ -568,7 +569,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
             goperands.push_back( strVariant );
         }
     }
-    return pNode;
+    return pNodePrev;
 }
 void PdfeContentsStream::writeToFile( QString filename ) const
 {
