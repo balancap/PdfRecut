@@ -217,7 +217,7 @@ protected:
     //virtual void fTextObjects( const PoDoFoExtended::PdfeStreamState& streamState );
     //virtual void fTextState( const PoDoFoExtended::PdfeStreamState& streamState );
     //virtual void fTextPositioning( const PoDoFoExtended::PdfeStreamState& streamState );
-    //virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
+    virtual PdfeVector fTextShowing( const PoDoFoExtended::PdfeStreamState& streamState );
     //virtual void fType3Fonts( const PoDoFoExtended::PdfeStreamState& streamState );
     //virtual void fColor( const PoDoFoExtended::PdfeStreamState& streamState );
     //virtual void fShadingPatterns( const PoDoFoExtended::PdfeStreamState& streamState );
@@ -233,7 +233,7 @@ protected:
 
 
     // PdfeCanvasAnalysis interface.
-    virtual PdfeVector fTextShowing(const PoDoFoExtended::PdfeStreamStateOld &streamState );
+    //virtual PdfeVector fTextShowing(const PoDoFoExtended::PdfeStreamStateOld &streamState );
 
 public:
     // Basic drawing routines. Operate in page coordinate system.

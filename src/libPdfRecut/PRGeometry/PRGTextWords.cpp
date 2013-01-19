@@ -23,6 +23,7 @@
 
 #include "PdfeFont.h"
 #include "PdfeCanvasAnalysis.h"
+#include "PdfeContentsAnalysis.h"
 
 #include <podofo/podofo.h>
 #include <limits>
@@ -123,6 +124,15 @@ PRGTextGroupWords::PRGTextGroupWords() :
 {
     this->init();
 }
+PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamState& streamState ) :
+    m_textPage( NULL ), m_data( NULL )
+{
+    // Initialize to empty and read data.
+    this->init();
+    if( streamState.pNode->category() == PdfeGCategory::TextShowing ) {
+        this->readData( document, streamState );
+    }
+}
 PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamStateOld& streamState ) :
     m_textPage( NULL ), m_data( NULL )
 {
@@ -130,6 +140,15 @@ PRGTextGroupWords::PRGTextGroupWords( PRDocument* document, const PdfeStreamStat
     this->init();
     if( streamState.gOperator.category() == PdfeGCategory::TextShowing ) {
         this->readData( document, streamState );
+    }
+}
+PRGTextGroupWords::PRGTextGroupWords( PRGTextPage* textPage, const PdfeStreamState& streamState ) :
+    m_textPage( NULL ), m_data( NULL )
+{
+    // Initialize to empty and read data.
+    this->init();
+    if( streamState.pNode->category() == PdfeGCategory::TextShowing ) {
+        this->readData( textPage, streamState );
     }
 }
 PRGTextGroupWords::PRGTextGroupWords( PRGTextPage* textPage, const PdfeStreamStateOld& streamState ) :
@@ -157,6 +176,33 @@ void PRGTextGroupWords::init()
 
     this->clearData();
 }
+
+void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& streamState )
+{
+    // Simpler references.
+    const std::vector<std::string>& operands = streamState.pNode->operands();
+    const PdfeGraphicsState& gstate = streamState.gstates.back();
+
+    // Create data structure.
+    this->clearData();
+    m_data = new PRGTextGroupWords::Data();
+
+    // Set transformation matrix and text state.
+    m_data->transMatGS = gstate.transMat;
+    m_data->textState = gstate.textState;
+    // Font data.
+    PdfeFont* pFont = document->fontCache( gstate.textState.fontRef );
+    m_data->pFont = pFont;
+    m_data->fontBBox = pFont->fontBBox();
+    this->computeTransMatrices();
+
+    // Get variant from string.
+    PdfVariant variant;
+    PdfTokenizer tokenizer( operands.back().c_str(), operands.back().length() );
+    tokenizer.GetNextVariant( variant, NULL );
+    // Read group of words.
+    this->readPdfVariant( variant, pFont );
+}
 void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamStateOld& streamState )
 {
     // Simpler references.
@@ -183,6 +229,14 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamStateOld
     tokenizer.GetNextVariant( variant, NULL );
     // Read group of words.
     this->readPdfVariant( variant, pFont );
+}
+
+void PRGTextGroupWords::readData( PRGTextPage* textPage, const PdfeStreamState& streamState )
+{
+    // Initialize using parent document.
+    m_textPage = textPage;
+    PRDocument* document = textPage->page()->gdocument()->parent();
+    this->readData( document, streamState );
 }
 void PRGTextGroupWords::readData( PRGTextPage* textPage, const PdfeStreamStateOld& streamState )
 {

@@ -26,6 +26,7 @@ class PdfVariant;
 namespace PoDoFoExtended {
 class PdfeFont;
 class PdfeStreamStateOld;
+class PdfeStreamState;
 }
 
 // File that gathers different classes that represent text elements.
@@ -181,11 +182,15 @@ public:
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
     PRGTextGroupWords( PRDocument* document,
+                       const PoDoFoExtended::PdfeStreamState& streamState );
+    PRGTextGroupWords( PRDocument* document,
                        const PoDoFoExtended::PdfeStreamStateOld& streamState );
     /** Construct a group of words from a PDF stream state.
      * \param textPage Parent text page object.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
+    PRGTextGroupWords( PRGTextPage* textPage,
+                       const PoDoFoExtended::PdfeStreamState& streamState );
     PRGTextGroupWords( PRGTextPage* textPage,
                        const PoDoFoExtended::PdfeStreamStateOld& streamState );
     /** Destructor.
@@ -201,11 +206,15 @@ public:
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
     void readData( PRDocument* document,
+                   const PoDoFoExtended::PdfeStreamState& streamState );
+    void readData( PRDocument* document,
                    const PoDoFoExtended::PdfeStreamStateOld& streamState );
     /** Read data of the group of words from a PDF stream state.
      * \param textPage Parent text page object.
      * \param streamState Stream state to consider (must correspond to a text showinG operator).
      */
+    void readData( PRGTextPage* textPage,
+                   const PoDoFoExtended::PdfeStreamState& streamState );
     void readData( PRGTextPage* textPage,
                    const PoDoFoExtended::PdfeStreamStateOld& streamState );
 private:

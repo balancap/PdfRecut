@@ -51,7 +51,7 @@ PRRenderPage::PRRenderPage( PRDocument* document,
     }
     else {
         m_pContentsStream = new PdfeContentsStream();
-        m_pContentsStream->load( m_page, false, false );
+        m_pContentsStream->load( m_page, true, false );
         m_ownContentsStream = true;
     }
 }
@@ -215,7 +215,7 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
     m_pagePainter->setTransform( m_pageImgTrans.toQTransform() );
 //    m_pagePainter->setClipPath( m_clippingPathStack.back(), Qt::ReplaceClip );
 }
-PdfeVector PRRenderPage::fTextShowing( const PdfeStreamStateOld& streamState )
+PdfeVector PRRenderPage::fTextShowing( const PdfeStreamState& streamState )
 {
     // Create the group of words.
     PRGTextGroupWords groupWords( m_document, streamState );
@@ -247,7 +247,6 @@ void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
 void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
-    //const PdfeGraphicOperator& gOperator = streamState.gOperator;
     const std::vector<std::string>& operands = streamState.pNode->operands();
     const PdfeGraphicsState& gstate = streamState.gstates.back();
 
@@ -288,13 +287,19 @@ void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
         // Draw form according to its properties.
         pathMat = formMat * gstate.transMat * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
-
         // Draw the image: corresponds to a rectangle (0,0,1,1).
         m_renderParameters.formPB.applyToPainter( m_pagePainter );
         m_pagePainter->drawRect(  QRectF( bbox[0].GetReal(),
                                           bbox[1].GetReal(),
                                           bbox[2].GetReal()-bbox[0].GetReal(),
                                           bbox[3].GetReal()-bbox[1].GetReal() ) );
+
+//        pathMat = formMat * gstate.transMat;
+//        PdfeORect orect( bbox[2].GetReal()-bbox[0].GetReal(), bbox[3].GetReal()-bbox[1].GetReal() );
+//        orect = pathMat.map( orect );
+//        QLOG_INFO() << QString( "<PRRenderPage> Render form XObject %1 (%2,%3)." )
+//                       .arg( operands.back().c_str() ).arg(orect.width()).arg(orect.height())
+//                       .toAscii().constData();
     }
 }
 
@@ -416,29 +421,23 @@ void PRRenderPage::Parameters::initToDefault()
 {
     // Clipping path set to empty.
     clippingPath = QPainterPath();
-
     // Path (normal & clipping) pens.
     pathPB.setPen( new QPen( Qt::magenta ) );
     clippingPathPB.setPen( new QPen( Qt::darkMagenta ) );
-
     // Text filling gradient.
     QLinearGradient textGradient( 0.0, 0.0, 0.0, 1.0 );
     textGradient.setColorAt( 0.0, Qt::blue );
     textGradient.setColorAt( 1.0, Qt::white );
     textPB.setBrush( new QBrush( textGradient ) );
-
     // Space filling color.
     textSpacePB.setBrush( new QBrush( Qt::lightGray ) );
     textPDFTranslationPB.setBrush( new QBrush( Qt::lightGray ) );
-
     // Inline image pen color.
     inlineImagePB.setPen( new QPen( Qt::darkCyan ) );
     inlineImagePB.setBrush( new QBrush( Qt::cyan ) );
-
     // Image pen color.
     imagePB.setPen( new QPen( Qt::darkRed ) );
     imagePB.setBrush( new QBrush( Qt::red ) );
-
     // Form pen color.
     formPB.setPen( new QPen( Qt::green ) );
     //formPB.fillBrush = new QBrush( Qt::green );
