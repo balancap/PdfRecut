@@ -19,7 +19,8 @@ SOURCES += \
     PRDocumentTools.cpp \
     PRStreamLayoutZone.cpp \
     PRRenderPage.cpp \
-    PRUtils.cpp
+    PRUtils.cpp \
+    PRPage.cpp
 
 HEADERS +=\
     PRDocument.h \
@@ -28,7 +29,8 @@ HEADERS +=\
     PRDocumentTools.h \
     PRStreamLayoutZone.h \
     PRRenderPage.h \
-    PRUtils.h
+    PRUtils.h \
+    PRPage.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {

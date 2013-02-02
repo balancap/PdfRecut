@@ -134,7 +134,7 @@ void splitPagesLayout( PdfDocument& doc, PRDocumentLayout& docLayout )
         docLayout.addPageZone(2*i+1, pageZone);
     }
 }
-void proceedFile( QString filePath )
+void proceedFile( QString fileName )
 {
     // Document objects.
     PRDocument document( 0 );
@@ -144,12 +144,15 @@ void proceedFile( QString filePath )
     timeTask.start();
 
     // File info
-    QFileInfo infoFile( filePath );
+    QFileInfo infoFile( fileName );
     cout << "Proceeding file: " << infoFile.fileName().toLocal8Bit().data() << endl;
 
     // Load PDF file
-    document.load( filePath );
+    document.load( fileName );
 
+    document.save( fileName );
+
+    /*
     // Analyse document geometry.
     PRGDocument::GParameters gparams;
     gparams.firstPageIndex = 0;
@@ -189,8 +192,9 @@ void proceedFile( QString filePath )
 
         // Save stream to file.
         filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
-        pGDocument->page( i )->contents().writeToFile( filename );
+        pGDocument->page( i )->contents().exportToFile( filename );
     }
+    */
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
