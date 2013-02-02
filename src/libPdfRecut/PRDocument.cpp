@@ -40,7 +40,6 @@ PRDocument::PRDocument( QObject* parent ) :
 {
     m_filename = QString();
     m_podofoDocument = NULL;
-
     // Initialize freetype library.
     if( FT_Init_FreeType( &m_ftLibrary ) ) {
         throw PRException( PRExceptionCode::FreeType,
@@ -57,7 +56,6 @@ void PRDocument::load( const QString& filename )
 {
     // Clear document.
     this->clear();
-
     // Load PoDoFo document.
     this->loadPoDoFoDocument( filename );
 
@@ -69,7 +67,7 @@ void PRDocument::load( const QString& filename )
 void PRDocument::save( const QString& filename )
 {
     // Write down PoDoFo document.
-    QString suffix( "_recut" );
+    QString suffix( "_PdfRecut" );
     this->writePoDoFoDocument( filename, suffix );
 }
 void PRDocument::clear()
@@ -88,13 +86,11 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename 
     if( m_podofoDocument ) {
         this->freePoDoFoDocument();
     }
-
     // Get mutex and then load file.
     QMutexLocker locker( &m_podofoMutex );
     try
     {
         m_filename = filename;
-
         // Log information.
         QLOG_INFO() << QString( "<PRDocument> Begin loading PoDoFo document \"%1\"." )
                        .arg( QFileInfo( m_filename ).fileName() )
@@ -102,7 +98,6 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename 
 
         m_podofoDocument = new PoDoFo::PdfMemDocument();
         m_podofoDocument->Load( m_filename.toLocal8Bit().data() );
-
         // Log information.
         QLOG_INFO() << QString( "<PRDocument> End loading PoDoFo document \"%1\" (%2 pages)." )
                        .arg( QFileInfo( m_filename ).fileName() )
@@ -115,7 +110,6 @@ PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename 
         delete m_podofoDocument;
         m_podofoDocument = NULL;
         m_filename.clear();
-
         // Throw exception...
         PRException errPR( error );
         errPR.log( QsLogging::ErrorLevel );
@@ -132,7 +126,6 @@ void PRDocument::writePoDoFoDocument( const QString& filename, const QString& su
                            true );
         return;
     }
-
     // Fix filename if corresponds to m_filename.
     QString fileOut = filename;
     QFileInfo infoOut( fileOut );
@@ -141,7 +134,6 @@ void PRDocument::writePoDoFoDocument( const QString& filename, const QString& su
                 + infoOut.baseName()
                 + QString("%1.pdf").arg( suffix );
     }
-
     // Get mutex and then write file.
     QMutexLocker locker( &m_podofoMutex );
     try
@@ -154,7 +146,6 @@ void PRDocument::writePoDoFoDocument( const QString& filename, const QString& su
         m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Compact );
         //m_podofoDocument->SetWriteMode( PoDoFo::ePdfWriteMode_Clean );
         m_podofoDocument->Write( fileOut.toLocal8Bit().data() );
-
         // Log information.
         QLOG_INFO() << QString( "<PRDocument> End writing PoDoFo document \"%1\"." )
                        .arg( QFileInfo( fileOut ).fileName() )
@@ -172,7 +163,6 @@ void PRDocument::freePoDoFoDocument()
 {
     // Get mutex and then free.
     QMutexLocker locker( &m_podofoMutex );
-
     delete m_podofoDocument;
     m_podofoDocument = NULL;
     m_filename = QString();
@@ -183,8 +173,7 @@ PoDoFoExtended::PdfeFont* PRDocument::fontCache( const PoDoFo::PdfReference& fon
     // Find the reference in the cache.
     std::map< PdfReference, PdfeFont* >::iterator it;
     it = m_fontCache.find( fontRef );
-
-    // If not find, add to cache.
+    // If not found, add to cache.
     if( it == m_fontCache.end() ) {
         return this->addFontToCache( fontRef );
     }
@@ -194,7 +183,7 @@ PoDoFoExtended::PdfeFont* PRDocument::fontCache( const PoDoFo::PdfReference& fon
 }
 void PRDocument::clearFontCache()
 {
-    // Free Pdf font metrics object.
+    // Free PDF font metrics object.
     std::map< PdfReference, PdfeFont* >::iterator it;
     for( it = m_fontCache.begin() ; it != m_fontCache.end() ; ++it ) {
         delete it->second;
@@ -211,7 +200,6 @@ PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference
     if( fontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
-
     const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
     if( fontSubType == PdfName("Type0") ) {
         pFont = new PdfeFontType0( fontObj, m_ftLibrary );

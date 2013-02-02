@@ -26,7 +26,7 @@ namespace PoDoFoExtended {
 PdfeContentsStream::PdfeContentsStream() :
     m_pFirstNode( NULL ), m_pLastNode( NULL ),
     m_nbNodes( 0 ), m_maxNodeID( 0 ),
-    m_initialGState(), m_initialResources()
+    m_initialGState(), m_resources()
 {
 }
 void PdfeContentsStream::init()
@@ -39,14 +39,14 @@ void PdfeContentsStream::init()
     m_nbNodes = 0;
     m_maxNodeID = 0;
     m_initialGState.init();
-    m_initialResources.init();
+    m_resources.init();
 }
 PdfeContentsStream::PdfeContentsStream( const PdfeContentsStream& rhs ) :
     m_pFirstNode( NULL ), m_pLastNode( NULL ),
     m_nbNodes( rhs.m_nbNodes ),
     m_maxNodeID( rhs.m_maxNodeID ),
     m_initialGState( rhs.m_initialGState ),
-    m_initialResources( rhs.m_initialResources )
+    m_resources( rhs.m_resources )
 {
     // Copy nodes.
     this->copyNodes( rhs );
@@ -59,7 +59,7 @@ PdfeContentsStream& PdfeContentsStream::operator=( const PdfeContentsStream& rhs
     m_nbNodes = rhs.m_nbNodes;
     m_maxNodeID = rhs.m_maxNodeID;
     m_initialGState = rhs.m_initialGState;
-    m_initialResources = rhs.m_initialResources;
+    m_resources = rhs.m_resources;
     this->copyNodes( rhs );
 
     return *this;
@@ -333,9 +333,8 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream, bool fi
     this->init();
     // Load canvas and set initial resources.
     this->load( pcanvas, loadFormsStream, fixStream, NULL, PdfeResources() );
-    m_initialResources.push_back( pcanvas->GetResources() );
+    m_resources.push_back( pcanvas->GetResources() );
 }
-
 PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     bool loadFormsStream,
                                                     bool fixStream,
@@ -571,7 +570,57 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
     }
     return pNodePrev;
 }
-void PdfeContentsStream::writeToFile( QString filename ) const
+
+void PdfeContentsStream::save( PdfCanvas* pcanvas )
+{
+    // Clean existing contents.
+    PdfObject* pContentsObj = pcanvas->GetContents();
+    PdfStream* pstream;
+    if( pContentsObj->IsArray() ) {
+        // Clear streams present in the array.
+        PdfArray& contentsArray = pContentsObj->GetArray();
+        for( size_t i = 0 ; i < contentsArray.size() ; ++i ) {
+            pstream = contentsArray[i].GetStream();
+            pstream->BeginAppend( true );
+            pstream->EndAppend();
+        }
+    }
+    else {
+        // Simply clear the stream.
+        pstream = pContentsObj->GetStream();
+        pstream->BeginAppend( true );
+        pstream->EndAppend();
+    }
+    // Set stream contents.
+    QByteArray streamData = this->streamData();
+    TVecFilters vecFilters;
+    vecFilters.push_back( ePdfFilter_FlateDecode );
+    pstream->Set( streamData.constData(), streamData.size(), vecFilters );
+
+    // Set resources: TODO
+}
+
+QByteArray PdfeContentsStream::streamData() const
+{
+    QByteArray data;
+    QTextStream streamOut( &data, QFile::WriteOnly );
+
+    // Write nodes description.
+    Node* pnode = m_pFirstNode;
+    while( pnode ) {
+        // Case of a loaded form: do not write done.
+        if( !pnode->isFormXObjectLoaded() ) {
+            streamOut << pnode->goperator().str() << " ";
+            for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
+                streamOut << pnode->operands().at( i ).c_str() << " ";
+            }
+            streamOut << endl;
+        }
+        pnode = pnode->next();
+    }
+    return data;
+}
+void PdfeContentsStream::exportToFile( QString filename ) const
 {
     QFile data( filename );
     if( data.open( QFile::WriteOnly | QFile::Truncate ) ) {

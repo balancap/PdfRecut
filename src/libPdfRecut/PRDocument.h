@@ -125,7 +125,6 @@ signals:
      * \param progress Progress, between 0 and 1.
      */
     void methodProgress( const QString& title, double progress ) const;
-
     /** Error signal.
      * \param title Title of the error.
      * \param description Description of the error.

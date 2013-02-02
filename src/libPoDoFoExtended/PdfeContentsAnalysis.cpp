@@ -42,7 +42,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
     // Initialize graphics state and resources.
     streamState.pStream = const_cast<PdfeContentsStream*>( &stream );
     streamState.gstates.push_back( stream.initialGState() );
-    streamState.resources = stream.initialResources();
+    streamState.resources = stream.resources();
 
     // Analyse contents stream's nodes.
     streamState.pNode = stream.firstNode();

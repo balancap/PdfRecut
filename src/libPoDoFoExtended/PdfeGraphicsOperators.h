@@ -9,8 +9,8 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
-#ifndef PDFEGRAPHICSENUMS_H
-#define PDFEGRAPHICSENUMS_H
+#ifndef PDFEGRAPHICSOPERATORS_H
+#define PDFEGRAPHICSOPERATORS_H
 
 #include <cstring>
 
@@ -249,4 +249,4 @@ private:
 
 }
 
-#endif // PDFEGRAPHICSENUMS_H
+#endif // PDFEGRAPHICSOPERATORS_H

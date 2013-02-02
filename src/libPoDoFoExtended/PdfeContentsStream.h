@@ -80,26 +80,37 @@ public:
      * keep a consistent contents stream.
      * \return Return the node right after the erased one.
      */
-    Node* erase(Node* pnode, bool smarterase );
+    Node* erase( Node* pnode, bool smarterase );
 
 public:
     /** Load the contents stream of a canvas (can be a page, a form,
      * a Type 3 font glyph,...).
-     * \param pCanvas Canvas whose contents stream is loaded.
+     * \param pcanvas Canvas whose contents stream is loaded.
      * \param loadFormsStream Are streams from XObjects forms also loaded?
      * If yes, the stream is integrated into the parent stream. Otherwise,
-     * only the graphics operator Do appears.
+     * only the graphics operator Do appears. Resources of the stream are completed
+     * with Forms resources.
      * \param fixStream Fix mistakes detected in the stream.
      */
     void load( PoDoFo::PdfCanvas* pcanvas,
                bool loadFormsStream,
                bool fixStream );
-    /** Write the stream into a text file. The text description
+    /** Save the stream into an existing canvas.
+     * \param pcanvas Canvas whose contents stream is replaced.
+     * Previous existing content is completely erased.
+     */
+    void save( PoDoFo::PdfCanvas* pcanvas );
+
+    /** Get stream data, formatted as specified in PDF reference.
+     * \return Byte array containing the stream.
+     */
+    QByteArray streamData() const;
+    /** Export the stream into a text file. The text description
      * does not correspond to the official PDF reference but should be
      * easily human-readable.
      * \param filename Filename of the text file.
      */
-    void writeToFile( QString filename ) const;
+    void exportToFile( QString filename ) const;
 
 private:
     /** Private version of the canvas loading. Can be called recursively, in
@@ -125,9 +136,9 @@ public:
     /// Last node of the stream.
     Node* lastNode() const  {   return m_pLastNode;         }
     /// Initial graphics state.
-    const PdfeGraphicsState& initialGState() const  {   return m_initialGState;     }
-    /// Initial resources of the stream.
-    const PdfeResources& initialResources() const   {   return m_initialResources;  }
+    const PdfeGraphicsState& initialGState() const  {   return m_initialGState; }
+    /// Resources used by the contents stream.
+    const PdfeResources& resources() const          {   return m_resources;     }
 
 private:
     /** Deep copy of nodes from another contents stream.
@@ -150,8 +161,8 @@ private:
 
     /// Initial graphics state used for the stream.
     PdfeGraphicsState  m_initialGState;
-    /// Initial resources used for the stream.
-    PdfeResources  m_initialResources;
+    /// Resources used by the contents stream.
+    PdfeResources  m_resources;
 };
 
 //**********************************************************//
