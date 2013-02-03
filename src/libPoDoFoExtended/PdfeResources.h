@@ -15,8 +15,12 @@
 #include <vector>
 #include <string>
 
+#include <podofo/base/PdfArray.h>
+#include <podofo/base/PdfDictionary.h>
+
 namespace PoDoFo {
     class PdfObject;
+    class PdfVecObjects;
     class PdfName;
 }
 
@@ -36,20 +40,50 @@ enum Enum {
     Properties,
     Unknown
 };
+/// Number of resources types.
+inline size_t size() {
+    static size_t size = 8;
+    return size;
+}
+/// String representation of a given resource.
+inline const char* str( PdfeResourcesType::Enum type ) {
+    static const char* names[9] = {
+        "ExtGState",
+        "ColorSpace",
+        "Pattern",
+        "Shading",
+        "XObject",
+        "Font",
+        "ProcSet",
+        "Properties",
+        "Unknown"
+    };
+    if( type >= 0 && type <= 8 ) {
+        return names[ type ];
+    }
+    return names[ PdfeResourcesType::Unknown ];
+}
 }
 
 /** Class used to handle a collection of resources associated to some contents.
+ * Resources dictionaries are stored independently of PDF document, and can be
+ * retrieved or written down using load/save routines.
  */
 class PdfeResources
 {
 public:
-    /** Create en empty object.
+    /** Create an empty resources object.
+     * Owner of the collection of objects (to resolve references...).
      */
-    PdfeResources();
+    PdfeResources( const PoDoFo::PdfVecObjects* pOwner = NULL );
+    /** Create a resources object from an existing one.
+     * \param pResourcesObj Resources object from a PDF.
+     */
+    PdfeResources( PoDoFo::PdfObject* pResourcesObj );
     /** Initialize to an empty collection of resources.
      */
     void init();
-    /** Copy constructor.
+    /** (Deep) copy constructor.
      * \param resources Object to copy.
      */
     PdfeResources( const PdfeResources& rhs );
@@ -59,54 +93,70 @@ public:
     PdfeResources& operator=( const PdfeResources& rhs );
 
 public:
-    // Resources PDF objects.
-    /** Push back a resources dictionary inside the collection
-     * \param pResourcesObj Dictionary to add (not owned by the PdfResources object).
+    /** Load resources from an existing object. Previous content
+     * are erased.
+     * \param pResourcesObj Resources object from a PDF document.
      */
-    void push_back( PoDoFo::PdfObject* pResourcesObj );
-    /** Remove a resources object from the collection.
-     * \param pResourcesObj Resources dictionary to remove.
-     * \return True if found and successively removed.
+    void load( PoDoFo::PdfObject* pResourcesObj );
+    /** Save resources into a PoDoFo object. Previous content of
+     * the object is replaced completely.
+     * \param pResourcesObj Resources object from a PDF document.
      */
-    bool remove( PoDoFo::PdfObject* pResourcesObj );
-    /** Is a resources object inside the collection?
-     * \param pResourcesObj Object to find in the collection.
-     * \return Found?
+    void save( PoDoFo::PdfObject* pResourcesObj );
+
+public:
+    /** Append another resources object. Existing keys are not
+     * erased.
+     * \param rhs Resources to append.
      */
-    bool inside( const PoDoFo::PdfObject* pResourcesObj ) const;
-    /** Get the vector of resources dictionaries.
-     * \return Vector of pointers.
+    void append( const PdfeResources& rhs );
+    /** Add a suffix to every entry in the resources collection.
+     * ProcSet category is not concerned.
+     * \param suffix Suffix to append.
      */
-    const std::vector<PoDoFo::PdfObject*>& resources() const;
+    void addSuffix( const std::string& suffix );
 
 public:
     // Resources contents.
-    /** Add a pair key/value to resources. The PdfObject is copied
+    /** Add a pair key/value to resources. The PdfObject value is copied.
+     * Only the key name is used when added to ProcSet.
      * \param resource Resource type where to add the key.
      * \param key Key of the object to add.
-     * \param PdfObject Value corresponding to the key. Copied.
+     * \param pobject Value corresponding to the key. Copied.
      */
-    void addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object );
-    /** Get a key in resources (try each resource object by order of importance).
+    void addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* pobject );
+    /** Get a key in resources.
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. NULL, if not found.
      */
     PoDoFo::PdfObject* getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
-    /** Get an indirect key in resources (try each resource object by order of importance).
+    /** Get an indirect key in resources. Resolve it if it is a reference.
      * \param resource Resource type where to search the key.
      * \param key Key to find.
      * \return PdfObject corresponding to the key. NULL, if not found.
      */
     PoDoFo::PdfObject* getIndirectKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const;
+    /** Is a procedure name inside the ProcSet array?
+     * \param name Name of the procedure.
+     * \return Inside?
+     */
+    bool insideProcSet( const PoDoFo::PdfName& name ) const;
 
 public:
-    /// Vector of C string corresponding to PdfResources types.
-    static const char* CTypes[];
+    // Simple getters/setters...
+    /// Get the owner object.
+    const PoDoFo::PdfVecObjects* owner() const              {   return m_pOwner;    }
+    /// Set the owner object.
+    void setOwner( const PoDoFo::PdfVecObjects* pOwner )    {   m_pOwner = pOwner;  }
 
 private:
-    /// Vector of resources objects, not owned by the class. Sorted by increasing order of importance.
-    std::vector<PoDoFo::PdfObject*>  m_resources;
+    /// Dictionaries containing different type of resources (except ProcSet).
+    std::vector<PoDoFo::PdfDictionary>  m_resourcesDict;
+    /// ProcSet array containing procedure set names.
+    PoDoFo::PdfArray  m_resourcesProcSet;
+    /// Owner of the collection of objects (to resolve references...).
+    const PoDoFo::PdfVecObjects*  m_pOwner;
 };
 
 }

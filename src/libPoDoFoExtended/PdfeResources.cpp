@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include "PdfeResources.h"
+#include "PdfeUtils.h"
 
 #include <podofo/podofo.h>
 #include <QsLog/QsLog.h>
@@ -18,115 +19,185 @@ using namespace PoDoFo;
 
 namespace PoDoFoExtended {
 
-const char* PdfeResources::CTypes[] = { "ExtGState",
-                                        "ColorSpace",
-                                        "Pattern",
-                                        "Shading",
-                                        "XObject",
-                                        "Font",
-                                        "ProcSet",
-                                        "Properties" };
-
-PdfeResources::PdfeResources()
+PdfeResources::PdfeResources(const PdfVecObjects *pOwner ) :
+    m_pOwner( pOwner )
 {
-    // Nothing to do!
+    m_resourcesDict.resize( PdfeResourcesType::size() );
+    m_resourcesProcSet.Clear();
+}
+PdfeResources::PdfeResources( PdfObject* pResourcesObj )
+{
+    m_pOwner = pResourcesObj->GetOwner();
+    m_resourcesDict.resize( PdfeResourcesType::size() );
+    this->load( pResourcesObj );
 }
 void PdfeResources::init()
 {
-    m_resources.clear();
+    m_resourcesDict.assign( PdfeResourcesType::size(), PdfDictionary() );
+    m_resourcesProcSet.Clear();
 }
 PdfeResources::PdfeResources( const PdfeResources& rhs ) :
-    m_resources( rhs.m_resources )
+    m_resourcesDict( rhs.m_resourcesDict ),
+    m_resourcesProcSet( rhs.m_resourcesProcSet ),
+    m_pOwner( rhs.m_pOwner )
 {
 }
 PdfeResources& PdfeResources::operator=( const PdfeResources& rhs )
 {
-    m_resources = rhs.m_resources;
+    m_resourcesDict = rhs.m_resourcesDict;
+    m_resourcesProcSet = rhs.m_resourcesProcSet;
+    m_pOwner = rhs.m_pOwner;
     return *this;
 }
 
-void PdfeResources::push_back( PdfObject* pResourcesObj )
+void PdfeResources::load( PdfObject* pResourcesObj )
 {
-    if( !pResourcesObj ) {
-        return;
-    }
-    // Check it is a dictionary and add it.
-    if( pResourcesObj->IsDictionary() ) {
-        m_resources.push_back( pResourcesObj );
-    }
-    else {
-        QLOG_WARN() << QString( "<PdfeResources> Try to add a resources object which is not a dictionary." )
+    this->init();
+    m_pOwner = pResourcesObj->GetOwner();
+    // Check input object.
+    if( !pResourcesObj || !pResourcesObj->IsDictionary() ) {
+        QLOG_WARN() << QString( "<PdfeResources> Try to load a resources object which is not a dictionary." )
                        .toAscii().constData();
         // TODO: raise exception?
     }
-}
-bool PdfeResources::remove( PdfObject* pResourcesObj )
-{
-    std::vector<PdfObject*>::iterator it;
-    it = std::find( m_resources.begin(), m_resources.end(), pResourcesObj );
-    if( it !=  m_resources.end() ) {
-        m_resources.erase( it );
-        return true;
+    // Copy resources dictionaries.
+    PdfeResourcesType::Enum rtype;
+    PdfObject* pResSubDict;
+    for( size_t i = 0 ; i < PdfeResourcesType::size() ; ++i ) {
+        rtype = PdfeResourcesType::Enum( i );
+        if( rtype != PdfeResourcesType::ProcSet ) {
+            pResSubDict = pResourcesObj->GetIndirectKey( PdfeResourcesType::str( rtype ) );
+            if( pResSubDict && pResSubDict->IsDictionary() ) {
+                m_resourcesDict[i] = pResSubDict->GetDictionary();
+            }
+        }
     }
-    return false;
+    // Copy ProcSet.
+    rtype = PdfeResourcesType::ProcSet;
+    pResSubDict = pResourcesObj->GetIndirectKey( PdfeResourcesType::str( rtype ) );
+    if( pResSubDict && pResSubDict->IsArray() ) {
+        m_resourcesProcSet = pResSubDict->GetArray();
+    }
 }
-bool PdfeResources::inside( const PdfObject* pResourcesObj ) const
+void PdfeResources::save( PdfObject* pResourcesObj )
 {
-    std::vector<PdfObject*>::const_iterator it;
-    it = std::find( m_resources.begin(), m_resources.end(), pResourcesObj );
-    return ( it !=  m_resources.end() );
-}
-const std::vector<PdfObject*>& PdfeResources::resources() const
-{
-    return m_resources;
+    // Check output object.
+    if( !pResourcesObj || !pResourcesObj->IsDictionary() ) {
+        QLOG_WARN() << QString( "<PdfeResources> Try to save resources into an object which is not a dictionary." )
+                       .toAscii().constData();
+        // TODO: raise exception?
+    }
+    // Copy resources dictionaries.
+    PdfeResourcesType::Enum rtype;
+    PdfObject* pResSubDict;
+    for( size_t i = 0 ; i < PdfeResourcesType::size() ; ++i ) {
+        rtype = PdfeResourcesType::Enum( i );
+        if( rtype != PdfeResourcesType::ProcSet ) {
+            pResSubDict = pResourcesObj->GetIndirectKey( PdfeResourcesType::str( rtype ) );
+            // Create dictionary if needed.
+            if( !pResSubDict ) {
+                pResourcesObj->GetDictionary().AddKey( PdfeResourcesType::str( rtype ),
+                                                       m_resourcesDict[i] );
+            }
+            else {
+                (*pResSubDict) = m_resourcesDict[i];
+            }
+        }
+    }
+    // Copy ProcSet.
+    rtype = PdfeResourcesType::ProcSet;
+    pResSubDict = pResourcesObj->GetIndirectKey( PdfeResourcesType::str( rtype ) );
+    if( !pResSubDict ) {
+        pResourcesObj->GetDictionary().AddKey( PdfeResourcesType::str( rtype ),
+                                               m_resourcesProcSet );
+    }
+    else {
+        (*pResSubDict) = m_resourcesProcSet;
+    }
 }
 
-void PdfeResources::addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* object )
+void PdfeResources::append( const PdfeResources& rhs )
 {
-    // Empty resources object...
-    if( m_resources.empty() ) {
-        return;
+    for( size_t i = 0 ; i < PdfeResourcesType::size() ; ++i ) {
+        m_resourcesDict[i].GetKeys().insert( rhs.m_resourcesDict[i].GetKeys().begin(),
+                                             rhs.m_resourcesDict[i].GetKeys().end() );
+        m_resourcesDict[i].SetDirty( true );
     }
-    // Get resources dictionary. Create it, if necessary. Then add key.
-    if( !m_resources.back()->GetDictionary().HasKey( CTypes[resource] ) ) {
-        m_resources.back()->GetDictionary().AddKey( CTypes[resource], PdfDictionary() );
+    // TODO: remove duplicate entries.
+    m_resourcesProcSet.insert( m_resourcesProcSet.end(),
+                               rhs.m_resourcesProcSet.begin(),
+                               rhs.m_resourcesProcSet.end() );
+    // Owner?
+    if( !m_pOwner && rhs.m_pOwner ) {
+        m_pOwner = rhs.m_pOwner;
     }
-    PdfObject* resDict = m_resources.back()->GetIndirectKey( CTypes[resource] );
-    resDict->GetDictionary().AddKey( key, object );
 }
-PoDoFo::PdfObject* PdfeResources::getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
+void PdfeResources::addSuffix( const std::string& suffix )
 {
-    PdfObject* keyObj = NULL;
-    // Look at every resources object.
-    for( int i = m_resources.size()-1 ; i >= 0 ; --i ) {
-        // Get resources dict.
-        PdfObject* resDict = m_resources[i]->GetIndirectKey( CTypes[resource] );
-        if( resDict ) {
-            // Find the value of the key (can be a PdfReference).
-            keyObj = resDict->GetDictionary().GetKey( key );
-            if( keyObj ) {
-                return keyObj;
+    TKeyMap bufferMap;
+    TKeyMap::iterator it;
+    PdfeResourcesType::Enum rtype;
+    for( size_t i = 0 ; i < PdfeResourcesType::size() ; ++i ) {
+        rtype = PdfeResourcesType::Enum( i );
+        if( rtype != PdfeResourcesType::ProcSet ) {
+            // Copy modified resources into buffer.
+            TKeyMap& resourcesMap = m_resourcesDict[i].GetKeys();
+            bufferMap.clear();
+            for( it = resourcesMap.begin() ; it != resourcesMap.end() ; ++it ) {
+                bufferMap[ it->first.GetName() + suffix ] = it->second;
+            }
+            resourcesMap = bufferMap;
+            m_resourcesDict[i].SetDirty( true );
+        }
+    }
+}
+
+void PdfeResources::addKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key, const PoDoFo::PdfObject* pobject )
+{
+    // Specific case of ProcSet.
+    if( resource != PdfeResourcesType::ProcSet ) {
+        m_resourcesDict[ resource ].AddKey( key, pobject );
+    }
+    else {
+        if( !this->insideProcSet( key) ) {
+            m_resourcesProcSet.push_back( key );
+        }
+    }
+}
+PdfObject* PdfeResources::getKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
+{
+    // Specific case of ProcSet.
+    if( resource != PdfeResourcesType::ProcSet ) {
+        return const_cast<PdfObject*>( m_resourcesDict[ resource ].GetKey( key ) );
+    }
+    else {
+        for( size_t i = 0 ; i < m_resourcesProcSet.size() ; ++i ) {
+            const PdfObject& resObj = m_resourcesProcSet[i];
+            if( resObj.IsName() && resObj.GetName() == key ) {
+                return const_cast<PdfObject*>( &resObj );
             }
         }
     }
     return NULL;
 }
-PoDoFo::PdfObject* PdfeResources::getIndirectKey( PdfeResourcesType::Enum resource, const PoDoFo::PdfName& key ) const
+PdfObject* PdfeResources::getIndirectKey( PdfeResourcesType::Enum resource, const PdfName& key) const
 {
-    PdfObject* keyObj = NULL;
-    // Look in every resources object.
-    for( int i = m_resources.size()-1 ; i >= 0 ; --i ) {
-        // Get resources dict.
-        PdfObject* resDict = m_resources[i]->GetIndirectKey( CTypes[resource] );
-        if( resDict ) {
-            // Find the (indirect) value of the key.
-            keyObj = resDict->GetIndirectKey( key );
-            if( keyObj ) {
-                return keyObj;
-            }
+    PdfObject* pObj = this->getKey( resource, key );
+    if( pObj && pObj->IsReference() && m_pOwner ) {
+        return m_pOwner->GetObject( pObj->GetReference() );
+        //return PdfeIndirectObject( pObj, m_pOwner );
+    }
+    return pObj;
+}
+bool PdfeResources::insideProcSet( const PdfName& name ) const
+{
+    for( size_t i = 0 ; i < m_resourcesProcSet.size() ; ++i ) {
+        const PdfObject& resObj = m_resourcesProcSet[i];
+        if( resObj.IsName() && resObj.GetName() == name ) {
+            return true;
         }
     }
-    return NULL;
+    return false;
 }
 
 }
