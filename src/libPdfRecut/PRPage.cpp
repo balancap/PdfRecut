@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include "PRPage.h"
+#include "PRDocument.h"
 
 #include <podofo/podofo.h>
 
@@ -18,15 +19,18 @@ using namespace PoDoFoExtended;
 
 namespace PdfRecut {
 
-PRPage::PRPage( const PdfRect& mediaBox )
+PRPage::PRPage( const PdfRect& mediaBox ) :
+    QObject( NULL )
 {
     this->init( mediaBox );
 }
-PRPage::PRPage( PdfPage* page, bool loadPageContents )
+PRPage::PRPage( PdfPage* page, bool loadPageContents ) :
+    QObject( NULL )
 {
     this->init( page, loadPageContents );
 }
 PRPage::PRPage( const PRPage& rhs ) :
+    QObject( NULL ),
     m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
     m_pageIndex( 0 ),
     m_pContentsStream( NULL ),
@@ -38,9 +42,7 @@ PRPage::PRPage( const PRPage& rhs ) :
 }
 PRPage& PRPage::operator=( const PRPage& rhs )
 {
-    m_pDocument = NULL;
-    m_pPage = NULL;
-    m_ownPageContents = false;
+    this->detach();
     m_pageIndex = 0;
     this->contents( false ) = rhs.contents();
     m_mediaBox = rhs.m_mediaBox;
@@ -57,9 +59,7 @@ PRPage::~PRPage()
 
 void PRPage::init( const PdfRect& mediaBox )
 {
-    m_pDocument = NULL;
-    m_pPage = NULL;
-    m_ownPageContents = false;
+    this->detach();
     m_pageIndex = 0;
     this->contents( false ).init();
     m_mediaBox = mediaBox;
@@ -69,9 +69,7 @@ void PRPage::init( const PdfRect& mediaBox )
 }
 void PRPage::init( PdfPage* page, bool loadPageContents )
 {
-    m_pDocument = NULL;
-    m_pPage = NULL;
-    m_ownPageContents = false;
+    this->detach();
     m_pageIndex = 0;
     this->contents( false ).init();
     if( loadPageContents ) {
@@ -92,12 +90,22 @@ void PRPage::loadContents() const
 {
     if( m_pDocument && m_pPage ) {
         this->contents( false ).load( m_pPage, true, true );
+        // Loaded/modified signal.
+        emit contentsLoaded();
     }
 }
 void PRPage::clearContents() const
 {
-    delete m_pContentsStream;
-    m_pContentsStream = NULL;
+    if( m_pContentsStream ) {
+        delete m_pContentsStream;
+        m_pContentsStream = NULL;
+        // Cleared signal.
+        emit contentsCleared();
+    }
+}
+bool PRPage::isContentsLoaded() const
+{
+    return ( m_pContentsStream != NULL );
 }
 
 PdfObject* PRPage::cleanPoDoFoContents()
@@ -129,18 +137,18 @@ PdfObject* PRPage::cleanPoDoFoContents()
     return NULL;
 }
 
-void PRPage::push()
+void PRPage::push( bool incContents )
 {
     if( m_pDocument && m_pPage ) {
-        // Clean page contents, if not done before.
-        if( !m_ownPageContents ) {
-            this->cleanPoDoFoContents();
-            m_ownPageContents = true;
+        if( incContents ) {
+            // Clean page contents, if not done before.
+            if( !m_ownPageContents ) {
+                this->cleanPoDoFoContents();
+                m_ownPageContents = true;
+            }
+            // Set page contents and resources.
+            this->contents( false ).save( m_pPage );
         }
-
-        // Set page contents and resources.
-        this->contents( false ).save( m_pPage );
-
         // Set page boxes.
         PdfVariant pagebox;
         m_mediaBox.ToVariant( pagebox );
@@ -161,6 +169,8 @@ void PRPage::push()
             m_artBox.ToVariant( pagebox );
             m_pPage->GetObject()->GetDictionary().AddKey( "ArtBox", pagebox );
         }
+        // Loaded/modified signal.
+        emit contentsLoaded();
     }
 }
 void PRPage::pull()
@@ -174,18 +184,40 @@ void PRPage::pull()
         this->setBleedBox( m_pPage->GetBleedBox() );
         this->setTrimBox( m_pPage->GetTrimBox() );
         this->setArtBox( m_pPage->GetArtBox() );
+        // Loaded/modified signal.
+        emit contentsLoaded();
     }
 }
 void PRPage::attach( PRDocument* document, PdfPage* page )
 {
+    this->detach();
     m_pDocument = document;
     m_pPage = page;
     m_ownPageContents = false;
+    this->setParent( document );
+
+    // TODO: connect signals
+}
+
+void PRPage::detach()
+{
+    m_pDocument = NULL;
+    m_pPage = NULL;
+    m_ownPageContents = false;
+    this->setParent( NULL );
+    // Disconnect signals/slots.
+    this->disconnect();
 }
 
 const PdfeContentsStream& PRPage::contents() const
 {
     return this->contents( true );
+}
+void PRPage::setContents( const PdfeContentsStream& contents )
+{
+    // Set contents and push modifications.
+    this->contents( false ) = contents;
+    this->push( true );
 }
 PdfeContentsStream& PRPage::contents( bool loadPageContents ) const
 {

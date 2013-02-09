@@ -18,6 +18,8 @@
 #include "PdfeContentsStream.h"
 #include "PdfeResources.h"
 
+#include <QObject>
+
 namespace PoDoFo {
 class PdfRect;
 class PdfPage;
@@ -41,8 +43,10 @@ class PRDocument;
  *    with the PDF content.
  * Page contents stream can be cached/uncached depending on the willing of the user.
  */
-class PRPage
+class PRPage : public QObject
 {
+    Q_OBJECT
+
     friend class PRDocument;
 public:
     /** Create an empty page with a given media box.
@@ -56,7 +60,7 @@ public:
      * \param loadPageContents Is page's content also loaded?
      */
     PRPage( PoDoFo::PdfPage* page, bool loadPageContents );
-    /** Copy constructor. The resulting page is not attached to any
+    /** (Deep) Copy constructor. The resulting page is not attached to any
      * document by default.
      * \param rhs Page to copy.
      */
@@ -92,6 +96,17 @@ public:
     /** Clear page contents. Use it at your own risk !
      */
     void clearContents() const;
+    /** Is page contents loaded?
+     * \return F***ing answer!
+     */
+    bool isContentsLoaded() const;
+signals:
+    /** Page contents have been loaded, or modified.
+     */
+    void contentsLoaded() const;
+    /** Page contents have been cleared.
+     */
+    void contentsCleared() const;
 
 private:
     /** Clean PoDoFo page contents, i.e. clear existing contents and
@@ -103,8 +118,9 @@ private:
 public:
     // Synchronisation with the PoDoFo::Page.
     /** Push modification to the associated PoDoFo::Page.
+     * \param incContents Include contents (optimization purpose).
      */
-    void push();
+    void push( bool incContents = true );
     /** Pull data and contents from the associated PoDoFo::Page.
      * Equivalent to initialization with the associated page.
      */
@@ -117,6 +133,9 @@ private:
      * \param page Pointer to the associated page.
      */
     void attach( PRDocument* document, PoDoFo::PdfPage* page );
+    /** Detach the page from a document.
+     */
+    void detach();
 
 public:
     // Getters...
@@ -129,15 +148,20 @@ public:
     PoDoFo::PdfPage* podofoPage() const {   return m_pPage;     }
     /// Get page index in a document. Beginning at zero (default: 0).
     size_t pageIndex() const    {   return  m_pageIndex;    }
+
+    // Setters...
+    /** Set page contents. If the page is attached to a PoDoFo page, the last
+     * is automatically updated (can be costly...).
+     * \param contents New page contents. The input object is entirely copied.
+     */
+    void setContents( const PoDoFoExtended::PdfeContentsStream& contents );
+
 private:
     // Private getters and setters...
     /// Get page contents stream. Loaded from PoDoFo::PdfPage if necessary.
     PoDoFoExtended::PdfeContentsStream& contents( bool loadPageContents ) const;
-
     /// Set page index in the document. Take care of not messing up the order!
     void setPageIndex( size_t pageIndex ) {     m_pageIndex = pageIndex;    }
-
-private:
 
 
 public:
@@ -228,22 +252,27 @@ inline PoDoFo::PdfRect PRPage::artBox() const
 void PRPage::setMediaBox( const PoDoFo::PdfRect& rhs )
 {
     m_mediaBox = rhs;
+    this->push( false );
 }
 void PRPage::setCropBox( const PoDoFo::PdfRect& rhs )
 {
     m_cropBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->push( false );
 }
 void PRPage::setBleedBox( const PoDoFo::PdfRect& rhs )
 {
     m_bleedBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->push( false );
 }
 void PRPage::setTrimBox( const PoDoFo::PdfRect& rhs )
 {
     m_trimBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->push( false );
 }
 void PRPage::setArtBox( const PoDoFo::PdfRect& rhs )
 {
     m_artBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->push( false );
 }
 
 }
