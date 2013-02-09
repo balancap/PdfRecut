@@ -290,8 +290,8 @@ void PRDocumentLayout::transformDocument( PRDocument* documentHandle ) const
         pageOut = document->CreatePage( m_pageLayouts[idx].mediaBox );
 
         // Resources associated to the page.
-        PdfeResources resourcesOut;
-        resourcesOut.push_back( pageOut->GetResources() );
+        PdfeResources resourcesOut( pageOut->GetResources() );
+        //resourcesOut.push_back( pageOut->GetResources() );
 
         // Set cropbox.
         m_pageLayouts[idx].cropBox.ToVariant( pagebox );
