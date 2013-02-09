@@ -290,7 +290,7 @@ void PdfeGlyphType3::computeBBox()
     m_cbox = PdfRect( 0, 0, 0, 0 );
 
     // Analyse contents stream of the glyph.
-    this->analyseContents( this, PdfeGraphicsState(), PdfeResources() );
+    this->analyseContents( this, PdfeGraphicsState(), PdfeResources( m_pResources ) );
 }
 
 //**********************************************//

@@ -100,8 +100,7 @@ bool PdfeGraphicsState::importExtGState( const PdfeResources& resources, const s
 bool PdfeGraphicsState::importFontReference( const PdfeResources& resources )
 {
     // Obtain the expected font reference.
-    PdfObject* font = resources.getKey( PdfeResourcesType::Font, textState.fontName );
-
+    const PdfObject* font = resources.getKey( PdfeResourcesType::Font, textState.fontName );
     if( font && font->IsReference() ) {
         textState.fontRef = font->GetReference();
         return true;

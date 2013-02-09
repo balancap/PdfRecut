@@ -331,7 +331,8 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                     // Save back resources and add form resources.
                     PdfXObject xobject( pnode->xobject() );
                     resourcesStack.push_back( streamState.resources );
-                    streamState.resources.push_back( xobject.GetResources() );
+                    //streamState.resources.push_back( xobject.GetResources() );
+                    streamState.resources.append( PdfeResources( xobject.GetResources() ) );
 
                     this->fFormBegin( streamState, &xobject );
                 }

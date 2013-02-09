@@ -35,6 +35,7 @@ void PdfeResources::init()
 {
     m_resourcesDict.assign( PdfeResourcesType::size(), PdfDictionary() );
     m_resourcesProcSet.Clear();
+    m_pOwner = NULL;
 }
 PdfeResources::PdfeResources( const PdfeResources& rhs ) :
     m_resourcesDict( rhs.m_resourcesDict ),

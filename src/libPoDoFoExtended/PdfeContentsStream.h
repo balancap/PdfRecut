@@ -89,7 +89,7 @@ public:
      * \param loadFormsStream Are streams from XObjects forms also loaded?
      * If yes, the stream is integrated into the parent stream. Otherwise,
      * only the graphics operator Do appears. Resources of the stream are completed
-     * with Forms resources.
+     * with Forms resources (their names are modified to avoid conflicts).
      * \param fixStream Fix mistakes detected in the stream.
      */
     void load( PoDoFo::PdfCanvas* pcanvas,
@@ -116,14 +116,14 @@ private:
     /** Private version of the canvas loading. Can be called recursively, in
      * particular to load form XObjects.
      * \param pNodePrev Node after which is loaded the form stream.
-     * \param iniResources Resources to use.
+     * \param resSuffix Suffix to add to resources (form loading...).
      * \return Last node to be inserted.
      */
     Node* load( PoDoFo::PdfCanvas* pcanvas,
                 bool loadFormsStream,
                 bool fixStream,
                 Node* pNodePrev,
-                const PdfeResources& iniResources );
+                const std::string& resSuffix );
 
 public:
     // Simples getters...
@@ -275,6 +275,12 @@ public:
     void setXObject( PdfeXObjectType::Enum type, PoDoFo::PdfObject* pXObject );
     /// Set loading/opening/closing information on a form XObject.
     void setFormXObject( bool isLoaded, bool isOpening, bool isClosing );
+
+    /** Add suffix to (resources) names which appear in the node.
+     * Does nothing if no name is involved in the node.
+     * \param suffix Suffix to append.
+     */
+    void addSuffix( const std::string& suffix );
 
 public:
     // Operands getters and setters...
