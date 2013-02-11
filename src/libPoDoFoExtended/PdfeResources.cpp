@@ -27,9 +27,12 @@ PdfeResources::PdfeResources(const PdfVecObjects *pOwner ) :
 }
 PdfeResources::PdfeResources( PdfObject* pResourcesObj )
 {
-    m_pOwner = pResourcesObj->GetOwner();
     m_resourcesDict.resize( PdfeResourcesType::size() );
-    this->load( pResourcesObj );
+    m_resourcesProcSet.Clear();
+    if( pResourcesObj ) {
+        m_pOwner = pResourcesObj->GetOwner();
+        this->load( pResourcesObj );
+    }
 }
 void PdfeResources::init()
 {
@@ -54,13 +57,14 @@ PdfeResources& PdfeResources::operator=( const PdfeResources& rhs )
 void PdfeResources::load( PdfObject* pResourcesObj )
 {
     this->init();
-    m_pOwner = pResourcesObj->GetOwner();
     // Check input object.
     if( !pResourcesObj || !pResourcesObj->IsDictionary() ) {
         QLOG_WARN() << QString( "<PdfeResources> Try to load a resources object which is not a dictionary." )
                        .toAscii().constData();
         // TODO: raise exception?
     }
+    m_pOwner = pResourcesObj->GetOwner();
+
     // Copy resources dictionaries.
     PdfeResourcesType::Enum rtype;
     PdfObject* pResSubDict;
@@ -101,7 +105,7 @@ void PdfeResources::save( PdfObject* pResourcesObj )
                                                        m_resourcesDict[i] );
             }
             else {
-                (*pResSubDict) = m_resourcesDict[i];
+                pResSubDict->PdfVariant::operator=( m_resourcesDict[i] );
             }
         }
     }
@@ -120,9 +124,10 @@ void PdfeResources::save( PdfObject* pResourcesObj )
 void PdfeResources::append( const PdfeResources& rhs )
 {
     for( size_t i = 0 ; i < PdfeResourcesType::size() ; ++i ) {
-        m_resourcesDict[i].GetKeys().insert( rhs.m_resourcesDict[i].GetKeys().begin(),
-                                             rhs.m_resourcesDict[i].GetKeys().end() );
-        m_resourcesDict[i].SetDirty( true );
+        TKeyMap::const_iterator it;
+        for( it = rhs.m_resourcesDict[i].GetKeys().begin() ; it != rhs.m_resourcesDict[i].GetKeys().end() ; ++it ) {
+            m_resourcesDict[i].AddKey( it->first, it->second );
+        }
     }
     // TODO: remove duplicate entries.
     m_resourcesProcSet.insert( m_resourcesProcSet.end(),

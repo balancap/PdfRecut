@@ -26,10 +26,10 @@ namespace PoDoFoExtended {
  * \param pObj Pointer to the object.
  * \return Pointer to the indirect object.
  */
-inline const PoDoFo::PdfObject* PdfeIndirectObject( const PoDoFo::PdfObject* pObj,
-                                                    const PoDoFo::PdfVecObjects* pOwner = NULL )
+inline PoDoFo::PdfObject* PdfeIndirectObject( PoDoFo::PdfObject* pObj,
+                                              const PoDoFo::PdfVecObjects* pOwner = NULL )
 {
-    if( pObj->IsReference() ) {
+    if( pObj && pObj->IsReference() ) {
         pOwner = ( pObj->GetOwner() ? pObj->GetOwner() : pOwner );
         if( !pOwner ) {
             PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidHandle,
@@ -42,8 +42,8 @@ inline const PoDoFo::PdfObject* PdfeIndirectObject( const PoDoFo::PdfObject* pOb
     }
     return pObj;
 }
-inline PoDoFo::PdfObject* PdfeIndirectObject( PoDoFo::PdfObject* pObj,
-                                              const PoDoFo::PdfVecObjects* pOwner = NULL )
+inline const PoDoFo::PdfObject* PdfeIndirectObject( const PoDoFo::PdfObject* pObj,
+                                                    const PoDoFo::PdfVecObjects* pOwner = NULL )
 {
     return const_cast<PoDoFo::PdfObject*>(
                 PdfeIndirectObject( const_cast<PoDoFo::PdfObject*>( pObj ), pOwner ) );

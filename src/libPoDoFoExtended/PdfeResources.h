@@ -99,7 +99,7 @@ public:
      */
     void load( PoDoFo::PdfObject* pResourcesObj );
     /** Save resources into a PoDoFo object. Previous content of
-     * the object is replaced completely.
+     * the object is completely replaced.
      * \param pResourcesObj Resources object from a PDF document.
      */
     void save( PoDoFo::PdfObject* pResourcesObj );
