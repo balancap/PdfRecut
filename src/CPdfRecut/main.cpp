@@ -13,6 +13,7 @@
 #include <QsLog/QsLogDest.h>
 
 #include "PRDocument.h"
+#include "PRPage.h"
 #include "PRDocumentLayout.h"
 #include "PRDocumentTools.h"
 #include "PRRenderPage.h"
@@ -149,8 +150,28 @@ void proceedFile( QString fileName )
 
     // Load PDF file
     document.load( fileName );
+    PdfeContentsStream contents;
+    for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
+        PRPage* page = document.page( i );
+        page->loadContents();
+        contents = page->contents();
+        page->setContents( contents );
+
+        // Save stream to file.
+        contents = page->contents();
+        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        contents.exportToFile( filename );
+
+    }
+//    PRPage* page = document.page( 0 );
+//    page->loadContents();
+//    contents = page->contents();
+//    page->setContents( contents );
+
+
 
     document.save( fileName );
+    document.clear();
 
     /*
     // Analyse document geometry.
@@ -198,8 +219,8 @@ void proceedFile( QString fileName )
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
-    std::cout << "Press RETURN to finish..." << std::endl;
-    std::cin.get();
+//    std::cout << "Press RETURN to finish..." << std::endl;
+//    std::cin.get();
 
 //    delete pGDocument;
 

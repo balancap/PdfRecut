@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include "PRDocument.h"
+#include "PRPage.h"
 
 #include "PRException.h"
 #include "PRGeometry/PRGDocument.h"
@@ -58,6 +59,8 @@ void PRDocument::load( const QString& filename )
     this->clear();
     // Load PoDoFo document.
     this->loadPoDoFoDocument( filename );
+    // Load pages.
+    this->loadPages();
 
     // Old ?
 //    QString methodTitle = tr( "Load PDF Document." );
@@ -72,12 +75,46 @@ void PRDocument::save( const QString& filename )
 }
 void PRDocument::clear()
 {
-    // Free PoDoFo document.
-    this->freePoDoFoDocument();
     // Cleat font cache.
     this->clearFontCache();
-    // Clear contents.
-    //this->clearContent();
+    // Clear pages.
+    this->clearPages();
+    // Free PoDoFo document.
+    this->freePoDoFoDocument();
+}
+
+void PRDocument::loadPages()
+{
+    this->clearPages();
+    // Load pages from PoDoFo document.
+    size_t nbPages = m_podofoDocument->GetPageCount();
+    m_pPages.resize( nbPages );
+    for( size_t i = 0 ; i < nbPages ; ++i ) {
+        m_pPages[i] = new PRPage( m_podofoDocument->GetPage( i ), false );
+        this->attachPage( i );
+    }
+
+}
+void PRDocument::clearPages()
+{
+    for( size_t i = 0 ; i < m_pPages.size() ; ++i ) {
+        delete m_pPages[i];
+    }
+    m_pPages.clear();
+}
+void PRDocument::setPagesIndex()
+{
+    for( size_t i = 0 ; i < m_pPages.size() ; ++i ) {
+        m_pPages[i]->setPageIndex( i );
+    }
+}
+void PRDocument::attachPage( size_t index )
+{
+    if( index < m_pPages.size() && m_pPages[index] ) {
+        PRPage* page = m_pPages[index];
+        page->attach( this, m_podofoDocument->GetPage( index ) );
+        // Connect signals: TODO.
+    }
 }
 
 PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename )
