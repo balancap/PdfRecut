@@ -38,7 +38,14 @@ class PRPage;
 //************************************************************//
 //                         PRDocument                         //
 //************************************************************//
-/** Class that handles a document object from PoDoFo library.
+/** Class improves the PoDoFo::PdfMemDocument class. It allows
+ * to handle more easily some operations on PDF document, especially
+ * modifications on pages.
+ * Caution: one should NEVER try to perform on operation on the PoDoFo
+ * document object if it is available in PRDocument interface. Otherwise,
+ * unknown consequences might appear (Sarah Palin, Black holes,
+ * Communism... who knows !)
+ *
  * It owns a mutex for the access to this object.
  */
 class PRDocument : public QObject
@@ -68,15 +75,18 @@ public:
      */
     void clear();
 
-
 public:
     // Pages related member functions.
+
+
+
     /// Number of pages in the document.
     size_t nbPages() const          {   return m_pPages.size();     }
     /// Get a page (pointer to the obejct).
     PRPage* page( size_t idx )              {   return m_pPages.at( idx );  }
     const PRPage* page( size_t idx ) const  {   return m_pPages.at( idx );  }
-
+    /// Set page contents cache size (minimum: 10).
+    void setPagesCacheSize( size_t cacheSize );
 
 private:
     /// Load pages from the PoDoFo document.
@@ -90,9 +100,21 @@ private:
      */
     void attachPage( size_t index );
 
+private slots:
+    // Page contents cache.
+    /** Cache a page of the document.
+     * \param pageIndex Index of the page to cache.
+     */
+    void cachePageContents( size_t pageIndex );
+    /** Uncache a page of the document.
+     * \param pageIndex Index of the page to uncache.
+     */
+    void uncachePageContents( size_t pageIndex );
 private:
-    // Page cache related functions.
-
+    /** Clean page cache. i.e. uncached pages until
+     * the cache size is respected.
+     */
+    void cleanCachePages();
 
 public:
     // Font cache related member functions.
@@ -110,7 +132,6 @@ private:
      * \return PdfeFont pointer, owned by the PRDocument object.
      */
     PoDoFoExtended::PdfeFont* addFontToCache( const PoDoFo::PdfReference& fontRef );
-
 
 public:
     // Getters...
@@ -170,6 +191,10 @@ private:
 
     /// Pages vector.
     std::vector<PRPage*>  m_pPages;
+    /// Pages cache list.
+    std::list<size_t>  m_pagesCacheList;
+    /// Pages cache size (default: infinity).
+    size_t  m_pagesCacheSize;
 
     /// Map containing font cache. Each key corresponds to the reference of the font object.
     std::map< PoDoFo::PdfReference, PoDoFoExtended::PdfeFont* >  m_fontCache;

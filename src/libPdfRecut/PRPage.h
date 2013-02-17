@@ -35,13 +35,13 @@ class PRDocument;
 //************************************************************//
 /** Class that represent a page in a PDF document.
  * It enhances PoDoFo::PdfPage, e.g. using PdfeContentsStream
- * to store the content stream of the page. It supports two modes
- * of synchronisation with a PDF document:
+ * to store the content stream of the page and other attributes in
+ * members. It supports two modes of synchronisation with a PDF document:
  *  - None, i.e. the page is not linked to a document, meaning modifications
  *    are not backported to a real PDF objects;
  *  - Complete, i.e. the page corresponds to an actual page in a given PDF
  *    document, implying that any modification to the PRPage is synchronised
- *    with the PDF content.
+ *    with the PDF content. It is up to a PRDocument to set this link.
  * Page contents stream can be cached/uncached depending on the willing of the user.
  */
 class PRPage : public QObject

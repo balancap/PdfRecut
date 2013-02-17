@@ -150,10 +150,12 @@ void proceedFile( QString fileName )
 
     // Load PDF file
     document.load( fileName );
+    document.setPagesCacheSize( 10 );
+
     PdfeContentsStream contents;
     for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
         PRPage* page = document.page( i );
-        page->loadContents();
+
         contents = page->contents();
         page->setContents( contents );
 

@@ -47,6 +47,8 @@ PRDocument::PRDocument( QObject* parent ) :
                            tr( "Can not initialize FreeType library." ),
                            true );
     }
+    // Default cache size.
+    m_pagesCacheSize = std::numeric_limits<size_t>::max();
 }
 PRDocument::~PRDocument()
 {
@@ -90,10 +92,10 @@ void PRDocument::loadPages()
     size_t nbPages = m_podofoDocument->GetPageCount();
     m_pPages.resize( nbPages );
     for( size_t i = 0 ; i < nbPages ; ++i ) {
-        m_pPages[i] = new PRPage( m_podofoDocument->GetPage( i ), false );
+        m_pPages[i] = new PRPage();
+        m_pPages[i]->load( m_podofoDocument->GetPage( i ), false, true );
         this->attachPage( i );
     }
-
 }
 void PRDocument::clearPages()
 {
@@ -101,6 +103,8 @@ void PRDocument::clearPages()
         delete m_pPages[i];
     }
     m_pPages.clear();
+    // Clear cache.
+    m_pagesCacheList.clear();
 }
 void PRDocument::setPagesIndex()
 {
@@ -108,14 +112,67 @@ void PRDocument::setPagesIndex()
         m_pPages[i]->setPageIndex( i );
     }
 }
+
 void PRDocument::attachPage( size_t index )
 {
     if( index < m_pPages.size() && m_pPages[index] ) {
         PRPage* page = m_pPages[index];
-        page->attach( this, m_podofoDocument->GetPage( index ) );
-        // Connect signals: TODO.
+        page->setPageIndex( index );
+        page->setParent( this );
+        // Connect signals:
+        QObject::connect( page, SIGNAL(contentsCached(size_t)),
+                          this, SLOT(cachePageContents(size_t)) );
+        QObject::connect( page, SIGNAL(contentsUncached(size_t)),
+                          this, SLOT(uncachePageContents(size_t)) );
     }
 }
+
+void PRDocument::setPagesCacheSize( size_t cacheSize )
+{
+    m_pagesCacheSize = std::max( cacheSize, size_t( 10 ) );
+    this->cleanCachePages();
+}
+void PRDocument::cachePageContents( size_t pageIndex )
+{
+    // Find index in the cache list.
+    std::list<size_t>::iterator it;
+    it = std::find( m_pagesCacheList.begin(), m_pagesCacheList.end(), pageIndex );
+    if( it == m_pagesCacheList.end() ) {
+        m_pagesCacheList.push_back( pageIndex );
+        m_pPages[ pageIndex ]->cacheContents();
+    }
+    else {
+        // Already cached: push to the back of the list.
+        m_pagesCacheList.erase( it );
+        m_pagesCacheList.push_back( pageIndex );
+    }
+    // Clean cache.
+    this->cleanCachePages();
+    // Log information.
+    QLOG_INFO() << QString( "<PRDocument> Cache page contents stream (index: %1)." )
+                   .arg( pageIndex ).toAscii().constData();
+}
+void PRDocument::uncachePageContents( size_t pageIndex )
+{
+    // Find index in the cache list.
+    std::list<size_t>::iterator it;
+    it = std::find( m_pagesCacheList.begin(), m_pagesCacheList.end(), pageIndex );
+    if( it != m_pagesCacheList.end() ) {
+        // Remove index and uncache contents.
+        m_pagesCacheList.erase( it );
+        m_pPages[ pageIndex ]->uncacheContents();
+        // Log information.
+        QLOG_INFO() << QString( "<PRDocument> Uncache page contents stream (index: %1)." )
+                       .arg( pageIndex ).toAscii().constData();
+    }
+}
+void PRDocument::cleanCachePages()
+{
+    while( m_pagesCacheList.size() > m_pagesCacheSize ) {
+        this->uncachePageContents( m_pagesCacheList.front() );
+    }
+}
+
 
 PoDoFo::PdfMemDocument* PRDocument::loadPoDoFoDocument( const QString& filename )
 {
