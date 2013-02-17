@@ -77,12 +77,27 @@ public:
 
 public:
     // Pages related member functions.
-
-
+    /** Insert a page into the document.
+     * \param index Index of the inserted page.
+     * \param pPage Pointer to the PRPage object. WARNING:
+     * the document owns the object afterward.
+     * \return Pointer to the page inserted (should be pPage...).
+     */
+    PRPage* insertPage( size_t index, PRPage* pPage );
+    /** Insert an empty page into the document.
+     * \param index Index of the new inserted page.
+     * \return Pointer to the new page inserted.
+     */
+    PRPage* insertPage( size_t index );
+    /** Delete a page in the document. Objects used by the page
+     * are moved to PRDocument trash.
+     * \param index Index of the page to delete.
+     */
+    void deletePage( size_t index );
 
     /// Number of pages in the document.
     size_t nbPages() const          {   return m_pPages.size();     }
-    /// Get a page (pointer to the obejct).
+    /// Get a page (pointer to the object).
     PRPage* page( size_t idx )              {   return m_pPages.at( idx );  }
     const PRPage* page( size_t idx ) const  {   return m_pPages.at( idx );  }
     /// Set page contents cache size (minimum: 10).
@@ -95,7 +110,8 @@ private:
     void clearPages();
     /// Set pages index.
     void setPagesIndex();
-    /** Attach a page to the document.
+    /** Attach a page to the document, i.e. set parent
+     * and connect signals/slots.
      * \param index Index of the page.
      */
     void attachPage( size_t index );

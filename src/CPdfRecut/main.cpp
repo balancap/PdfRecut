@@ -150,22 +150,27 @@ void proceedFile( QString fileName )
 
     // Load PDF file
     document.load( fileName );
-    document.setPagesCacheSize( 10 );
+    document.setPagesCacheSize( 100 );
 
-    // 781/0
-    PdfObject* pobj = document.podofoDocument()->GetObjects().GetObject( PdfReference( 781, 0 ) );
 
     PdfeContentsStream contents;
-    for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
+    for( size_t i = 0 ; i < document.nbPages()-1 ; ++i ) {
         PRPage* page = document.page( i );
 
         contents = page->contents();
         page->setContents( contents );
 
+        PRPage* page2 = document.insertPage( i+1 );
+        page2->operator=( *page );
+
+        document.deletePage( i+2 );
+
         // Save stream to file.
         contents = page->contents();
         QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
         contents.exportToFile( filename );
+
+        ++i;
 
     }
 //    PRPage* page = document.page( 0 );

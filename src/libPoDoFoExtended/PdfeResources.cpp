@@ -90,6 +90,7 @@ void PdfeResources::save( PdfObject* pResourcesObj )
     if( !pResourcesObj || !pResourcesObj->IsDictionary() ) {
         QLOG_WARN() << QString( "<PdfeResources> Try to save resources into an object which is not a dictionary." )
                        .toAscii().constData();
+        return;
         // TODO: raise exception?
     }
     // Copy resources dictionaries.

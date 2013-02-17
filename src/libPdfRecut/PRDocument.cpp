@@ -85,6 +85,39 @@ void PRDocument::clear()
     this->freePoDoFoDocument();
 }
 
+PRPage* PRDocument::insertPage( size_t index, PRPage* pPage )
+{
+    index = std::min( std::max( index, size_t(0) ), m_pPages.size() );
+    // Create temp page and insert it in the PoDoFo pages tree.
+    PdfPage* tmpPage = new PdfPage( pPage->mediaBox(), m_podofoDocument );
+    m_podofoDocument->GetPagesTree()->InsertPage( int(index)-1, tmpPage );
+    delete tmpPage;
+
+    // Insert PRPage object and push modifications.
+    m_pPages.insert( m_pPages.begin()+index, pPage );
+    this->attachPage( index );
+    m_pPages[ index ]->pushModifications( true, true );
+    // Update pages indexes.
+    this->setPagesIndex();
+    return m_pPages[ index ];
+}
+PRPage* PRDocument::insertPage( size_t index )
+{
+    return this->insertPage( index, new PRPage() );
+}
+void PRDocument::deletePage( size_t index )
+{
+    index = std::min( std::max( index, size_t(0) ), m_pPages.size()-1 );
+    // Delete PoDoFo::PdfPage.
+    m_podofoDocument->GetPagesTree()->DeletePage( index );
+    // TODO: move page objects to trash before deleting...
+
+    // Delete PRPage.
+    delete m_pPages[ index ];
+    m_pPages.erase( m_pPages.begin() + index );
+    this->setPagesIndex();
+}
+
 void PRDocument::loadPages()
 {
     this->clearPages();
@@ -122,6 +155,8 @@ void PRDocument::attachPage( size_t index )
         // Connect signals:
         QObject::connect( page, SIGNAL(contentsCached(size_t)),
                           this, SLOT(cachePageContents(size_t)) );
+        QObject::connect( page, SIGNAL(modified(size_t,bool,bool)),
+                          this, SLOT(cachePageContents(size_t)) );
         QObject::connect( page, SIGNAL(contentsUncached(size_t)),
                           this, SLOT(uncachePageContents(size_t)) );
     }
@@ -129,7 +164,8 @@ void PRDocument::attachPage( size_t index )
 
 void PRDocument::setPagesCacheSize( size_t cacheSize )
 {
-    m_pagesCacheSize = std::max( cacheSize, size_t( 10 ) );
+    size_t minCacheSize = 10;
+    m_pagesCacheSize = std::max( cacheSize, size_t( minCacheSize ) );
     this->cleanCachePages();
 }
 void PRDocument::cachePageContents( size_t pageIndex )
@@ -140,6 +176,9 @@ void PRDocument::cachePageContents( size_t pageIndex )
     if( it == m_pagesCacheList.end() ) {
         m_pagesCacheList.push_back( pageIndex );
         m_pPages[ pageIndex ]->cacheContents();
+        // Log information.
+        QLOG_INFO() << QString( "<PRDocument> Cache page contents stream (index: %1)." )
+                       .arg( pageIndex ).toAscii().constData();
     }
     else {
         // Already cached: push to the back of the list.
@@ -148,9 +187,6 @@ void PRDocument::cachePageContents( size_t pageIndex )
     }
     // Clean cache.
     this->cleanCachePages();
-    // Log information.
-    QLOG_INFO() << QString( "<PRDocument> Cache page contents stream (index: %1)." )
-                   .arg( pageIndex ).toAscii().constData();
 }
 void PRDocument::uncachePageContents( size_t pageIndex )
 {
