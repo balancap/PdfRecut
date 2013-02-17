@@ -72,7 +72,7 @@ public:
     PRPage& operator=( const PRPage& rhs );
     /** Default destructor.
      */
-    ~PRPage();
+    virtual ~PRPage();
 
     /** Initialize the page to an empty page.
      * \param mediaBox Media box of the new page.
@@ -249,27 +249,27 @@ inline PoDoFo::PdfRect PRPage::artBox() const
     }
 }
 
-void PRPage::setMediaBox( const PoDoFo::PdfRect& rhs )
+inline void PRPage::setMediaBox( const PoDoFo::PdfRect& rhs )
 {
     m_mediaBox = rhs;
     this->push( false );
 }
-void PRPage::setCropBox( const PoDoFo::PdfRect& rhs )
+inline void PRPage::setCropBox( const PoDoFo::PdfRect& rhs )
 {
     m_cropBox = PdfeORect::intersection( m_mediaBox, rhs );
     this->push( false );
 }
-void PRPage::setBleedBox( const PoDoFo::PdfRect& rhs )
+inline void PRPage::setBleedBox( const PoDoFo::PdfRect& rhs )
 {
     m_bleedBox = PdfeORect::intersection( m_mediaBox, rhs );
     this->push( false );
 }
-void PRPage::setTrimBox( const PoDoFo::PdfRect& rhs )
+inline void PRPage::setTrimBox( const PoDoFo::PdfRect& rhs )
 {
     m_trimBox = PdfeORect::intersection( m_mediaBox, rhs );
     this->push( false );
 }
-void PRPage::setArtBox( const PoDoFo::PdfRect& rhs )
+inline void PRPage::setArtBox( const PoDoFo::PdfRect& rhs )
 {
     m_artBox = PdfeORect::intersection( m_mediaBox, rhs );
     this->push( false );

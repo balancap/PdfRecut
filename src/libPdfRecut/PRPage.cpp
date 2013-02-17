@@ -20,12 +20,18 @@ using namespace PoDoFoExtended;
 namespace PdfRecut {
 
 PRPage::PRPage( const PdfRect& mediaBox ) :
-    QObject( NULL )
+    QObject( NULL ),
+    m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
+    m_pageIndex( 0 ),
+    m_pContentsStream( NULL )
 {
     this->init( mediaBox );
 }
 PRPage::PRPage( PdfPage* page, bool loadPageContents ) :
-    QObject( NULL )
+    QObject( NULL ),
+    m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
+    m_pageIndex( 0 ),
+    m_pContentsStream( NULL )
 {
     this->init( page, loadPageContents );
 }
@@ -105,7 +111,7 @@ void PRPage::clearContents() const
 }
 bool PRPage::isContentsLoaded() const
 {
-    return ( m_pContentsStream != NULL );
+    return ( m_pContentsStream != NULL ) && ( !m_pContentsStream->isEmpty() );
 }
 
 PdfObject* PRPage::cleanPoDoFoContents()
@@ -195,8 +201,6 @@ void PRPage::attach( PRDocument* document, PdfPage* page )
     m_pPage = page;
     m_ownPageContents = false;
     this->setParent( document );
-
-    // TODO: connect signals
 }
 
 void PRPage::detach()
