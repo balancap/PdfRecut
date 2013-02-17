@@ -152,6 +152,9 @@ void proceedFile( QString fileName )
     document.load( fileName );
     document.setPagesCacheSize( 10 );
 
+    // 781/0
+    PdfObject* pobj = document.podofoDocument()->GetObjects().GetObject( PdfReference( 781, 0 ) );
+
     PdfeContentsStream contents;
     for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
         PRPage* page = document.page( i );
@@ -170,7 +173,11 @@ void proceedFile( QString fileName )
 //    contents = page->contents();
 //    page->setContents( contents );
 
-
+    // Save into...
+    QFileInfo fileInfo( fileName );
+    fileName = fileInfo.absolutePath()
+            + "/recut/"
+            + infoFile.fileName();
 
     document.save( fileName );
     document.clear();

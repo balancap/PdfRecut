@@ -35,7 +35,7 @@ inline PoDoFo::PdfObject* PdfeIndirectObject( PoDoFo::PdfObject* pObj,
             PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidHandle,
                                      "Object is a reference but does not have an owner!" );
         }
-        while( pObj->IsReference() ) {
+        while( pObj && pObj->IsReference() ) {
             pObj = pOwner->GetObject( pObj->GetReference() );
         }
         return pObj;

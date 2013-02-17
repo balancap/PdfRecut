@@ -117,7 +117,7 @@ void PdfeResources::save( PdfObject* pResourcesObj )
                                                m_resourcesProcSet );
     }
     else {
-        (*pResSubDict) = m_resourcesProcSet;
+        pResSubDict->PdfVariant::operator=( m_resourcesProcSet );
     }
 }
 
@@ -190,8 +190,10 @@ PdfObject* PdfeResources::getIndirectKey( PdfeResourcesType::Enum resource, cons
 {
     PdfObject* pObj = this->getKey( resource, key );
     if( pObj && pObj->IsReference() && m_pOwner ) {
+        //size_t idx = m_pOwner->GetIndex( pObj->GetReference() );
+        //PdfObject* pobj1 = m_pOwner->GetObject( pObj->GetReference() );
+        //PdfObject* pobj2 = PdfeIndirectObject( pObj, m_pOwner );
         return m_pOwner->GetObject( pObj->GetReference() );
-        //return PdfeIndirectObject( pObj, m_pOwner );
     }
     return pObj;
 }

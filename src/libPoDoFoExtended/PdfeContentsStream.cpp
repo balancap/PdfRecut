@@ -484,74 +484,90 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                 // Get XObject pointer and subtype.
                 std::string xobjName = goperands.back().substr( 1 ) + resSuffix;
                 PdfObject* pXObject = m_resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
-                std::string xobjSubtype = pXObject->GetIndirectKey( "Subtype" )->GetName().GetName();
-
-                // Form XObject.
-                if( xobjSubtype == "Form" ) {
-                    // PdfXObject corresponding created and update node information.
-                    PdfXObject xobject( pXObject );
-                    pNode->setXObject( PdfeXObjectType::Form, pXObject );
-
-                    // Load form XObject.
-                    if( loadFormsStream ) {
-                        pNode->setFormXObject( true, true, false );
-                        // Save the current graphics state on the stack 'q'.
-                        pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::q ),
-                                                    std::vector<std::string>() ),
-                                              pNode );
-                        // Get transformation matrix of the form.
-                        PdfeMatrix formTransMat;
-                        if( pXObject->GetDictionary().HasKey( "Matrix" ) ) {
-                            PdfArray& mat = pXObject->GetIndirectKey( "Matrix" )->GetArray();
-                            formTransMat(0,0) = mat[0].GetReal();    formTransMat(0,1) = mat[1].GetReal();
-                            formTransMat(1,0) = mat[2].GetReal();    formTransMat(1,1) = mat[3].GetReal();
-                            formTransMat(2,0) = mat[4].GetReal();    formTransMat(2,1) = mat[5].GetReal();
-                            // Insert in the stream it if not the identity.
-                            if( formTransMat != PdfeMatrix() ) {
-                                std::vector<std::string> goperands_cm( 6 );
-                                mat[0].ToString( goperands_cm[0] );
-                                mat[1].ToString( goperands_cm[1] );
-                                mat[2].ToString( goperands_cm[2] );
-                                mat[3].ToString( goperands_cm[3] );
-                                mat[4].ToString( goperands_cm[4] );
-                                mat[5].ToString( goperands_cm[5] );
-                                pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::cm ),
-                                                            goperands_cm ),
-                                                      pNode );
-                            }
-                        }
-                        // Load form XObject, with new suffix.
-                        std::ostringstream  suffixStream;
-                        suffixStream << resSuffix << "_form" << nbForms;
-                        pNode = this->load( &xobject, loadFormsStream, fixStream, pNode, suffixStream.str() );
-                        // Restore the current graphics state on the stack 'Q'.
-                        pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
-                                                    std::vector<std::string>() ),
-                                              pNode );
-                        // Closing form XObject node.
-                        pNode = this->insert( Node( 0, goperator, goperands ),
-                                              pNode );
+                // The XObject exists...
+                if( pXObject ) {
+                    std::string xobjSubtype = pXObject->GetIndirectKey( "Subtype" )->GetName().GetName();
+                    // Form XObject.
+                    if( xobjSubtype == "Form" ) {
+                        // PdfXObject corresponding created and update node information.
+                        PdfXObject xobject( pXObject );
                         pNode->setXObject( PdfeXObjectType::Form, pXObject );
-                        pNode->setFormXObject( true, false, true );
-                        pNode->addSuffix( resSuffix );
+
+                        // Load form XObject.
+                        if( loadFormsStream ) {
+                            pNode->setFormXObject( true, true, false );
+                            // Save the current graphics state on the stack 'q'.
+                            pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::q ),
+                                                        std::vector<std::string>() ),
+                                                  pNode );
+                            // Get transformation matrix of the form.
+                            PdfeMatrix formTransMat;
+                            if( pXObject->GetDictionary().HasKey( "Matrix" ) ) {
+                                PdfArray& mat = pXObject->GetIndirectKey( "Matrix" )->GetArray();
+                                formTransMat(0,0) = mat[0].GetReal();    formTransMat(0,1) = mat[1].GetReal();
+                                formTransMat(1,0) = mat[2].GetReal();    formTransMat(1,1) = mat[3].GetReal();
+                                formTransMat(2,0) = mat[4].GetReal();    formTransMat(2,1) = mat[5].GetReal();
+                                // Insert in the stream it if not the identity.
+                                if( formTransMat != PdfeMatrix() ) {
+                                    std::vector<std::string> goperands_cm( 6 );
+                                    mat[0].ToString( goperands_cm[0] );
+                                    mat[1].ToString( goperands_cm[1] );
+                                    mat[2].ToString( goperands_cm[2] );
+                                    mat[3].ToString( goperands_cm[3] );
+                                    mat[4].ToString( goperands_cm[4] );
+                                    mat[5].ToString( goperands_cm[5] );
+                                    pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::cm ),
+                                                                goperands_cm ),
+                                                          pNode );
+                                }
+                            }
+                            // Load form XObject, with new suffix.
+                            std::ostringstream  suffixStream;
+                            suffixStream << resSuffix << "_form" << nbForms;
+                            pNode = this->load( &xobject, loadFormsStream, fixStream, pNode, suffixStream.str() );
+                            // Restore the current graphics state on the stack 'Q'.
+                            pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
+                                                        std::vector<std::string>() ),
+                                                  pNode );
+                            // Closing form XObject node.
+                            pNode = this->insert( Node( 0, goperator, goperands ),
+                                                  pNode );
+                            pNode->setXObject( PdfeXObjectType::Form, pXObject );
+                            pNode->setFormXObject( true, false, true );
+                            pNode->addSuffix( resSuffix );
+                        }
+                        else {
+                            pNode->setFormXObject( false, false, false );
+                        }
+                        ++nbForms;
+                    }
+                    else if( xobjSubtype == "PS" ) {
+                        pNode->setXObject( PdfeXObjectType::PS, pXObject );
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Postscript XObject inserted. Currently not supported. (node ID: %1)." )
+                                       .arg( pNode->id() ).toAscii().constData();
+                    }
+                    else if( xobjSubtype == "Image" ) {
+                        pNode->setXObject( PdfeXObjectType::Image, pXObject );
                     }
                     else {
-                        pNode->setFormXObject( false, false, false );
+                        pNode->setXObject( PdfeXObjectType::Unknown, pXObject );
+                        QLOG_WARN() << QString( "<PdfeContentsStream> Unknown XObject type. (node ID: %1)." )
+                                       .arg( pNode->id() ).toAscii().constData();
+                        if( fixStream ) {
+                            this->erase( pNode, false );
+                            pNode = pNodePrev;
+                        }
                     }
-                    ++nbForms;
                 }
-                else if( xobjSubtype == "PS" ) {
-                    pNode->setXObject( PdfeXObjectType::PS, pXObject );
-                    QLOG_WARN() << QString( "<PdfeContentsStream> Postscript XObject inserted. Currently not supported. (node ID: %1)." )
-                                   .arg( pNode->id() ).toAscii().constData();
-                }
-                else if( xobjSubtype == "Image" ) {
-                    pNode->setXObject( PdfeXObjectType::Image, pXObject );
-                }
+                // No XObject found.
                 else {
                     pNode->setXObject( PdfeXObjectType::Unknown, pXObject );
-                    QLOG_WARN() << QString( "<PdfeContentsStream> Unknown XObject type. (node ID: %1)." )
+                    QLOG_WARN() << QString( "<PdfeContentsStream> XObject not found in the PDF document. (node ID: %1)." )
                                    .arg( pNode->id() ).toAscii().constData();
+                    if( fixStream ) {
+                        this->erase( pNode, false );
+                        pNode = pNodePrev;
+                    }
                 }
             }
             else if( goperator.type() == PdfeGOperator::Unknown ) {

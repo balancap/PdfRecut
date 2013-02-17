@@ -225,7 +225,7 @@ void PRDocument::writePoDoFoDocument( const QString& filename, const QString& su
     QFileInfo infoOut( fileOut );
     if( infoOut == QFileInfo( m_filename ) ) {
         fileOut = infoOut.canonicalPath() + "/"
-                + infoOut.baseName()
+                + infoOut.completeBaseName()
                 + QString("%1.pdf").arg( suffix );
     }
     // Get mutex and then write file.
