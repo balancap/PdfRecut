@@ -11,6 +11,7 @@
 
 #include "PdfeContentsStream.h"
 #include "PdfeStreamTokenizer.h"
+#include "PdfeUtils.h"
 
 #include <QtCore>
 #include <QsLog/QsLog.h>
@@ -334,11 +335,11 @@ void PdfeContentsStream::load( PdfCanvas* pcanvas, bool loadFormsStream, bool fi
     // Load canvas and set initial resources.
     this->load( pcanvas, loadFormsStream, fixStream, NULL, std::string() );
 }
-PdfeContentsStream::Node* PdfeContentsStream::load(PdfCanvas* pcanvas,
+PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                                     bool loadFormsStream,
                                                     bool fixStream,
                                                     PdfeContentsStream::Node* pNodePrev,
-                                                    const std::string &resSuffix )
+                                                    const std::string& resSuffix )
 {
     // Contents stream tokenizer.
     PdfeStreamTokenizer tokenizer( pcanvas );
@@ -517,8 +518,8 @@ PdfeContentsStream::Node* PdfeContentsStream::load(PdfCanvas* pcanvas,
                             }
                         }
                         // Load form XObject, with new suffix.
-                        std::ostringstream  suffixStream( resSuffix );
-                        suffixStream << "_form" << nbForms;
+                        std::ostringstream  suffixStream;
+                        suffixStream << resSuffix << "_form" << nbForms;
                         pNode = this->load( &xobject, loadFormsStream, fixStream, pNode, suffixStream.str() );
                         // Restore the current graphics state on the stack 'Q'.
                         pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
@@ -589,7 +590,9 @@ void PdfeContentsStream::save( PdfCanvas* pcanvas )
         // Clear streams present in the array.
         PdfArray& contentsArray = pContentsObj->GetArray();
         for( size_t i = 0 ; i < contentsArray.size() ; ++i ) {
-            pstream = contentsArray[i].GetStream();
+            PdfObject* pStreamObj = PdfeIndirectObject( &contentsArray[i],
+                                                        pContentsObj->GetOwner() );
+            pstream = pStreamObj->GetStream();
             pstream->BeginAppend( true );
             pstream->EndAppend();
         }
@@ -606,24 +609,25 @@ void PdfeContentsStream::save( PdfCanvas* pcanvas )
     vecFilters.push_back( ePdfFilter_FlateDecode );
     pstream->Set( streamData.constData(), streamData.size(), vecFilters );
 
-    // Set resources: TODO
+    // Save contents resources.
+    m_resources.save( pcanvas->GetResources() );
 }
 
 QByteArray PdfeContentsStream::streamData() const
 {
     QByteArray data;
-    QTextStream streamOut( &data, QFile::WriteOnly );
-
     // Write nodes description.
     Node* pnode = m_pFirstNode;
     while( pnode ) {
         // Case of a loaded form: do not write done.
         if( !pnode->isFormXObjectLoaded() ) {
-            streamOut << pnode->goperator().str() << " ";
             for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
-                streamOut << pnode->operands().at( i ).c_str() << " ";
+                const std::string& operand = pnode->operands()[i];
+                data.append( operand.c_str(), operand.length() );
+                data.append( ' ' );
             }
-            streamOut << endl;
+            data.append( pnode->goperator().str(), -1 );
+            data.append( '\n' );
         }
         pnode = pnode->next();
     }
@@ -684,7 +688,7 @@ void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
 
             // Opening/closing nodes.
             if( pNodeIn->isOpeningNode() ) {
-                pNodesOpening.at( pNodeIn ) = pNodeNext;
+                pNodesOpening[ pNodeIn ] = pNodeNext;
             }
             else if( pNodeIn->isClosingNode() ) {
                 std::map<Node*,Node*>::iterator it =
@@ -699,7 +703,7 @@ void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
             else if( pNodeIn->category() == PdfeGCategory::PathConstruction ) {
                 // Beginning of the subpath.
                 if( pNodeIn->isBeginSubpathNode() ) {
-                    pNodesBeginSubpath.at( pNodeIn ) = pNodeNext;
+                    pNodesBeginSubpath[ pNodeIn ] = pNodeNext;
                 }
                 std::map<Node*,Node*>::iterator it =
                         pNodesBeginSubpath.find( pNodeIn->beginSubpathNode() );
@@ -708,7 +712,7 @@ void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
                 }
                 // Painting nodes associated.
                 if( pNodeIn->paintingNode() ) {
-                    pNodesPath.at( pNodeIn->paintingNode() ).push_back( pNodeNext );
+                    pNodesPath[ pNodeIn->paintingNode() ].push_back( pNodeNext );
                 }
             }
             else if( pNodeIn->category() == PdfeGCategory::PathPainting ) {
@@ -817,14 +821,14 @@ void PdfeContentsStream::Node::clear()
 // Getters...
 PdfeContentsStream::Node* PdfeContentsStream::Node::openingNode() const
 {
-    if( this->closingNode() ) {
+    if( this->isClosingNode() ) {
         return m_pOpeningNode;
     }
     return NULL;
 }
 PdfeContentsStream::Node* PdfeContentsStream::Node::closingNode() const
 {
-    if( this->openingNode() ) {
+    if( this->isOpeningNode() ) {
         return m_pClosingNode;
     }
     return NULL;
