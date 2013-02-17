@@ -92,7 +92,7 @@ public:
      * with Forms resources (their names are modified to avoid conflicts).
      * \param fixStream Fix mistakes detected in the stream.
      */
-    void load( PoDoFo::PdfCanvas* pcanvas,
+    void load( PoDoFo::PdfCanvas *pcanvas,
                bool loadFormsStream,
                bool fixStream );
     /** Save the stream into an existing canvas.
@@ -119,7 +119,7 @@ private:
      * \param resSuffix Suffix to add to resources (form loading...).
      * \return Last node to be inserted.
      */
-    Node* load( PoDoFo::PdfCanvas* pcanvas,
+    Node* load( PoDoFo::PdfCanvas *pcanvas,
                 bool loadFormsStream,
                 bool fixStream,
                 Node* pNodePrev,

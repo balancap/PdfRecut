@@ -54,6 +54,9 @@ PdfeContentsStream::PdfeContentsStream( const PdfeContentsStream& rhs ) :
 }
 PdfeContentsStream& PdfeContentsStream::operator=( const PdfeContentsStream& rhs )
 {
+    if( this == &rhs ) {
+        return *this;
+    }
     // Clear existing contents nodes.
     this->deleteNodes();
     // Copy members and nodes.

@@ -21,41 +21,30 @@ namespace PdfRecut {
 
 PRPage::PRPage( const PdfRect& mediaBox ) :
     QObject( NULL ),
-    m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
     m_pageIndex( 0 ),
-    m_pContentsStream( NULL )
+    m_pContentsStream( NULL ),
+    m_ownPageContentsObj( false )
 {
-    this->init( mediaBox );
-}
-PRPage::PRPage( PdfPage* page, bool loadPageContents ) :
-    QObject( NULL ),
-    m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
-    m_pageIndex( 0 ),
-    m_pContentsStream( NULL )
-{
-    this->init( page, loadPageContents );
+    this->initAttributes( mediaBox );
 }
 PRPage::PRPage( const PRPage& rhs ) :
     QObject( NULL ),
-    m_pDocument( NULL ), m_pPage( NULL ), m_ownPageContents( false ),
     m_pageIndex( 0 ),
     m_pContentsStream( NULL ),
-    m_mediaBox( rhs.m_mediaBox ),
-    m_cropBox( rhs.m_cropBox ), m_bleedBox( rhs.m_bleedBox ),
-    m_trimBox( rhs.m_trimBox ), m_artBox( rhs.m_artBox )
+    m_ownPageContentsObj( false )
 {
-    m_pContentsStream = new PdfeContentsStream( rhs.contents() );
+    this->copyContents( rhs );
+    this->copyAttributes( rhs );
 }
 PRPage& PRPage::operator=( const PRPage& rhs )
 {
-    this->detach();
-    m_pageIndex = 0;
-    this->contents( false ) = rhs.contents();
-    m_mediaBox = rhs.m_mediaBox;
-    m_cropBox = rhs.m_cropBox;
-    m_bleedBox = rhs.m_bleedBox;
-    m_trimBox = rhs.m_trimBox;
-    m_artBox = rhs.m_artBox;
+    if( this == &rhs ) {
+        return *this;
+    }
+    this->copyContents( rhs );
+    this->copyAttributes( rhs );
+    // Modified signal !!!
+    this->pushModifications( true, true );
     return *this;
 }
 PRPage::~PRPage()
@@ -65,59 +54,134 @@ PRPage::~PRPage()
 
 void PRPage::init( const PdfRect& mediaBox )
 {
-    this->detach();
-    m_pageIndex = 0;
-    this->contents( false ).init();
-    m_mediaBox = mediaBox;
-    m_cropBox = m_bleedBox
-            = m_trimBox
-            = m_artBox = PdfRect();
-}
-void PRPage::init( PdfPage* page, bool loadPageContents )
-{
-    this->detach();
-    m_pageIndex = 0;
-    this->contents( false ).init();
-    if( loadPageContents ) {
-        m_pContentsStream->load( page, true, true );
-    }
-    this->setMediaBox( page->GetMediaBox() );
-    this->setCropBox( page->GetCropBox() );
-    this->setBleedBox( page->GetBleedBox() );
-    this->setTrimBox( page->GetTrimBox() );
-    this->setArtBox( page->GetArtBox() );
+    // Initialize contents and attributes.
+    delete m_pContentsStream;
+    m_pContentsStream = NULL;
+    this->initAttributes( mediaBox );
+    this->pushModifications( true, true );
 }
 void PRPage::clear()
 {
     this->init( PdfRect() );
 }
 
-void PRPage::loadContents() const
+void PRPage::initAttributes( const PdfRect& mediaBox )
 {
-    if( m_pDocument && m_pPage ) {
-        this->contents( false ).load( m_pPage, true, true );
-        // Loaded/modified signal.
-        emit contentsLoaded();
-    }
+    // Initialize page boxes.
+    m_mediaBox = mediaBox;
+    m_cropBox = m_bleedBox
+            = m_trimBox
+            = m_artBox = PdfRect();
 }
-void PRPage::clearContents() const
+void PRPage::copyAttributes( const PRPage& rhs )
 {
-    if( m_pContentsStream ) {
+    // Page boxes.
+    m_mediaBox = rhs.m_mediaBox;
+    m_cropBox = rhs.m_cropBox;
+    m_bleedBox = rhs.m_bleedBox;
+    m_trimBox = rhs.m_trimBox;
+    m_artBox = rhs.m_artBox;
+}
+void PRPage::copyContents( const PRPage& rhs )
+{
+    if( rhs.m_pContentsStream ) {
+        this->pContents()->operator=( rhs.contents() );
+    }
+    else {
         delete m_pContentsStream;
         m_pContentsStream = NULL;
-        // Cleared signal.
-        emit contentsCleared();
     }
 }
-bool PRPage::isContentsLoaded() const
+
+void PRPage::load( const PdfPage* page, bool incContents, bool incAttributes )
 {
-    return ( m_pContentsStream != NULL ) && ( !m_pContentsStream->isEmpty() );
+    if( page && incAttributes ) {
+        // Load page boxes.
+        this->setMediaBox( page->GetMediaBox() );
+        this->setCropBox( page->GetCropBox() );
+        this->setBleedBox( page->GetBleedBox() );
+        this->setTrimBox( page->GetTrimBox() );
+        this->setArtBox( page->GetArtBox() );
+    }
+    if( page && incContents ) {
+        // TODO: fix const_cast...
+        this->pContents()->load( const_cast<PdfPage*>( page ), true, true );
+    }
+    else if( !incContents ) {
+        // Set contents to empty if not loaded.
+        delete m_pContentsStream;
+        m_pContentsStream = NULL;
+    }
+    emit loaded( m_pageIndex, incContents, incAttributes );
+}
+void PRPage::save( PdfPage* page, bool incContents, bool incAttributes )
+{
+    if( page && incAttributes ) {
+        // Set page boxes.
+        PdfVariant pagebox;
+        m_mediaBox.ToVariant( pagebox );
+        page->GetObject()->GetDictionary().AddKey( "MediaBox", pagebox );
+        if( m_cropBox.GetWidth() && m_cropBox.GetHeight() ) {
+            m_cropBox.ToVariant( pagebox );
+            page->GetObject()->GetDictionary().AddKey( "CropBox", pagebox );
+        }
+        if( m_bleedBox.GetWidth() && m_bleedBox.GetHeight() ) {
+            m_bleedBox.ToVariant( pagebox );
+            page->GetObject()->GetDictionary().AddKey( "BleedBox", pagebox );
+        }
+        if( m_trimBox.GetWidth() && m_trimBox.GetHeight() ) {
+            m_trimBox.ToVariant( pagebox );
+            page->GetObject()->GetDictionary().AddKey( "TrimBox", pagebox );
+        }
+        if( m_artBox.GetWidth() && m_artBox.GetHeight() ) {
+            m_artBox.ToVariant( pagebox );
+            page->GetObject()->GetDictionary().AddKey( "ArtBox", pagebox );
+        }
+    }
+    if( page && incContents ) {
+        this->cleanPoDoFoPageStreams( page );
+        // Set page contents and resources.
+        this->pContents()->save( page );
+    }
 }
 
-PdfObject* PRPage::cleanPoDoFoContents()
+void PRPage::cacheContents() const
 {
-    if( m_pPage && m_pDocument ) {
-        PdfObject* pContentsObj = m_pPage->GetContents();
+    // Convention: m_pContentsStream set to NULL when uncached.
+    if( !m_pContentsStream ) {
+        PdfPage* page = this->podofoPage();
+        if( page ) {
+            this->pContents()->load( page, true, true );
+            emit contentsCached( m_pageIndex );
+        }
+    }
+}
+void PRPage::uncacheContents() const
+{
+    // Convention: m_pContentsStream set to NULL when uncached.
+    if( m_pContentsStream && this->podofoPage() ) {
+        delete m_pContentsStream;
+        m_pContentsStream = NULL;
+        emit contentsUncached( m_pageIndex );
+    }
+}
+bool PRPage::isContentsCached() const
+{
+    return m_pContentsStream;
+}
+
+void PRPage::pushModifications( bool incContents, bool incAttributes )
+{
+    PoDoFo::PdfPage* page = this->podofoPage();
+    if( page ) {
+        this->save( page, incContents, incAttributes );
+    }
+    emit modified( m_pageIndex, incContents, incAttributes );
+}
+void PRPage::cleanPoDoFoPageStreams( PdfPage* page )
+{
+    if( page && !m_ownPageContentsObj ) {
+        PdfObject* pContentsObj = page->GetContents();
         if( pContentsObj->IsArray() ) {
             PdfArray& contentsArray = pContentsObj->GetArray();
             for( size_t i = 0 ; i < contentsArray.size() ; ++i ) {
@@ -130,110 +194,86 @@ PdfObject* PRPage::cleanPoDoFoContents()
             PdfReference streamRef( pStreamObj->Reference().ObjectNumber(),
                                     pStreamObj->Reference().GenerationNumber() );
             contentsArray.push_back( streamRef );
-            return pStreamObj;
         }
         else {
             // Simply clear the stream.
             PdfStream* pstream = pContentsObj->GetStream();
             pstream->BeginAppend( true );
             pstream->EndAppend();
-            return pContentsObj;
         }
+        m_ownPageContentsObj = true;
+    }
+}
+
+PRDocument* PRPage::document() const
+{
+    return static_cast<PRDocument*>( this->QObject::parent() );
+}
+PdfPage* PRPage::podofoPage() const
+{
+    PRDocument* pdocument = this->document();
+    if( pdocument && pdocument->podofoDocument() ) {
+        return pdocument->podofoDocument()->GetPage( m_pageIndex );
     }
     return NULL;
 }
-
-void PRPage::push( bool incContents )
+size_t PRPage::pageIndex() const
 {
-    if( m_pDocument && m_pPage ) {
-        if( incContents ) {
-            // Clean page contents, if not done before.
-            if( !m_ownPageContents ) {
-                this->cleanPoDoFoContents();
-                m_ownPageContents = true;
-            }
-            // Set page contents and resources.
-            this->contents( false ).save( m_pPage );
-        }
-        // Set page boxes.
-        PdfVariant pagebox;
-        m_mediaBox.ToVariant( pagebox );
-        m_pPage->GetObject()->GetDictionary().AddKey( "MediaBox", pagebox );
-        if( m_cropBox.GetWidth() && m_cropBox.GetHeight() ) {
-            m_cropBox.ToVariant( pagebox );
-            m_pPage->GetObject()->GetDictionary().AddKey( "CropBox", pagebox );
-        }
-        if( m_bleedBox.GetWidth() && m_bleedBox.GetHeight() ) {
-            m_bleedBox.ToVariant( pagebox );
-            m_pPage->GetObject()->GetDictionary().AddKey( "BleedBox", pagebox );
-        }
-        if( m_trimBox.GetWidth() && m_trimBox.GetHeight() ) {
-            m_trimBox.ToVariant( pagebox );
-            m_pPage->GetObject()->GetDictionary().AddKey( "TrimBox", pagebox );
-        }
-        if( m_artBox.GetWidth() && m_artBox.GetHeight() ) {
-            m_artBox.ToVariant( pagebox );
-            m_pPage->GetObject()->GetDictionary().AddKey( "ArtBox", pagebox );
-        }
-        // Loaded/modified signal.
-        emit contentsLoaded();
-    }
-}
-void PRPage::pull()
-{
-    if( m_pDocument && m_pPage ) {
-        // Retrieve page contents and data.
-        this->contents( false ).load( m_pPage, true, true );
-
-        this->setMediaBox( m_pPage->GetMediaBox() );
-        this->setCropBox( m_pPage->GetCropBox() );
-        this->setBleedBox( m_pPage->GetBleedBox() );
-        this->setTrimBox( m_pPage->GetTrimBox() );
-        this->setArtBox( m_pPage->GetArtBox() );
-        // Loaded/modified signal.
-        emit contentsLoaded();
-    }
-}
-void PRPage::attach( PRDocument* document, PdfPage* page )
-{
-    this->detach();
-    m_pDocument = document;
-    m_pPage = page;
-    m_ownPageContents = false;
-    this->setParent( document );
-}
-
-void PRPage::detach()
-{
-    m_pDocument = NULL;
-    m_pPage = NULL;
-    m_ownPageContents = false;
-    this->setParent( NULL );
-    // Disconnect signals/slots.
-    this->disconnect();
+    return m_pageIndex;
 }
 
 const PdfeContentsStream& PRPage::contents() const
 {
-    return this->contents( true );
+    if( !this->isContentsCached() ) {
+        this->cacheContents();
+    }
+    return *this->pContents();
+}
+
+void PRPage::setParent( PRDocument* document )
+{
+    this->QObject::setParent( document );
+    m_ownPageContentsObj = false;
 }
 void PRPage::setContents( const PdfeContentsStream& contents )
 {
-    // Set contents and push modifications.
-    this->contents( false ) = contents;
-    this->push( true );
+    // Set contents and signal modifications.
+    this->pContents()->operator=( contents );
+    this->pushModifications( true, false );
 }
-PdfeContentsStream& PRPage::contents( bool loadPageContents ) const
+
+PdfeContentsStream* PRPage::pContents() const
 {
-    // Create contents stream if does not exist.
     if( !m_pContentsStream ) {
         m_pContentsStream = new PdfeContentsStream();
     }
-    // If is empty and attached to a page, try to load.
-    if( loadPageContents && m_pContentsStream->isEmpty() ) {
-        this->loadContents();
-    }
-    return *m_pContentsStream;
+    return m_pContentsStream;
+}
+
+void PRPage::setMediaBox( const PoDoFo::PdfRect& rhs )
+{
+    m_mediaBox = rhs;
+    this->pushModifications( false, true );
+}
+void PRPage::setCropBox( const PoDoFo::PdfRect& rhs )
+{
+    m_cropBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->pushModifications( false, true );
+}
+void PRPage::setBleedBox( const PoDoFo::PdfRect& rhs )
+{
+    m_bleedBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->pushModifications( false, true );
+}
+void PRPage::setTrimBox( const PoDoFo::PdfRect& rhs )
+{
+    m_trimBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->pushModifications( false, true );
+}
+void PRPage::setArtBox( const PoDoFo::PdfRect& rhs )
+{
+    m_artBox = PdfeORect::intersection( m_mediaBox, rhs );
+    this->pushModifications( false, true );
 }
 
 }
