@@ -45,25 +45,15 @@ public:
     /** Destructor.
      */
     virtual ~PRGSubDocument();
-    /** Reimplement QObject parent function.
-     * \return Pointer to the parent PRGDocument.
-     */
-    PRGDocument* parent() const;
 
 public:
     // Contents related member functions.
-    /** Load pages contents streams.
-     */
-    void loadPagesContents();
     /** Analyse the geometry of the sub-document
      * Create an internal structure (based on PRGPage,...) that
      * describes the geometry of the PDF content.
      * \param params Parameters used for the analysis.
      */
     void analyse( const PRGDocument::GParameters& params );
-    /** Clear the internal structure which describes the sub-document geometry.
-     */
-    void clear();
 
 private:
     /** Compute mean crop box.
@@ -74,9 +64,15 @@ private:
      * \param lastIndex Index of the last page to consider.
      */
     void computeBasicStats( size_t firstIndex, size_t lastIndex );
+    /** Clear the internal structure which describes the sub-document
+     * geometry.
+     */
+    void clear();
 
 public:
     // Getters...
+    /// Reimplement QObject parent function.
+    PRGDocument* parent() const;
     /// Number of pages in the sub-document.
     size_t nbPages() const  {   return (m_lastPageIndex-m_firstPageIndex+1);    }
     /// Get a page object.

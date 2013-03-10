@@ -31,7 +31,7 @@ class PRGImagePage;
 
 /** Class that represent a page in a PDF document.
  * It describes page's basic objects (text, paths and images),
- * and the geometrical links between them.
+ * and the geometrical relationship between them.
  */
 class PRGPage : public QObject
 {

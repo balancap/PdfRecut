@@ -225,8 +225,6 @@ private:
     PoDoFo::PdfRect  m_trimBox;
     /// Art box.
     PoDoFo::PdfRect  m_artBox;
-
-
 };
 
 //************************************************************//

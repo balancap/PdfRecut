@@ -47,17 +47,7 @@ PRGSubDocument::~PRGSubDocument()
 {
     this->clear();
 }
-PRGDocument* PRGSubDocument::parent() const
-{
-    return static_cast<PRGDocument*>( this->QObject::parent() );
-}
 
-void PRGSubDocument::loadPagesContents()
-{
-    for( size_t i = 0 ; i < m_pages.size() ; ++i ) {
-        m_pages[i]->loadContents();
-    }
-}
 void PRGSubDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Log analysis.
@@ -121,6 +111,10 @@ void PRGSubDocument::computeBasicStats( size_t firstIndex, size_t lastIndex )
                    .toAscii().constData();
 }
 
+PRGDocument* PRGSubDocument::parent() const
+{
+    return static_cast<PRGDocument*>( this->QObject::parent() );
+}
 PRGPage* PRGSubDocument::page( size_t idx )
 {
     if( idx < m_firstPageIndex || idx > m_lastPageIndex || !m_pages.size() ) {

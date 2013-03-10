@@ -26,6 +26,9 @@ class PRGPage;
 //                         PRGDocument                        //
 //************************************************************//
 /** Class that describes the basic geometry of PDF document.
+ * The description gathers text elements, paths and images. Its goal
+ * is to provide an efficient interface for the deduction of a
+ * higher level structure of a text document.
  */
 class PRGDocument : public QObject
 {
@@ -33,38 +36,27 @@ class PRGDocument : public QObject
 
 public:
     /** Default constructor: initialize using a PRDocument parent
-     * object.
+     * object (must be provided).
      * \param parent Parent PRDocument.
      * \param subDocumentTolerance Sub-document (relative) tolerance for page size.
      */
-    explicit PRGDocument( PRDocument* parent = 0,
+    explicit PRGDocument( PRDocument* parent,
                           double subDocumentTol = 0.05 );
-    /** Destructor: delete PoDoFo document object, if loaded.
+    /** Destructor. Clear inside structures.
      */
     virtual ~PRGDocument();
-    /** Reimplement QObject parent function.
-     * \return Pointer to the parent PRDocument.
-     */
-    PRDocument* parent() const;
 
 public:
     /// Structure which describes geometry analysis parameters.
     struct GParameters;
 
     // Contents related member functions.
-    /** Load pages contents streams. Might use some memory (~150mB) for large
-     * PDF documents.
-     */
-    void loadPagesContents();
-    /** Analyse the geomtry of the PDF file.
+   /** Analyse the geomtry of the PDF file.
      * Create an internal structure (based on PRGSubDocument, PRGPage, ...) that
      * describes the geometry of the PDF content.
      * \param params Parameters used for the analysis.
      */
     void analyse( const PRGDocument::GParameters& params );
-    /** Clear the internal structure which describes the PDF geometry.
-     */
-    void clear();
 
 public slots:
     // Page cache.
@@ -84,7 +76,9 @@ private:
      * \param tolerance Tolerance used for page size.
      */
     void createSubDocuments( double tolerance );
-
+    /** Clear the internal structure which describes the PDF geometry.
+     */
+    void clear();
 
 public:
     // Getters...
@@ -93,6 +87,8 @@ public:
     /// Get a sub-document object.
     PRGSubDocument* subDocument( size_t idx )                {  return m_subDocuments.at( idx );    }
     const PRGSubDocument* subDocument( size_t idx ) const    {  return m_subDocuments.at( idx );    }
+    /// Reimplement QObject parent function.
+    PRDocument* parent() const;
     /// Number of pages in the document.
     size_t nbPages() const;
     /// Get a geometry page object.

@@ -42,18 +42,7 @@ PRGDocument::~PRGDocument()
 {
     this->clear();
 }
-PRDocument* PRGDocument::parent() const
-{
-    // TODO: dynamic_cast or static_cast?
-    return static_cast<PRDocument*>( this->QObject::parent() );
-}
 
-void PRGDocument::loadPagesContents()
-{
-    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
-        m_subDocuments[i]->loadPagesContents();
-    }
-}
 void PRGDocument::analyse( const PRGDocument::GParameters& params )
 {
     // Time spent analysing the document.
@@ -71,16 +60,7 @@ void PRGDocument::analyse( const PRGDocument::GParameters& params )
                    .arg( timeTask.elapsed() / 1000. )
                    .toAscii().constData();
 }
-void PRGDocument::clear()
-{
-    // Delete PRSubDocuments objects.
-    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
-        m_subDocuments[i]->clear();
-        delete m_subDocuments[i];
-        m_subDocuments[i] = NULL;
-    }
-    m_subDocuments.clear();
-}
+
 
 void PRGDocument::cacheAddPage( PRGPage* page )
 {
@@ -148,7 +128,21 @@ void PRGDocument::createSubDocuments( double tolerance )
         m_subDocuments.push_back( new PRGSubDocument( this, idxFirst, idx-1 ) );
     }
 }
+void PRGDocument::clear()
+{
+    // Delete PRSubDocuments objects.
+    for( size_t i = 0 ; i < m_subDocuments.size() ; ++i ) {
+        delete m_subDocuments[i];
+        m_subDocuments[i] = NULL;
+    }
+    m_subDocuments.clear();
+}
 
+PRDocument* PRGDocument::parent() const
+{
+    // TODO: dynamic_cast or static_cast?
+    return static_cast<PRDocument*>( this->QObject::parent() );
+}
 size_t PRGDocument::nbPages() const
 {
     return this->parent()->podofoDocument()->GetPageCount();

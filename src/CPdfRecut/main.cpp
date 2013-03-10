@@ -152,8 +152,8 @@ void proceedFile( QString fileName )
     document.load( fileName );
     document.setPagesCacheSize( 100 );
 
-
-    PdfeContentsStream contents;
+    // Check modifications on contents stream.
+    /*PdfeContentsStream contents;
     for( size_t i = 0 ; i < document.nbPages()-1 ; ++i ) {
         PRPage* page = document.page( i );
 
@@ -162,39 +162,30 @@ void proceedFile( QString fileName )
 
         PRPage* page2 = document.insertPage( i+1 );
         page2->operator=( *page );
-
         document.deletePage( i+2 );
 
         // Save stream to file.
         contents = page->contents();
         QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
         contents.exportToFile( filename );
-
         ++i;
-
     }
-//    PRPage* page = document.page( 0 );
-//    page->loadContents();
-//    contents = page->contents();
-//    page->setContents( contents );
-
     // Save into...
     QFileInfo fileInfo( fileName );
     fileName = fileInfo.absolutePath()
             + "/recut/"
             + infoFile.fileName();
-
     document.save( fileName );
-    document.clear();
+    document.clear();*/
 
-    /*
+
     // Analyse document geometry.
     PRGDocument::GParameters gparams;
     gparams.firstPageIndex = 0;
     gparams.lastPageIndex = 50;
 
     PRGDocument* pGDocument = new PRGDocument( &document, 0.05 );
-    pGDocument->loadPagesContents();
+    //pGDocument->loadPagesContents();
 
     pGDocument->analyse( gparams );
 
@@ -217,8 +208,8 @@ void proceedFile( QString fileName )
 
         // Render some elements.
         renderPage.initRendering( renderParams.resolution );
-        renderPage.renderElements( renderParams );
-//        textPage->renderGroupsWords( renderPage, false );
+//        renderPage.renderElements( renderParams );
+        textPage->renderGroupsWords( renderPage, false );
 //        textPage->renderLines( renderPage, false, false );
 
         // Save image to file.
@@ -229,7 +220,7 @@ void proceedFile( QString fileName )
         filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
         pGDocument->page( i )->contents().exportToFile( filename );
     }
-    */
+
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
