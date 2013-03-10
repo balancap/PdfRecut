@@ -13,7 +13,9 @@
 #define PRGPAGE_H
 
 #include <QObject>
+
 #include "PRGDocument.h"
+#include "PRPage.h"
 #include "PdfeContentsStream.h"
 
 namespace PoDoFo {
@@ -51,12 +53,6 @@ public:
 
 public:
     // Contents and cached data.
-    /** Load page contents stream.
-     */
-    void loadContents() const;
-    /** Clear page contents stream.
-     */
-    void clearContents();
     /** Load page data: text, paths and images.
      */
     void loadData();
@@ -93,12 +89,20 @@ public:
 
 public:
     // Getters...
-    /// Get the PoDoFo page object corresponding to the page.
-    PoDoFo::PdfPage* podofoPage() const {   return m_page;      }
+    /// Get the PRPage object corresponding to the page.
+    PRPage* page()              {   return m_pPage;     }
+    const PRPage* page() const  {   return m_pPage;     }
     /// Reimplement QObject parent function with PRGSubDocument.
     PRGSubDocument* parent() const;
     /// Parent PRGDocument.
     PRGDocument* gdocument() const;
+
+    /// Get text component of the page.
+    PRGTextPage* text() const           {   return m_textPage;  }
+
+
+/*    /// Get the PoDoFo page object corresponding to the page.
+    PoDoFo::PdfPage* podofoPage() const {   return m_page;      }
     /// Get page index.
     size_t pageIndex() const            {   return m_pageIndex; }
 
@@ -111,20 +115,23 @@ public:
         }
         return *m_pContentsStream;
     }
-    /// Get text component of the page.
-    PRGTextPage* text() const           {   return m_textPage;  }
-
+*/
 private:
     // No copy constructor and operator= allowed.
     Q_DISABLE_COPY(PRGPage)
 
 private:
-    /// Page index.
+    /// PRPage object corresponding to this page.
+    PRPage*  m_pPage;
+
+
+    /*/// Page index.
     size_t  m_pageIndex;
     /// Pointer to the PoDoFo page;
     PoDoFo::PdfPage*  m_page;
     /// Page contents stream (mutable since considered as cached data).
     mutable PoDoFoExtended::PdfeContentsStream*  m_pContentsStream;
+*/
 
     /// Text elements in the page.
     PRGTextPage*  m_textPage;

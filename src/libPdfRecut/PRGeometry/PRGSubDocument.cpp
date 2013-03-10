@@ -88,7 +88,7 @@ void PRGSubDocument::computeMeanCropBox()
 {
     double width(0), height(0);
     for( size_t i = 0 ; i < this->nbPages() ; ++i ) {
-        PdfRect cbox = PRGPage::PageCropBox( m_pages[i]->podofoPage() );
+        PdfRect cbox = PRGPage::PageCropBox( m_pages[i]->page()->podofoPage() );
         width += cbox.GetWidth();
         height += cbox.GetHeight();
     }

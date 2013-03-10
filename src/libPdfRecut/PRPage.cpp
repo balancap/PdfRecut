@@ -49,6 +49,7 @@ PRPage& PRPage::operator=( const PRPage& rhs )
 }
 PRPage::~PRPage()
 {
+    this->uncacheContents();
     delete m_pContentsStream;
 }
 
@@ -206,6 +207,10 @@ void PRPage::cleanPoDoFoPageStreams( PdfPage* page )
 }
 
 PRDocument* PRPage::document() const
+{
+    return static_cast<PRDocument*>( this->QObject::parent() );
+}
+PRDocument* PRPage::parent() const
 {
     return static_cast<PRDocument*>( this->QObject::parent() );
 }

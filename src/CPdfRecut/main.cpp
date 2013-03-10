@@ -218,8 +218,10 @@ void proceedFile( QString fileName )
 
         // Save stream to file.
         filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
-        pGDocument->page( i )->contents().exportToFile( filename );
+        pGDocument->page( i )->page()->contents().exportToFile( filename );
     }
+    delete pGDocument;
+    document.clear();
 
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;

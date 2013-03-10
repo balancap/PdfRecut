@@ -59,7 +59,7 @@ void PRGTextPage::loadData()
     // Analyse page content.
     m_nbGroupsStream = 0;
     m_nbGroupsPage = 0;
-    this->analyseContents( m_page->podofoPage(), PdfeGraphicsState(), PdfeResources() );
+    this->analyseContents( m_page->page()->podofoPage(), PdfeGraphicsState(), PdfeResources() );
     // Send signal.
     emit dataLoaded( this->page() );
 }
@@ -86,7 +86,7 @@ void PRGTextPage::clear()
 void PRGTextPage::detectLines()
 {
     QLOG_INFO() << QString( "<PRGTextPage> Detection of page's text lines (index: %1)." )
-                   .arg( m_page->pageIndex() )
+                   .arg( m_page->page()->pageIndex() )
                    .toAscii().constData();
 
     // Clear existing lines.
@@ -737,7 +737,7 @@ void PRGTextPage::renderGroupsWords( PRRenderPage& renderPage,
         }
     }
     QLOG_INFO() << QString( "<PRGTextPage> Render page's groups of words (index: %1)." )
-                   .arg( m_page->pageIndex() )
+                   .arg( m_page->page()->pageIndex() )
                    .toAscii().constData();
 }
 void PRGTextPage::renderLines( PRRenderPage& renderPage,
@@ -799,7 +799,7 @@ void PRGTextPage::renderLines( PRRenderPage& renderPage,
         }
     }
     QLOG_INFO() << QString( "<PRGTextPage> Render page's text lines (index: %1)." )
-                   .arg( m_page->pageIndex() )
+                   .arg( m_page->page()->pageIndex() )
                    .toAscii().constData();
 }
 

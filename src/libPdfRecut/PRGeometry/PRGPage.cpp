@@ -28,13 +28,13 @@ namespace PdfRecut {
 
 PRGPage::PRGPage( PRGSubDocument* parent, size_t pageIndex ) :
     QObject( parent ),
-    m_pageIndex( pageIndex ),
-    m_page( parent->parent()->parent()->podofoDocument()->GetPage( pageIndex ) ),
-    m_pContentsStream( NULL ),
+    m_pPage( NULL ),
     m_textPage( NULL ),
     m_pathPage( NULL ),
     m_imagePage( NULL )
 {
+    // Parent page object.
+    m_pPage = parent->parent()->parent()->page( pageIndex );
     // Create content objects.
     m_textPage = new PRGTextPage( this );
 //    m_pathPage;
@@ -42,14 +42,14 @@ PRGPage::PRGPage( PRGSubDocument* parent, size_t pageIndex ) :
 
     // Connect signals.
     QObject::connect( this, SIGNAL(dataLoaded(PRGPage*)),
-                      this->gdocument(), SLOT(cacheAddPage(PRGPage*)));
+                      this->gdocument(), SLOT(cacheAddPage(PRGPage*)) );
 
 }
 PRGPage::~PRGPage()
 {
     // Remove page from document cache and clear contents.
     this->gdocument()->cacheRmPage( this );
-    this->clearContents();
+    //this->clearContents();
 
     // Delete content objects.
     delete m_textPage;
@@ -60,22 +60,7 @@ PRGPage::~PRGPage()
 //    m_imagePage = NULL;
 }
 
-void PRGPage::loadContents() const
-{
-    // Log information.
-    QLOG_INFO() << QString( "<PRGPage> Load page contents stream (index: %1)." )
-                   .arg( m_pageIndex ).toAscii().constData();
-    // Load contents stream and send signal
-    if( !m_pContentsStream ) {
-        m_pContentsStream = new PdfeContentsStream();
-    }
-    m_pContentsStream->load( this->podofoPage(), true, false );
-    emit contentsLoaded( this );
-}
-void PRGPage::clearContents()
-{
-    delete m_pContentsStream;
-}
+
 void PRGPage::loadData()
 {
     // Load text, paths and images contents.

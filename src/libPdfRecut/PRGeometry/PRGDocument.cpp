@@ -62,32 +62,32 @@ void PRGDocument::analyse( const PRGDocument::GParameters& params )
 }
 
 
-void PRGDocument::cacheAddPage( PRGPage* page )
+void PRGDocument::cacheAddPage( PRGPage* gpage )
 {
     // Is the page already in the cache?
     std::list<PRGPage*>::iterator it;
-    it = std::find( m_cachePages.begin(), m_cachePages.end(), page );
+    it = std::find( m_cachePages.begin(), m_cachePages.end(), gpage );
     if( it == m_cachePages.end() ) {
         // Push to front and remove back if necessary.
-        m_cachePages.push_front( page );
+        m_cachePages.push_front( gpage );
         if( m_cachePages.size() > m_cachePagesSize ) {
             this->cacheRmPage( m_cachePages.back() );
         }
         QLOG_INFO() << QString( "<PRGDocument> Cache page data (index: %1)." )
-                       .arg( page->pageIndex() )
+                       .arg( gpage->page()->pageIndex() )
                        .toAscii().constData();
     }
     else {
         // Move the page to the front.
         m_cachePages.erase( it );
-        m_cachePages.push_front( page );
+        m_cachePages.push_front( gpage );
     }
 }
-void PRGDocument::cacheRmPage( PRGPage* page )
+void PRGDocument::cacheRmPage( PRGPage* gpage )
 {
     // Remove the page from the cache and clear its data.
     std::list<PRGPage*>::iterator it;
-    it = std::find( m_cachePages.begin(), m_cachePages.end(), page );
+    it = std::find( m_cachePages.begin(), m_cachePages.end(), gpage );
     if( it != m_cachePages.end() ) {
         (*it)->clearData();
         m_cachePages.erase( it );

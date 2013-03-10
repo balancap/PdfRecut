@@ -64,12 +64,12 @@ public slots:
      * is assumed to be loaded by the caller.
      * \param page Pointer to the page to add.
      */
-    void cacheAddPage( PRGPage* page );
+    void cacheAddPage( PRGPage* gpage );
     /** Remove a page from the cache. PRGPage::clearData
      * is automatically called.
      * \param page Pointer to the page to remove.
      */
-    void cacheRmPage( PRGPage* page );
+    void cacheRmPage( PRGPage* gpage );
 
 private:
     /** Create sub-documents inside the PDF.

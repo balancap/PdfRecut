@@ -53,7 +53,7 @@ public:
     /** Create an empty page with a given media box.
      * \param mediaBox Media box of the new page.
      */
-    PRPage( const PoDoFo::PdfRect& mediaBox = PoDoFo::PdfRect() );
+    explicit PRPage( const PoDoFo::PdfRect& mediaBox = PoDoFo::PdfRect() );
     /** (Deep) Copy constructor. The resulting page is not attached to any
      * document by default.
      * \param rhs Page to copy.
@@ -166,6 +166,8 @@ public:
     // Getters...
     /// Get parent document. NULL if not attached to any document.
     PRDocument* document() const;
+    /// Reimplement QObject parent function with PRDocument.
+    PRDocument* parent() const;
     /// Get attached podofo page. NULL if nothing attached.
     PoDoFo::PdfPage* podofoPage() const;
     /// Get page index in a document. Beginning at zero (default: 0).
