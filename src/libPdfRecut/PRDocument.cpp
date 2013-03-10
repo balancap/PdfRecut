@@ -323,25 +323,28 @@ void PRDocument::clearFontCache()
 PoDoFoExtended::PdfeFont* PRDocument::addFontToCache( const PoDoFo::PdfReference& fontRef )
 {
     // Get PoDoFo font object.
-    PdfObject* fontObj = m_podofoDocument->GetObjects().GetObject( fontRef );
+    PdfObject* pFontObj = m_podofoDocument->GetObjects().GetObject( fontRef );
     PdfeFont* pFont = NULL;
 
     // Check it is a font object and get font subtype.
-    if( fontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
+    if( !pFontObj || pFontObj->GetDictionary().GetKey( PdfName::KeyType )->GetName() != PdfName("Font") ) {
+        QLOG_ERROR() << QString( "<PRDocument> PDF font object (%1,%2) not found in the document." )
+                       .arg( fontRef.ObjectNumber() ).arg( fontRef.GenerationNumber() )
+                       .toAscii().constData();
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
-    const PdfName& fontSubType = fontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
+    const PdfName& fontSubType = pFontObj->GetDictionary().GetKey( PdfName::KeySubtype )->GetName();
     if( fontSubType == PdfName("Type0") ) {
-        pFont = new PdfeFontType0( fontObj, m_ftLibrary );
+        pFont = new PdfeFontType0( pFontObj, m_ftLibrary );
     }
     else if( fontSubType == PdfName("Type1") || fontSubType == PdfName("MMType1") ) {
-        pFont = new PdfeFontType1( fontObj, m_ftLibrary );
+        pFont = new PdfeFontType1( pFontObj, m_ftLibrary );
     }
     else if( fontSubType == PdfName("TrueType") ) {
-        pFont = new PdfeFontTrueType( fontObj, m_ftLibrary );
+        pFont = new PdfeFontTrueType( pFontObj, m_ftLibrary );
     }
     else if( fontSubType == PdfName("Type3") ) {
-        pFont = new PdfeFontType3( fontObj, m_ftLibrary );
+        pFont = new PdfeFontType3( pFontObj, m_ftLibrary );
     }
     // Insert font in the cache.
     m_fontCache.insert( std::make_pair( fontRef, pFont ) );

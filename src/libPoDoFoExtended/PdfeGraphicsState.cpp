@@ -19,31 +19,51 @@ using namespace PoDoFo;
 namespace PoDoFoExtended {
 
 //**********************************************************//
-//                      Pdf Text State                      //
+//                       PdfeTextState                      //
 //**********************************************************//
 PdfeTextState::PdfeTextState()
 {
     this->init();
 }
-
 void PdfeTextState::init()
 {
-    render = 0;
-    fontSize = charSpace = wordSpace = leading = rise = 0;
-    hScale = 100;
-    fontName = "";
+    m_render = 0;
+    m_fontSize = m_charSpace = m_wordSpace = m_leading = m_rise = 0.;
+    m_hScale = 100.;
+    m_fontName = "";
+    m_fontRef = PdfReference();
 
-    transMat.init();
-    lineTransMat.init();
+    m_transMat.init();
+    m_lineTransMat.init();
 }
 void PdfeTextState::initMatrices()
 {
-    transMat.init();
-    lineTransMat.init();
+    m_transMat.init();
+    m_lineTransMat.init();
+}
+
+void PdfeTextState::setFont( const std::string& name, const PdfReference& ref )
+{
+    m_fontName = name;
+    m_fontRef = ref;
+}
+bool PdfeTextState::setFont( const std::string& name, const PdfeResources& resources )
+{
+    // Obtain the expected font reference.
+    const PdfObject* pFontRef = resources.getKey( PdfeResourcesType::Font, name );
+    if( pFontRef && pFontRef->IsReference() ) {
+        m_fontName = name;
+        m_fontRef = pFontRef->GetReference();
+        return true;
+    }
+    // Something wrong happened...
+    m_fontName = name;
+    m_fontRef = PdfReference();
+    return false;
 }
 
 //**********************************************************//
-//                    Pdf Graphics State                    //
+//                     PdfeGraphicsState                    //
 //**********************************************************//
 PdfeGraphicsState::PdfeGraphicsState()
 {
@@ -89,20 +109,19 @@ bool PdfeGraphicsState::importExtGState( const PdfeResources& resources, const s
     param = eGState->GetIndirectKey( "Font" );
     if( param ) {
         PdfArray& array = param->GetArray();
-        textState.fontRef = array[0].GetReference();
-        textState.fontName = "";
-        textState.fontSize = array[1].GetReal();
+        textState.setFont( "", array[0].GetReference() );
+        textState.setFontSize( array[1].GetReal() );
     }
 
-    // TODO: complete!
+    // TODO: complete with other state parameters!
     return true;
 }
 bool PdfeGraphicsState::importFontReference( const PdfeResources& resources )
 {
     // Obtain the expected font reference.
-    const PdfObject* font = resources.getKey( PdfeResourcesType::Font, textState.fontName );
+    const PdfObject* font = resources.getKey( PdfeResourcesType::Font, textState.fontName() );
     if( font && font->IsReference() ) {
-        textState.fontRef = font->GetReference();
+        textState.setFont( textState.fontName(), font->GetReference() );
         return true;
     }
     return false;

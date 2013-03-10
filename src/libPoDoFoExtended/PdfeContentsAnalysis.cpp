@@ -117,33 +117,33 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
 
             if( pnode->type() == PdfeGOperator::Tc ) {
                 // Read char space.
-                gstate.textState.charSpace = pnode->operand<double>( 0 );
+                gstate.textState.setCharSpace( pnode->operand<double>( 0 ) );
             }
             else if( pnode->type() == PdfeGOperator::Tw ) {
                 // Read word space.
-                gstate.textState.wordSpace = pnode->operand<double>( 0 );
+                gstate.textState.setWordSpace( pnode->operand<double>( 0 ) );
             }
             else if( pnode->type() == PdfeGOperator::Tz ) {
                 // Read horizontal scale.
-                gstate.textState.hScale = pnode->operand<double>( 0 );
+                gstate.textState.setHScale( pnode->operand<double>( 0 ) );
             }
             else if( pnode->type() == PdfeGOperator::TL ) {
                 // Read leading.
-                gstate.textState.leading = pnode->operand<double>( 0 );
+                gstate.textState.setLeading( pnode->operand<double>( 0 ) );
             }
             else if( pnode->type() == PdfeGOperator::Tf ) {
                 // Read font name and font size.
-                gstate.textState.fontName = pnode->operands().at( 0 ).substr( 1 );
-                gstate.importFontReference( resources );
-                gstate.textState.fontSize = pnode->operand<double>( 1 );
+                gstate.textState.setFont( pnode->operands().at( 0 ).substr( 1 ),
+                                          resources );
+                gstate.textState.setFontSize( pnode->operand<double>( 1 ) );
             }
             else if( pnode->type() == PdfeGOperator::Tr ) {
                 // Read render.
-                gstate.textState.render = pnode->operand<int>( 0 );
+                gstate.textState.setRender( pnode->operand<int>( 0 ) );
             }
             else if( pnode->type() == PdfeGOperator::Ts ) {
                 // Read rise.
-                gstate.textState.rise = pnode->operand<double>( 0 );
+                gstate.textState.setRise( pnode->operand<double>( 0 ) );
             }
             // Call category function.
             this->fTextState( streamState );
@@ -157,8 +157,8 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                 transMat(2,0) = pnode->operand<double>( 0 );
                 transMat(2,1) = pnode->operand<double>( 1 );
 
-                gstate.textState.lineTransMat = transMat * gstate.textState.lineTransMat;
-                gstate.textState.transMat = gstate.textState.lineTransMat;
+                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
+                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
             }
             else if( pnode->type() == PdfeGOperator::TD ) {
                 // Read and compute text transformation matrix.
@@ -166,10 +166,10 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                 transMat(2,0) = pnode->operand<double>( 0 );
                 transMat(2,1) = pnode->operand<double>( 1 );
 
-                gstate.textState.lineTransMat = transMat * gstate.textState.lineTransMat;
-                gstate.textState.transMat = gstate.textState.lineTransMat;
+                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
+                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
                 // New leading value.
-                gstate.textState.leading = -transMat(2,1);
+                gstate.textState.setLeading( -transMat(2,1) );
             }
             else if( pnode->type() == PdfeGOperator::Tm ) {
                 // Get transformation matrix.
@@ -181,16 +181,16 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                 transMat(2,0) = pnode->operand<double>( 4 );
                 transMat(2,1) = pnode->operand<double>( 5 );
 
-                gstate.textState.transMat = transMat;
-                gstate.textState.lineTransMat = transMat;
+                gstate.textState.setTransMat( transMat );
+                gstate.textState.setLineTransMat( transMat );
             }
             else if( pnode->type() == PdfeGOperator::Tstar ) {
                 // "T*" equivalent to "0 -Tl Td".
                 PdfeMatrix transMat;
-                transMat(2,1) = -gstate.textState.leading;
+                transMat(2,1) = -gstate.textState.leading();
 
-                gstate.textState.lineTransMat = transMat * gstate.textState.lineTransMat;
-                gstate.textState.transMat = gstate.textState.lineTransMat;
+                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
+                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
             }
             // Call category function.
             this->fTextPositioning( streamState );
@@ -202,15 +202,15 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             if( pnode->type() == PdfeGOperator::Quote ) {
                 // Corresponds to T*, Tj.
                 PdfeMatrix transMat;
-                transMat(2,1) = -gstate.textState.leading;
+                transMat(2,1) = -gstate.textState.leading();
 
-                gstate.textState.lineTransMat = transMat * gstate.textState.lineTransMat;
-                gstate.textState.transMat = gstate.textState.lineTransMat;
+                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
+                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
             }
             else if( pnode->type() == PdfeGOperator::DoubleQuote ) {
                 // Corresponds to Tw, Tc, Tj.
-                gstate.textState.wordSpace = pnode->operand<double>( 0 );
-                gstate.textState.charSpace = pnode->operand<double>( 1 );
+                gstate.textState.setWordSpace( pnode->operand<double>( 0 ) );
+                gstate.textState.setCharSpace( pnode->operand<double>( 1 ) );
             }
             // Call category function: return text displacement vector.
             PdfeVector textDispl = this->fTextShowing( streamState );
@@ -219,7 +219,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             PdfeMatrix transMat;
             transMat(2,0) = textDispl(0);
             transMat(2,1) = textDispl(1);
-            gstate.textState.transMat = transMat * gstate.textState.transMat;
+            gstate.textState.setTransMat( transMat * gstate.textState.transMat() );
         }
         else if( pnode->category() == PdfeGCategory::Color ) {
             // Commands in this category: CS, cs, SC, SCN, sc, scn, G, g, RG, rg, K, k.

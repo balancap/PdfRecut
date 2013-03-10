@@ -191,7 +191,7 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& s
     m_data->transMatGS = gstate.transMat;
     m_data->textState = gstate.textState;
     // Font data.
-    PdfeFont* pFont = document->fontCache( gstate.textState.fontRef );
+    PdfeFont* pFont = document->fontCache( gstate.textState.fontReference() );
     m_data->pFont = pFont;
     m_data->fontBBox = pFont->fontBBox();
     this->computeTransMatrices();
@@ -218,7 +218,7 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamStateOld
     m_data->textState = gState.textState;
 
     // Font data.
-    PdfeFont* pFont = document->fontCache( gState.textState.fontRef );
+    PdfeFont* pFont = document->fontCache( gState.textState.fontReference() );
     m_data->pFont = pFont;
     m_data->fontBBox = pFont->fontBBox();
     this->computeTransMatrices();
@@ -288,9 +288,9 @@ void PRGTextGroupWords::readPdfString( const PoDoFo::PdfString& str,
     //    }
 
     // Text parameters.
-    double fontSize = data()->textState.fontSize;
-    double charSpace = data()->textState.charSpace / fontSize;
-    double wordSpace = data()->textState.wordSpace / fontSize;
+    double fontSize = data()->textState.fontSize();
+    double charSpace = data()->textState.charSpace() / fontSize;
+    double wordSpace = data()->textState.wordSpace() / fontSize;
 
     double maxCharSpace = pFont->statistics( true ).meanBBox.GetWidth() * MaxCharSpaceScale;
 
@@ -465,8 +465,8 @@ PdfeVector PRGTextGroupWords::displacement() const
 {
     PdfeVector displacement = this->advance();
     const PdfeTextState& textState = data()->textState;
-    displacement(0) = displacement(0) * textState.fontSize * ( textState.hScale / 100. );
-    displacement(1) = displacement(1) * textState.fontSize;
+    displacement(0) = displacement(0) * textState.fontSize() * ( textState.hScale() / 100. );
+    displacement(1) = displacement(1) * textState.fontSize();
     return displacement;
 }
 PdfeORect PRGTextGroupWords::bbox( PRGTextWordCoordinates::Enum endCoords,
@@ -498,10 +498,10 @@ PdfeMatrix PRGTextGroupWords::transMatrix( PRGTextWordCoordinates::Enum startCoo
     // Compute global rendering matrix (font -> page).
     PdfeMatrix tmpMat, globalTransMat;
     const PdfeTextState& textState = data()->textState;
-    tmpMat(0,0) = textState.fontSize * ( textState.hScale / 100. );
-    tmpMat(1,1) = textState.fontSize;
-    tmpMat(2,1) = textState.rise;
-    globalTransMat = tmpMat * textState.transMat * data()->transMatGS;
+    tmpMat(0,0) = textState.fontSize() * ( textState.hScale() / 100. );
+    tmpMat(1,1) = textState.fontSize();
+    tmpMat(2,1) = textState.rise();
+    globalTransMat = tmpMat * textState.transMat() * data()->transMatGS;
 
     if( startCoord == PRGTextWordCoordinates::Word &&
             endCoord == PRGTextWordCoordinates::Page ) {
@@ -559,11 +559,11 @@ PdfeMatrix PRGTextGroupWords::getGlobalTransMatrix() const
     // Compute text rendering matrix.
     PdfeMatrix tmpMat, textMat;
     const PdfeTextState& textState = data()->textState;
-    tmpMat(0,0) = textState.fontSize * ( textState.hScale / 100. );
+    tmpMat(0,0) = textState.fontSize() * ( textState.hScale() / 100. );
     //tmpMat(1,1) = m_textState.fontSize * m_words.back().height;
-    tmpMat(1,1) = textState.fontSize;
-    tmpMat(2,1) = textState.rise;
-    textMat = tmpMat * textState.transMat * data()->transMatGS;
+    tmpMat(1,1) = textState.fontSize();
+    tmpMat(2,1) = textState.rise();
+    textMat = tmpMat * textState.transMat() * data()->transMatGS;
 
     return textMat;
 }

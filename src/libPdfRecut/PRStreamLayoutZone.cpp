@@ -316,7 +316,7 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamStateOld& streamSta
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Show text if inside page zone.
-    PdfeMatrix tmpMat = gState.textState.transMat * gState.transMat;
+    PdfeMatrix tmpMat = gState.textState.transMat() * gState.transMat;
     if( tmpMat(2,1) <= m_zone.zoneIn.GetBottom() + m_zone.zoneIn.GetHeight() &&
             tmpMat(2,1) >= m_zone.zoneIn.GetBottom() )
     {
@@ -335,8 +335,8 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamStateOld& streamSta
             m_bufStream << "T*\n";
         }
         else if( gOperator.type() == PdfeGOperator::DoubleQuote ) {
-            m_bufStream << gState.textState.wordSpace << "Tw\n"
-                        << gState.textState.charSpace << "Tc\n";
+            m_bufStream << gState.textState.wordSpace() << "Tw\n"
+                        << gState.textState.charSpace() << "Tc\n";
         }
         m_streamOut->Append( m_bufStream.str() );
     }
