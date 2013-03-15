@@ -172,7 +172,7 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
 
     // Compute path rendering matrix.
     PdfeMatrix pathMat;
-    pathMat = gstate.transMat * m_pageImgTrans;
+    pathMat = gstate.transMat() * m_pageImgTrans;
     m_pagePainter->setTransform( pathMat.toQTransform() );
 
     // Fill path with white background, if necessary.
@@ -200,7 +200,7 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
     QPainterPath qClippingPath = currentPath.toQPainterPath( true, evenOddRule );
 
     // Apply transformation, to have a common coordinates system.
-    QTransform qTrans = gstate.transMat.toQTransform();
+    QTransform qTrans = gstate.transMat().toQTransform();
     qClippingPath = qTrans.map( qClippingPath );
 
     // Intersect the clipping path with the current one.
@@ -236,7 +236,7 @@ void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
     if( goperator.type() == PdfeGOperator::EI ) {
         // Compute path rendering matrix.
         PdfeMatrix pathMat;
-        pathMat = gstate.transMat * m_pageImgTrans;
+        pathMat = gstate.transMat() * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the inline image: corresponds to a rectangle (0,0,1,1).
@@ -261,7 +261,7 @@ void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
         //testPdfImage( xobjPtr );
 
         // Compute path rendering matrix.
-        pathMat = gstate.transMat * m_pageImgTrans;
+        pathMat = gstate.transMat() * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
 
         // Draw the image: corresponds to a rectangle (0,0,1,1).
@@ -285,7 +285,7 @@ void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
         PdfArray& bbox = xobjPtr->GetIndirectKey( "BBox" )->GetArray();
 
         // Draw form according to its properties.
-        pathMat = formMat * gstate.transMat * m_pageImgTrans;
+        pathMat = formMat * gstate.transMat() * m_pageImgTrans;
         m_pagePainter->setTransform( pathMat.toQTransform() );
         // Draw the image: corresponds to a rectangle (0,0,1,1).
         m_renderParameters.formPB.applyToPainter( m_pagePainter );

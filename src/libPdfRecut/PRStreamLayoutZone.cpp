@@ -149,14 +149,14 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamStateOld& streamState,
     bool inZone;
     size_t idx = 0;
     PdfeMatrix invTransMat;
-    gState.transMat.inverse( invTransMat );
+    gState.transMat().inverse( invTransMat );
 
     // Keep subpaths which intersect the zone, and reduce them if necessary.
     std::vector<PdfeSubPath>::iterator it;
     for( it = subpaths.begin() ; it != subpaths.end() ; )
     {
         // Apply transformation matrix.
-        it->applyTransMatrix( gState.transMat );
+        it->applyTransMatrix( gState.transMat() );
 
         // Does the subpath intersect the zone.
         inZone = it->intersectZone( m_zone.zoneIn, m_parameters.pathStrictlyInside );
@@ -316,7 +316,7 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamStateOld& streamSta
     const PdfeGraphicsState& gState = streamState.gStates.back();
 
     // Show text if inside page zone.
-    PdfeMatrix tmpMat = gState.textState.transMat() * gState.transMat;
+    PdfeMatrix tmpMat = gState.textState().transMat() * gState.transMat();
     if( tmpMat(2,1) <= m_zone.zoneIn.GetBottom() + m_zone.zoneIn.GetHeight() &&
             tmpMat(2,1) >= m_zone.zoneIn.GetBottom() )
     {
@@ -335,8 +335,8 @@ PdfeVector PRStreamLayoutZone::fTextShowing( const PdfeStreamStateOld& streamSta
             m_bufStream << "T*\n";
         }
         else if( gOperator.type() == PdfeGOperator::DoubleQuote ) {
-            m_bufStream << gState.textState.wordSpace() << "Tw\n"
-                        << gState.textState.charSpace() << "Tc\n";
+            m_bufStream << gState.textState().wordSpace() << "Tw\n"
+                        << gState.textState().charSpace() << "Tc\n";
         }
         m_streamOut->Append( m_bufStream.str() );
     }
@@ -434,7 +434,7 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamStateOld& streamState )
         pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
         PdfeSubPath subpathII = pathII.subpaths().back();
-        subpathII.applyTransMatrix( gState.transMat );
+        subpathII.applyTransMatrix( gState.transMat() );
 
         bool inZone = subpathII.intersectZone( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
         if( !inZone ) {
@@ -472,7 +472,7 @@ void PRStreamLayoutZone::fXObjects( const PdfeStreamStateOld& streamState )
         pathImg.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
 
         PdfeSubPath subpathImg = pathImg.subpaths().back();
-        subpathImg.applyTransMatrix( gState.transMat );
+        subpathImg.applyTransMatrix( gState.transMat() );
 
         bool inZone = subpathImg.intersectZone( m_zone.zoneIn, m_parameters.imageStrictlyInside );
         if( inZone )

@@ -16,7 +16,7 @@
 #include "podofo/base/PdfReference.h"
 
 #include "PdfePath.h"
-#include "PdfeResources.h"
+#include "PdfeContentsStream.h"
 
 namespace PoDoFo {
     class PdfPage;
@@ -24,8 +24,11 @@ namespace PoDoFo {
 
 namespace PoDoFoExtended {
 
-/** Class describing a text state in a PDF stream, i.e.
+class PdfeResources;
+
+/** Class describing the text state in a PDF stream, i.e.
  * containing every information related to text rendering.
+ * See PDF reference for my information on the topic.
  */
 class PdfeTextState
 {
@@ -98,7 +101,7 @@ public:
     void setHScale( double rhs )    {   m_hScale = rhs;    }
     /// Set lines leading.
     void setLeading( double rhs)    {   m_leading = rhs;   }
-    /// Set rendering mode.
+    /// Set rendering mode (0-7).
     void setRender( int rhs )       {   m_render = rhs;    }
     /// Set text rise.
     void setRise( double rhs )      {   m_rise = rhs;      }
@@ -131,48 +134,124 @@ private:
     double  m_rise;
 };
 
-/** Structure describing a graphics state in a Pdf stream.
- * This structure does not reproduce all properties described the Pdf reference.
+/** Class describing the graphics state in a PDF stream.
+ * It gathers several parameters related to page rendering.
+ *
+ * Note that currently, the class does not implement all the
+ * PDF reference (in particular parameters that might be set
+ * in an ExtGState object).
  */
-struct PdfeGraphicsState
+class PdfeGraphicsState
 {
-    /// Transformation matrix (set with cm).
-    PdfeMatrix transMat;
-
-    /// Clipping path.
-    PdfePath clippingPath;
-
-    /// Pdf Text graphics state.
-    PdfeTextState textState;
-
-    /// Line width.
-    double lineWidth;
-    /// Line cap style.
-    int lineCap;
-    /// Line join style.
-    int lineJoin;
-    /// Compatibility mode.
-    bool compatibilityMode;
-
-    /** Default constructor.
+public:
+    /** Default constructor. Initialize the state to default values.
      */
     PdfeGraphicsState();
-
-    /** Function which initializes members to default Pdf values.
+    /** Copy constructor.
+     */
+    PdfeGraphicsState( const PdfeGraphicsState& rhs );
+    /** Assignement operator.
+     */
+    PdfeGraphicsState& operator=( const PdfeGraphicsState& rhs );
+    /** Initialize members to default values specified in the PDF reference.
      */
     void init();
+    /** Destructor.
+     */
+    ~PdfeGraphicsState();
 
-    /** Import parameters from ExtGState.
-     * \param resources Resources where to find to the GState.
-     * \param gsName Name of the graphics state to import.
+public:
+    /** Update graphics state accordingly to a node contained
+     * in a contents stream.
+     * \param pnode Pointer to the node.
+     * \param currentPath Current path in the stream. Used to update
+     * the clipping path.
+     * \param resources Resources of the stream.
+     */
+    void update( const PdfeContentsStream::Node* pnode,
+                 const PdfePath& currentPath,
+                 const PdfeResources& resources );
+
+    /** Load parameters from an extern graphics state object.
+     * \param gstateName Name of the graphics state to load.
+     * \param resources Resources object where to find to the GState.
      * \return True if the extGState was found and loaded. False else.
      */
-    bool importExtGState( const PdfeResources& resources, const std::string& gsName );
+    bool loadExtGState( const std::string& gstateName, const PdfeResources& resources );
 
-    /** Import the Pdf reference corresponding to the font object (with name fontName).
-     * \param resources Resources where to find the font reference.
+public:
+    // Text graphics state.
+    /** Get a reference to the text graphics state. Can be used
+     * to modify the text graphics state object.
      */
-    bool importFontReference( const PdfeResources& resources );
+    PdfeTextState& textState();
+    const PdfeTextState& textState() const;
+    /** Clear text graphics state object. Can be useful
+     * when no text drawing information is needed (e.g. paths...).
+     */
+    void clearTextState();
+
+    // Getters...
+    /// Get transformation matrix.
+    const PdfeMatrix& transMat() const      {   return m_transMat;      }
+    /// Get clipping path.
+    const PdfePath& clippingPath() const    {   return m_clippingPath;  }
+    /// Get line's width.
+    double lineWidth() const    {   return m_lineWidth;     }
+    /// Get line's cap style.
+    int lineCap() const         {   return m_lineCap;       }
+    /// Get line's join style.
+    int lineJoin() const        {   return m_lineJoin;      }
+    /// Get miter limit.
+    double miterLimit() const   {   return m_miterLimit;    }
+
+    /// Compatibility mode (BX/EX operators)?
+    bool compatibilityMode() const  {   return m_compatibilityMode;     }
+
+    // and setters.
+    /// Set transformation matrix.
+    void setTransMat( const PdfeMatrix& rhs )       {   m_transMat = rhs;       }
+    /// Set clipping path.
+    void setClippingPath( const PdfePath& rhs )     {   m_clippingPath = rhs;   }
+    /// Set line's width.
+    void setLineWidth( double rhs ) {   m_lineWidth = rhs;  }
+    /// Set line's cap style.
+    void setLineCap( int rhs )      {   m_lineCap = rhs;    }
+    /// Set line's join style.
+    void setLineJoin( int rhs )     {   m_lineJoin = rhs;   }
+    /// Set miter limit.
+    void setMiterLimit( double rhs ){   m_miterLimit = rhs; }
+
+    /// Set compatibility mode.
+    void setCompatibilityMode( bool rhs )   {   m_compatibilityMode = rhs;  }
+
+private:
+    /// PDF text graphics state.
+    mutable PdfeTextState*  m_pTextState;
+
+    /// Transformation matrix (op: cm).
+    PdfeMatrix  m_transMat;
+    /// Clipping path.
+    PdfePath  m_clippingPath;
+    /// Color space.
+    // TODO.
+    /// Color.
+    // TODO.
+    /// Line width (op: w).
+    double  m_lineWidth;
+    /// Line cap style (EPdfLineCapStyle) (op: J).
+    int  m_lineCap;
+    /// Line join style (EPdfLineJoinStyle) (op: j).
+    int  m_lineJoin;
+    /// maximum length of mitered line joins for stroked paths (op: M).
+    double  m_miterLimit;
+    /// Color rendering intent.
+    // TODO.
+    /// Flatness.
+    // TODO.
+
+    /// Compatibility mode (BX/EX operator).
+    bool  m_compatibilityMode;
 };
 
 }

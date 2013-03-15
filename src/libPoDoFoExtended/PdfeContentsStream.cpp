@@ -10,6 +10,8 @@
  ***************************************************************************/
 
 #include "PdfeContentsStream.h"
+
+#include "PdfeGraphicsState.h"
 #include "PdfeStreamTokenizer.h"
 #include "PdfeUtils.h"
 
@@ -27,7 +29,8 @@ namespace PoDoFoExtended {
 PdfeContentsStream::PdfeContentsStream() :
     m_pFirstNode( NULL ), m_pLastNode( NULL ),
     m_nbNodes( 0 ), m_maxNodeID( 0 ),
-    m_initialGState(), m_resources()
+    m_pInitialGState( new PdfeGraphicsState() ),
+    m_resources()
 {
 }
 void PdfeContentsStream::init()
@@ -39,14 +42,14 @@ void PdfeContentsStream::init()
     m_pLastNode = NULL;
     m_nbNodes = 0;
     m_maxNodeID = 0;
-    m_initialGState.init();
+    m_pInitialGState->init();
     m_resources.init();
 }
 PdfeContentsStream::PdfeContentsStream( const PdfeContentsStream& rhs ) :
     m_pFirstNode( NULL ), m_pLastNode( NULL ),
     m_nbNodes( rhs.m_nbNodes ),
     m_maxNodeID( rhs.m_maxNodeID ),
-    m_initialGState( rhs.m_initialGState ),
+    m_pInitialGState( new PdfeGraphicsState( *(rhs.m_pInitialGState) ) ),
     m_resources( rhs.m_resources )
 {
     // Copy nodes.
@@ -62,7 +65,7 @@ PdfeContentsStream& PdfeContentsStream::operator=( const PdfeContentsStream& rhs
     // Copy members and nodes.
     m_nbNodes = rhs.m_nbNodes;
     m_maxNodeID = rhs.m_maxNodeID;
-    m_initialGState = rhs.m_initialGState;
+    m_pInitialGState->operator=( *(rhs.m_pInitialGState) );
     m_resources = rhs.m_resources;
     this->copyNodes( rhs );
 
@@ -70,6 +73,7 @@ PdfeContentsStream& PdfeContentsStream::operator=( const PdfeContentsStream& rhs
 }
 PdfeContentsStream::~PdfeContentsStream()
 {
+    delete m_pInitialGState;
     // Clear contents nodes.
     this->deleteNodes();
 }

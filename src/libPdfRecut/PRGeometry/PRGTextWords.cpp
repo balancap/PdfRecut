@@ -188,10 +188,10 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& s
     m_data = new PRGTextGroupWords::Data();
 
     // Set transformation matrix and text state.
-    m_data->transMatGS = gstate.transMat;
-    m_data->textState = gstate.textState;
+    m_data->transMatGS = gstate.transMat();
+    m_data->textState = gstate.textState();
     // Font data.
-    PdfeFont* pFont = document->fontCache( gstate.textState.fontReference() );
+    PdfeFont* pFont = document->fontCache( gstate.textState().fontReference() );
     m_data->pFont = pFont;
     m_data->fontBBox = pFont->fontBBox();
     this->computeTransMatrices();
@@ -207,18 +207,18 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamStateOld
 {
     // Simpler references.
     const std::vector<std::string>& gOperands = streamState.gOperands;
-    const PdfeGraphicsState& gState = streamState.gStates.back();
+    const PdfeGraphicsState& gstate = streamState.gStates.back();
 
     // Create data structure.
     this->clearData();
     m_data = new PRGTextGroupWords::Data();
 
     // Set transformation matrix and text state.
-    m_data->transMatGS = gState.transMat;
-    m_data->textState = gState.textState;
+    m_data->transMatGS = gstate.transMat();
+    m_data->textState = gstate.textState();
 
     // Font data.
-    PdfeFont* pFont = document->fontCache( gState.textState.fontReference() );
+    PdfeFont* pFont = document->fontCache( gstate.textState().fontReference() );
     m_data->pFont = pFont;
     m_data->fontBBox = pFont->fontBBox();
     this->computeTransMatrices();

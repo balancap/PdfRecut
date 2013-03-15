@@ -13,8 +13,9 @@
 #define PDFECONTENTSSTREAM_H
 
 #include <istream>
+#include <QByteArray>
 
-#include "PdfeGraphicsState.h"
+#include "PdfePath.h"
 #include "PdfeResources.h"
 #include "PdfeMisc.h"
 
@@ -25,6 +26,8 @@ class PdfVariant;
 }
 
 namespace PoDoFoExtended {
+
+class PdfeGraphicsState;
 
 /// Node ID typedef.
 typedef PoDoFo::pdf_uint32  pdfe_nodeid;
@@ -136,9 +139,9 @@ public:
     /// Last node of the stream.
     Node* lastNode() const  {   return m_pLastNode;         }
     /// Initial graphics state.
-    const PdfeGraphicsState& initialGState() const  {   return m_initialGState; }
+    const PdfeGraphicsState& initialGState() const  {   return *m_pInitialGState;   }
     /// Resources used by the contents stream.
-    const PdfeResources& resources() const          {   return m_resources;     }
+    const PdfeResources& resources() const          {   return m_resources;         }
 
 private:
     /** Deep copy of nodes from another contents stream.
@@ -160,7 +163,7 @@ private:
     pdfe_nodeid  m_maxNodeID;
 
     /// Initial graphics state used for the stream.
-    PdfeGraphicsState  m_initialGState;
+    PdfeGraphicsState*  m_pInitialGState;
     /// Resources used by the contents stream.
     PdfeResources  m_resources;
 };

@@ -296,8 +296,8 @@ void PdfeGlyphType3::computeBBox()
 //**********************************************//
 //         PdfeCanvasAnalysis interface         //
 //**********************************************//
-void PdfeGlyphType3::fPathPainting( const PdfeStreamStateOld& streamState,
-                                    const PdfePath& currentPath )
+void PdfeGlyphType3::fPathPainting( const PdfeStreamStateOld&,
+                                    const PdfePath& )
 {
     // TODO: implement the computation of cbox.
 //    std::cout << this << " / " << streamState.gOperator.name << " : ";

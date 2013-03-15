@@ -60,8 +60,10 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
     // Initialize graphics state and resources.
     streamState.gStates.push_back( initialGState );
     tmpRect = canvas->GetPageSize();
-    streamState.gStates.back().clippingPath.appendRectangle( PdfeVector( tmpRect.GetLeft(), tmpRect.GetBottom() ),
-                                                             PdfeVector( tmpRect.GetWidth(), tmpRect.GetHeight() ) );
+    PdfePath clippingPath = streamState.gStates.back().clippingPath();
+    clippingPath.appendRectangle( PdfeVector( tmpRect.GetLeft(), tmpRect.GetBottom() ),
+                                  PdfeVector( tmpRect.GetWidth(), tmpRect.GetHeight() ) );
+    streamState.gStates.back().setClippingPath( clippingPath );
 
     streamState.canvas = canvas;
     streamState.resources = initialResources;
@@ -92,20 +94,26 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                 if( gOperator.type() ==PdfeGOperator::w ) {
                     // Get line width.
-                    this->readValue( gOperands.back(), gState.lineWidth );
+                    double val;
+                    this->readValue( gOperands.back(), val );
+                    gState.setLineWidth( val );
                 }
                 else if( gOperator.type() ==PdfeGOperator::J ) {
                     // Get line cap.
-                    this->readValue( gOperands.back(), gState.lineCap );
+                    int val;
+                    this->readValue( gOperands.back(), val );
+                    gState.setLineCap( val );
                 }
                 else if( gOperator.type() ==PdfeGOperator::j ) {
                     // Get line join.
-                    this->readValue( gOperands.back(), gState.lineJoin );
+                    int val;
+                    this->readValue( gOperands.back(), val );
+                    gState.setLineJoin( val );
                 }
                 else if( gOperator.type() ==PdfeGOperator::gs ) {
                     // Get parameters from an ExtGState dictionary.
                     tmpString = gOperands.back().substr( 1 );
-                    gState.importExtGState( resources, tmpString );
+                    gState.loadExtGState( tmpString, resources );
                 }
                 // Call category function.
                 this->fGeneralGState( streamState );
@@ -134,7 +142,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-5], tmpMat(0,1) );
                     this->readValue( gOperands[nbvars-6], tmpMat(0,0) );
 
-                    gState.transMat = tmpMat * gState.transMat;
+                    gState.setTransMat( tmpMat * gState.transMat() );
                 }
                 // Call category function.
                 this->fSpecialGState( streamState );
@@ -145,7 +153,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                 // Initialize text transform matrices when op = "BT".
                 if( gOperator.type() == PdfeGOperator::BT ) {
-                    gState.textState.initMatrices();
+                    gState.textState().initMatrices();
                 }
                 // Call category function.
                 this->fTextObjects( streamState );
@@ -158,43 +166,43 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 if( gOperator.type() == PdfeGOperator::Tc ) {
                     // Read char space.
                     this->readValue( gOperands.back(), tmpValue );
-                    gState.textState.setCharSpace( tmpValue );
+                    gState.textState().setCharSpace( tmpValue );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tw ) {
                     // Read word space.
                     this->readValue( gOperands.back(), tmpValue );
-                    gState.textState.setWordSpace( tmpValue );
+                    gState.textState().setWordSpace( tmpValue );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tz ) {
                     // Read horizontal scale.
                     this->readValue( gOperands.back(), tmpValue );
-                    gState.textState.setHScale( tmpValue );
+                    gState.textState().setHScale( tmpValue );
                 }
                 else if( gOperator.type() == PdfeGOperator::TL ) {
                     // Read leading.
                     this->readValue( gOperands.back(), tmpValue );
-                    gState.textState.setLeading( tmpValue );
+                    gState.textState().setLeading( tmpValue );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tf ) {
                     // Read font size and font name
                     size_t nbvars = gOperands.size();
                     this->readValue( gOperands[nbvars-1], tmpValue );
-                    gState.textState.setFontSize( tmpValue );
+                    gState.textState().setFontSize( tmpValue );
 
                     // Remove leading '/' and get font reference.
                     tmpString = gOperands[nbvars-2];
-                    gState.textState.setFont( tmpString.substr( 1 ), resources );
+                    gState.textState().setFont( tmpString.substr( 1 ), resources );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tr ) {
                     // Read render.
                     int render;
                     this->readValue( gOperands.back(), render );
-                    gState.textState.setRender( render );
+                    gState.textState().setRender( render );
                 }
                 else if( gOperator.type() == PdfeGOperator::Ts ) {
                     // Read rise.
                     this->readValue( gOperands.back(), tmpValue );
-                    gState.textState.setRise( tmpValue );
+                    gState.textState().setRise( tmpValue );
                 }
                 // Call category function.
                 this->fTextState( streamState );
@@ -210,8 +218,8 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-1], tmpMat(2,1) );
                     this->readValue( gOperands[nbvars-2], tmpMat(2,0) );
 
-                    gState.textState.setLineTransMat( tmpMat * gState.textState.lineTransMat() );
-                    gState.textState.setTransMat( gState.textState.lineTransMat() );
+                    gState.textState().setLineTransMat( tmpMat * gState.textState().lineTransMat() );
+                    gState.textState().setTransMat( gState.textState().lineTransMat() );
                 }
                 else if( gOperator.type() == PdfeGOperator::TD ) {
                     // Read and compute text transformation matrix.
@@ -220,11 +228,11 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-1], tmpMat(2,1) );
                     this->readValue( gOperands[nbvars-2], tmpMat(2,0) );
 
-                    gState.textState.setLineTransMat( tmpMat * gState.textState.lineTransMat() );
-                    gState.textState.setTransMat( gState.textState.lineTransMat() );
+                    gState.textState().setLineTransMat( tmpMat * gState.textState().lineTransMat() );
+                    gState.textState().setTransMat( gState.textState().lineTransMat() );
 
                     // New leading value.
-                    gState.textState.setLeading( -tmpMat(2,1) );
+                    gState.textState().setLeading( -tmpMat(2,1) );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tm ) {
                     // Get transformation matrix new one.
@@ -237,16 +245,16 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-5], tmpMat(0,1) );
                     this->readValue( gOperands[nbvars-6], tmpMat(0,0) );
 
-                    gState.textState.setTransMat( tmpMat );
-                    gState.textState.setLineTransMat( tmpMat );
+                    gState.textState().setTransMat( tmpMat );
+                    gState.textState().setLineTransMat( tmpMat );
                 }
                 else if( gOperator.type() == PdfeGOperator::Tstar ) {
                     // "T*" equivalent to "0 -Tl Td".
                     tmpMat.init();
-                    tmpMat(2,1) = -gState.textState.leading();
+                    tmpMat(2,1) = -gState.textState().leading();
 
-                    gState.textState.setLineTransMat( tmpMat * gState.textState.lineTransMat() );
-                    gState.textState.setTransMat( gState.textState.lineTransMat() );
+                    gState.textState().setLineTransMat( tmpMat * gState.textState().lineTransMat() );
+                    gState.textState().setTransMat( gState.textState().lineTransMat() );
                 }
                 // Call category function.
                 this->fTextPositioning( streamState );
@@ -260,10 +268,10 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 if( gOperator.type() == PdfeGOperator::Quote ) {
                     // Corresponds to T*, Tj.
                     tmpMat.init();
-                    tmpMat(2,1) = -gState.textState.leading();
+                    tmpMat(2,1) = -gState.textState().leading();
 
-                    gState.textState.setLineTransMat( tmpMat * gState.textState.lineTransMat() );
-                    gState.textState.setTransMat( gState.textState.lineTransMat() );
+                    gState.textState().setLineTransMat( tmpMat * gState.textState().lineTransMat() );
+                    gState.textState().setTransMat( gState.textState().lineTransMat() );
                 }
                 else if( gOperator.type() == PdfeGOperator::DoubleQuote ) {
                     // Corresponds to Tw, Tc, Tj.
@@ -271,9 +279,9 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     tmpMat.init();
 
                     this->readValue( gOperands[nbvars-1], tmpValue );
-                    gState.textState.setCharSpace( tmpValue );
+                    gState.textState().setCharSpace( tmpValue );
                     this->readValue( gOperands[nbvars-2], tmpValue );
-                    gState.textState.setWordSpace( tmpValue );
+                    gState.textState().setWordSpace( tmpValue );
                 }
                 // Call category function: return text displacement vector.
                 PdfeVector textDispl = this->fTextShowing( streamState );
@@ -282,7 +290,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 tmpMat.init();
                 tmpMat(2,0) = textDispl(0);
                 tmpMat(2,1) = textDispl(1);
-                gState.textState.setTransMat( tmpMat * gState.textState.transMat() );
+                gState.textState().setTransMat( tmpMat * gState.textState().transMat() );
             }
             else if( gOperator.category() == PdfeGCategory::Color )
             {
@@ -388,7 +396,9 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Commands in this category: W, W*.
 
                 // Append the current path to the clipping path.
-                gState.clippingPath.appendPath( currentPath );
+                PdfePath clippingPath( gState.clippingPath() );
+                clippingPath.appendPath( currentPath );
+                gState.setClippingPath( clippingPath );
 
                 // Set the clipping path operator of the current path.
                 currentPath.setClippingPathOp( gOperator.str() );
@@ -447,7 +457,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                         formMat(2,0) = mat[4].GetReal();
                         formMat(2,1) = mat[5].GetReal();
                     }
-                    streamState.gStates.back().transMat = formMat * streamState.gStates.back().transMat;
+                    streamState.gStates.back().setTransMat( formMat * streamState.gStates.back().transMat() );
 
                     // Get form's BBox and append it to clipping path.
                     PdfArray& bbox = xObjPtr->GetIndirectKey( "BBox" )->GetArray();
@@ -459,7 +469,9 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     pathBBox.appendLine( PdfeVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
                     pathBBox.closeSubpath();
 
-                    streamState.gStates.back().clippingPath.appendPath( pathBBox );
+                    PdfePath clippingPath( streamState.gStates.back().clippingPath() );
+                    clippingPath.appendPath( pathBBox );
+                    streamState.gStates.back().setClippingPath( clippingPath );
 
                     // Analayse Form.
                     this->fFormBegin( streamState, &xObject );
@@ -481,11 +493,11 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
 
                 if( gOperator.type() == PdfeGOperator::BX ) {
                     // Activate compatibility mode.
-                    gState.compatibilityMode = true;
+                    gState.setCompatibilityMode( true );
                 }
                 else if( gOperator.type() == PdfeGOperator::EX ) {
                     // Deactivate compatibility mode.
-                    gState.compatibilityMode = false;
+                    gState.setCompatibilityMode( false );
                 }
 
                 // Call category function.

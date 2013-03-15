@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include "PdfeContentsAnalysis.h"
+#include "PdfeGraphicsState.h"
 
 #include <podofo/podofo.h>
 
@@ -52,33 +53,16 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         PdfeGraphicsState& gstate = streamState.gstates.back();
         PdfeResources& resources = streamState.resources;
 
-        // Type of node...
+        // Update graphics state.
+        gstate.update( pnode, currentPath, resources );
+
+        // Specific treatment for each kind of node.
         if( pnode->category() == PdfeGCategory::GeneralGState ) {
             // Commands in this category: w, J, j, M, d, ri, i, gs.
-
-            if( pnode->type() ==PdfeGOperator::w ) {
-                // Get line width.
-                gstate.lineWidth = pnode->operand<double>( 0 );
-            }
-            else if( pnode->type() ==PdfeGOperator::J ) {
-                // Get line cap.
-                gstate.lineCap = pnode->operand<int>( 0 );
-            }
-            else if( pnode->type() ==PdfeGOperator::j ) {
-                // Get line join.
-                gstate.lineJoin = pnode->operand<int>( 0 );
-            }
-            else if( pnode->type() ==PdfeGOperator::gs ) {
-                // Get parameters from an ExtGState dictionary.
-                std::string str = pnode->operands().back().substr( 1 );
-                gstate.importExtGState( resources, str );
-            }
-            // Call category function.
             this->fGeneralGState( streamState );
         }
         else if( pnode->category() == PdfeGCategory::SpecialGState ) {
             // Commands in this category: q, Q, cm.
-
             if( pnode->type() == PdfeGOperator::q ) {
                 // Push on the graphics state stack.
                 streamState.gstates.push_back( gstate );
@@ -87,145 +71,34 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                 // Pop on the graphics state stack.
                 streamState.gstates.pop_back();
             }
-            else if( pnode->type() == PdfeGOperator::cm ) {
-                // Get transformation matrix and compute new one.
-                PdfeMatrix transMat;
-                transMat(0,0) = pnode->operand<double>( 0 );
-                transMat(0,1) = pnode->operand<double>( 1 );
-                transMat(1,0) = pnode->operand<double>( 2 );
-                transMat(1,1) = pnode->operand<double>( 3 );
-                transMat(2,0) = pnode->operand<double>( 4 );
-                transMat(2,1) = pnode->operand<double>( 5 );
-
-                gstate.transMat = transMat * gstate.transMat;
-            }
             // Call category function.
             this->fSpecialGState( streamState );
         }
         else if( pnode->category() == PdfeGCategory::TextObjects ) {
             // Commands in this category: BT, ET.
-
-            // Initialize text transform matrices when op = "BT".
-            if( pnode->type() == PdfeGOperator::BT ) {
-                gstate.textState.initMatrices();
-            }
-            // Call category function.
             this->fTextObjects( streamState );
         }
         else if( pnode->category() == PdfeGCategory::TextState ) {
             // Commands in this category: Tc, Tw, Tz, TL, Tf, Tr, Ts.
-
-            if( pnode->type() == PdfeGOperator::Tc ) {
-                // Read char space.
-                gstate.textState.setCharSpace( pnode->operand<double>( 0 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::Tw ) {
-                // Read word space.
-                gstate.textState.setWordSpace( pnode->operand<double>( 0 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::Tz ) {
-                // Read horizontal scale.
-                gstate.textState.setHScale( pnode->operand<double>( 0 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::TL ) {
-                // Read leading.
-                gstate.textState.setLeading( pnode->operand<double>( 0 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::Tf ) {
-                // Read font name and font size.
-                gstate.textState.setFont( pnode->operands().at( 0 ).substr( 1 ),
-                                          resources );
-                gstate.textState.setFontSize( pnode->operand<double>( 1 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::Tr ) {
-                // Read render.
-                gstate.textState.setRender( pnode->operand<int>( 0 ) );
-            }
-            else if( pnode->type() == PdfeGOperator::Ts ) {
-                // Read rise.
-                gstate.textState.setRise( pnode->operand<double>( 0 ) );
-            }
-            // Call category function.
             this->fTextState( streamState );
         }
         else if( pnode->category() == PdfeGCategory::TextPositioning ) {
             // Commands in this category: Td, TD, Tm, T*.
-
-            if( pnode->type() == PdfeGOperator::Td ) {
-                // Read and compute text transformation matrix.
-                PdfeMatrix transMat;
-                transMat(2,0) = pnode->operand<double>( 0 );
-                transMat(2,1) = pnode->operand<double>( 1 );
-
-                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
-                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
-            }
-            else if( pnode->type() == PdfeGOperator::TD ) {
-                // Read and compute text transformation matrix.
-                PdfeMatrix transMat;
-                transMat(2,0) = pnode->operand<double>( 0 );
-                transMat(2,1) = pnode->operand<double>( 1 );
-
-                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
-                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
-                // New leading value.
-                gstate.textState.setLeading( -transMat(2,1) );
-            }
-            else if( pnode->type() == PdfeGOperator::Tm ) {
-                // Get transformation matrix.
-                PdfeMatrix transMat;
-                transMat(0,0) = pnode->operand<double>( 0 );
-                transMat(0,1) = pnode->operand<double>( 1 );
-                transMat(1,0) = pnode->operand<double>( 2 );
-                transMat(1,1) = pnode->operand<double>( 3 );
-                transMat(2,0) = pnode->operand<double>( 4 );
-                transMat(2,1) = pnode->operand<double>( 5 );
-
-                gstate.textState.setTransMat( transMat );
-                gstate.textState.setLineTransMat( transMat );
-            }
-            else if( pnode->type() == PdfeGOperator::Tstar ) {
-                // "T*" equivalent to "0 -Tl Td".
-                PdfeMatrix transMat;
-                transMat(2,1) = -gstate.textState.leading();
-
-                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
-                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
-            }
-            // Call category function.
             this->fTextPositioning( streamState );
         }
         else if( pnode->category() == PdfeGCategory::TextShowing ) {
             // Commands in this category: Tj, TJ, ', "
 
-            //Modify text graphics state parameters when necessary.
-            if( pnode->type() == PdfeGOperator::Quote ) {
-                // Corresponds to T*, Tj.
-                PdfeMatrix transMat;
-                transMat(2,1) = -gstate.textState.leading();
-
-                gstate.textState.setLineTransMat( transMat * gstate.textState.lineTransMat() );
-                gstate.textState.setTransMat( gstate.textState.lineTransMat() );
-            }
-            else if( pnode->type() == PdfeGOperator::DoubleQuote ) {
-                // Corresponds to Tw, Tc, Tj.
-                gstate.textState.setWordSpace( pnode->operand<double>( 0 ) );
-                gstate.textState.setCharSpace( pnode->operand<double>( 1 ) );
-            }
             // Call category function: return text displacement vector.
             PdfeVector textDispl = this->fTextShowing( streamState );
-
             // Update text transformation matrix using the vector.
             PdfeMatrix transMat;
             transMat(2,0) = textDispl(0);
             transMat(2,1) = textDispl(1);
-            gstate.textState.setTransMat( transMat * gstate.textState.transMat() );
+            gstate.textState().setTransMat( transMat * gstate.textState().transMat() );
         }
         else if( pnode->category() == PdfeGCategory::Color ) {
             // Commands in this category: CS, cs, SC, SCN, sc, scn, G, g, RG, rg, K, k.
-            // Not so much done in this category. Should maybe implement a bit more. TODO !
-
-            // Call category function.
             this->fColor( streamState );
         }
         else if( pnode->category() == PdfeGCategory::PathConstruction ) {
@@ -295,8 +168,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         else if( pnode->category() == PdfeGCategory::ClippingPath ) {
             // Commands in this category: W, W*.
 
-            // Append the current path to the clipping path.
-            gstate.clippingPath.appendPath( currentPath );
+            // TODO: fix this awful implementation !
             // Set the clipping path operator of the current path.
             currentPath.setClippingPathOp( pnode->goperator().str() );
 
@@ -305,20 +177,14 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         }
         else if( pnode->category() == PdfeGCategory::Type3Fonts ) {
             // Commands in this category: d0, d1.
-
-            // Call category function.
             this->fType3Fonts( streamState );
         }
         else if( pnode->category() == PdfeGCategory::ShadingPatterns ) {
             // Commands in this category: sh.
-
-            // Call category function.
             this->fShadingPatterns( streamState );
         }
         else if( pnode->category() == PdfeGCategory::InlineImages ) {
             // Commands in this category: BI, ID, EI.
-
-            // Call category function.
             this->fInlineImages( streamState );
         }
         else if( pnode->category() == PdfeGCategory::XObjects ) {
@@ -359,28 +225,16 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         }
         else if( pnode->category() == PdfeGCategory::Compatibility ) {
             // Commands in this category: BX, EX.
-
-            if( pnode->type() == PdfeGOperator::BX ) {
-                // Activate compatibility mode.
-                gstate.compatibilityMode = true;
-            }
-            else if( pnode->type() == PdfeGOperator::EX ) {
-                // Deactivate compatibility mode.
-                gstate.compatibilityMode = false;
-            }
-            // Call category function.
             this->fCompatibility( streamState );
         }
         else if( pnode->category() == PdfeGCategory::Unknown ) {
             // Call category function.
             this->fUnknown( streamState );
-
 //                if( !gstate.compatibilityMode ) {
 //                    PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidContentStream,
 //                                             "Invalid token in a stream" );
 //                }
         }
-
         // Next node in the stream...
         streamState.pNode = streamState.pNode->next();
     }
