@@ -19,54 +19,126 @@
 
 namespace PoDoFoExtended {
 
-namespace PdfePathOperators
-{
-/// Enum of operators used to define a PDF path.
-enum Enum
-{
-    m = 0,  // move
-    l,      // line
-    c,      // Bézier c
-    v,      // Bézier v
-    y,      // Bézier y
-    h,      // close
-    re      // rectangle
-};
-}
-
 //**********************************************************//
 //                         PdfeSubPath                      //
 //**********************************************************//
 /** Class representing a PDF subpath. It is used as the basic
- * brick for a the construction of PDF paths.
+ * brick for a the construction of PDF paths. It should be
+ * sufficiently smart to check the integrity of the subpath
+ * construction process, but also allow some afterwards
+ * modifications.
  */
 class PdfeSubPath
 {
 public:
-    /** Default constructor: create empty subpath.
+    /** Default constructor: create empty subpath with a
+     * starting point.
+     * \param startCoords Coordinates of the starting point,
+     * corresponding to the operator "x y m". (0,0) by default.
      */
-    PdfeSubPath();
-    /** Initialize to an empty subpath.
+    PdfeSubPath( const PdfeVector& startCoords = PdfeVector() );
+    /** Create a subpath from a rectangle.
+     * \param rect Coordinates of the rectangle, corresponding
+     * to the operator "x y w h re".
      */
-    void init();
+    PdfeSubPath( const PoDoFo::PdfRect& rect );
+    /** Initialize to an empty subpath with a given starting point.
+     * \param startCoords Coordinates of the starting point,
+     * corresponding to the operator "x y m". (0,0) by default.
+     */
+    void init( const PdfeVector& startCoords = PdfeVector() );
+    /** Initialize the subpath with a rectangle.
+     * \param rect Coordinates of the rectangle, corresponding
+     * to the operator "x y w h re".
+     */
+    void init( const PoDoFo::PdfRect& rect );
 
 public:
-    // Basic modification of the subpath.
-    /** Append a point to the subpath.
-     * \param coord Coordinates of the point to append.
-     * \param op Construction operator corresponding.
+    /** Basic structure which represents a point inside a subpath,
+     * i.e. its coordinates and the corresponding graphics operator.
      */
-    void appendPoint( const PdfeVector& coord, PdfePathOperators::Enum op );
-    /** Modify a point of the subpath.
-     * \param coord Coordinates of the point to append.
-     * \param op Construction operator corresponding.
-     * \param idx Index of the point to modify.
+    struct Point
+    {
+        /// Coordinates of the point.
+        PdfeVector  coordinates;
+        /// Graphics operator.
+        PdfeGraphicOperator  goperator;
+        /// Simple constructor.
+        Point( const PdfeVector& coords = PdfeVector(),
+               const PdfeGraphicOperator& gop = PdfeGraphicOperator() );
+    };
+
+public:
+    // Subpath construction...
+    /** Move the starting point: erase completely the
+     * subpath and set the starting coordinates.
+     * Corresponds to operator "x y m".
+     * \param coords Coordinates of the starting point.
+     * \return Reference to the modified subpath.
      */
-    void setPoint( size_t idx, const PdfeVector& coord, PdfePathOperators::Enum op );
-    /** Close (or not) the subpath.
-     * \param closed Close the subpath (default: true).
+    PdfeSubPath& moveTo( const PdfeVector& coords );
+    /** Append a straight line to the subpath, begin at the
+     * current point, if the subpath is not already closed.
+     * Corresponds to operator "x y l".
+     * \param coords End coordinates of the straight line.
+     * \return Reference to the modified subpath.
      */
-    void close( bool closed = true );
+    PdfeSubPath& appendLine( const PdfeVector& coords );
+    /** Append a Bézier curve, with 2 controlling points.
+     * Corresponds to operator "x1 y1 x2 y2 x3 y3 c".
+     * \param coords1 Control point 1.
+     * \param coords2 Control point 2.
+     * \param coords3 End point of the Bézier curve.
+     * \return Reference to the modified subpath.
+     */
+    PdfeSubPath& appendBezierC( const PdfeVector& coords1,
+                                const PdfeVector& coords2,
+                                const PdfeVector& coords3 );
+    /** Append a Bézier curve, with 1 controlling point.
+     * Corresponds to operator "x2 y2 x3 y3 v".
+     * \param coords2 Control point 2.
+     * \param coords3 End point of the Bézier curve.
+     * \return Reference to the modified subpath.
+     */
+    PdfeSubPath& appendBezierV( const PdfeVector& coords2,
+                                const PdfeVector& coords3 );
+    /** Append a Bézier curve, with 1 controlling point.
+     * Corresponds to operator "x1 y1 x3 y3 y".
+     * \param coords1 Control point 1.
+     * \param coords3 End point of the Bézier curve.
+     * \return Reference to the modified subpath.
+     */
+    PdfeSubPath& appendBezierY( const PdfeVector& coords1,
+                                const PdfeVector& coords3 );
+    /** Close the subpath, with operator "h".
+     * \return Reference to the modified subpath.
+     */
+    PdfeSubPath& close();
+
+    /** Modify the coordinates of a point in the subpath.
+     * Use it at yout own risk!
+     * \param idx Index of the point.
+     * \param coords New coordinates.
+     */
+    void setCoordinates( size_t idx, const PdfeVector& coords );
+
+public:
+    // Subpath getters...
+    /// Is the subpath closed ?
+    bool isClosed() const;
+    /// Is subpath empty (i.e. with only a starting point)?
+    bool isEmpty() const        {   return ( m_points.size() <= 1 );    }
+
+    /// Number of points in the subpath.
+    size_t nbPoints() const             {   return m_points.size();     }
+    /// Current point in the subpath.
+    const Point& currentPoint() const   {   return m_points.back();     }
+    /// Get a subpath's point.
+    const Point& point( size_t idx ) const                  {   return m_points.at( idx );      }
+    /// Get a point coordinates.
+    const PdfeVector& coordinates( size_t idx ) const       {   return m_points.at( idx ).coordinates;  }
+    /// Get a point graphics operator.
+    const PdfeGraphicOperator& goperator( size_t idx ) const{   return m_points.at( idx ).goperator;    }
 
 public:
     // Transformation and observation on the subpath.
@@ -74,71 +146,39 @@ public:
      * \param zone Rectangle representing the zone.
      * \param strictInclusion Evaluate if the subpath is stricly inside the zone.
      */
-    bool intersectZone( const PoDoFo::PdfRect& zone,
-                        bool strictInclusion = false ) const;
-       /** Reduce the subpath in order to be inside a given zone.
+    bool intersects( const PoDoFo::PdfRect& zone,
+                     bool strictInclusion = false ) const;
+    /** Modify the subpath such that it corresponds to the intersection
+     * with a given zone.
      * \param zone Rectangle representing the zone to consider.
+     * \return Reference to the modified subpath.
      */
-    void reduceToZone( const PoDoFo::PdfRect& zone );
-    /** Apply a transformation matrix to points of the subpath.
+    PdfeSubPath& intersection( const PoDoFo::PdfRect& zone );
+    /** Map a transformation matrix to points of the subpath.
      * \param transMat Transformation matrix.
+     * \return Reference to the modified subpath.
      */
-    void applyTransMatrix( const PdfeMatrix& transMat );
+    PdfeSubPath& map( const PdfeMatrix& transMat );
 
     /** Convert the subpath to a Qt Painter Path object.
      * \param closeSubpath Force (or not) to close the subpath.
-     * \param evenOddRule Use the even-odd rule for painting.
+     * \param fillingRule Filling rule (winding by default).
      * \return QPainterPath object.
      */
     QPainterPath toQPainterPath( bool closeSubpath = true,
-                                 bool evenOddRule = false ) const;
-
-public:
-    /** Evaluate if a rectangle path intersects a zone.
-     * \param path Rectangle path.
-     * \param zone Rectangle representing the zone.
-     * \param strictInclusion Evaluate if the path is stricly inside the zone.
-     */
-    static bool intersectZone( const PoDoFo::PdfRect& path,
-                               const PoDoFo::PdfRect& zone,
-                               bool strictInclusion = false );
-    /** Modify a point in order to be inside a given zone.
-  * \param point Point which is modified.
-  * \param zone Rectangle representing the zone to consider.
-  */
- static void reduceToZone( PdfeVector& point,
-                           const PoDoFo::PdfRect& zone ) ;
-
-
-public:
-    // Getters.
-    /// Is the subpath closed ?
-    bool isClosed() const   {   return m_closed; }
-    /// Is subpath empty ?
-    bool isEmpty() const    {   return ( m_coordPoints.size() == 0 );  }
-
-    /// Number of points in the subpath.
-    size_t nbPoints() const {   return m_coordPoints.size();    }
-    /// Get a point coordinates.
-    const PdfeVector& pointCoord( size_t idx ) const    {   return m_coordPoints.at( idx );  }
-    /// Get a point operator.
-    PdfePathOperators::Enum pointOp( size_t idx ) const {   return m_opPoints.at( idx );  }
-
+                                 PdfeFillingRule::Enum fillingRule = PdfeFillingRule::Winding ) const;
 
 private:
-    /// Coordinates of points which composed the subpath.
-    std::vector<PdfeVector>  m_coordPoints;
-    /// Vector which identifies the constructor operator used for each point in the path.
-    std::vector<PdfePathOperators::Enum>  m_opPoints;
-    /// Is the subpath closed.
-    bool  m_closed;
+    /// Points which composed the subpath.
+    std::vector<Point>  m_points;
 };
 
 
 //**********************************************************//
 //                          PdfePath                        //
 //**********************************************************//
-/** Class representing a PDF path.
+/** Class representing a PDF path. A path is made of a
+ * collection of independent subpaths (PdfeSubPath).
  */
 class PdfePath
 {
@@ -146,160 +186,107 @@ public:
     /** Constructor: create an empty path.
      */
     PdfePath();
-
     /** Initialize to an empty path.
      */
     void init();
 
 public:
-    //**********************************************************//
-    //                      Path construction                   //
-    //**********************************************************//
+    // Path construction...
     /** Append an entire path.
      * \param path Path to append.
      */
-    void appendPath( const PdfePath& path );
-    /** Append an subpath.
+    PdfePath& appendPath( const PdfePath& path );
+    /** Append a subpath.
      * \param subpath Subpath to append.
      */
-    void appendSubpath( const PdfeSubPath& subpath );
-    /** Begin a new subpath, by moving current point.
+    PdfePath& appendSubpath( const PdfeSubPath& subpath );
+
+    /** Begin a new subpath by moving current point.
      * Corresponds to operator "x y m".
-     * \param point Point where the current point.
+     * \param coords Coordinates of the starting point.
      */
-    void beginSubpath( const PdfeVector& point );
-    /** Append a straight line to the current subpath, begin at the current point.
-     * Corresponds to operator "x y l".
-     * \param point End point of the straight line.
+    PdfePath& moveTo( const PdfeVector& coords );
+    /** Append a straight line to the current subpath, begin at the
+     * current point. Corresponds to operator "x y l".
+     * \param coords Coordinates of the ending point of the straight line.
      */
-    void appendLine( const PdfeVector& point );
+    PdfePath& appendLine( const PdfeVector& coords );
     /** Append a Bézier curve, with 2 controlling points.
      * Corresponds to operator "x1 y1 x2 y2 x3 y3 c".
-     * \param point1 Control point 1.
-     * \param point2 Control point 2.
-     * \param point3 End point of the Bézier curve.
+     * \param coords1 Control point 1.
+     * \param coords2 Control point 2.
+     * \param coords3 Ending point of the Bézier curve.
      */
-    void appendBezierC( const PdfeVector& point1,
-                        const PdfeVector& point2,
-                        const PdfeVector& point3 );
+    PdfePath& appendBezierC( const PdfeVector& coords1,
+                             const PdfeVector& coords2,
+                             const PdfeVector& coords3 );
     /** Append a Bézier curve, with 1 controlling point.
      * Corresponds to operator "x2 y2 x3 y3 v".
-     * \param point2 Control point 2.
-     * \param point3 End point of the Bézier curve.
+     * \param coords2 Control point 2.
+     * \param coords3 End point of the Bézier curve.
      */
-    void appendBezierV( const PdfeVector& point2,
-                        const PdfeVector& point3 );
+    PdfePath& appendBezierV( const PdfeVector& coords2,
+                             const PdfeVector& coords3 );
     /** Append a Bézier curve, with 1 controlling point.
      * Corresponds to operator "x1 y1 x3 y3 y".
-     * \param point1 Control point 1.
-     * \param point3 End point of the Bézier curve.
+     * \param coords1 Control point 1.
+     * \param coords3 End point of the Bézier curve.
      */
-    void appendBezierY( const PdfeVector& point1,
-                        const PdfeVector& point3 );
-    /** Close current subpath with a straight line.
-     * Corresponds to operator h.
-     */
-    void closeSubpath();
+    PdfePath& appendBezierY( const PdfeVector& coords1,
+                             const PdfeVector& coords3 );
     /** Append a rectangle to the path as a complete subpath.
      * Corresponds to operator "x y width height re".
-     * \param llPoint Left-low point of the rectangle.
-     * \param size Width and height of the rectangle.
+     * \param rect Coordinates of the rectangle.
      */
-    void appendRectangle( const PdfeVector& llPoint,
-                          const PdfeVector& size );
+    PdfePath& appendRectangle( const PoDoFo::PdfRect& rect );
+    /** Close current subpath with a straight line.
+     * Corresponds to operator "h".
+     */
+    PdfePath& closeSubpath();
 
+public:
     /** Convert the path to a Qt Painter Path object.
      * \param closeSubpaths Force (or not) to close subpaths.
-     * \param evenOddRule Use the even-odd rule for painting.
+     * \param fillingRule Filling rule (winding by default).
      * \return QPainterPath object.
      */
     QPainterPath toQPainterPath( bool closeSubpaths = true,
-                                 bool evenOddRule = false ) const;
-
+                                 PdfeFillingRule::Enum fillingRule = PdfeFillingRule::Winding ) const;
 
 public:
-    //**********************************************************//
-    //                       Getters/Setters                    //
-    //**********************************************************//
-    /** Get a constant reference to subpaths that compose the PdfePath.
-     * \return Constant reference to an std::vector of PdfeSubPath.
-     */
-    const std::vector<PdfeSubPath>& subpaths() const {
-        return m_subpaths;
-    }
-    /** Set a subpaths of the PdfePath.
-     * \param idx Index of the subpath to modify.
-     * \param subpath New subpath.
-     */
-    void setSubPath( size_t idx, const PdfeSubPath& subpath ) {
-        m_subpaths.at( idx ) = subpath;
-    }
-
-    /** Get clipping path operator.
-     * \return Clipping path operator. Empty if it is not a clipping path.
-     */
-    std::string clippingPathOp() const;
-    /** Is it a clipping path.
-     * \return Boolean.
-     */
+    // Clipping path operator.
+    /// Is the path a clipping path.
     bool isClippingPath() const;
-    /** Set clipping path operator of the path.
-     * \param op Clipping path operator. Empty if it is not a clipping path.
-     */
-    void setClippingPathOp( const std::string& op );
+    /// Get clipping path operator (unknown if not a clipping path).
+    const PdfeGraphicOperator& clippingPathOp() const;
+    /// Set clipping path operator of the path.
+    void setClippingPathOp( const PdfeGraphicOperator& gop );
 
 public:
-    /** Get the operator name.
-     * \param op PDF path operator.
-     * \return Name of the operator (string).
-     */
-    static const char* OperatorName( PdfePathOperators::Enum op );
+    // Getters and setters...
+    /// Numbers of subpaths.
+    size_t nbSubpaths() const   {   return m_subpaths.size();   }
+    /// Reference to a given subpath.
+    PdfeSubPath& subpath( size_t idx )              {   return m_subpaths.at( idx );    }
+    const PdfeSubPath& subpath( size_t idx ) const  {   return m_subpaths.at( idx );    }
+
+public:
+    // DEPRECIATED...
+    const std::vector<PdfeSubPath>& subpaths() const    {   return m_subpaths;  }
 
 private:
     /** Get the current subpath. Append a new one if the last in the list
      * is closed.
      * \return Reference to the current subpath in the path.
      */
-    PdfeSubPath& currentSubPath();
+    PdfeSubPath& currentSubpath();
 
 private:
     /// Subpaths vector.
     std::vector<PdfeSubPath>  m_subpaths;
-    /// Current point coordinates in the path.
-    PdfeVector  m_currentPoint;
-    /// Clipping path operator (empty if not a clipping path).
-    std::string  m_clippingPathOp;
+    /// Clipping path operator (unknown if not a clipping path).
+    PdfeGraphicOperator  m_clippingPathOp;
 };
-
-//**********************************************************//
-//                      Inline methods                      //
-//**********************************************************//
-inline void PdfeSubPath::reduceToZone( PdfeVector& point, const PoDoFo::PdfRect& zone )
-{
-    point(0) = std::min( std::max( point(0), zone.GetLeft() ),
-                         zone.GetLeft() + zone.GetWidth() );
-    point(1) = std::min( std::max( point(1), zone.GetBottom() ),
-                         zone.GetBottom() + zone.GetHeight() );
-}
-inline void PdfeSubPath::applyTransMatrix( const PdfeMatrix& transMat )
-{
-    // Modify points in the subpath.
-    for( size_t j = 0 ; j < m_coordPoints.size() ; j++ ) {
-        m_coordPoints[j] = m_coordPoints[j] * transMat;
-    }
-}
-inline std::string PdfePath::clippingPathOp() const
-{
-    return m_clippingPathOp;
-}
-inline bool PdfePath::isClippingPath() const
-{
-    return m_clippingPathOp.length();
-}
-inline void PdfePath::setClippingPathOp( const std::string& op )
-{
-    m_clippingPathOp = op;
-}
 
 }
 

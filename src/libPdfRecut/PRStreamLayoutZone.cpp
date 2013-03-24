@@ -156,18 +156,18 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamStateOld& streamState,
     for( it = subpaths.begin() ; it != subpaths.end() ; )
     {
         // Apply transformation matrix.
-        it->applyTransMatrix( gState.transMat() );
+        it->map( gState.transMat() );
 
         // Does the subpath intersect the zone.
-        inZone = it->intersectZone( m_zone.zoneIn, m_parameters.pathStrictlyInside );
+        inZone = it->intersects( m_zone.zoneIn, m_parameters.pathStrictlyInside );
 
         if( inZone ) {
             // Reduce to zone if asked, and if not already strictly inside the zone.
             if( m_parameters.pathReduce && !m_parameters.pathStrictlyInside ) {
-                it->reduceToZone( m_zone.zoneIn );
+                it->intersection( m_zone.zoneIn );
 
                 // Apply inverse matrix to get points in current space.
-                it->applyTransMatrix( invTransMat );
+                it->map( invTransMat );
             }
             else {
                 // Simply get back original subpath.
@@ -189,59 +189,58 @@ void PRStreamLayoutZone::fPathPainting( const PdfeStreamStateOld& streamState,
         // Points in the subpath.
         for( size_t j = 0 ; j < subpaths[i].nbPoints() ; j++ ) {
             // Distinction between different painting operators.
-            if( subpaths[i].pointOp(j) == PdfePathOperators::m ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+            if( subpaths[i].goperator(j).type() == PdfeGOperator::m ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
                 m_bufStream << "m\n";
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::l ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::l ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
                 m_bufStream << "l\n";
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::c ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+2)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+2)(1) << " ";
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::c ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(1) << " ";
+                m_bufStream << subpaths[i].coordinates(j+2)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j+2)(1) << " ";
                 m_bufStream << "c\n";
                 j+=2;
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::v ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::v ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(1) << " ";
                 m_bufStream << "v\n";
                 j+=1;
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::y ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j+1)(1) << " ";
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::y ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j+1)(1) << " ";
                 m_bufStream << "y\n";
                 j+=1;
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::h ) {
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::h ) {
                 m_bufStream << "h\n";
             }
-            else if( subpaths[i].pointOp(j) == PdfePathOperators::re ) {
-                m_bufStream << subpaths[i].pointCoord(j)(0) << " ";
-                m_bufStream << subpaths[i].pointCoord(j)(1) << " ";
-                m_bufStream << ( subpaths[i].pointCoord(j+2)(0)-subpaths[i].pointCoord(j)(0) ) << " ";
-                m_bufStream << ( subpaths[i].pointCoord(j+2)(1)-subpaths[i].pointCoord(j)(1) ) << " ";
+            else if( subpaths[i].goperator(j).type() == PdfeGOperator::re ) {
+                m_bufStream << subpaths[i].coordinates(j)(0) << " ";
+                m_bufStream << subpaths[i].coordinates(j)(1) << " ";
+                m_bufStream << ( subpaths[i].coordinates(j+2)(0)-subpaths[i].coordinates(j)(0) ) << " ";
+                m_bufStream << ( subpaths[i].coordinates(j+2)(1)-subpaths[i].coordinates(j)(1) ) << " ";
                 m_bufStream << "re\n";
                 j+=4;
             }
         }
     }
     // Add clipping path operator if necessary.
-    std::string clippingPathOp = currentPath.clippingPathOp();
-    if( clippingPathOp.length() ) {
-        m_bufStream << clippingPathOp << "\n";
+    if( currentPath.isClippingPath() ) {
+        m_bufStream << currentPath.clippingPathOp().str() << "\n";
     }
     // Painting operator.
     m_bufStream << gOperator.str() << "\n";
@@ -431,12 +430,12 @@ void PRStreamLayoutZone::fInlineImages( const PdfeStreamStateOld& streamState )
     else if( gOperator.type() == PdfeGOperator::EI ) {
         // Check if the inline image is inside the zone.
         PdfePath pathII;
-        pathII.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
+        pathII.appendRectangle( PdfRect(0,0,1,1) );
 
         PdfeSubPath subpathII = pathII.subpaths().back();
-        subpathII.applyTransMatrix( gState.transMat() );
+        subpathII.map( gState.transMat() );
 
-        bool inZone = subpathII.intersectZone( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
+        bool inZone = subpathII.intersects( m_zone.zoneIn, m_parameters.inlineImageStrictlyInside );
         if( !inZone ) {
             return;
         }
@@ -469,12 +468,12 @@ void PRStreamLayoutZone::fXObjects( const PdfeStreamStateOld& streamState )
     if( !xobjSubtype.compare( "Image" ) ) {
         // Check if the image is inside the zone.
         PdfePath pathImg;
-        pathImg.appendRectangle( PdfeVector(0,0), PdfeVector(1,1) );
+        pathImg.appendRectangle( PdfRect(0,0,1,1) );
 
         PdfeSubPath subpathImg = pathImg.subpaths().back();
-        subpathImg.applyTransMatrix( gState.transMat() );
+        subpathImg.map( gState.transMat() );
 
-        bool inZone = subpathImg.intersectZone( m_zone.zoneIn, m_parameters.imageStrictlyInside );
+        bool inZone = subpathImg.intersects( m_zone.zoneIn, m_parameters.imageStrictlyInside );
         if( inZone )
         {
             m_bufString = "/";

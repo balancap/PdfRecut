@@ -254,7 +254,7 @@ public:
     /** Intersection with a rectangle zone: corresponds to
      * a projection inside the given zone.
      * \param zone Rectangular zone.
-     * \return Reference to the newly modified vector.
+     * \return Reference to the modified vector.
      */
     PdfeVector& intersection( const PoDoFo::PdfRect& zone );
 };

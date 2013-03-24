@@ -61,8 +61,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
     streamState.gStates.push_back( initialGState );
     tmpRect = canvas->GetPageSize();
     PdfePath clippingPath = streamState.gStates.back().clippingPath();
-    clippingPath.appendRectangle( PdfeVector( tmpRect.GetLeft(), tmpRect.GetBottom() ),
-                                  PdfeVector( tmpRect.GetWidth(), tmpRect.GetHeight() ) );
+    clippingPath.appendRectangle( tmpRect );
     streamState.gStates.back().setClippingPath( clippingPath );
 
     streamState.canvas = canvas;
@@ -312,7 +311,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-1], point(1) );
                     this->readValue( gOperands[nbvars-2], point(0) );
 
-                    currentPath.beginSubpath( point );
+                    currentPath.moveTo( point );
                 }
                 else if( gOperator.type() == PdfeGOperator::l ) {
                     // Append straight line.
@@ -376,7 +375,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     this->readValue( gOperands[nbvars-3], llpoint(1) );
                     this->readValue( gOperands[nbvars-4], llpoint(0) );
 
-                    currentPath.appendRectangle( llpoint, size );
+                    currentPath.appendRectangle( PdfRect( llpoint(0), llpoint(1), size(0), size(1) ) );
                 }
                 // Call category function.
                 this->fPathConstruction( streamState, currentPath );
@@ -463,7 +462,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     PdfArray& bbox = xObjPtr->GetIndirectKey( "BBox" )->GetArray();
 
                     PdfePath pathBBox;
-                    pathBBox.beginSubpath( PdfeVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
+                    pathBBox.moveTo( PdfeVector( bbox[0].GetReal(), bbox[1].GetReal() ) );
                     pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[1].GetReal() ) );
                     pathBBox.appendLine( PdfeVector( bbox[2].GetReal(), bbox[3].GetReal() ) );
                     pathBBox.appendLine( PdfeVector( bbox[0].GetReal(), bbox[3].GetReal() ) );

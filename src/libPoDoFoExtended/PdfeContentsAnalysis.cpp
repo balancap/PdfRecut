@@ -108,7 +108,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
                 // Begin a new subpath.
                 PdfeVector point( pnode->operand<double>( 0 ),
                                   pnode->operand<double>( 1 ) );
-                currentPath.beginSubpath( point );
+                currentPath.moveTo( point );
             }
             else if( pnode->type() == PdfeGOperator::l ) {
                 // Append straight line.
@@ -148,11 +148,11 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             }
             else if( pnode->type() == PdfeGOperator::re ) {
                 // Append a rectangle to the current path as a complete subpath.
-                PdfeVector lbPoint( pnode->operand<double>( 0 ),
-                                    pnode->operand<double>( 1 ) );
-                PdfeVector size( pnode->operand<double>( 2 ),
-                                 pnode->operand<double>( 3 ) );
-                currentPath.appendRectangle( lbPoint, size );
+                PdfRect rect( pnode->operand<double>( 0 ),
+                              pnode->operand<double>( 1 ),
+                              pnode->operand<double>( 2 ),
+                              pnode->operand<double>( 3 ) );
+                currentPath.appendRectangle( rect );
             }
             // Call category function.
             this->fPathConstruction( streamState, currentPath );

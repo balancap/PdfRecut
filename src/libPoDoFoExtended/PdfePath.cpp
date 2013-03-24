@@ -19,35 +19,113 @@ namespace PoDoFoExtended {
 //**********************************************************//
 //                        PdfeSubPath                       //
 //**********************************************************//
-PdfeSubPath::PdfeSubPath()
+PdfeSubPath::Point::Point( const PdfeVector& coords, const PdfeGraphicOperator& gop ) :
+    coordinates( coords ),
+    goperator( gop )
 {
-    this->init();
-}
-void PdfeSubPath::init()
-{
-    m_coordPoints.clear();
-    m_opPoints.clear();
-    m_closed = false;
 }
 
-void PdfeSubPath::appendPoint( const PdfeVector& coord, PdfePathOperators::Enum op )
+PdfeSubPath::PdfeSubPath( const PdfeVector& startCoords )
 {
-    m_coordPoints.push_back( coord );
-    m_opPoints.push_back( op );
+    this->init( startCoords );
+}
+PdfeSubPath::PdfeSubPath( const PdfRect& rect )
+{
+    this->init( rect );
+}
+void PdfeSubPath::init( const PdfeVector& startCoords )
+{
+    // Clear subpath and append starting point.
+    m_points.clear();
+    m_points.push_back( Point( startCoords, PdfeGOperator::m ) );
+}
+void PdfeSubPath::init( const PdfRect& rect )
+{
+    /* Known to be equivalent to
+      x y m
+      ( x + width ) y l
+      ( x + width ) ( y + height ) l
+      x ( y + height ) l
+      h
+    */
+    m_points.clear();
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom()+rect.GetHeight() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom()+rect.GetHeight() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
 }
 
-void PdfeSubPath::setPoint( size_t idx , const PdfeVector& coord, PdfePathOperators::Enum op )
+PdfeSubPath &PdfeSubPath::moveTo( const PdfeVector& coords )
 {
-    m_coordPoints.at( idx ) = coord;
-    m_opPoints.at( idx ) = op;
+    // Clear subpath and append starting point.
+    m_points.clear();
+    m_points.push_back( Point( coords, PdfeGOperator::m ) );
+    return *this;
 }
-void PdfeSubPath::close( bool closed )
+PdfeSubPath& PdfeSubPath::appendLine( const PdfeVector& coords )
 {
-    m_closed = closed;
+    if( !this->isClosed() ) {
+        m_points.push_back( Point( coords, PdfeGOperator::l ) );
+    }
+    return *this;
+}
+PdfeSubPath& PdfeSubPath::appendBezierC( const PdfeVector& coords1,
+                                         const PdfeVector& coords2,
+                                         const PdfeVector& coords3 )
+{
+    if( !this->isClosed() ) {
+        m_points.push_back( Point( coords1, PdfeGOperator::c ) );
+        m_points.push_back( Point( coords2, PdfeGOperator::c ) );
+        m_points.push_back( Point( coords3, PdfeGOperator::c ) );
+    }
+    return *this;
+}
+PdfeSubPath& PdfeSubPath::appendBezierV( const PdfeVector& coords2,
+                                         const PdfeVector& coords3 )
+{
+    if( !this->isClosed() ) {
+        m_points.push_back( Point( coords2, PdfeGOperator::v ) );
+        m_points.push_back( Point( coords3, PdfeGOperator::v ) );
+    }
+    return *this;
+}
+PdfeSubPath& PdfeSubPath::appendBezierY( const PdfeVector& coords1,
+                                         const PdfeVector& coords3 )
+{
+    if( !this->isClosed() ) {
+        m_points.push_back( Point( coords1, PdfeGOperator::y ) );
+        m_points.push_back( Point( coords3, PdfeGOperator::y ) );
+    }
+    return *this;
+}
+PdfeSubPath& PdfeSubPath::close()
+{
+    if( !this->isClosed() ) {
+        m_points.push_back( Point( m_points.front().coordinates,
+                                   PdfeGOperator::h ) );
+    }
+    return *this;
 }
 
-bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
-                                 bool strictInclusion ) const
+void PdfeSubPath::setCoordinates( size_t idx, const PdfeVector& coords )
+{
+    m_points.at( idx ).coordinates = coords;
+}
+
+bool PdfeSubPath::isClosed() const
+{
+    return  ( m_points.back().goperator.type() == PdfeGOperator::h ) ||
+            ( m_points.back().goperator.type() == PdfeGOperator::re );
+}
+
+bool PdfeSubPath::intersects( const PoDoFo::PdfRect& zone,
+                              bool strictInclusion ) const
 {
     bool leftTop(false), left(false), leftBottom(false);
     bool centerTop(false), center(false), centerBottom(false);
@@ -55,54 +133,53 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
     bool strictCenter(true);
 
     // Loop on the points of the subpath.
-    for( size_t i = 0 ; i < m_coordPoints.size() ; i++ )
-    {
+    for( size_t i = 0 ; i < m_points.size() ; i++ ) {
+        const PdfeVector& coords = m_points[i].coordinates;
         // Only check center with strict inclusion
         if( strictInclusion ) {
             strictCenter = strictCenter &&
-                    m_coordPoints[i](0) >= zone.GetLeft() &&
-                    m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
-                    m_coordPoints[i](1) >= zone.GetBottom() &&
-                    m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight();
+                    coords(0) >= zone.GetLeft() &&
+                    coords(0) <= zone.GetLeft()+zone.GetWidth() &&
+                    coords(1) >= zone.GetBottom() &&
+                    coords(1) <= zone.GetBottom()+zone.GetHeight();
         }
         else {
             // Where is the current point / zone.
-            if( m_coordPoints[i](0) <= zone.GetLeft() &&
-                    m_coordPoints[i](1) <= zone.GetBottom() )
+            if( coords(0) <= zone.GetLeft() &&
+                    coords(1) <= zone.GetBottom() )
                 leftBottom = true;
-            else if( m_coordPoints[i](0) <= zone.GetLeft() &&
-                     m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight() &&
-                     m_coordPoints[i](1) >= zone.GetBottom() )
+            else if( coords(0) <= zone.GetLeft() &&
+                     coords(1) <= zone.GetBottom()+zone.GetHeight() &&
+                     coords(1) >= zone.GetBottom() )
                 left = true;
-            else if( m_coordPoints[i](0) <= zone.GetLeft() &&
-                     m_coordPoints[i](1) >= zone.GetBottom()+zone.GetHeight() )
+            else if( coords(0) <= zone.GetLeft() &&
+                     coords(1) >= zone.GetBottom()+zone.GetHeight() )
                 leftTop = true;
-            else if( m_coordPoints[i](0) >= zone.GetLeft() &&
-                     m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
-                     m_coordPoints[i](1) <= zone.GetBottom() )
+            else if( coords(0) >= zone.GetLeft() &&
+                     coords(0) <= zone.GetLeft()+zone.GetWidth() &&
+                     coords(1) <= zone.GetBottom() )
                 centerBottom = true;
-            else if( m_coordPoints[i](0) >= zone.GetLeft() &&
-                     m_coordPoints[i](0) <= zone.GetLeft()+zone.GetWidth() &&
-                     m_coordPoints[i](1) >= zone.GetBottom()+zone.GetHeight() )
+            else if( coords(0) >= zone.GetLeft() &&
+                     coords(0) <= zone.GetLeft()+zone.GetWidth() &&
+                     coords(1) >= zone.GetBottom()+zone.GetHeight() )
                 centerTop = true;
-            else if( m_coordPoints[i](0) >= zone.GetLeft()+zone.GetWidth() &&
-                     m_coordPoints[i](1) <= zone.GetBottom() )
+            else if( coords(0) >= zone.GetLeft()+zone.GetWidth() &&
+                     coords(1) <= zone.GetBottom() )
                 rightBottom = true;
-            else if( m_coordPoints[i](0) >= zone.GetLeft()+zone.GetWidth() &&
-                     m_coordPoints[i](1) <= zone.GetBottom()+zone.GetHeight() &&
-                     m_coordPoints[i](1) >= zone.GetBottom() )
+            else if( coords(0) >= zone.GetLeft()+zone.GetWidth() &&
+                     coords(1) <= zone.GetBottom()+zone.GetHeight() &&
+                     coords(1) >= zone.GetBottom() )
                 right = true;
-            else if( m_coordPoints[i](0) >= zone.GetLeft()+zone.GetWidth() &&
-                     m_coordPoints[i](1) >= zone.GetBottom()+zone.GetHeight() )
+            else if( coords(0) >= zone.GetLeft()+zone.GetWidth() &&
+                     coords(1) >= zone.GetBottom()+zone.GetHeight() )
                 rightTop = true;
             else
                 center = true;
         }
     }
-    if(strictInclusion) {
+    if( strictInclusion ) {
         return strictCenter;
     }
-
     // Try to estimate if the path intersects the zone.
     bool intersect = center ||
             ( centerTop && ( leftBottom || centerBottom || rightBottom ) ) ||
@@ -111,152 +188,130 @@ bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
             ( right && ( leftBottom || left || leftTop ) ) ||
             ( leftBottom && rightTop ) ||
             ( leftTop && rightBottom );
-
     return intersect;
 }
-bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& path,
-                                 const PoDoFo::PdfRect& zone,
-                                 bool strictInclusion )
-{
-    if( strictInclusion ) {
-        // Strict inclusion: all points in the zone.
-        strictInclusion = ( path.GetLeft() >= zone.GetLeft() ) &&
-                ( path.GetBottom() >= zone.GetBottom() ) &&
-                ( path.GetLeft()+path.GetWidth() <= zone.GetLeft()+zone.GetWidth() ) &&
-                ( path.GetBottom()+path.GetHeight() <= zone.GetBottom()+zone.GetHeight() );
-        return strictInclusion;
-    }
-    else {
-        bool left(false), right(false), bottom(false), top(false), center(false);
-
-        // Evaluate the intersection with the different part of the zone.
-        center = ( path.GetLeft() >= zone.GetLeft() ) &&
-                ( path.GetBottom() >= zone.GetBottom() ) &&
-                ( path.GetLeft()+path.GetWidth() <= zone.GetLeft()+zone.GetWidth() ) &&
-                ( path.GetBottom()+path.GetHeight() <= zone.GetBottom()+zone.GetHeight() );
-
-        left = !( path.GetBottom()+path.GetHeight() <= zone.GetBottom() ||
-                  path.GetBottom() >= zone.GetBottom()+zone.GetHeight() ) &&
-                path.GetLeft() <= zone.GetLeft();
-
-        right = !( path.GetBottom()+path.GetHeight() <= zone.GetBottom() ||
-                   path.GetBottom() >= zone.GetBottom()+zone.GetHeight() ) &&
-                path.GetLeft()+path.GetWidth() >= zone.GetLeft()+zone.GetWidth();
-
-        bottom = !( path.GetLeft()+path.GetWidth() <= zone.GetLeft() ||
-                    path.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
-                path.GetBottom() <= zone.GetBottom();
-
-        top = !( path.GetLeft()+path.GetWidth() <= zone.GetLeft() ||
-                 path.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
-                path.GetBottom()+path.GetHeight() <= zone.GetBottom()+zone.GetHeight();
-
-        bool intersect = center ||
-                ( left && top ) ||
-                ( left && bottom ) ||
-                ( right && top ) ||
-                ( right && bottom ) ||
-                ( top && bottom ) ||
-                ( left && right );
-        return intersect;
-    }
-}
-
-void PdfeSubPath::reduceToZone( const PoDoFo::PdfRect& zone )
+PdfeSubPath& PdfeSubPath::intersection( const PoDoFo::PdfRect& zone )
 {
     // Modify points in the subpath.
-    for( size_t j = 0 ; j < m_coordPoints.size() ; j++ )
-    {
+    for( size_t j = 0 ; j < m_points.size() ; j++ ) {
+        PdfeGOperator::Enum goperator = m_points[j].goperator.type();
         // Distinction between different painting operators.
-        if( m_opPoints[j] == PdfePathOperators::m ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
+        if( goperator == PdfeGOperator::m ) {
+            m_points[j].coordinates.intersection( zone );
         }
-        else if( m_opPoints[j] == PdfePathOperators::l ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
+        else if( goperator == PdfeGOperator::l ) {
+            m_points[j].coordinates.intersection( zone );
         }
-        else if( m_opPoints[j] == PdfePathOperators::c ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+1], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+2], zone );
+        else if( goperator == PdfeGOperator::c ) {
+            m_points[j].coordinates.intersection( zone );
+            m_points[j+1].coordinates.intersection( zone );
+            m_points[j+2].coordinates.intersection( zone );
             j+=2;
         }
-        else if( m_opPoints[j] == PdfePathOperators::v ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+1], zone );
+        else if( goperator == PdfeGOperator::v ) {
+            m_points[j].coordinates.intersection( zone );
+            m_points[j+1].coordinates.intersection( zone );
             j+=1;
         }
-        else if( m_opPoints[j] == PdfePathOperators::y ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+1], zone );
+        else if( goperator == PdfeGOperator::y ) {
+            m_points[j].coordinates.intersection( zone );
+            m_points[j+1].coordinates.intersection( zone );
             j+=1;
         }
-        else if( m_opPoints[j] == PdfePathOperators::h ) {
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
+        else if( goperator == PdfeGOperator::h ) {
+            m_points[j+1].coordinates.intersection( zone );
         }
-        else if( m_opPoints[j] == PdfePathOperators::re ) {
-            // Rectangle: modify points and transform "re" command by "m l l l h"
+        else if( goperator == PdfeGOperator::re ) {
+            // Rectangle: modify points and replace "re" command by "m l l l h"
             // in case it is not a rectangle anymore.
-            PdfeSubPath::reduceToZone( m_coordPoints[j], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+1], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+2], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+3], zone );
-            PdfeSubPath::reduceToZone( m_coordPoints[j+4], zone );
+            m_points[j].coordinates.intersection( zone );
+            m_points[j+1].coordinates.intersection( zone );
+            m_points[j+2].coordinates.intersection( zone );
+            m_points[j+3].coordinates.intersection( zone );
+            m_points[j+4].coordinates.intersection( zone );
 
-            m_opPoints[j] = PdfePathOperators::m;
-            m_opPoints[j+1] = PdfePathOperators::l;
-            m_opPoints[j+2] = PdfePathOperators::l;
-            m_opPoints[j+3] = PdfePathOperators::l;
-            m_opPoints[j+4] = PdfePathOperators::h;
+            m_points[j].goperator = PdfeGOperator::m;
+            m_points[j+1].goperator = PdfeGOperator::l;
+            m_points[j+2].goperator = PdfeGOperator::l;
+            m_points[j+3].goperator = PdfeGOperator::l;
+            m_points[j+4].goperator = PdfeGOperator::h;
 
             j+=4;
         }
     }
+    return *this;
 }
-QPainterPath PdfeSubPath::toQPainterPath( bool closeSubpath, bool evenOddRule ) const
+PdfeSubPath& PdfeSubPath::map( const PdfeMatrix& transMat )
 {
+    // Modify points' coordinates in the subpath.
+    for( size_t j = 0 ; j < m_points.size() ; j++ ) {
+        PdfeGOperator::Enum goperator = m_points[j].goperator.type();
+        if( goperator == PdfeGOperator::re ) {
+            // Case of the rectangle modify points and replace "re" command by "m l l l h".
+            m_points[j].coordinates = m_points[j].coordinates * transMat;
+            m_points[j+1].coordinates = m_points[j+1].coordinates * transMat;
+            m_points[j+2].coordinates = m_points[j+2].coordinates * transMat;
+            m_points[j+3].coordinates = m_points[j+3].coordinates * transMat;
+            m_points[j+4].coordinates = m_points[j+4].coordinates * transMat;
+
+            m_points[j].goperator = PdfeGOperator::m;
+            m_points[j+1].goperator = PdfeGOperator::l;
+            m_points[j+2].goperator = PdfeGOperator::l;
+            m_points[j+3].goperator = PdfeGOperator::l;
+            m_points[j+4].goperator = PdfeGOperator::h;
+
+            j+=4;
+        }
+        else {
+            m_points[j].coordinates = m_points[j].coordinates * transMat;
+        }
+    }
+    return *this;
+}
+QPainterPath PdfeSubPath::toQPainterPath( bool closeSubpath, PdfeFillingRule::Enum fillingRule ) const
+{
+    if( this->isEmpty() ) {
+        return QPainterPath();
+    }
     // Qt painter path to create from PDF subpath.
     QPainterPath qPath;
-
     // Add points from the subpath.
-    for( size_t j = 0 ; j < this->nbPoints() ; ++j ) {
-        const PdfeVector& point = m_coordPoints[j];
-        PdfePathOperators::Enum opPoint = m_opPoints[j];
+    for( size_t j = 0 ; j < m_points.size() ; ++j ) {
+        PdfeGOperator::Enum goperator = m_points[j].goperator.type();
 
         // Distinction between different painting operators.
-        if( opPoint == PdfePathOperators::m ) {
-            qPath.moveTo( point(0), point(1) );
+        if( goperator == PdfeGOperator::m ) {
+            qPath.moveTo( m_points[j].coordinates.toQPoint() );
         }
-        else if( opPoint == PdfePathOperators::l ) {
-            qPath.lineTo( point(0), point(1) );
+        else if( goperator == PdfeGOperator::l ) {
+            qPath.lineTo( m_points[j].coordinates.toQPoint() );
         }
-        else if( opPoint == PdfePathOperators::c ) {
-            QPointF c1Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
-            QPointF c2Pt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
-            QPointF endPt( m_coordPoints[j+2](0), m_coordPoints[j+2](1) );
-            qPath.cubicTo( c1Pt, c2Pt, endPt );
+        else if( goperator == PdfeGOperator::c ) {
+            qPath.cubicTo( m_points[j].coordinates.toQPoint(),
+                           m_points[j+1].coordinates.toQPoint(),
+                           m_points[j+2].coordinates.toQPoint() );
             j+=2;
         }
-        else if( opPoint == PdfePathOperators::v ) {
-            QPointF c1Pt( qPath.currentPosition() );
-            QPointF c2Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
-            QPointF endPt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
-            qPath.cubicTo( c1Pt, c2Pt, endPt );
+        else if( goperator == PdfeGOperator::v ) {
+            qPath.cubicTo( qPath.currentPosition(),
+                           m_points[j].coordinates.toQPoint(),
+                           m_points[j+1].coordinates.toQPoint() );
             j+=1;
         }
-        else if( opPoint == PdfePathOperators::y ) {
-            QPointF c1Pt( m_coordPoints[j](0), m_coordPoints[j](1) );
-            QPointF c2Pt( m_coordPoints[j+1](0), m_coordPoints[j+1](1) );
-            QPointF endPt( c2Pt );
-            qPath.cubicTo( c1Pt, c2Pt, endPt );
+        else if( goperator == PdfeGOperator::y ) {
+            qPath.cubicTo( m_points[j].coordinates.toQPoint(),
+                           m_points[j+1].coordinates.toQPoint(),
+                           m_points[j+1].coordinates.toQPoint() );
             j+=1;
         }
-        else if( opPoint == PdfePathOperators::h ) {
+        else if( goperator == PdfeGOperator::h ) {
             qPath.closeSubpath();
         }
-        else if( opPoint == PdfePathOperators::re ) {
+        else if( goperator == PdfeGOperator::re ) {
             // Rectangle:  "re" corresponds to "m l l l h"
-            const PdfeVector& pointUR = m_coordPoints[j+2];
-            qPath.addRect( point(0), point(1), pointUR(0)-point(0), pointUR(1)-point(1) );
+            const PdfeVector& coordsLB = m_points[j].coordinates;
+            const PdfeVector& coordsUR = m_points[j+2].coordinates;
+            qPath.addRect( coordsLB(0), coordsLB(1), coordsUR(0)-coordsLB(0), coordsUR(1)-coordsLB(1) );
             j+=4;
         }
     }
@@ -265,7 +320,7 @@ QPainterPath PdfeSubPath::toQPainterPath( bool closeSubpath, bool evenOddRule ) 
         qPath.closeSubpath();
     }
     // Filling rule.
-    if( evenOddRule ) {
+    if( fillingRule == PdfeFillingRule::EvenOdd ) {
         qPath.setFillRule( Qt::OddEvenFill );
     }
     else {
@@ -283,169 +338,94 @@ PdfePath::PdfePath()
 }
 void PdfePath::init()
 {
+    // Clear subpaths and add an empty one.
     m_subpaths.clear();
-    m_currentPoint.init();
-    m_clippingPathOp.clear();
+    m_subpaths.push_back( PdfeSubPath() );
+    m_clippingPathOp.set( PdfeGOperator::Unknown );
 }
 
-void PdfePath::appendPath( const PdfePath& path )
+PdfePath& PdfePath::appendPath( const PdfePath& path )
 {
-    // Append subpaths and set current point.
+    // Append subpaths.
     m_subpaths.insert( m_subpaths.end(), path.m_subpaths.begin(), path.m_subpaths.end() );
-    m_currentPoint = path.m_currentPoint;
+    return *this;
 }
-void PdfePath::appendSubpath( const PdfeSubPath& subpath )
+PdfePath& PdfePath::appendSubpath( const PdfeSubPath& subpath )
 {
-    // Append subpath and set current point.
+    // Append subpath.
     m_subpaths.push_back( subpath );
-    m_currentPoint = subpath.pointCoord( subpath.nbPoints()-1 );
+    return *this;
 }
-void PdfePath::beginSubpath( const PdfeVector& point )
-{
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
 
-    if( curSubpath.nbPoints() <= 1 ) {
-        // If is empty or with only one point: erase this subpath.
-        curSubpath.init();
-        curSubpath.appendPoint( point, PdfePathOperators::m );
-    }
-    else {
-        // Default behaviour: create a new subpath.
+PdfePath& PdfePath::moveTo( const PdfeVector& coords )
+{
+    // Add new subpath if necessary.
+    if( !m_subpaths.back().isEmpty() ) {
         m_subpaths.push_back( PdfeSubPath() );
-        m_subpaths.back().appendPoint( point, PdfePathOperators::m );
     }
-    m_currentPoint = point;
+    m_subpaths.back().moveTo( coords );
+    return *this;
 }
-void PdfePath::appendLine( const PdfeVector& point )
+PdfePath& PdfePath::appendLine( const PdfeVector& coords )
 {
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
-
-    // If is empty, add a first point which corresponds to current point.
-    if( curSubpath.isEmpty() ) {
-        curSubpath.appendPoint( m_currentPoint, PdfePathOperators::m );
-    }
-
-    // Add line end point and set current point.
-    curSubpath.appendPoint( point, PdfePathOperators::l );
-    m_currentPoint = point;
+    // Append line to current subpath.
+    PdfeSubPath& subpath = this->currentSubpath();
+    subpath.appendLine( coords );
+    return *this;
 }
-void PdfePath::appendBezierC( const PdfeVector& point1,
-                              const PdfeVector& point2,
-                              const PdfeVector& point3 )
+PdfePath& PdfePath::appendBezierC( const PdfeVector& coords1,
+                                   const PdfeVector& coords2,
+                                   const PdfeVector& coords3 )
 {
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
-
-    // If is empty, add a first point which corresponds to current point.
-    if( curSubpath.isEmpty() ) {
-        curSubpath.appendPoint( m_currentPoint, PdfePathOperators::m );
-    }
-
-    // Add  Bézier curve points and set current point.
-    curSubpath.appendPoint( point1, PdfePathOperators::c );
-    curSubpath.appendPoint( point2, PdfePathOperators::c );
-    curSubpath.appendPoint( point3, PdfePathOperators::c );
-    m_currentPoint = point3;
+    // Append Bezier curve to current subpath.
+    PdfeSubPath& subpath = this->currentSubpath();
+    subpath.appendBezierC( coords1, coords2, coords3 );
+    return *this;
 }
-void PdfePath::appendBezierV( const PdfeVector& point2,
-                              const PdfeVector& point3 )
+PdfePath& PdfePath::appendBezierV( const PdfeVector& coords2,
+                                   const PdfeVector& coords3 )
 {
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
-
-    // If is empty, add a first point which corresponds to current point.
-    if( curSubpath.isEmpty() ) {
-        curSubpath.appendPoint( m_currentPoint, PdfePathOperators::m );
-    }
-
-    // Add  Bézier curve points and set current point.
-    curSubpath.appendPoint( point2, PdfePathOperators::v );
-    curSubpath.appendPoint( point3, PdfePathOperators::v );
-    m_currentPoint = point3;
+    // Append Bezier curve to current subpath.
+    PdfeSubPath& subpath = this->currentSubpath();
+    subpath.appendBezierV( coords2, coords3 );
+    return *this;
 }
-void PdfePath::appendBezierY( const PdfeVector& point1,
-                              const PdfeVector& point3 )
+PdfePath& PdfePath::appendBezierY( const PdfeVector& coords1,
+                                   const PdfeVector& coords3 )
 {
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
-
-    // If is empty, add a first point which corresponds to current point.
-    if( curSubpath.isEmpty() ) {
-        curSubpath.appendPoint( m_currentPoint, PdfePathOperators::m );
-    }
-
-    // Add  Bézier curve points and set current point.
-    curSubpath.appendPoint( point1, PdfePathOperators::y );
-    curSubpath.appendPoint( point3, PdfePathOperators::y );
-    m_currentPoint = point3;
+    // Append Bezier curve to current subpath.
+    PdfeSubPath& subpath = this->currentSubpath();
+    subpath.appendBezierY( coords1, coords3 );
+    return *this;
 }
-void PdfePath::closeSubpath()
+PdfePath& PdfePath::appendRectangle( const PdfRect& rect )
 {
-    // Get current subpath.
-    PdfeSubPath& curSubpath = this->currentSubPath();
-
-    // Close if subpath not empty.
-    if( !curSubpath.isEmpty() ) {
-        curSubpath.appendPoint( curSubpath.pointCoord( 0 ), PdfePathOperators::h );
-        curSubpath.close();
-        m_currentPoint = curSubpath.pointCoord( curSubpath.nbPoints()-1 );
-    }
-}
-void PdfePath::appendRectangle( const PdfeVector& llPoint,
-                                const PdfeVector& size )
-{
-    /* Known to be equivalent to
-      x y m
-      ( x + width ) y l
-      ( x + width ) ( y + height ) l
-      x ( y + height ) l
-      h
-    */
-
-    // Begin subpath and add points.
-    this->beginSubpath( llPoint );
-
-    PdfeSubPath& subpath = m_subpaths.back();
-    subpath.setPoint( 0, subpath.pointCoord( 0 ), PdfePathOperators::re );
-    subpath.appendPoint( PdfeVector( llPoint(0)+size(0), llPoint(1) ), PdfePathOperators::re );
-    subpath.appendPoint( PdfeVector( llPoint(0)+size(0), llPoint(1)+size(1) ), PdfePathOperators::re );
-    subpath.appendPoint( PdfeVector( llPoint(0), llPoint(1)+size(1) ), PdfePathOperators::re );
-    subpath.appendPoint( PdfeVector( llPoint(0), llPoint(1) ), PdfePathOperators::re );
-
-    // Close rectangle subpath and set current point.
-    subpath.close();
-    m_currentPoint = llPoint;
-}
-PdfeSubPath& PdfePath::currentSubPath()
-{
-    // Vector of subpaths empty: create an empty one and returned it.
-    if( m_subpaths.empty() )
-    {
+    // Add new subpath if necessary.
+    if( !m_subpaths.back().isEmpty() ) {
         m_subpaths.push_back( PdfeSubPath() );
-        return m_subpaths.back();
     }
-    // Last subpath is closed: created an empty one and returned it.
-    if( m_subpaths.back().isClosed() ) {
-        m_subpaths.push_back( PdfeSubPath() );
-        return m_subpaths.back();
+    m_subpaths.back().init( rect );
+    return *this;
+}
+PdfePath& PdfePath::closeSubpath()
+{
+    // Close last subpath in the list.
+    if( m_subpaths.size() ) {
+        m_subpaths.back().close();
     }
-    // Default behaviour; return last one in the list.
-    return m_subpaths.back();
+    return *this;
 }
 
-QPainterPath PdfePath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) const
+QPainterPath PdfePath::toQPainterPath( bool closeSubpaths, PdfeFillingRule::Enum fillingRule ) const
 {
     // Qt painter path to create from PDF path.
     QPainterPath qPath;
-
     // Append subpaths.
     for( size_t i = 0 ; i < m_subpaths.size() ; ++i ) {
-        qPath.addPath( m_subpaths[i].toQPainterPath( closeSubpaths, evenOddRule ) );
+        qPath.addPath( m_subpaths[i].toQPainterPath( closeSubpaths, fillingRule ) );
     }
     // Filling rule.
-    if( evenOddRule ) {
+    if( fillingRule == PdfeFillingRule::EvenOdd ) {
         qPath.setFillRule( Qt::OddEvenFill );
     }
     else {
@@ -454,12 +434,43 @@ QPainterPath PdfePath::toQPainterPath( bool closeSubpaths, bool evenOddRule ) co
     return qPath;
 }
 
-const char *PdfePath::OperatorName( PdfePathOperators::Enum op )
+bool PdfePath::isClippingPath() const
 {
-    static const char* const operatorsName[7] = {
-        "m", "l", "c", "v", "y", "h", "re"
-    };
-    return operatorsName[ op ];
+    return ( m_clippingPathOp.category() == PdfeGCategory::ClippingPath );
+}
+const PdfeGraphicOperator& PdfePath::clippingPathOp() const
+{
+    return m_clippingPathOp;
+}
+void PdfePath::setClippingPathOp( const PdfeGraphicOperator& gop )
+{
+    if( gop.category() == PdfeGCategory::ClippingPath ) {
+        m_clippingPathOp = gop;
+    }
+    else {
+        m_clippingPathOp.set( PdfeGOperator::Unknown );
+    }
+}
+
+PdfeSubPath& PdfePath::currentSubpath()
+{
+    // Vector of subpaths empty: create an empty one and returned it.
+    if( m_subpaths.empty() ) {
+        m_subpaths.push_back( PdfeSubPath() );
+        return m_subpaths.back();
+    }
+    // Last subpath is closed: created an empty one and returned it.
+    if( m_subpaths.back().isClosed() ) {
+        // Guess the starting point from the previous subpath.
+        PdfeVector coords;
+        if( m_subpaths.size() ) {
+            coords = m_subpaths.back().currentPoint().coordinates;
+        }
+        m_subpaths.push_back( PdfeSubPath( coords ) );
+        return m_subpaths.back();
+    }
+    // Default behaviour; return last one in the list.
+    return m_subpaths.back();
 }
 
 }

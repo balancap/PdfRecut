@@ -167,8 +167,7 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
     }
     // Qt painter path to create from Pdf path.
     bool closeSubpaths = pnode->goperator().isClosePainting();
-    bool evenOddRule = pnode->goperator().isEvenOddRule();
-    QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths, evenOddRule );
+    QPainterPath qCurrentPath = currentPath.toQPainterPath( closeSubpaths, pnode->goperator().fillingRule() );
 
     // Compute path rendering matrix.
     PdfeMatrix pathMat;
@@ -180,7 +179,7 @@ void PRRenderPage::fPathPainting( const PdfeStreamState& streamState,
         m_pagePainter->fillPath( qCurrentPath, Qt::white );
     }
     // Draw path.
-    if( currentPath.clippingPathOp().length() ) {
+    if( currentPath.isClippingPath() ) {
         m_renderParameters.clippingPathPB.applyToPainter( m_pagePainter );
         m_pagePainter->drawPath( qCurrentPath );
     }
@@ -196,8 +195,7 @@ void PRRenderPage::fClippingPath( const PdfeStreamState& streamState,
     const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // Get Qt painter path which represents the clipping path.
-    bool evenOddRule = goperator.isEvenOddRule();
-    QPainterPath qClippingPath = currentPath.toQPainterPath( true, evenOddRule );
+    QPainterPath qClippingPath = currentPath.toQPainterPath( true, goperator.fillingRule() );
 
     // Apply transformation, to have a common coordinates system.
     QTransform qTrans = gstate.transMat().toQTransform();
