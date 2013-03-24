@@ -14,6 +14,7 @@
 
 #include "PdfeTypes.h"
 #include "PdfeGraphicsOperators.h"
+#include "PdfeContentsStream.h"
 
 #include "podofo/base/PdfRect.h"
 
@@ -189,6 +190,21 @@ public:
     /** Initialize to an empty path.
      */
     void init();
+
+public:
+    // Path loading and saving from stream.
+    /** Load a path from a node in a contents stream.
+     * \param pnode Pointer to the node at which begins the path.
+     * \return Pointer to the last node of path's definition
+     */
+    PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
+    /** Save back the path into a contents stream.
+     * \param pnode Pointer of the node where to insert the path definition.
+     * \param eraseExisting Erase existing contents at this node.
+     * \return Pointer to the last node of path's definition
+     */
+    PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
+                                    bool eraseExisting ) const;
 
 public:
     // Path construction...

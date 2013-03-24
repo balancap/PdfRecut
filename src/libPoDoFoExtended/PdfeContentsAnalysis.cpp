@@ -104,56 +104,8 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         else if( pnode->category() == PdfeGCategory::PathConstruction ) {
             // Commands in this category: m, l, c, v, y, h, re.
 
-            if( pnode->type() == PdfeGOperator::m ) {
-                // Begin a new subpath.
-                PdfeVector point( pnode->operand<double>( 0 ),
-                                  pnode->operand<double>( 1 ) );
-                currentPath.moveTo( point );
-            }
-            else if( pnode->type() == PdfeGOperator::l ) {
-                // Append straight line.
-                PdfeVector point( pnode->operand<double>( 0 ),
-                                  pnode->operand<double>( 1 ) );
-                currentPath.appendLine( point );
-            }
-            else if( pnode->type() == PdfeGOperator::c ) {
-                // Append Bézier curve (c).
-                PdfeVector point1( pnode->operand<double>( 0 ),
-                                   pnode->operand<double>( 1 ) );
-                PdfeVector point2( pnode->operand<double>( 2 ),
-                                   pnode->operand<double>( 3 ) );
-                PdfeVector point3( pnode->operand<double>( 4 ),
-                                   pnode->operand<double>( 5 ) );
-                currentPath.appendBezierC( point1, point2, point3 );
-            }
-            else if( pnode->type() == PdfeGOperator::v ) {
-                // Append Bézier curve (c).
-                PdfeVector point2( pnode->operand<double>( 0 ),
-                                   pnode->operand<double>( 1 ) );
-                PdfeVector point3( pnode->operand<double>( 2 ),
-                                   pnode->operand<double>( 3 ) );
-                currentPath.appendBezierV( point2, point3 );
-            }
-            else if( pnode->type() == PdfeGOperator::y ) {
-                // Append Bézier curve (c).
-                PdfeVector point1( pnode->operand<double>( 0 ),
-                                   pnode->operand<double>( 1 ) );
-                PdfeVector point3( pnode->operand<double>( 2 ),
-                                   pnode->operand<double>( 3 ) );
-                currentPath.appendBezierY( point1, point3 );
-            }
-            else if( pnode->type() == PdfeGOperator::h ) {
-                // Close the current subpath by appending a straight line.
-                currentPath.closeSubpath();
-            }
-            else if( pnode->type() == PdfeGOperator::re ) {
-                // Append a rectangle to the current path as a complete subpath.
-                PdfRect rect( pnode->operand<double>( 0 ),
-                              pnode->operand<double>( 1 ),
-                              pnode->operand<double>( 2 ),
-                              pnode->operand<double>( 3 ) );
-                currentPath.appendRectangle( rect );
-            }
+            // Load current path.
+            pnode = currentPath.load( pnode );
             // Call category function.
             this->fPathConstruction( streamState, currentPath );
         }
@@ -170,7 +122,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
 
             // TODO: fix this awful implementation !
             // Set the clipping path operator of the current path.
-            currentPath.setClippingPathOp( pnode->goperator().str() );
+            currentPath.setClippingPathOp( pnode->goperator() );
 
             // Call category function.
             this->fClippingPath( streamState, currentPath );
@@ -236,6 +188,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
 //                }
         }
         // Next node in the stream...
+        streamState.pNode = pnode;
         streamState.pNode = streamState.pNode->next();
     }
 }

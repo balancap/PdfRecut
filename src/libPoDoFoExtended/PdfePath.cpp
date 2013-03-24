@@ -344,6 +344,74 @@ void PdfePath::init()
     m_clippingPathOp.set( PdfeGOperator::Unknown );
 }
 
+PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
+{
+    PdfeContentsStream::Node* pNodePrev = pnode;
+    this->init();
+    // Path construction nodes.
+    while( pnode->category() == PdfeGCategory::PathConstruction ) {
+        if( pnode->type() == PdfeGOperator::m ) {
+            // Begin a new subpath.
+            PdfeVector point( pnode->operand<double>( 0 ),
+                              pnode->operand<double>( 1 ) );
+            this->moveTo( point );
+        }
+        else if( pnode->type() == PdfeGOperator::l ) {
+            // Append straight line.
+            PdfeVector point( pnode->operand<double>( 0 ),
+                              pnode->operand<double>( 1 ) );
+            this->appendLine( point );
+        }
+        else if( pnode->type() == PdfeGOperator::c ) {
+            // Append Bézier curve (c).
+            PdfeVector point1( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point2( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            PdfeVector point3( pnode->operand<double>( 4 ),
+                               pnode->operand<double>( 5 ) );
+            this->appendBezierC( point1, point2, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::v ) {
+            // Append Bézier curve (c).
+            PdfeVector point2( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point3( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            this->appendBezierV( point2, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::y ) {
+            // Append Bézier curve (c).
+            PdfeVector point1( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point3( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            this->appendBezierY( point1, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::h ) {
+            // Close the current subpath by appending a straight line.
+            this->closeSubpath();
+        }
+        else if( pnode->type() == PdfeGOperator::re ) {
+            // Append a rectangle to the current path as a complete subpath.
+            PdfRect rect( pnode->operand<double>( 0 ),
+                          pnode->operand<double>( 1 ),
+                          pnode->operand<double>( 2 ),
+                          pnode->operand<double>( 3 ) );
+            this->appendRectangle( rect );
+        }
+        pNodePrev = pnode;
+        pnode = pnode->next();
+    }
+    return pNodePrev;
+}
+PdfeContentsStream::Node* PdfePath::save( PdfeContentsStream::Node* pnode,
+                                          bool eraseExisting ) const
+{
+    // TODO: implement...
+    return pnode;
+}
+
 PdfePath& PdfePath::appendPath( const PdfePath& path )
 {
     // Append subpaths.

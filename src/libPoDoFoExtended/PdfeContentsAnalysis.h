@@ -13,6 +13,7 @@
 #define PDFECONTENTSANALYSIS_H
 
 #include "PdfeContentsStream.h"
+#include "PdfePath.h"
 
 namespace PoDoFo {
     class PdfXObject;

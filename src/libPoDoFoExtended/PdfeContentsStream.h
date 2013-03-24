@@ -15,7 +15,7 @@
 #include <istream>
 #include <QByteArray>
 
-#include "PdfePath.h"
+#include "PdfeGraphicsOperators.h"
 #include "PdfeResources.h"
 #include "PdfeMisc.h"
 
