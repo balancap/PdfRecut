@@ -147,7 +147,7 @@ PdfeORect PRGTextLine::bbox( PRGTextLineCoordinates::Enum endCoords, bool incLTS
         bbox = pData->bboxNoLTSpaces;
     }
     if( incLCL && pData->idxLargeCapitalLetter >= 0 ) {
-        bbox = PdfeORect::reunion( pData->bboxLCL, bbox );
+        bbox = PdfeRect::reunion( pData->bboxLCL, bbox );
     }
     PdfeORect obbox( bbox );
 

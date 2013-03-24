@@ -26,6 +26,9 @@ namespace PoDoFoExtended {
 
 class PdfeResources;
 
+//**********************************************************//
+//                       PdfeTextState                      //
+//**********************************************************//
 /** Class describing the text state in a PDF stream, i.e.
  * containing every information related to text rendering.
  * See PDF reference for my information on the topic.
@@ -134,6 +137,41 @@ private:
     double  m_rise;
 };
 
+//**********************************************************//
+//                     PdfeClippingPath                     //
+//**********************************************************//
+/** Class that represents the PDF clipping path of a graphics
+ * state. It is mostly a workaround the existing PdfePath.
+ */
+class PdfeClippingPath
+{
+public:
+    /** Default constructor.
+     */
+    PdfeClippingPath();
+    /** Initialize the clipping path to empty.
+     */
+    void init();
+
+public:
+    /** Append a path to the clipping path.
+     * \param path Path to append.
+     * \param clipOperator Clipping operator (W/W*).
+     */
+    void append( const PdfePath& path,
+                 PdfeGOperator::Enum clipOperator );
+
+private:
+    /// Stack of consecutive paths defining the clipping path.
+    std::vector<PdfePath>  m_paths;
+    /// Clipping path operators (W or W*).
+    std::vector<PdfeGOperator::Enum>  m_clipOperators;
+
+};
+
+//**********************************************************//
+//                     PdfeGraphicsState                    //
+//**********************************************************//
 /** Class describing the graphics state in a PDF stream.
  * It gathers several parameters related to page rendering.
  *

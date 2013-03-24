@@ -139,7 +139,7 @@ const PdfeFontDescriptor& PdfeFontTrueType::fontDescriptor() const
 PdfRect PdfeFontTrueType::fontBBox() const
 {
     // Font bbox rescaled.
-    return PdfRectRescale( m_fontDescriptor.fontBBox(), 0.001 );
+    return PdfeRect::rescale( m_fontDescriptor.fontBBox(), 0.001 );
 }
 PdfeVector PdfeFontTrueType::advance(pdfe_cid c, bool useFParams) const
 {
@@ -162,7 +162,7 @@ PdfRect PdfeFontTrueType::bbox( pdfe_cid c, bool useFParams ) const
     PdfRect cbbox;
     if( c >= m_firstCID && c <= m_lastCID ) {
         cbbox = m_bboxCID[ c - m_firstCID ];
-        cbbox = PdfRectRescale( cbbox, 0.001 );
+        cbbox = PdfeRect::rescale( cbbox, 0.001 );
     }
     else {
         // Call default implementation.

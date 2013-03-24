@@ -68,7 +68,8 @@ QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec );
 //**********************************************************//
 //                        PdfeMatrix                        //
 //**********************************************************//
-/** Transformation matrix used in graphics state.
+/** Representation of a common transformation matrix which is
+ * usually stored in graphics state.
  */
 class PdfeMatrix : public vmml::mat3d
 {
@@ -121,9 +122,11 @@ public:
     }
 
     /** Map a vector in the new coordinate system defined by the matrix.
+     * \param vect Input vector.
      */
     PdfeVector map( const PdfeVector& vect ) const;
     /** Map a rectangle in the new coordinate system defined by the matrix.
+     * \param rect Input oriented rectangle.
      */
     PdfeORect map( const PdfeORect& rect ) const;
 };
@@ -149,14 +152,28 @@ public:
     PdfeVector( double x, double y ) {
         this->init( x, y );
     }
+    /** Initialize vector to (0,0).
+     */
+    void init() {
+        this->at(0,0) = 0;
+        this->at(0,1) = 0;
+        this->at(0,2) = 1;
+    }
+    /** Initialize vector to (x,y).
+     */
+    void init( double x, double y ) {
+        this->at(0,0) = x;
+        this->at(0,1) = y;
+        this->at(0,2) = 1;
+    }
 
-    /** Operator = overloaded
+    /** Operator= overloaded.
      */
     const PdfeVector& operator=( const vmml::matrix<1,3,double>& source ) {
         *( (vmml::matrix<1,3,double>*) this ) = source;
         return *this;
     }
-    /** Operator + overloaded
+    /** Operator+ overloaded.
      */
     PdfeVector operator+( const PdfeVector& vect ) const {
         PdfeVector rvect;
@@ -165,7 +182,7 @@ public:
         rvect.at(0,2) = 1.0;
         return rvect;
     }
-    /** *Operator overloaded
+    /** Operator* overloaded.
      */
     PdfeVector operator*( const PdfeMatrix& mat ) const {
         PdfeVector rvect;
@@ -174,7 +191,7 @@ public:
         rvect.at(0,2) = 1.0;
         return rvect;
     }
-    /** Operator * overloaded
+    /** Operator* overloaded.
      */
     PdfeVector operator*( double coef ) const {
         PdfeVector rvect;
@@ -202,6 +219,7 @@ public:
         return out;
     }
 
+public:
     /** Rotate a vector of 90°.
      * \return Copy of the vector rotated.
      */
@@ -212,28 +230,12 @@ public:
         rvect.at(0,2) = 1.0;
         return rvect;
     }
-    /** Initialize vector to (0,0).
-     */
-    void init() {
-        this->at(0,0) = 0;
-        this->at(0,1) = 0;
-        this->at(0,2) = 1;
-    }
-    /** Initialize vector to (x,y).
-     */
-    void init( double x, double y ) {
-        this->at(0,0) = x;
-        this->at(0,1) = y;
-        this->at(0,2) = 1;
-    }
-
     /** Convert to a QPointF object.
      * \return Corresponding QPointF.
      */
     QPointF toQPoint() const {
         return QPointF( this->at(0,0), this->at(0,1) );
     }
-
     /** L^2 norm of the vector.
      */
     double norm2() const {
@@ -249,6 +251,12 @@ public:
     static double angle( const PdfeVector& vect1, const PdfeVector& vect2 ) {
         return acos( PdfeVector::dotProduct( vect1, vect2 ) / vect1.norm2() / vect2.norm2() );
     }
+    /** Intersection with a rectangle zone: corresponds to
+     * a projection inside the given zone.
+     * \param zone Rectangular zone.
+     * \return Reference to the newly modified vector.
+     */
+    PdfeVector& intersection( const PoDoFo::PdfRect& zone );
 };
 
 //**********************************************************//
@@ -412,49 +420,24 @@ public:
      *  \return Estimate of the minimal distance.
      */
     static double minDistance( const PdfeORect& rect1, const PdfeORect& rect2 );
-
     /** Compute the minimal distance between a PdfORect and a point (represented by a PdfeVector).
      * \param rect Rectangle to consider.
      * \param point Point to consider.
      *  \return Estimate of the minimal distance.
      */
     static double minDistance( const PdfeORect& rect, const PdfeVector& point );
-
     /** Compute the maximal distance between two PdfORect.
      * \param rect1 First rectangle to consider.
      * \param rect2 Second rectangle.
      *  \return Estimate of the maximal distance.
      */
     static double maxDistance( const PdfeORect& rect1, const PdfeORect& rect2 );
-
     /** Compute the maximal distance between a PdfORect and a point (represented by a PdfeVector).
      * \param rect Rectangle to consider.
      * \param point Point to consider.
      *  \return Estimate of the maximal distance.
      */
     static double maxDistance( const PdfeORect& rect, const PdfeVector& point );
-
-public:
-    /** Intersection between two PoDoFo::PdfRect objects.
-     * \param rect1 First rectangle.
-     * \param rect2 Second rectangle.
-     * \return Intersection of two rectangles.
-     */
-    static PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& lhs, const PoDoFo::PdfRect& rhs );
-
-    /** Union between two PoDoFo::PdfRect objects.
-     * \param rect1 First rectangle.
-     * \param rect2 Second rectangle.
-     * \return Intersection of two rectangles.
-     */
-    static PoDoFo::PdfRect reunion( const PoDoFo::PdfRect& lhs, const PoDoFo::PdfRect& rhs );
-
-    /** Is a second rectangle inside the first one?
-     * \param rect1 First rectangle.
-     * \param rect2 Second rectangle.
-     * \return Rect2 in rect1 ?
-     */
-    static bool inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
 
 private:
     /// Left bottom point.
@@ -464,33 +447,65 @@ private:
     /// Width of the rectangle.
     double  m_width;
     /// Height of the rectangle.
-    double m_height;
+    double  m_height;
 };
 
 //**********************************************************//
-//                          PdfRect                         //
+//                      PdfRect methods                     //
 //**********************************************************//
-/** Transform PoDoFo::PdfRect into QRectF.
- * \param rect PdfRect.
- **/
-inline QRectF FromPdfRectToQRectF( const PoDoFo::PdfRect& rect ) {
-    return QRectF( rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() );
-}
-/** Rescale a PdfRect.
- * \param rect PdfRect.
- * \param scale Scale coefficient.
- * \return PdfRect scaled.
+/** Namespace gathering different common methods applied on
+ * PdfRect object.
  */
-inline PoDoFo::PdfRect PdfRectRescale( const PoDoFo::PdfRect& rect, double scale ) {
-    return PoDoFo::PdfRect( rect.GetLeft() * scale,
-                            rect.GetBottom() * scale,
-                            rect.GetWidth() * scale,
-                            rect.GetHeight() * scale );
-}
-/** PdfRect to std::string. Use width and height on the contrary to PoDoFo.
- * \return String describing the rectangle.
+namespace PdfeRect
+{
+
+/** Intersection between two PoDoFo::PdfRect objects.
+ * \param rect1 First rectangle.
+ * \param rect2 Second rectangle.
+ * \return Intersection of two rectangles.
  */
-std::string PdfRectToString( const PoDoFo::PdfRect& rect );
+PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
+/** Union between two PoDoFo::PdfRect objects.
+ * \param rect1 First rectangle.
+ * \param rect2 Second rectangle.
+ * \return Intersection of two rectangles.
+ */
+PoDoFo::PdfRect reunion( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
+/** Rescale a rectangle.
+ * \param rect PdfRect.
+ * \param coef Scale coefficient.
+ * \return PdfRect rescaled.
+ */
+PoDoFo::PdfRect rescale( const PoDoFo::PdfRect& rect, double coef );
+
+/** Does a zone rectangle contains a given rectangle?
+ * \param zone Rectangular zone.
+ * \param rect Rectangle.
+ * \return Zone contains the rectangle?
+ */
+bool contains( const PoDoFo::PdfRect& zone, const PoDoFo::PdfRect& rect );
+/** Does a rectangle intersects with a rectangular zone?
+ * \param zone Rectangular zone.
+ * \param rect Rectangle.
+ * \param strictInclusion Evaluate if the rectangle is stricly contained in the zone.
+ */
+bool intersects( const PoDoFo::PdfRect& zone,
+                 const PoDoFo::PdfRect& rect,
+                 bool strictInclusion = false );
+
+/** PdfRect to std::string. Differs from PoDoFo version since
+ * it returns width and height of the rectangle.
+ * \param rect Input rectangle.
+ * \return String representation the rectangle.
+ */
+std::string toString( const PoDoFo::PdfRect& rect );
+/** Transform PoDoFo::PdfRect into a QRectF.
+ * \param rect Input rectangle.
+ * \return Corresponding QRectF object.
+ */
+QRectF toQRectF( const PoDoFo::PdfRect& rect );
+
+}
 
 //}
 

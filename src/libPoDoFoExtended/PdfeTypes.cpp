@@ -39,6 +39,14 @@ QString UTF16VecToQString( const std::vector<pdfe_utf16>& utf16vec )
 //**********************************************************//
 //                         PdfeVector                       //
 //**********************************************************//
+PdfeVector& PdfeVector::intersection( const PoDoFo::PdfRect& zone )
+{
+    this->at(0,0) = std::min( std::max( this->at(0,0), zone.GetLeft() ),
+                              zone.GetLeft() + zone.GetWidth() );
+    this->at(0,1) = std::min( std::max( this->at(0,1), zone.GetBottom() ),
+                              zone.GetBottom() + zone.GetHeight() );
+    return *this;
+}
 
 //**********************************************************//
 //                         PdfeMatrix                       //
@@ -239,55 +247,109 @@ double PdfeORect::maxDistance( const PdfeORect& rect, const PdfeVector& point )
     return dist;
 }
 
-PoDoFo::PdfRect PdfeORect::intersection(const PoDoFo::PdfRect& lhs,
-                                               const PoDoFo::PdfRect& rhs )
+//**********************************************************//
+//                      PdfRect methods                     //
+//**********************************************************//
+namespace PdfeRect
 {
-    double left = std::max( lhs.GetLeft(), rhs.GetLeft() );
-    double bottom = std::max( lhs.GetBottom(), rhs.GetBottom() );
-    double right = std::min( lhs.GetLeft() + lhs.GetWidth(),
-                             rhs.GetLeft() + rhs.GetWidth() );
-    double top = std::min( lhs.GetBottom() + lhs.GetHeight(),
-                           rhs.GetBottom() + rhs.GetHeight() );
+
+PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
+{
+    double left = std::max( rect1.GetLeft(), rect2.GetLeft() );
+    double bottom = std::max( rect1.GetBottom(), rect2.GetBottom() );
+    double right = std::min( rect1.GetLeft() + rect1.GetWidth(),
+                             rect2.GetLeft() + rect2.GetWidth() );
+    double top = std::min( rect1.GetBottom() + rect1.GetHeight(),
+                           rect2.GetBottom() + rect2.GetHeight() );
     return PoDoFo::PdfRect( left, bottom,
                             std::max( 0.0, right - left ),
                             std::max( 0.0, top - bottom ) );
 }
-PoDoFo::PdfRect PdfeORect::reunion(const PoDoFo::PdfRect &lhs, const PoDoFo::PdfRect &rhs)
+PoDoFo::PdfRect reunion( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
 {
-    double left = std::min( lhs.GetLeft(), rhs.GetLeft() );
-    double bottom = std::min( lhs.GetBottom(), rhs.GetBottom() );
-    double right = std::max( lhs.GetLeft() + lhs.GetWidth(),
-                             rhs.GetLeft() + rhs.GetWidth() );
-    double top = std::max( lhs.GetBottom() + lhs.GetHeight(),
-                           rhs.GetBottom() + rhs.GetHeight() );
+    double left = std::min( rect1.GetLeft(), rect2.GetLeft() );
+    double bottom = std::min( rect1.GetBottom(), rect2.GetBottom() );
+    double right = std::max( rect1.GetLeft() + rect1.GetWidth(),
+                             rect2.GetLeft() + rect2.GetWidth() );
+    double top = std::max( rect1.GetBottom() + rect1.GetHeight(),
+                           rect2.GetBottom() + rect2.GetHeight() );
     return PoDoFo::PdfRect( left, bottom,
                             right - left,
                             top - bottom );
 }
-bool PdfeORect::inside( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 )
+PoDoFo::PdfRect rescale( const PoDoFo::PdfRect& rect, double coef )
 {
-    return ( rect2.GetLeft() >= rect1.GetLeft() &&
-             rect2.GetBottom() >= rect1.GetBottom() &&
-             rect2.GetLeft() + rect2.GetWidth() <= rect1.GetLeft() + rect1.GetWidth() &&
-             rect2.GetBottom() + rect2.GetHeight() <= rect1.GetBottom() + rect1.GetHeight() );
+    return PoDoFo::PdfRect( rect.GetLeft() * coef,
+                            rect.GetBottom() * coef,
+                            rect.GetWidth() * coef,
+                            rect.GetHeight() * coef );
 }
 
-//**********************************************************//
-//                          PdfRect                         //
-//**********************************************************//
-std::string PdfRectToString( const PoDoFo::PdfRect& rect )
+bool contains( const PoDoFo::PdfRect& zone, const PoDoFo::PdfRect& rect )
+{
+    return ( rect.GetLeft() >= zone.GetLeft() &&
+             rect.GetBottom() >= zone.GetBottom() &&
+             rect.GetLeft() + rect.GetWidth() <= zone.GetLeft() + zone.GetWidth() &&
+             rect.GetBottom() + rect.GetHeight() <= zone.GetBottom() + zone.GetHeight() );
+}
+bool intersects( const PoDoFo::PdfRect& zone, const PoDoFo::PdfRect& rect, bool strictInclusion )
+{
+    if( strictInclusion ) {
+        return PdfeRect::contains( zone, rect );
+    }
+    else {
+        bool left(false), right(false), bottom(false), top(false), center(false);
+
+        // Evaluate the intersection with the different part of the zone.
+        center = ( rect.GetLeft() >= zone.GetLeft() ) &&
+                ( rect.GetBottom() >= zone.GetBottom() ) &&
+                ( rect.GetLeft()+rect.GetWidth() <= zone.GetLeft()+zone.GetWidth() ) &&
+                ( rect.GetBottom()+rect.GetHeight() <= zone.GetBottom()+zone.GetHeight() );
+
+        left = !( rect.GetBottom()+rect.GetHeight() <= zone.GetBottom() ||
+                  rect.GetBottom() >= zone.GetBottom()+zone.GetHeight() ) &&
+                rect.GetLeft() <= zone.GetLeft();
+
+        right = !( rect.GetBottom()+rect.GetHeight() <= zone.GetBottom() ||
+                   rect.GetBottom() >= zone.GetBottom()+zone.GetHeight() ) &&
+                rect.GetLeft()+rect.GetWidth() >= zone.GetLeft()+zone.GetWidth();
+
+        bottom = !( rect.GetLeft()+rect.GetWidth() <= zone.GetLeft() ||
+                    rect.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
+                rect.GetBottom() <= zone.GetBottom();
+
+        top = !( rect.GetLeft()+rect.GetWidth() <= zone.GetLeft() ||
+                 rect.GetLeft() >= zone.GetWidth()+zone.GetLeft() ) &&
+                rect.GetBottom()+rect.GetHeight() <= zone.GetBottom()+zone.GetHeight();
+
+        bool intersect = center ||
+                ( left && top ) ||
+                ( left && bottom ) ||
+                ( right && top ) ||
+                ( right && bottom ) ||
+                ( top && bottom ) ||
+                ( left && right );
+        return intersect;
+    }
+}
+
+
+std::string toString( const PoDoFo::PdfRect& rect )
 {
     size_t MaxLength = 5;
-    QString desc =
-            QString( "[ %1 %2 %3 %4 ]" )
+    QString desc = QString( "[ %1 %2 %3 %4 ]" )
             .arg( rect.GetLeft(), -MaxLength )
             .arg( rect.GetBottom(), -MaxLength )
             .arg( rect.GetWidth(), -MaxLength )
             .arg( rect.GetHeight(), -MaxLength );
-
     return std::string( desc.toLocal8Bit().constData() );
 }
+QRectF toQRectF( const PoDoFo::PdfRect& rect )
+{
+    return QRectF( rect.GetLeft(), rect.GetBottom(), rect.GetWidth(), rect.GetHeight() );
+}
 
+}
 
 //}
 

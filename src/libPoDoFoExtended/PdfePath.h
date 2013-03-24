@@ -34,7 +34,11 @@ enum Enum
 };
 }
 
-/** Class representing a PDF subpath.
+//**********************************************************//
+//                         PdfeSubPath                      //
+//**********************************************************//
+/** Class representing a PDF subpath. It is used as the basic
+ * brick for a the construction of PDF paths.
  */
 class PdfeSubPath
 {
@@ -42,11 +46,12 @@ public:
     /** Default constructor: create empty subpath.
      */
     PdfeSubPath();
-
     /** Initialize to an empty subpath.
      */
     void init();
 
+public:
+    // Basic modification of the subpath.
     /** Append a point to the subpath.
      * \param coord Coordinates of the point to append.
      * \param op Construction operator corresponding.
@@ -58,30 +63,20 @@ public:
      * \param idx Index of the point to modify.
      */
     void setPoint( size_t idx, const PdfeVector& coord, PdfePathOperators::Enum op );
+    /** Close (or not) the subpath.
+     * \param closed Close the subpath (default: true).
+     */
+    void close( bool closed = true );
 
 public:
-    // Transformation on subpath.
+    // Transformation and observation on the subpath.
     /** Evaluate if the subpath path intersects a given zone.
      * \param zone Rectangle representing the zone.
      * \param strictInclusion Evaluate if the subpath is stricly inside the zone.
      */
     bool intersectZone( const PoDoFo::PdfRect& zone,
                         bool strictInclusion = false ) const;
-    /** Evaluate if a rectangle path intersects a zone.
-     * \param path Rectangle path.
-     * \param zone Rectangle representing the zone.
-     * \param strictInclusion Evaluate if the path is stricly inside the zone.
-     */
-    static bool intersectZone( const PoDoFo::PdfRect& path,
-                               const PoDoFo::PdfRect& zone,
-                               bool strictInclusion = false );
-    /** Modify a point in order to be inside a given zone.
-     * \param point Point which is modified.
-     * \param zone Rectangle representing the zone to consider.
-     */
-    static void reduceToZone( PdfeVector& point,
-                              const PoDoFo::PdfRect& zone ) ;
-    /** Reduce the subpath in order to be inside a given zone.
+       /** Reduce the subpath in order to be inside a given zone.
      * \param zone Rectangle representing the zone to consider.
      */
     void reduceToZone( const PoDoFo::PdfRect& zone );
@@ -99,6 +94,23 @@ public:
                                  bool evenOddRule = false ) const;
 
 public:
+    /** Evaluate if a rectangle path intersects a zone.
+     * \param path Rectangle path.
+     * \param zone Rectangle representing the zone.
+     * \param strictInclusion Evaluate if the path is stricly inside the zone.
+     */
+    static bool intersectZone( const PoDoFo::PdfRect& path,
+                               const PoDoFo::PdfRect& zone,
+                               bool strictInclusion = false );
+    /** Modify a point in order to be inside a given zone.
+  * \param point Point which is modified.
+  * \param zone Rectangle representing the zone to consider.
+  */
+ static void reduceToZone( PdfeVector& point,
+                           const PoDoFo::PdfRect& zone ) ;
+
+
+public:
     // Getters.
     /// Is the subpath closed ?
     bool isClosed() const   {   return m_closed; }
@@ -112,8 +124,6 @@ public:
     /// Get a point operator.
     PdfePathOperators::Enum pointOp( size_t idx ) const {   return m_opPoints.at( idx );  }
 
-    /// Close a subpath.
-    void close()    {   m_closed = true;    }
 
 private:
     /// Coordinates of points which composed the subpath.
@@ -125,6 +135,9 @@ private:
 };
 
 
+//**********************************************************//
+//                          PdfePath                        //
+//**********************************************************//
 /** Class representing a PDF path.
  */
 class PdfePath

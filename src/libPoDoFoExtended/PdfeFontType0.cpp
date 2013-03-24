@@ -99,7 +99,7 @@ const PdfeFontDescriptor& PdfeFontType0::fontDescriptor() const
 PdfRect PdfeFontType0::fontBBox() const
 {
     // Font bbox rescaled.
-    return PdfRectRescale( m_fontCID->fontDescriptor().fontBBox(), 0.001 );
+    return PdfeRect::rescale( m_fontCID->fontDescriptor().fontBBox(), 0.001 );
 }
 PdfeVector PdfeFontType0::advance( pdfe_cid c, bool useFParams ) const
 {
@@ -240,7 +240,7 @@ PoDoFo::PdfRect PdfeFontCID::bbox( pdfe_cid c ) const
 {
     // Get bbox and rescale in page coordinates.
     PdfRect cbbox = m_hBBoxes.bbox( c );
-    return PdfRectRescale( cbbox, 0.001 );
+    return PdfeRect::rescale( cbbox, 0.001 );
 }
 pdfe_gid PdfeFontCID::fromCIDToGID( pdfe_cid c ) const
 {

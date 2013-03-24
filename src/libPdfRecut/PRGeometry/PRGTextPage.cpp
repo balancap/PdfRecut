@@ -323,7 +323,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeInside( PRGTextLine* pBaseLine,
         PdfRect lineBBox = lineOBBox.toPdfRect();
 
         // Check if the line bounding box is inside the enlarge base bbox.
-        if( PdfeORect::inside( enlargeBBox, lineBBox ) ) {
+        if( PdfeRect::contains( enlargeBBox, lineBBox ) ) {
             pLinesToMerge.push_back( pLine );
         }
     }
@@ -391,7 +391,7 @@ PRGTextLine* PRGTextPage::mergeLines_EnlargeOutside(PRGTextLine* pBaseLine,
             }
             // Check if the line bounding box is inside the enlarge base bbox.
             PdfRect lineBBox = lineOBBox.toPdfRect();
-            if( PdfeORect::inside( enlargeBBox, lineBBox ) ) {
+            if( PdfeRect::contains( enlargeBBox, lineBBox ) ) {
                 pLinesToMerge.push_back( pLine );
             }
         }

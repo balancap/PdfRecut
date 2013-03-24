@@ -41,6 +41,10 @@ void PdfeSubPath::setPoint( size_t idx , const PdfeVector& coord, PdfePathOperat
     m_coordPoints.at( idx ) = coord;
     m_opPoints.at( idx ) = op;
 }
+void PdfeSubPath::close( bool closed )
+{
+    m_closed = closed;
+}
 
 bool PdfeSubPath::intersectZone( const PoDoFo::PdfRect& zone,
                                  bool strictInclusion ) const

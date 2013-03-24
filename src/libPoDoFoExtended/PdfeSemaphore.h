@@ -40,15 +40,13 @@ class PdfeSemaphoreReadLocker
 public:
     /** Constructor: block until can obtain one resource.
      */
-    PdfeSemaphoreReadLocker( PdfeClassSemaphore* semaphore )
-    {
+    PdfeSemaphoreReadLocker( PdfeClassSemaphore* semaphore ) {
         m_semaphore = semaphore;
         m_semaphore->acquire( 1 );
     }
     /** Destructor: release the resource blocked.
      */
-    ~PdfeSemaphoreReadLocker()
-    {
+    ~PdfeSemaphoreReadLocker() {
         m_semaphore->release( 1 );
     }
 
@@ -66,15 +64,13 @@ class PdfeSemaphoreWriteLocker
 public:
     /** Constructor: block until can obtain all resources of the semaphore.
      */
-    PdfeSemaphoreWriteLocker( PdfeClassSemaphore* semaphore )
-    {
+    PdfeSemaphoreWriteLocker( PdfeClassSemaphore* semaphore ) {
         m_semaphore = semaphore;
         m_semaphore->acquire( PdfeClassSemaphore::NResources );
     }
     /** Destructor: release resources blocked.
      */
-    ~PdfeSemaphoreWriteLocker()
-    {
+    ~PdfeSemaphoreWriteLocker() {
         m_semaphore->release( PdfeClassSemaphore::NResources );
     }
 

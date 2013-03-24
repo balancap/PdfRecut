@@ -65,6 +65,30 @@ bool PdfeTextState::setFont( const std::string& name, const PdfeResources& resou
 }
 
 //**********************************************************//
+//                     PdfeClippingPath                     //
+//**********************************************************//
+PdfeClippingPath::PdfeClippingPath()
+{
+    this->init();
+}
+void PdfeClippingPath::init()
+{
+    m_paths.clear();
+    m_clipOperators.clear();
+}
+
+void PdfeClippingPath::append( const PdfePath& path, PdfeGOperator::Enum clipOperator )
+{
+    // Default value for clipping operator...
+    if( PdfeGOperator::category( clipOperator ) != PdfeGCategory::ClippingPath ) {
+        clipOperator = PdfeGOperator::W;
+    }
+    m_paths.push_back( path );
+    m_clipOperators.push_back( clipOperator );
+}
+
+
+//**********************************************************//
 //                     PdfeGraphicsState                    //
 //**********************************************************//
 PdfeGraphicsState::PdfeGraphicsState() :

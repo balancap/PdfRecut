@@ -97,7 +97,7 @@ PdfRect PRGPage::PageCropBox( PdfPage* pPage )
     PdfRect cropBox( pPage->GetCropBox() );
 
     // Intersection between the two.
-    cropBox = PdfeORect::intersection( mediaBox, cropBox );
+    cropBox = PdfeRect::intersection( mediaBox, cropBox );
     return cropBox;
 }
 

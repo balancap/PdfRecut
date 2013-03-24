@@ -262,22 +262,22 @@ void PRPage::setMediaBox( const PoDoFo::PdfRect& rhs )
 }
 void PRPage::setCropBox( const PoDoFo::PdfRect& rhs )
 {
-    m_cropBox = PdfeORect::intersection( m_mediaBox, rhs );
+    m_cropBox = PdfeRect::intersection( m_mediaBox, rhs );
     this->pushModifications( false, true );
 }
 void PRPage::setBleedBox( const PoDoFo::PdfRect& rhs )
 {
-    m_bleedBox = PdfeORect::intersection( m_mediaBox, rhs );
+    m_bleedBox = PdfeRect::intersection( m_mediaBox, rhs );
     this->pushModifications( false, true );
 }
 void PRPage::setTrimBox( const PoDoFo::PdfRect& rhs )
 {
-    m_trimBox = PdfeORect::intersection( m_mediaBox, rhs );
+    m_trimBox = PdfeRect::intersection( m_mediaBox, rhs );
     this->pushModifications( false, true );
 }
 void PRPage::setArtBox( const PoDoFo::PdfRect& rhs )
 {
-    m_artBox = PdfeORect::intersection( m_mediaBox, rhs );
+    m_artBox = PdfeRect::intersection( m_mediaBox, rhs );
     this->pushModifications( false, true );
 }
 

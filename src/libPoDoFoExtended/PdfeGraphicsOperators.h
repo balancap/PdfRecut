@@ -203,7 +203,6 @@ public:
      * \return True if it closes the path.
      */
     bool isClosePainting() const {
-
         return  ( category() == PdfeGCategory::PathPainting ) &&
                 ( m_type == PdfeGOperator::s ||
                   m_type == PdfeGOperator::f ||
