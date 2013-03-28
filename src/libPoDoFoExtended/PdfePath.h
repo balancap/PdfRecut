@@ -12,9 +12,7 @@
 #ifndef PDFEPATH_H
 #define PDFEPATH_H
 
-#include "PdfeTypes.h"
-#include "PdfeGraphicsOperators.h"
-#include "PdfeContentsStream.h"
+#include "PdfeGElement.h"
 
 #include "podofo/base/PdfRect.h"
 
@@ -304,7 +302,7 @@ public:
     const PdfeSubPath& subpath( size_t idx ) const  {   return m_subpaths.at( idx );    }
 
 public:
-    // DEPRECIATED...
+    // DEPRECATED...
     const std::vector<PdfeSubPath>& subpaths() const    {   return m_subpaths;  }
 
 private:

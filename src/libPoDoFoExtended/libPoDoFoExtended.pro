@@ -21,13 +21,14 @@ SOURCES += \
     PdfeFontTrueType.cpp \
     PdfeCMap.cpp \
     PdfeGraphicsState.cpp \
-    PdfePath.cpp \
     PdfeResources.cpp \
     PdfeStreamTokenizer.cpp \
     PdfeCanvasAnalysis.cpp \
     PdfeUtils.cpp \
     PdfeContentsStream.cpp \
-    PdfeContentsAnalysis.cpp
+    PdfeContentsAnalysis.cpp \
+    PdfeGElement.cpp \
+    PdfePath.cpp
 
 HEADERS += \
     PdfeTypes.h \
@@ -42,14 +43,15 @@ HEADERS += \
     PdfeGraphicsState.h \
     PdfeGraphicsOperators.h \
     PdfeMisc.h \
-    PdfePath.h \
     PdfeSemaphore.h \
     PdfeResources.h \
     PdfeStreamTokenizer.h \
     PdfeCanvasAnalysis.h \
     PdfeUtils.h \
     PdfeContentsStream.h \
-    PdfeContentsAnalysis.h
+    PdfeContentsAnalysis.h \
+    PdfeGElement.h \
+    PdfePath.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {
