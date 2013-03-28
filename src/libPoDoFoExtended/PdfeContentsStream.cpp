@@ -776,7 +776,7 @@ void PdfeContentsStream::deleteNodes()
 //                  PdfeContentsStream::Node                //
 //**********************************************************//
 PdfeContentsStream::Node::Node() :
-    m_nodeID( 0 ),
+    m_nodeID( NodeIDUndefined() ),
     m_pPrevNode( NULL ), m_pNextNode( NULL ),
     m_goperator(), m_goperands(),
     m_pOpeningNode( NULL ),
@@ -796,7 +796,7 @@ PdfeContentsStream::Node::Node( pdfe_nodeid nodeid,
 }
 void PdfeContentsStream::Node::init()
 {
-    m_nodeID = 0;
+    m_nodeID = NodeIDUndefined();
     m_pPrevNode = m_pNextNode = NULL;
     m_pOpeningNode = NULL;
     m_pBeginSubpathNode = NULL;

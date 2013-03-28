@@ -112,6 +112,8 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         else if( pnode->category() == PdfeGCategory::PathPainting ) {
             // Commands in this category: S, s, f, F, f*, B, B*, b, b*, n.
 
+            // Set path painting operator.
+            currentPath.setPaintingOp( pnode->goperator() );
             // Call category function.
             this->fPathPainting( streamState, currentPath );
             // Clear the current path.
@@ -120,10 +122,8 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
         else if( pnode->category() == PdfeGCategory::ClippingPath ) {
             // Commands in this category: W, W*.
 
-            // TODO: fix this awful implementation !
             // Set the clipping path operator of the current path.
             currentPath.setClippingPathOp( pnode->goperator() );
-
             // Call category function.
             this->fClippingPath( streamState, currentPath );
         }

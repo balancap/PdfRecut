@@ -44,15 +44,11 @@ public:
      */
     PdfeSubPath( const PoDoFo::PdfRect& rect );
     /** Initialize to an empty subpath with a given starting point.
+     * Reset the ID to unknown.
      * \param startCoords Coordinates of the starting point,
      * corresponding to the operator "x y m". (0,0) by default.
      */
     void init( const PdfeVector& startCoords = PdfeVector() );
-    /** Initialize the subpath with a rectangle.
-     * \param rect Coordinates of the rectangle, corresponding
-     * to the operator "x y w h re".
-     */
-    void init( const PoDoFo::PdfRect& rect );
 
 public:
     /** Basic structure which represents a point inside a subpath,
@@ -115,16 +111,18 @@ public:
      * \return Reference to the modified subpath.
      */
     PdfeSubPath& close();
-
-    /** Modify the coordinates of a point in the subpath.
-     * Use it at yout own risk!
-     * \param idx Index of the point.
-     * \param coords New coordinates.
+    /** Set the subpath as a rectangular subpath. Clear
+     * existing points inside the subpath.
+     * \param rect Coordinates of the rectangle, corresponding
+     * to the operator "x y w h re".
+     * \return Reference to the modified subpath.
      */
-    void setCoordinates( size_t idx, const PdfeVector& coords );
+    PdfeSubPath& setRectangle( const PoDoFo::PdfRect& rect );
 
 public:
     // Subpath getters...
+    /// Subpath node ID.
+    pdfe_nodesubid nodeSubID() const    {   return m_nodeSubID;     }
     /// Is the subpath closed ?
     bool isClosed() const;
     /// Is subpath empty (i.e. with only a starting point)?
@@ -138,8 +136,19 @@ public:
     const Point& point( size_t idx ) const                  {   return m_points.at( idx );      }
     /// Get a point coordinates.
     const PdfeVector& coordinates( size_t idx ) const       {   return m_points.at( idx ).coordinates;  }
+
     /// Get a point graphics operator.
     const PdfeGraphicOperator& goperator( size_t idx ) const{   return m_points.at( idx ).goperator;    }
+
+    // Setters...
+    /** Modify the coordinates of a point in the subpath.
+     * Use it at yout own risk!
+     * \param idx Index of the point.
+     * \param coords New coordinates.
+     */
+    void setCoordinates( size_t idx, const PdfeVector& coords );
+    /// Set subpath node sub ID.
+    void setNodeSubID( pdfe_nodesubid id )  {   m_nodeSubID = id;   }
 
 public:
     // Transformation and observation on the subpath.
@@ -170,6 +179,8 @@ public:
                                  PdfeFillingRule::Enum fillingRule = PdfeFillingRule::Winding ) const;
 
 private:
+    /// Subpath node sub ID inside the path.
+    pdfe_nodesubid  m_nodeSubID;
     /// Points which composed the subpath.
     std::vector<Point>  m_points;
 };
@@ -195,13 +206,13 @@ public:
     // Path loading and saving from stream.
     /** Load a path from a node in a contents stream.
      * \param pnode Pointer to the node at which begins the path.
-     * \return Pointer to the last node of path's definition
+     * \return Pointer to the last node of path's definition.
      */
     PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
     /** Save back the path into a contents stream.
      * \param pnode Pointer of the node where to insert the path definition.
      * \param eraseExisting Erase existing contents at this node.
-     * \return Pointer to the last node of path's definition
+     * \return Pointer to the last node of path's definition.
      */
     PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
                                     bool eraseExisting ) const;
@@ -278,6 +289,12 @@ public:
     /// Set clipping path operator of the path.
     void setClippingPathOp( const PdfeGraphicOperator& gop );
 
+    // Path painting  operator.
+    /// Get path painting operator ("n" by default).
+    const PdfeGraphicOperator& paintingOp() const;
+    /// Set path painting operator.
+    void setPaintingOp( const PdfeGraphicOperator& gop );
+
 public:
     // Getters and setters...
     /// Numbers of subpaths.
@@ -296,12 +313,17 @@ private:
      * \return Reference to the current subpath in the path.
      */
     PdfeSubPath& currentSubpath();
+    /** Update subpaths ID.
+     */
+    void updateSubpathsID();
 
 private:
     /// Subpaths vector.
     std::vector<PdfeSubPath>  m_subpaths;
     /// Clipping path operator (unknown if not a clipping path).
     PdfeGraphicOperator  m_clippingPathOp;
+    /// Path painting operator ("n" by default).
+    PdfeGraphicOperator  m_paintingOp;
 };
 
 }

@@ -13,6 +13,8 @@
 #define PDFECONTENTSSTREAM_H
 
 #include <istream>
+#include <limits>
+
 #include <QByteArray>
 
 #include "PdfeGraphicsOperators.h"
@@ -31,6 +33,17 @@ class PdfeGraphicsState;
 
 /// Node ID typedef.
 typedef PoDoFo::pdf_uint32  pdfe_nodeid;
+/// Node sub ID typedef.
+typedef PoDoFo::pdf_uint16  pdfe_nodesubid;
+
+/// Undefined node id value.
+inline pdfe_nodeid NodeIDUndefined() {
+    return std::numeric_limits<pdfe_nodeid>::max();
+}
+/// Undefined node sub id value.
+inline pdfe_nodesubid NodeSubIDUndefined() {
+    return std::numeric_limits<pdfe_nodesubid>::max();
+}
 
 //**********************************************************//
 //                     PdfeContentsStream                   //

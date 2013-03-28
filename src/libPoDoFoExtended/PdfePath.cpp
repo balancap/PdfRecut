@@ -25,43 +25,109 @@ PdfeSubPath::Point::Point( const PdfeVector& coords, const PdfeGraphicOperator& 
 {
 }
 
-PdfeSubPath::PdfeSubPath( const PdfeVector& startCoords )
+PdfeSubPath::PdfeSubPath( const PdfeVector& startCoords ) :
+    m_nodeSubID( NodeSubIDUndefined() )
 {
     this->init( startCoords );
 }
-PdfeSubPath::PdfeSubPath( const PdfRect& rect )
+PdfeSubPath::PdfeSubPath( const PdfRect& rect ) :
+    m_nodeSubID( NodeSubIDUndefined() )
 {
-    this->init( rect );
+    this->setRectangle( rect );
 }
 void PdfeSubPath::init( const PdfeVector& startCoords )
 {
     // Clear subpath and append starting point.
+    m_nodeSubID = NodeSubIDUndefined();
     m_points.clear();
     m_points.push_back( Point( startCoords, PdfeGOperator::m ) );
 }
-void PdfeSubPath::init( const PdfRect& rect )
-{
-    /* Known to be equivalent to
-      x y m
-      ( x + width ) y l
-      ( x + width ) ( y + height ) l
-      x ( y + height ) l
-      h
-    */
-    m_points.clear();
-    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
-                               PdfeGOperator::re ) );
-    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom() ),
-                               PdfeGOperator::re ) );
-    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom()+rect.GetHeight() ),
-                               PdfeGOperator::re ) );
-    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom()+rect.GetHeight() ),
-                               PdfeGOperator::re ) );
-    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
-                               PdfeGOperator::re ) );
-}
 
-PdfeSubPath &PdfeSubPath::moveTo( const PdfeVector& coords )
+
+/*PdfeContentsStream::Node* PdfeSubPath::load( PdfeContentsStream::Node* pnode,
+                                             const PdfeVector& defStartCoords )
+{
+    // Initialize subpath with default starting coordinates.
+    this->init( defStartCoords );
+
+    // Read subpath, until an ending node is reached (m/h/re).
+    PdfeContentsStream::Node* pNodePrev = pnode;
+    while( pnode && pnode->category() == PdfeGCategory::PathConstruction ) {
+        if( pnode->type() == PdfeGOperator::m ) {
+            // Start point of the subpath.
+            if( this->isEmpty() ) {
+                PdfeVector point( pnode->operand<double>( 0 ),
+                                  pnode->operand<double>( 1 ) );
+                this->moveTo( point );
+            }
+            // Beginning of another subpath.
+            else {
+                return pNodePrev;
+            }
+        }
+        else if( pnode->type() == PdfeGOperator::l ) {
+            // Append straight line.
+            PdfeVector point( pnode->operand<double>( 0 ),
+                              pnode->operand<double>( 1 ) );
+            this->appendLine( point );
+        }
+        else if( pnode->type() == PdfeGOperator::c ) {
+            // Append Bézier curve (c).
+            PdfeVector point1( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point2( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            PdfeVector point3( pnode->operand<double>( 4 ),
+                               pnode->operand<double>( 5 ) );
+            this->appendBezierC( point1, point2, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::v ) {
+            // Append Bézier curve (v).
+            PdfeVector point2( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point3( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            this->appendBezierV( point2, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::y ) {
+            // Append Bézier curve (y).
+            PdfeVector point1( pnode->operand<double>( 0 ),
+                               pnode->operand<double>( 1 ) );
+            PdfeVector point3( pnode->operand<double>( 2 ),
+                               pnode->operand<double>( 3 ) );
+            this->appendBezierY( point1, point3 );
+        }
+        else if( pnode->type() == PdfeGOperator::h ) {
+            // Close the current subpath by appending a straight line.
+            this->close();
+            // Check there is no other "h" node after.
+            while( pnode->next() && pnode->next()->type() == PdfeGOperator::h ) {
+                pnode = pnode->next();
+            }
+            return pnode;
+        }
+        else if( pnode->type() == PdfeGOperator::re ) {
+            // Append a rectangle to the current path as a complete subpath.
+            PdfRect rect( pnode->operand<double>( 0 ),
+                          pnode->operand<double>( 1 ),
+                          pnode->operand<double>( 2 ),
+                          pnode->operand<double>( 3 ) );
+            this->init( rect );
+            return pnode;
+        }
+        pNodePrev = pnode;
+        pnode = pnode->next();
+    }
+    // End of path construction nodes.
+    return pNodePrev;
+}
+PdfeContentsStream::Node* PdfeSubPath::save( PdfeContentsStream::Node* pnode,
+                                             bool eraseExisting ) const
+{
+    return pnode;
+}*/
+
+PdfeSubPath& PdfeSubPath::moveTo( const PdfeVector& coords )
 {
     // Clear subpath and append starting point.
     m_points.clear();
@@ -110,6 +176,28 @@ PdfeSubPath& PdfeSubPath::close()
         m_points.push_back( Point( m_points.front().coordinates,
                                    PdfeGOperator::h ) );
     }
+    return *this;
+}
+PdfeSubPath& PdfeSubPath::setRectangle( const PdfRect& rect )
+{
+    /* Known to be equivalent to
+      x y m
+      ( x + width ) y l
+      ( x + width ) ( y + height ) l
+      x ( y + height ) l
+      h
+    */
+    m_points.clear();
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft()+rect.GetWidth(), rect.GetBottom()+rect.GetHeight() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom()+rect.GetHeight() ),
+                               PdfeGOperator::re ) );
+    m_points.push_back( Point( PdfeVector( rect.GetLeft(), rect.GetBottom() ),
+                               PdfeGOperator::re ) );
     return *this;
 }
 
@@ -342,6 +430,8 @@ void PdfePath::init()
     m_subpaths.clear();
     m_subpaths.push_back( PdfeSubPath() );
     m_clippingPathOp.set( PdfeGOperator::Unknown );
+    m_paintingOp.set( PdfeGOperator::n );
+    this->updateSubpathsID();
 }
 
 PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
@@ -416,12 +506,14 @@ PdfePath& PdfePath::appendPath( const PdfePath& path )
 {
     // Append subpaths.
     m_subpaths.insert( m_subpaths.end(), path.m_subpaths.begin(), path.m_subpaths.end() );
+    this->updateSubpathsID();
     return *this;
 }
 PdfePath& PdfePath::appendSubpath( const PdfeSubPath& subpath )
 {
     // Append subpath.
     m_subpaths.push_back( subpath );
+    this->updateSubpathsID();
     return *this;
 }
 
@@ -430,6 +522,7 @@ PdfePath& PdfePath::moveTo( const PdfeVector& coords )
     // Add new subpath if necessary.
     if( !m_subpaths.back().isEmpty() ) {
         m_subpaths.push_back( PdfeSubPath() );
+        this->updateSubpathsID();
     }
     m_subpaths.back().moveTo( coords );
     return *this;
@@ -471,8 +564,9 @@ PdfePath& PdfePath::appendRectangle( const PdfRect& rect )
     // Add new subpath if necessary.
     if( !m_subpaths.back().isEmpty() ) {
         m_subpaths.push_back( PdfeSubPath() );
+        this->updateSubpathsID();
     }
-    m_subpaths.back().init( rect );
+    m_subpaths.back().setRectangle( rect );
     return *this;
 }
 PdfePath& PdfePath::closeSubpath()
@@ -520,11 +614,26 @@ void PdfePath::setClippingPathOp( const PdfeGraphicOperator& gop )
     }
 }
 
+const PdfeGraphicOperator& PdfePath::paintingOp() const
+{
+    return m_paintingOp;
+}
+void PdfePath::setPaintingOp( const PdfeGraphicOperator& gop )
+{
+    if( gop.category() == PdfeGCategory::PathPainting ) {
+        m_paintingOp = gop;
+    }
+    else {
+        m_paintingOp.set( PdfeGOperator::n );
+    }
+}
+
 PdfeSubPath& PdfePath::currentSubpath()
 {
     // Vector of subpaths empty: create an empty one and returned it.
     if( m_subpaths.empty() ) {
         m_subpaths.push_back( PdfeSubPath() );
+        this->updateSubpathsID();
         return m_subpaths.back();
     }
     // Last subpath is closed: created an empty one and returned it.
@@ -535,10 +644,20 @@ PdfeSubPath& PdfePath::currentSubpath()
             coords = m_subpaths.back().currentPoint().coordinates;
         }
         m_subpaths.push_back( PdfeSubPath( coords ) );
+        this->updateSubpathsID();
         return m_subpaths.back();
     }
     // Default behaviour; return last one in the list.
     return m_subpaths.back();
 }
+void PdfePath::updateSubpathsID()
+{
+    pdfe_nodesubid subpathid( 0 );
+    for( size_t i = 0 ; i < m_subpaths.size() ; ++i ) {
+        m_subpaths[i].setNodeSubID( subpathid );
+        ++subpathid;
+    }
+}
+
 
 }
