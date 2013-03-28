@@ -45,7 +45,7 @@ typedef unsigned int  pdfe_gid;
 /// UTF16 character. Host byte order is assumed when this type is used (use pdf_utf16be otherwise).
 typedef PoDoFo::pdf_uint16  pdfe_utf16;
 
-/// Pdf CID String. To be improve ?
+/// PDF CID String. To be improve ?
 typedef std::basic_string<pdfe_cid>  PdfeCIDString;
 
 /** Macro that convert UTF16 Big Endian to host byte order (or conversely).
@@ -79,21 +79,33 @@ public:
     PdfeMatrix() {
         this->init();
     }
-    /** Copy constructor for vmml::mat3d.
+    /** Copy constructor.
      */
-    PdfeMatrix( const vmml::mat3d& source  ) :
-        vmml::mat3d( source ) { }
-    /** =Operator overload
-     */
-    const PdfeMatrix& operator=( const vmml::mat3d& source ) {
-        *( (vmml::mat3d*) this ) = source;
-        return *this;
-    }
-    /** Initialize matrix to unit
+//    PdfeMatrix( const PdfeMatrix& rhs  ) :
+//        vmml::mat3d( rhs ) {
+//    }
+    /** Initialize matrix to unit.
      */
     void init() {
         this->fill( 0 );
         this->at(0,0) = this->at(1,1) = this->at(2,2) = 1;
+    }
+    // Operators...
+    /** Operator= overloaded.
+     */
+    const PdfeMatrix& operator=( const PdfeMatrix& rhs ) {
+        if( &rhs != this ) {
+            this->vmml::mat3d::operator=( rhs );
+        }
+        return *this;
+    }
+    /** Operator* overloaded.
+     */
+    PdfeMatrix operator*( const PdfeMatrix& rhs ) const {
+        PdfeMatrix rmat;
+        rmat.multiply( *this, rhs );
+        //rmat.vmml::mat3d::operator=(  this->vmml::mat3d::operator*( rhs ) );
+        return rmat;
     }
 
     /** Compute inverse matrix
@@ -142,7 +154,8 @@ class PdfeVector : public vmml::matrix<1,3,double>
 public:
     /** Default constructor, vector initialize to (0,0,1)
      */
-    PdfeVector() {
+    PdfeVector() :
+        vmml::matrix<1,3,double>() {
         this->init();
     }
     /** Construction of a vector (x,y).
@@ -151,6 +164,14 @@ public:
      */
     PdfeVector( double x, double y ) {
         this->init( x, y );
+    }
+    /** Copy constructor.
+     */
+    PdfeVector( const PdfeVector& rhs ) :
+        vmml::matrix<1,3,double>() {
+        this->at(0,0) = rhs.at(0,0);
+        this->at(0,1) = rhs.at(0,1);
+        this->at(0,2) = 1;
     }
     /** Initialize vector to (0,0).
      */
@@ -167,19 +188,23 @@ public:
         this->at(0,2) = 1;
     }
 
-    /** Operator= overloaded.
+    // Operators...
+    /** Operator+ overloaded.
      */
-    const PdfeVector& operator=( const vmml::matrix<1,3,double>& source ) {
-        *( (vmml::matrix<1,3,double>*) this ) = source;
-        return *this;
+    PdfeVector operator+( const PdfeVector& rhs ) const {
+        PdfeVector rvect;
+        rvect.at(0,0) = this->at(0,0) + rhs.at(0,0);
+        rvect.at(0,1) = this->at(0,1) + rhs.at(0,1);
+        rvect.at(0,2) = 1;
+        return rvect;
     }
     /** Operator+ overloaded.
      */
-    PdfeVector operator+( const PdfeVector& vect ) const {
+    PdfeVector operator-( const PdfeVector& rhs ) const {
         PdfeVector rvect;
-        rvect.at(0,0) = vect.at(0,0) + this->at(0,0);
-        rvect.at(0,1) = vect.at(0,1) + this->at(0,1);
-        rvect.at(0,2) = 1.0;
+        rvect.at(0,0) = this->at(0,0) - rhs.at(0,0);
+        rvect.at(0,1) = this->at(0,1) - rhs.at(0,1);
+        rvect.at(0,2) = 1;
         return rvect;
     }
     /** Operator* overloaded.
@@ -188,7 +213,7 @@ public:
         PdfeVector rvect;
         rvect.at(0,0) = mat(0,0) * this->at(0,0) + mat(1,0) * this->at(0,1) + mat(2,0);
         rvect.at(0,1) = mat(0,1) * this->at(0,0) + mat(1,1) * this->at(0,1) + mat(2,1);
-        rvect.at(0,2) = 1.0;
+        rvect.at(0,2) = 1;
         return rvect;
     }
     /** Operator* overloaded.
