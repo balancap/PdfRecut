@@ -20,6 +20,16 @@ namespace PoDoFoExtended {
 
 class PdfeGraphicsState;
 
+
+namespace PdfeGElementSave {
+/// Type of saving policy used for PdfeGElement object.
+enum Enum {
+    Replace = 0,    /// Replace existing content.
+    PushBack,       /// Push the element after existing ones.
+    PushFront       /// Push the element in front of existing ones.
+};
+}
+
 /** Class that represents a common PDF graphical element stored
  * in a contents stream (i.e. path, text, image, ...).
  * This parent interface is used to stored some common information
@@ -35,6 +45,9 @@ public:
     /** Initialize the graphic element to an empty object.
      */
     void init();
+    /** Destructor: release resources.
+     */
+    ~PdfeGElement();
 
 public:
     // Node ID.

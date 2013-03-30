@@ -25,12 +25,16 @@ void PdfeGElement::init()
     delete m_pGState;
     m_pGState = NULL;
 }
+PdfeGElement::~PdfeGElement()
+{
+    delete m_pGState;
+}
 
 bool PdfeGElement::hasGState() const
 {
     return m_pGState;
 }
-const PdfeGraphicsState &PdfeGElement::gstate() const
+const PdfeGraphicsState& PdfeGElement::gstate() const
 {
     if( !m_pGState ) {
         m_pGState = new PdfeGraphicsState();

@@ -420,12 +420,15 @@ QPainterPath PdfeSubPath::toQPainterPath( bool closeSubpath, PdfeFillingRule::En
 //**********************************************************//
 //                          PdfePath                        //
 //**********************************************************//
-PdfePath::PdfePath()
+PdfePath::PdfePath() :
+    PdfeGElement(),
+    m_clippingPathOp( PdfeGOperator::Unknown ),
+    m_paintingOp( PdfeGOperator::n )
 {
-    this->init();
 }
 void PdfePath::init()
 {
+    this->PdfeGElement::init();
     // Clear subpaths and add an empty one.
     m_subpaths.clear();
     m_subpaths.push_back( PdfeSubPath() );
@@ -496,7 +499,7 @@ PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
     return pNodePrev;
 }
 PdfeContentsStream::Node* PdfePath::save( PdfeContentsStream::Node* pnode,
-                                          bool eraseExisting ) const
+                                          PdfeGElementSave::Enum savePolicy ) const
 {
     // TODO: implement...
     return pnode;
@@ -514,6 +517,16 @@ PdfePath& PdfePath::appendSubpath( const PdfeSubPath& subpath )
     // Append subpath.
     m_subpaths.push_back( subpath );
     this->updateSubpathsID();
+    return *this;
+}
+PdfePath& PdfePath::eraseSubpath( size_t idx )
+{
+    m_subpaths.erase( m_subpaths.begin() + idx );
+    return *this;
+}
+PdfePath& PdfePath::clearSubpaths()
+{
+    m_subpaths.clear();
     return *this;
 }
 

@@ -189,8 +189,10 @@ private:
 //**********************************************************//
 /** Class representing a PDF path. A path is made of a
  * collection of independent subpaths (PdfeSubPath).
+ * Inherit from PdfeGElement since it is considered as
+ * graphics element inside a PDF contents stream.
  */
-class PdfePath
+class PdfePath : public PdfeGElement
 {
 public:
     /** Constructor: create an empty path.
@@ -209,14 +211,13 @@ public:
     PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
     /** Save back the path into a contents stream.
      * \param pnode Pointer of the node where to insert the path definition.
-     * \param eraseExisting Erase existing contents at this node.
+     * \param savePolicy Save policy of the element (replace/push back/push front).
      * \return Pointer to the last node of path's definition.
      */
     PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
-                                    bool eraseExisting ) const;
+                                    PdfeGElementSave::Enum savePolicy ) const;
 
 public:
-    // Path construction...
     /** Append an entire path.
      * \param path Path to append.
      */
@@ -225,7 +226,18 @@ public:
      * \param subpath Subpath to append.
      */
     PdfePath& appendSubpath( const PdfeSubPath& subpath );
+    /** Erase a subpath element in the path.
+     * \param idx Index of the subpath to delete.
+     */
+    PdfePath& eraseSubpath( size_t idx );
+    /** Clear subpaths in the path. Keep path's operators and
+     * node ID (otherwise, use init).
+     */
+    PdfePath& clearSubpaths();
 
+
+public:
+    // Path construction...
     /** Begin a new subpath by moving current point.
      * Corresponds to operator "x y m".
      * \param coords Coordinates of the starting point.
