@@ -204,7 +204,8 @@ public:
 
 public:
     // Path loading and saving from stream.
-    /** Load a path from a node in a contents stream.
+    /** Load a path from a node in a contents stream. The node ID is
+     * saved back, but the graphics state is set unchanged.
      * \param pnode Pointer to the node at which begins the path.
      * \return Pointer to the last node of path's definition.
      */
@@ -234,7 +235,6 @@ public:
      * node ID (otherwise, use init).
      */
     PdfePath& clearSubpaths();
-
 
 public:
     // Path construction...
@@ -318,6 +318,11 @@ public:
     const std::vector<PdfeSubPath>& subpaths() const    {   return m_subpaths;  }
 
 private:
+    /** Create and append a subpath to the collection. Return the last subpath
+     * if only if it is empty.
+     * \return Newly created subpath.
+     */
+    PdfeSubPath& createSubpath();
     /** Get the current subpath. Append a new one if the last in the list
      * is closed.
      * \return Reference to the current subpath in the path.

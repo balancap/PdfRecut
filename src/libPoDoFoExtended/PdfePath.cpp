@@ -439,6 +439,9 @@ void PdfePath::init()
 
 PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
 {
+    // Set node ID.
+    this->setNodeID( pnode->id() );
+
     PdfeContentsStream::Node* pNodePrev = pnode;
     this->init();
     // Path construction nodes.
@@ -532,12 +535,9 @@ PdfePath& PdfePath::clearSubpaths()
 
 PdfePath& PdfePath::moveTo( const PdfeVector& coords )
 {
-    // Add new subpath if necessary.
-    if( !m_subpaths.back().isEmpty() ) {
-        m_subpaths.push_back( PdfeSubPath() );
-        this->updateSubpathsID();
-    }
-    m_subpaths.back().moveTo( coords );
+    // Add new subpath if necessary and move to.
+    PdfeSubPath& subpath = this->createSubpath();
+    subpath.moveTo( coords );
     return *this;
 }
 PdfePath& PdfePath::appendLine( const PdfeVector& coords )
@@ -574,12 +574,9 @@ PdfePath& PdfePath::appendBezierY( const PdfeVector& coords1,
 }
 PdfePath& PdfePath::appendRectangle( const PdfRect& rect )
 {
-    // Add new subpath if necessary.
-    if( !m_subpaths.back().isEmpty() ) {
-        m_subpaths.push_back( PdfeSubPath() );
-        this->updateSubpathsID();
-    }
-    m_subpaths.back().setRectangle( rect );
+    // Add new subpath if necessary and set rectangle.
+    PdfeSubPath& subpath = this->createSubpath();
+    subpath.setRectangle( rect );
     return *this;
 }
 PdfePath& PdfePath::closeSubpath()
@@ -641,6 +638,14 @@ void PdfePath::setPaintingOp( const PdfeGraphicOperator& gop )
     }
 }
 
+PdfeSubPath& PdfePath::createSubpath()
+{
+    if( !m_subpaths.size() || !m_subpaths.back().isEmpty() ) {
+        m_subpaths.push_back( PdfeSubPath() );
+        this->updateSubpathsID();
+    }
+    return m_subpaths.back();
+}
 PdfeSubPath& PdfePath::currentSubpath()
 {
     // Vector of subpaths empty: create an empty one and returned it.
