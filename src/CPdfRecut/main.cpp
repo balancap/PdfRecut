@@ -153,8 +153,8 @@ void proceedFile( QString fileName )
     document.setPagesCacheSize( 100 );
 
     // Check modifications on contents stream.
-    /*PdfeContentsStream contents;
-    for( size_t i = 0 ; i < document.nbPages()-1 ; ++i ) {
+    PdfeContentsStream contents;
+    for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
         PRPage* page = document.page( i );
 
         contents = page->contents();
@@ -162,13 +162,14 @@ void proceedFile( QString fileName )
 
         PRPage* page2 = document.insertPage( i+1 );
         page2->operator=( *page );
-        document.deletePage( i+2 );
-
-        // Save stream to file.
-        contents = page->contents();
-        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
-        contents.exportToFile( filename );
         ++i;
+        //document.deletePage( i+2 );
+
+//        // Save stream to file.
+//        contents = page->contents();
+//        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+//        contents.exportToFile( filename );
+//        ++i;
     }
     // Save into...
     QFileInfo fileInfo( fileName );
@@ -176,9 +177,9 @@ void proceedFile( QString fileName )
             + "/recut/"
             + infoFile.fileName();
     document.save( fileName );
-    document.clear();*/
+    document.clear();
 
-
+/*
     // Analyse document geometry.
     PRGDocument::GParameters gparams;
     gparams.firstPageIndex = 0;
@@ -221,8 +222,9 @@ void proceedFile( QString fileName )
         pGDocument->page( i )->page()->contents().exportToFile( filename );
     }
     delete pGDocument;
-    document.clear();
 
+
+    document.clear();*/
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 
