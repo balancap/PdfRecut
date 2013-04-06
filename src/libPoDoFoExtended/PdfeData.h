@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <string>
+#include <cstring>
 #include <ostream>
 
 namespace PoDoFoExtended {
@@ -77,6 +78,7 @@ public:
     PdfeData( const PdfeData& rhs ) :
         std::vector<char>( rhs ) { }
 
+    PdfeData( const char* s );
     PdfeData( const char* s, size_t n );
     PdfeData( const std::string& str );
 
@@ -88,12 +90,33 @@ public:
     char* data() {
         return &this->operator[]( 0 );
     }
+    // Convert into string.
+    std::string to_string() const {
+        return std::string( this->data(), this->size() );
+    }
+    void to_string( std::string& str ) const {
+        str.assign( this->data(), this->size() );
+    }
+    // Operator<<
+    PdfeData& operator<<( const PdfeData& data ) {
+        this->insert( this->end(), data.begin(), data.end() );
+        return *this;
+    }
+    PdfeData& operator<<( const std::string& str ) {
+        this->insert( this->end(), str.begin(), str.end() );
+        return *this;
+    }
 };
 
 inline std::ostream& operator<<( std::ostream& os, const PdfeData& data ) {
     os.write( data.data(), data.size() );
     return os;
 }
+inline std::string to_string( const PdfeData& data ) {
+    return data.to_string();
+}
+
+
 
 }
 

@@ -15,16 +15,16 @@
 
 namespace PoDoFoExtended {
 
+PdfeData::PdfeData( const char* s ) {
+    this->assign( s, s+std::strlen(s) );
+}
 PdfeData::PdfeData( const char* s, size_t n )
 {
-    std::copy( s, s+n, this->begin() );
+    this->assign( s, s+n );
 }
 PdfeData::PdfeData( const std::string& str )
 {
-    std::copy( str.begin(), str.end(), this->begin() );
+    this->assign( str.begin(), str.end() );
 }
-
-
-
 
 }
