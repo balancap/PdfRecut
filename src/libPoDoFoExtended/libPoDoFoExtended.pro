@@ -29,7 +29,8 @@ SOURCES += \
     PdfeContentsAnalysis.cpp \
     PdfeGElement.cpp \
     PdfePath.cpp \
-    PdfeTextElement.cpp
+    PdfeTextElement.cpp \
+    PdfeData.cpp
 
 HEADERS += \
     PdfeTypes.h \
@@ -53,7 +54,8 @@ HEADERS += \
     PdfeContentsAnalysis.h \
     PdfeGElement.h \
     PdfePath.h \
-    PdfeTextElement.h
+    PdfeTextElement.h \
+    PdfeData.h
 
 INCLUDEPATH += $$PWD/../3rdparty
 win32 {
