@@ -245,11 +245,11 @@ void PRRenderPage::fInlineImages( const PdfeStreamState& streamState )
 void PRRenderPage::fXObjects( const PdfeStreamState& streamState )
 {
     // Simpler references.
-    const std::vector<std::string>& operands = streamState.pNode->operands();
+    const std::vector<PdfeData>& operands = streamState.pNode->operands();
     const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // Name of the XObject and dictionary entry.
-    std::string xobjName = operands.back().substr( 1 );
+    std::string xobjName = operands.back().to_string().substr( 1 );
     PdfObject* xobjPtr = streamState.resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
     std::string xobjSubtype = xobjPtr->GetIndirectKey( "Subtype" )->GetName().GetName();
     PdfeMatrix pathMat;

@@ -12,11 +12,14 @@
 #ifndef PDFECONTENTSSTREAM_H
 #define PDFECONTENTSSTREAM_H
 
+
 #include <istream>
 #include <limits>
 
 #include <QByteArray>
 
+#include "PdfeTypes.h"
+#include "PdfeData.h"
 #include "PdfeGraphicsOperators.h"
 #include "PdfeResources.h"
 #include "PdfeMisc.h"
@@ -66,15 +69,16 @@ public:
     /** Initialize the contents stream to an empty object.
      */
     void init();
-    /** Copy constructor.
+    /** Copy constructor. Perform a deep copy.
      */
     PdfeContentsStream( const PdfeContentsStream& rhs );
-    /** Assignement operator.
+    /** Assignment operator. Perform a deep copy.
      */
     PdfeContentsStream& operator=( const PdfeContentsStream& rhs );
     /** Destructor.
      */
     ~PdfeContentsStream();
+
 public:
     // Basic modifications of the contents stream.
     /** Find a node with a given ID.
@@ -205,8 +209,8 @@ public:
      * operator and operands.
      */
     Node( pdfe_nodeid nodeid,
-          const PdfeGraphicOperator& goperator,
-          const std::vector<std::string>& goperands );
+          const PdfeGraphicOperator& goperator = PdfeGraphicOperator(),
+          const std::vector<PdfeData>& goperands = std::vector<PdfeData>() );
     /** Initialize the node to an empty object.
      */
     void init();
@@ -235,9 +239,9 @@ public:
     Node* next() const      {   return m_pNextNode;     }
 
     /// Graphics operator (const reference).
-    const PdfeGraphicOperator& goperator() const        {   return m_goperator;     }
+    const PdfeGraphicOperator& goperator() const    {   return m_goperator;     }
     /// Graphics operands (represented by string).
-    const std::vector<std::string>& operands() const    {   return m_goperands;     }
+    const std::vector<PdfeData>& operands() const   {   return m_goperands;     }
     /// Number of operands.
     size_t nbOperands() const               {   return m_goperands.size();      }
     /// Node type.
@@ -275,7 +279,12 @@ public:
     /// Set the graphics operator of the node.
     void setGOperator( const PdfeGraphicOperator& rhs );
     /// Set graphics operands related to the node's operator.
-    void setOperands( const std::vector<std::string>& rhs );
+    void setOperands( const std::vector<PdfeData>& rhs );
+
+    /// Set graphics operands from a PdfeVector.
+    void setOperands( const PdfeVector& rhs );
+    /// Set graphics operands from a PdfeMatrix.
+    void setOperands( const PdfeMatrix& rhs );
 
     /// Set opening node. Check the type before modification.
     void setOpeningNode( Node* pnode );
@@ -314,6 +323,12 @@ public:
     template <class T>
     void setOperand( size_t idx, const T& value );
 
+    // Special case of PdfeData.
+    /// Get operand data value.
+    const PdfeData& operand( size_t idx ) const;
+    /// Set operand data.
+    void setOperand( size_t idx, const PdfeData& data );
+
 private:
     // Setters... Keep them private for now...
     /// Set node ID in the stream.
@@ -334,7 +349,7 @@ private:
     /// Graphics operator corresponding to the node.
     PdfeGraphicOperator  m_goperator;
     /// Graphics operands associated to the operator.
-    std::vector<std::string>  m_goperands;
+    std::vector<PdfeData>  m_goperands;
 
     union {
         /// Opening node. Only for operators BT/ET q/Q BI/EI BX/EX.
@@ -394,47 +409,57 @@ inline bool PdfeContentsStream::Node::isBeginSubpathNode() const
             this == m_pBeginSubpathNode;
 }
 
+// Operand's getter / setter (template).
 template <class T>
-const T PdfeContentsStream::Node::operand( size_t idx ) const
+inline const T PdfeContentsStream::Node::operand( size_t idx ) const
 {
     T value;
-    std::istringstream istream( m_goperands.at( idx ) );
+    std::istringstream istream( m_goperands.at( idx ).to_string() );
     if( !( istream >> value ) ) {
-        //std::cout << "Error: " << str << std::endl;
-        PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, m_goperands.at( idx ).c_str() );
+        PODOFO_RAISE_ERROR_INFO( PoDoFo::ePdfError_InvalidDataType, m_goperands.at( idx ).to_string().c_str() );
     }
     return value;
 }
 template <class T>
-void PdfeContentsStream::Node::setOperand( size_t idx, const T& value )
+inline void PdfeContentsStream::Node::setOperand( size_t idx, const T& val )
 {
     if( idx >= m_goperands.size() ) {
         m_goperands.resize( idx + 1 );
     }
     PdfeOStringStream ostream;
-    ostream << value;
+    ostream << val;
     m_goperands.at( idx ) = ostream.str();
 }
-
-// std::string specialization.
-template <>
-inline const std::string PdfeContentsStream::Node::operand( size_t idx ) const
-{
+// Operand's getter / setter (PdfeData).
+inline const PdfeData& PdfeContentsStream::Node::operand( size_t idx ) const {
     return m_goperands.at( idx );
 }
-template <>
-inline void PdfeContentsStream::Node::setOperand( size_t idx, const std::string& value )
-{
+/// Set operand data.
+inline void PdfeContentsStream::Node::setOperand( size_t idx, const PdfeData& data ) {
     if( idx >= m_goperands.size() ) {
         m_goperands.resize( idx + 1 );
     }
-    m_goperands.at( idx ) = value;
+    m_goperands.at( idx ) = data;
 }
 // PoDoFo::PdfVariant specialization.
 template <>
 const PoDoFo::PdfVariant PdfeContentsStream::Node::operand( size_t idx ) const;
 template <>
 void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant& value );
+// PoDoFo::PdfName specialization (no check...).
+template <>
+inline const PoDoFo::PdfName PdfeContentsStream::Node::operand( size_t idx ) const {
+    const PdfeData& goperand = m_goperands.at( idx );
+    return PoDoFo::PdfName( goperand.data()+1, goperand.size()-1 );
+}
+template <>
+inline void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfName& name ) {
+    if( idx >= m_goperands.size() ) {
+        m_goperands.resize( idx + 1 );
+    }
+    PdfeData& goperand = m_goperands.at( idx );
+    goperand << "/" << name.GetName();
+}
 
 }
 

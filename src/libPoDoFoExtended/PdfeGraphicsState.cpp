@@ -176,7 +176,7 @@ void PdfeGraphicsState::update( const PdfeContentsStream::Node* pnode,
         }
         else if( pnode->type() ==PdfeGOperator::gs ) {
             // Get parameters from an ExtGState dictionary.
-            std::string extGStateName = pnode->operands().back().substr( 1 );
+            std::string extGStateName( pnode->operands().back().to_string().substr( 1 ) );
             this->loadExtGState( extGStateName, resources );
         }
     }
@@ -221,7 +221,7 @@ void PdfeGraphicsState::update( const PdfeContentsStream::Node* pnode,
         }
         else if( pnode->type() == PdfeGOperator::Tf ) {
             // Read font name and font size.
-            std::string fontName = pnode->operands().at( 0 ).substr( 1 );
+            std::string fontName = pnode->operand( 0 ).to_string().substr( 1 );
             this->textState().setFont( fontName, resources );
             this->textState().setFontSize( pnode->operand<double>( 1 ) );
         }

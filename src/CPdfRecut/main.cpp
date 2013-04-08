@@ -9,6 +9,8 @@
  * Written by Paul Balança <paul.balanca@gmail.com>, 2012                  *
  ***************************************************************************/
 
+#include <algorithm>
+
 #include <QsLog/QsLog.h>
 #include <QsLog/QsLogDest.h>
 
@@ -24,6 +26,7 @@
 #include "PRGeometry/PRGTextPage.h"
 
 #include "PdfeFontType1.h"
+#include "PdfeData.h"
 
 #include <podofo/podofo.h>
 
@@ -150,7 +153,7 @@ void proceedFile( QString fileName )
 
     // Load PDF file
     document.load( fileName );
-    document.setPagesCacheSize( 100 );
+    document.setPagesCacheSize( 30 );
 
     // Check modifications on contents stream.
     PdfeContentsStream contents;
@@ -160,15 +163,15 @@ void proceedFile( QString fileName )
         contents = page->contents();
         page->setContents( contents );
 
-        PRPage* page2 = document.insertPage( i+1 );
-        page2->operator=( *page );
-        ++i;
+//        PRPage* page2 = document.insertPage( i+1 );
+//        page2->operator=( *page );
+//        ++i;
         //document.deletePage( i+2 );
 
-//        // Save stream to file.
-//        contents = page->contents();
-//        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
-//        contents.exportToFile( filename );
+        // Save stream to file.
+        //contents = page->contents();
+        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        contents.exportToFile( filename );
 //        ++i;
     }
     // Save into...
@@ -177,7 +180,19 @@ void proceedFile( QString fileName )
             + "/recut/"
             + infoFile.fileName();
     document.save( fileName );
-    document.clear();
+
+    PdfeData data( "1" );
+    PdfeDataStream iodatastream( data );
+    //iodatastream.seekp( 0, std::ios_base::end );
+//    iodatastream << double(1e-8) << flush;
+//    iodatastream << "data";
+//    iodatastream.close();
+
+    bool fval;
+    bool val = ( iodatastream >> fval );
+
+    std::cout << data << " / " << val << " / " << fval << std::endl;
+
 
 /*
     // Analyse document geometry.
@@ -221,10 +236,10 @@ void proceedFile( QString fileName )
         filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
         pGDocument->page( i )->page()->contents().exportToFile( filename );
     }
-    delete pGDocument;
+    delete pGDocument;*/
 
 
-    document.clear();*/
+    document.clear();
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
 

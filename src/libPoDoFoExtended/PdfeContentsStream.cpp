@@ -354,7 +354,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
     EPdfContentsType tokenType;
     std::string strVariant;
     PdfeGraphicOperator goperator;
-    std::vector<std::string> goperands;
+    std::vector<PdfeData> goperands;
     size_t nbForms = 0;
 
     // Nodes stacks, for specific links.
@@ -486,7 +486,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
             // XObjects forms: resources and loading.
             else if( goperator.category() == PdfeGCategory::XObjects ) {
                 // Get XObject pointer and subtype.
-                std::string xobjName = goperands.back().substr( 1 ) + resSuffix;
+                std::string xobjName = goperands.back().to_string().substr( 1 ) + resSuffix;
                 PdfObject* pXObject = m_resources.getIndirectKey( PdfeResourcesType::XObject, xobjName );
                 // The XObject exists...
                 if( pXObject ) {
@@ -502,7 +502,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                             pNode->setFormXObject( true, true, false );
                             // Save the current graphics state on the stack 'q'.
                             pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::q ),
-                                                        std::vector<std::string>() ),
+                                                        std::vector<PdfeData>() ),
                                                   pNode );
                             // Get transformation matrix of the form.
                             PdfeMatrix formTransMat;
@@ -513,16 +513,9 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                                 formTransMat(2,0) = mat[4].GetReal();    formTransMat(2,1) = mat[5].GetReal();
                                 // Insert in the stream it if not the identity.
                                 if( formTransMat != PdfeMatrix() ) {
-                                    std::vector<std::string> goperands_cm( 6 );
-                                    mat[0].ToString( goperands_cm[0] );
-                                    mat[1].ToString( goperands_cm[1] );
-                                    mat[2].ToString( goperands_cm[2] );
-                                    mat[3].ToString( goperands_cm[3] );
-                                    mat[4].ToString( goperands_cm[4] );
-                                    mat[5].ToString( goperands_cm[5] );
-                                    pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::cm ),
-                                                                goperands_cm ),
+                                    pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::cm ) ),
                                                           pNode );
+                                    pNode->setOperands( formTransMat );
                                 }
                             }
                             // Load form XObject, with new suffix.
@@ -530,8 +523,7 @@ PdfeContentsStream::Node* PdfeContentsStream::load( PdfCanvas* pcanvas,
                             suffixStream << resSuffix << "_form" << nbForms;
                             pNode = this->load( &xobject, loadFormsStream, fixStream, pNode, suffixStream.str() );
                             // Restore the current graphics state on the stack 'Q'.
-                            pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ),
-                                                        std::vector<std::string>() ),
+                            pNode = this->insert( Node( 0, PdfeGraphicOperator( PdfeGOperator::Q ) ),
                                                   pNode );
                             // Closing form XObject node.
                             pNode = this->insert( Node( 0, goperator, goperands ),
@@ -642,16 +634,17 @@ QByteArray PdfeContentsStream::streamData() const
     // Write nodes description.
     Node* pnode = m_pFirstNode;
     while( pnode ) {
-        // Case of a loaded form: do not write done.
+        // Case of a loaded form: do not write Do.
         if( !pnode->isFormXObjectLoaded() ) {
             for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
-                const std::string& operand = pnode->operands()[i];
-                data.append( operand.c_str(), operand.length() );
+                const PdfeData& operand = pnode->operands()[i];
+                data.append( operand.data(), operand.size() );
                 data.append( ' ' );
             }
             data.append( pnode->goperator().str(), -1 );
             data.append( '\n' );
         }
+
         pnode = pnode->next();
     }
     return data;
@@ -670,7 +663,7 @@ void PdfeContentsStream::exportToFile( QString filename ) const
                 << pnode->goperator().str()
                 << qSetFieldWidth( 0 ) << left;
             for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
-                out << pnode->operands().at( i ).c_str() << " ";
+                out << pnode->operands().at( i ).to_string().c_str() << " ";
             }
             out << endl;
 
@@ -785,7 +778,7 @@ PdfeContentsStream::Node::Node() :
 }
 PdfeContentsStream::Node::Node( pdfe_nodeid nodeid,
                                 const PdfeGraphicOperator& goperator,
-                                const std::vector<std::string>& goperands ) :
+                                const std::vector<PdfeData>& goperands ) :
     m_nodeID( nodeid ),
     m_pPrevNode( NULL ), m_pNextNode( NULL ),
     m_goperator( goperator ), m_goperands( goperands ),
@@ -908,10 +901,40 @@ void PdfeContentsStream::Node::setGOperator( const PdfeGraphicOperator& rhs )
 {
     m_goperator = rhs;
 }
-void PdfeContentsStream::Node::setOperands( const std::vector<std::string>& rhs )
+void PdfeContentsStream::Node::setOperands( const std::vector<PdfeData>& rhs )
 {
     m_goperands = rhs;
 }
+
+void PdfeContentsStream::Node::setOperands( const PdfeVector& rhs )
+{
+    m_goperands.resize( 2 );
+    PdfeOStringStream ostream;
+
+    ostream.str("");    ostream << rhs( 0 );
+    m_goperands.at( 0 ) = ostream.str();
+    ostream.str("");    ostream << rhs( 1 );
+    m_goperands.at( 1 ) = ostream.str();
+}
+void PdfeContentsStream::Node::setOperands( const PdfeMatrix& mat )
+{
+    m_goperands.resize( 6 );
+    PdfeOStringStream ostream;
+
+    ostream.str("");    ostream << mat(0,0);
+    m_goperands.at( 0 ) = ostream.str();
+    ostream.str("");    ostream << mat(0,1);
+    m_goperands.at( 1 ) = ostream.str();
+    ostream.str("");    ostream << mat(1,0);
+    m_goperands.at( 2 ) = ostream.str();
+    ostream.str("");    ostream << mat(1,1);
+    m_goperands.at( 3 ) = ostream.str();
+    ostream.str("");    ostream << mat(2,0);
+    m_goperands.at( 4 ) = ostream.str();
+    ostream.str("");    ostream << mat(2,1);
+    m_goperands.at( 5 ) = ostream.str();
+}
+
 void PdfeContentsStream::Node::setOpeningNode( PdfeContentsStream::Node* pnode )
 {
     if( this->isClosingNode() && pnode->isOpeningNode() ) {
@@ -967,36 +990,36 @@ void PdfeContentsStream::Node::addSuffix( const std::string& suffix )
     }
 
     if( m_goperator.type() == PdfeGOperator::gs ) {
-        m_goperands.back() = m_goperands.back() + suffix;
+        m_goperands.back() << suffix;
     }
     else if( m_goperator.type() == PdfeGOperator::Tf ) {
-        m_goperands[0] = m_goperands[0] + suffix;
+        m_goperands[0] << suffix;
     }
     else if( m_goperator.type() == PdfeGOperator::sh ) {
-        m_goperands.back() = m_goperands.back() + suffix;
+        m_goperands.back() << suffix;
     }
     else if( m_goperator.type() == PdfeGOperator::ID ) {
         // TODO: color space.
     }
     else if( m_goperator.type() == PdfeGOperator::Do ) {
-        m_goperands.back() = m_goperands.back() + suffix;
+        m_goperands.back() << suffix;
     }
     else if( m_goperator.category() == PdfeGCategory::Color ) {
         // Color space.
         if( m_goperator.type() == PdfeGOperator::CS ||
                m_goperator.type() == PdfeGOperator::cs ) {
-            std::string colorSpace = m_goperands.back().substr( 1 );
+            std::string colorSpace = m_goperands.back().to_string().substr( 1 );
             // TODO: improve a bit this ugly code!
             if( colorSpace != "DeviceGray" && colorSpace != "DeviceRGB" &&
                    colorSpace != "DeviceCMYK" && colorSpace != "Pattern" ) {
-                m_goperands.back() = m_goperands.back() + suffix;
+                m_goperands.back() << suffix;
             }
         }
         // Color, in case of pattern.
         else if( m_goperator.type() == PdfeGOperator::scn ||
                  m_goperator.type() == PdfeGOperator::SCN ) {
             if( m_goperands.back()[0] == '/' ) {
-                m_goperands.back() = m_goperands.back() + suffix;
+                m_goperands.back() << suffix;
             }
         }
     }
@@ -1007,7 +1030,7 @@ template <>
 const PoDoFo::PdfVariant PdfeContentsStream::Node::operand( size_t idx ) const
 {
     PdfVariant variant;
-    PdfTokenizer tokenizer( m_goperands.at( idx ).c_str(), m_goperands.at( idx ).length() );
+    PdfTokenizer tokenizer( m_goperands.at( idx ).data(), m_goperands.at( idx ).size() );
     tokenizer.GetNextVariant( variant, NULL );
     return variant;
 }
@@ -1017,7 +1040,9 @@ void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant&
     if( idx >= m_goperands.size() ) {
         m_goperands.resize( idx + 1 );
     }
-    value.ToString( m_goperands.at( idx ) ,ePdfWriteMode_Compact );
+    std::string str;
+    value.ToString( str ,ePdfWriteMode_Compact );
+    m_goperands.at( idx ) = str;
 }
 
 }

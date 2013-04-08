@@ -180,7 +180,7 @@ void PRGTextGroupWords::init()
 void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& streamState )
 {
     // Simpler references.
-    const std::vector<std::string>& operands = streamState.pNode->operands();
+    const std::vector<PdfeData>& operands = streamState.pNode->operands();
     const PdfeGraphicsState& gstate = streamState.gstates.back();
 
     // Create data structure.
@@ -198,7 +198,7 @@ void PRGTextGroupWords::readData( PRDocument* document, const PdfeStreamState& s
 
     // Get variant from string.
     PdfVariant variant;
-    PdfTokenizer tokenizer( operands.back().c_str(), operands.back().length() );
+    PdfTokenizer tokenizer( operands.back().data(), operands.back().size() );
     tokenizer.GetNextVariant( variant, NULL );
     // Read group of words.
     this->readPdfVariant( variant, pFont );
