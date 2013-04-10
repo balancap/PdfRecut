@@ -2,14 +2,16 @@
 ##                       libPoDoFoExtended                      ##
 ##################################################################
 
-QT       += gui
-
+DEFINES += LIBPODOFOEXTENDED_LIBRARY
 TARGET = libPoDoFoExtended
 TEMPLATE = lib
 CONFIG += staticlib
+QT += gui
 
-DEFINES += LIBPODOFOEXTENDED_LIBRARY
+### PdfRecut Dependencies (include+libs)
+include( $$PWD/../PRDependencies.pri )
 
+### Sources files...
 SOURCES += \
     PdfeTypes.cpp \
     PdfeFontDescriptor.cpp \
@@ -56,18 +58,3 @@ HEADERS += \
     PdfePath.h \
     PdfeTextElement.h \
     PdfeData.h
-
-INCLUDEPATH += $$PWD/../3rdparty
-win32 {
-    INCLUDEPATH += ../PoDoFo/win32/include
-    # INCLUDEPATH += "C:/Program Files/GnuWin32/include"
-}
-unix {
-    INCLUDEPATH += $$PWD/../../../PoDoFo/linux64/include
-    INCLUDEPATH += /usr/include/freetype2
-}
-
-unix {
-    target.path = /usr/lib
-    INSTALLS += target
-}

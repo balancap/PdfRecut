@@ -165,7 +165,7 @@ public:
      * \param c Character identifier (CID).
      * \return Advance vector.
      */
-    virtual PdfeVector advance( pdfe_cid c ) const;
+    PdfeVector advance( pdfe_cid c ) const;
     /** Get the bounding box of a character.
      * \param c Character identifier (CID).
      * \return Bounding box of the character.

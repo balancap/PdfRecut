@@ -155,6 +155,7 @@ void proceedFile( QString fileName )
     document.load( fileName );
     document.setPagesCacheSize( 30 );
 
+
     // Check modifications on contents stream.
     PdfeContentsStream contents;
     for( size_t i = 0 ; i < document.nbPages() ; ++i ) {
@@ -170,8 +171,8 @@ void proceedFile( QString fileName )
 
         // Save stream to file.
         //contents = page->contents();
-        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
-        contents.exportToFile( filename );
+        //QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        //contents.exportToFile( filename );
 //        ++i;
     }
     // Save into...
@@ -192,7 +193,6 @@ void proceedFile( QString fileName )
     bool val = ( iodatastream >> fval );
 
     std::cout << data << " / " << val << " / " << fval << std::endl;
-
 
 /*
     // Analyse document geometry.
