@@ -19,6 +19,25 @@ PdfeGElement::PdfeGElement() :
     m_pGState( NULL )
 {
 }
+PdfeGElement::PdfeGElement( const PdfeGElement& rhs ) :
+    m_nodeID( rhs.m_nodeID ),
+    m_pGState( NULL )
+{
+    if( rhs.m_pGState ) {
+        m_pGState = new PdfeGraphicsState( *rhs.m_pGState );
+    }
+}
+PdfeGElement& PdfeGElement::operator=( const PdfeGElement& rhs )
+{
+    m_nodeID = rhs.m_nodeID;
+    if( rhs.m_pGState ) {
+        m_pGState = new PdfeGraphicsState( *rhs.m_pGState );
+    }
+    else {
+        m_pGState = NULL;
+    }
+    return *this;
+}
 void PdfeGElement::init()
 {
     m_nodeID = NodeIDUndefined();

@@ -34,6 +34,9 @@ enum Enum {
  * in a contents stream (i.e. path, text, image, ...).
  * This parent interface is used to stored some common information
  * such as node ID and graphics state.
+ *
+ * Caution: Should not be used directly to handle sub-classes, as
+ * the destructor is not virtual.
  */
 class PdfeGElement
 {
@@ -42,9 +45,16 @@ public:
      * no graphics state stored.
      */
     PdfeGElement();
+    /** Copy constructor.
+     */
+    PdfeGElement( const PdfeGElement& rhs );
+    /** Assignement operator.
+     */
+    PdfeGElement& operator=( const PdfeGElement& rhs );
     /** Initialize the graphic element to an empty object.
      */
     void init();
+
     /** Destructor: release resources.
      */
     ~PdfeGElement();
