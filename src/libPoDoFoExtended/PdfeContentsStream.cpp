@@ -618,62 +618,42 @@ void PdfeContentsStream::save( PdfCanvas* pcanvas )
         pstream->BeginAppend( true );
         pstream->EndAppend();
     }
-    // Set stream contents.
-    QByteArray streamData = this->streamData();
+    // Get stream contents data.
+    PdfeData data;
+    PdfeDataStream dataStream( data );
+    dataStream << (*this) << std::flush;
+
+    // Set page contents stream.
     TVecFilters vecFilters;
     vecFilters.push_back( ePdfFilter_FlateDecode );
-    pstream->Set( streamData.constData(), streamData.size(), vecFilters );
+    pstream->Set( data.data(), data.size(), vecFilters );
 
     // Save contents resources.
     m_resources.save( pcanvas->GetResources() );
 }
 
-QByteArray PdfeContentsStream::streamData() const
+PdfeData PdfeContentsStream::data() const
 {
-    QByteArray data;
-    // Write nodes description.
-    Node* pnode = m_pFirstNode;
-    while( pnode ) {
-        // Case of a loaded form: do not write Do.
-        if( !pnode->isFormXObjectLoaded() ) {
-            for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
-                const PdfeData& operand = pnode->operands()[i];
-                data.append( operand.data(), operand.size() );
-                data.append( ' ' );
-            }
-            data.append( pnode->goperator().str(), -1 );
-            data.append( '\n' );
-        }
-
-        pnode = pnode->next();
-    }
+    PdfeData data;
+    PdfeDataStream dataStream( data );
+    dataStream << (*this) << std::flush;
     return data;
 }
-void PdfeContentsStream::exportToFile( QString filename ) const
+std::ostream& PdfeContentsStream::toTextStream( std::ostream& os ) const
 {
-    QFile data( filename );
-    if( data.open( QFile::WriteOnly | QFile::Truncate ) ) {
-        QTextStream out( &data );
-
-        Node* pnode = m_pFirstNode;
-        while( pnode ) {
-            // Write node description.
-            out << qSetFieldWidth( 5 ) << left
-                << pnode->id()
-                << pnode->goperator().str()
-                << qSetFieldWidth( 0 ) << left;
-            for( size_t i = 0 ; i < pnode->operands().size() ; ++i ) {
-                out << pnode->operands().at( i ).to_string().c_str() << " ";
-            }
-            out << endl;
-
-            pnode = pnode->next();
-        }
+    // Write down nodes description.
+    Node* pnode = m_pFirstNode;
+    while( pnode ) {
+        pnode->toTextStream( os );
+        pnode = pnode->next();
     }
-    else {
-        QLOG_WARN() << QString( "<PdfeContentsStream> Can not open file (%1) to write stream description." )
-                       .arg( filename ).toAscii().constData();
-    }
+    return os;
+}
+std::string PdfeContentsStream::toText() const
+{
+    std::ostringstream ostr;
+    this->toTextStream( ostr );
+    return ostr.str();
 }
 
 void PdfeContentsStream::copyNodes( const PdfeContentsStream& stream )
@@ -763,6 +743,17 @@ void PdfeContentsStream::deleteNodes()
     m_pLastNode = NULL;
     m_nbNodes = 0;
     m_maxNodeID = 0;
+}
+
+std::ostream& operator<<( std::ostream& os, const PdfeContentsStream& contents )
+{
+    // Simply write down nodes.
+    PdfeContentsStream::Node* pnode( contents.firstNode() );
+    while( pnode ) {
+        os << (*pnode);
+        pnode = pnode->next();
+    }
+    return os;
 }
 
 //**********************************************************//
@@ -1043,6 +1034,49 @@ void PdfeContentsStream::Node::setOperand( size_t idx, const PoDoFo::PdfVariant&
     std::string str;
     value.ToString( str ,ePdfWriteMode_Compact );
     m_goperands.at( idx ) = str;
+}
+
+std::ostream& PdfeContentsStream::Node::toTextStream( std::ostream& os ) const
+{
+    // Save ostream flags.
+    std::ios_base::fmtflags osflags = os.flags();
+    // Node id first.
+    os.width( 6 );
+    os << std::left << this->m_nodeID;
+    // Check the node is well-defined.
+    if( m_goperator.type() != PdfeGOperator::Unknown ) {
+        os.width( 4 );
+        os << m_goperator.str();
+        for( size_t i = 0 ; i < m_goperands.size() ; ++i ) {
+            // os.width( 8 );
+            os << ' ' << m_goperands[i];
+        }
+        os << '\n';
+    }
+    else {
+        os << "Unknown\n";
+    }
+    // Set back flags.
+    os.flags( osflags );
+    return os;
+}
+std::string PdfeContentsStream::Node::toText() const
+{
+    std::ostringstream ostr;
+    this->toTextStream( ostr );
+    return ostr.str();
+}
+std::ostream& operator<<( std::ostream& os, const PdfeContentsStream::Node& node )
+{
+    // Check the node is well-defined.
+    if( node.goperator().type() != PdfeGOperator::Unknown ) {
+        // Print operands and then the operator.
+        for( size_t i = 0 ; i < node.nbOperands() ; ++i ) {
+            os << node.operand( i ) << ' ';
+        }
+        os << node.goperator().str() << '\n';
+    }
+    return os;
 }
 
 }

@@ -10,6 +10,7 @@
  ***************************************************************************/
 
 #include <algorithm>
+#include <fstream>
 
 #include <QsLog/QsLog.h>
 #include <QsLog/QsLogDest.h>
@@ -170,8 +171,10 @@ void proceedFile( QString fileName )
         //document.deletePage( i+2 );
 
         // Save stream to file.
-        //contents = page->contents();
-        //QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        QString filename = QString("./stream/stream%1.txt").arg( i, 3, 10, QLatin1Char('0') );
+        std::ofstream ofile( filename.toLocal8Bit().constData(), ios_base::out | ios_base::trunc );
+        contents.toTextStream( ofile );
+        ofile.close();
         //contents.exportToFile( filename );
 //        ++i;
     }
@@ -242,6 +245,7 @@ void proceedFile( QString fileName )
     document.clear();
 
     cout << " >>> Time elapsed: " << timeTask.elapsed() << " ms." << endl << endl;
+
 
 //    std::cout << "Press RETURN to finish..." << std::endl;
 //    std::cin.get();

@@ -12,9 +12,8 @@
 #ifndef PDFECONTENTSSTREAM_H
 #define PDFECONTENTSSTREAM_H
 
-
-#include <istream>
 #include <limits>
+#include <ostream>
 
 #include <QByteArray>
 
@@ -121,16 +120,25 @@ public:
      */
     void save( PoDoFo::PdfCanvas* pcanvas );
 
-    /** Get stream data, formatted as specified in PDF reference.
-     * \return Byte array containing the stream.
+public:
+    /** Get stream data, formatted accordingly to the PDF
+     * reference.
+     * \return Data object containing the stream.
      */
-    QByteArray streamData() const;
-    /** Export the stream into a text file. The text description
-     * does not correspond to the official PDF reference but should be
-     * easily human-readable.
-     * \param filename Filename of the text file.
+    PdfeData data() const;
+    /** Write down a text description of the stream in an
+     * output stream. Note: should only be use for human reading,
+     * not PDF streams generation (use operator<< otherwise).
+     * \param os Reference to output stream.
+     * \return Modified output stream.
      */
-    void exportToFile( QString filename ) const;
+    std::ostream& toTextStream( std::ostream& os ) const;
+    /** Text description of the contents stream in an
+     * output string. Note: should be use for human reading,
+     * not PDF streams generation (use operator<< otherwise).
+     * \return String describing the node.
+     */
+    std::string toText() const;
 
 private:
     /** Private version of the canvas loading. Can be called recursively, in
@@ -184,6 +192,14 @@ private:
     /// Resources used by the contents stream.
     PdfeResources  m_resources;
 };
+
+/** Write a contents stream into a std::ostream accordingly to the PDF
+ * reference format. Should be used to generate the standard PDF stream.
+ * \param os Reference to output stream.
+ * \param contents Contents to write down.
+ * \return Modified output stream.
+ */
+std::ostream& operator<<( std::ostream& os, const PdfeContentsStream& contents );
 
 //**********************************************************//
 //                  PdfeContentsStream::Node                //
@@ -329,6 +345,21 @@ public:
     /// Set operand data.
     void setOperand( size_t idx, const PdfeData& data );
 
+public:
+    /** Write down a text description of the node in an
+     * output stream. Note: should be use for human reading,
+     * not PDF streams generation (use operator<< otherwise).
+     * \param os Reference to output stream.
+     * \return Modified output stream.
+     */
+    std::ostream& toTextStream( std::ostream& os ) const;
+    /** Text description of the node in an
+     * output string. Note: should be use for human reading,
+     * not PDF streams generation (use operator<< otherwise).
+     * \return String describing the node.
+     */
+    std::string toText() const;
+
 private:
     // Setters... Keep them private for now...
     /// Set node ID in the stream.
@@ -377,6 +408,13 @@ private:
         } m_formXObject;
     };
 };
+
+/** Write node into a stream accordingly to the PDF reference format.
+ * \param os Reference to output stream.
+ * \param node Node to write down.
+ * \return Modified output stream.
+ */
+std::ostream& operator<<( std::ostream& os, const PdfeContentsStream::Node& node );
 
 //**********************************************************//
 //              Inline PdfeContentsStream::Node             //

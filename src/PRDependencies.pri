@@ -9,9 +9,11 @@ INCLUDEPATH += $$PWD/3rdparty
 win32 {
     ### PoDoFo path
     debug {
-        INCLUDEPATH += $$PWD/../../../PoDoFo/podofo-win64-release/include
+        INCLUDEPATH += $$PWD/../../../PoDoFo/podofo-win64-debug/include
+        LIBS += -L$$PWD/../../../PoDoFo/podofo-win64-debug/lib
     }
     release {
+        INCLUDEPATH += $$PWD/../../../PoDoFo/podofo-win64-release/include
         LIBS += -L$$PWD/../../../PoDoFo/podofo-win64-release/lib
     }
     # INCLUDEPATH += "C:/Program Files/GnuWin32/include"
