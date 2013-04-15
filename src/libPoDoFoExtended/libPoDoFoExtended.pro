@@ -57,4 +57,5 @@ HEADERS += \
     PdfeGElement.h \
     PdfePath.h \
     PdfeTextElement.h \
-    PdfeData.h
+    PdfeData.h \
+    PoDoFoExtended.h

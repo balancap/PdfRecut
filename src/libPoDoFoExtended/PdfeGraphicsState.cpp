@@ -65,28 +65,23 @@ bool PdfeTextState::setFont( const std::string& name, const PdfeResources& resou
 }
 
 //**********************************************************//
-//                     PdfeClippingPath                     //
+//                     PdfeClippingRect                     //
 //**********************************************************//
-PdfeClippingPath::PdfeClippingPath()
+PdfeClippingRect::PdfeClippingRect() :
+    m_clippingRect( PdfeRect::infinite() )
 {
-    this->init();
 }
-void PdfeClippingPath::init()
+void PdfeClippingRect::init()
 {
-    m_paths.clear();
-    m_clipOperators.clear();
+    m_clippingRect = PdfeRect::infinite();
 }
-
-void PdfeClippingPath::append( const PdfePath& path, PdfeGOperator::Enum clipOperator )
+PdfeClippingRect& PdfeClippingRect::append( const PdfePath& path )
 {
-    // Default value for clipping operator...
-    if( PdfeGOperator::category( clipOperator ) != PdfeGCategory::ClippingPath ) {
-        clipOperator = PdfeGOperator::W;
+    if( path.clippingPathOp().category() == PdfeGCategory::ClippingPath ) {
+        m_clippingRect = PdfeRect::intersection( m_clippingRect, path.bbox() );
     }
-    m_paths.push_back( path );
-    m_clipOperators.push_back( clipOperator );
+    return *this;
 }
-
 
 //**********************************************************//
 //                     PdfeGraphicsState                    //
@@ -98,7 +93,7 @@ PdfeGraphicsState::PdfeGraphicsState() :
 }
 PdfeGraphicsState::PdfeGraphicsState( const PdfeGraphicsState& rhs ):
     m_transMat( rhs.m_transMat ),
-    m_clippingPath( rhs.m_clippingPath ),
+    m_clippingRect( rhs.m_clippingRect ),
     m_lineWidth( rhs.m_lineWidth ),
     m_lineCap( rhs.m_lineCap ),
     m_lineJoin( rhs.m_lineJoin ),
@@ -117,7 +112,7 @@ PdfeGraphicsState &PdfeGraphicsState::operator=( const PdfeGraphicsState& rhs )
     if( &rhs != this ) {
         // Copy members...
         m_transMat = rhs.m_transMat;
-        m_clippingPath = rhs.m_clippingPath;
+        m_clippingRect = rhs.m_clippingRect;
         m_lineWidth = rhs.m_lineWidth;
         m_lineCap = rhs.m_lineCap;
         m_lineJoin = rhs.m_lineJoin;
@@ -137,7 +132,7 @@ void PdfeGraphicsState::init()
     this->clearTextState();
 
     m_transMat.init();
-    m_clippingPath.init();
+    m_clippingRect.init();
 
     m_lineWidth = 1.0;
     m_lineCap = ePdfLineCapStyle_Butt;
@@ -302,10 +297,10 @@ void PdfeGraphicsState::update( const PdfeContentsStream::Node* pnode,
     }
     else if( pnode->category() == PdfeGCategory::ClippingPath ) {
         // Commands in this category: W, W*.
-        // Append the current path to the clipping path.
-        m_clippingPath.appendPath( currentPath );
-        // Set the clipping path operator of the current path.
-        //currentPath.setClippingPathOp( pnode->goperator().str() );
+
+        // According to PDF reference, the clipping path should updated after
+        // the painting operation.
+        //m_clippingPath.appendPath( currentPath );
     }
     else if( pnode->category() == PdfeGCategory::Compatibility ) {
         // Commands in this category: BX, EX.

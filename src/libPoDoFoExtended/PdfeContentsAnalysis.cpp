@@ -116,6 +116,9 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             currentPath.setPaintingOp( pnode->goperator() );
             // Call category function.
             this->fPathPainting( streamState, currentPath );
+
+            // Update graphics state clipping rectangle.
+            gstate.clippingRect().append( currentPath );
             // Clear the current path.
             currentPath.init();
         }

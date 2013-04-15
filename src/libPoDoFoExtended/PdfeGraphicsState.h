@@ -138,35 +138,37 @@ private:
 };
 
 //**********************************************************//
-//                     PdfeClippingPath                     //
+//                     PdfeClippingRect                     //
 //**********************************************************//
-/** Class that represents the PDF clipping path of a graphics
- * state. It is mostly a workaround the existing PdfePath.
+/** Class that represents a rectangular approximation of the
+ * PDF clipping path of a graphics state. It aims to provide
+ * a fast and efficient, even though inaccurate, representation
+ * of the clipping path.
+ * Can be reimplemented if one needs more precise estimates.
  */
-class PdfeClippingPath
+class PdfeClippingRect
 {
 public:
-    /** Default constructor.
+    /** Default constructor, initialize the clipping
+     * rect to infinite rect.
      */
-    PdfeClippingPath();
-    /** Initialize the clipping path to empty.
+    PdfeClippingRect();
+    /** Initialize the clipping rect to infinite rect.
      */
     void init();
 
 public:
-    /** Append a path to the clipping path.
-     * \param path Path to append.
-     * \param clipOperator Clipping operator (W/W*).
+    /** Append a path to the clipping rect. Use path
+     * bounding box to modify the rectangle.
+     * \param path Path to append. Does nothing if the path
+     * does not have a valid clipping operator (W/W*).
+     * \return Modified clipping rectangle.
      */
-    void append( const PdfePath& path,
-                 PdfeGOperator::Enum clipOperator );
+    PdfeClippingRect& append( const PdfePath& path );
 
 private:
-    /// Stack of consecutive paths defining the clipping path.
-    std::vector<PdfePath>  m_paths;
-    /// Clipping path operators (W or W*).
-    std::vector<PdfeGOperator::Enum>  m_clipOperators;
-
+    /// Rectangle approximating the clipping path.
+    PoDoFo::PdfRect  m_clippingRect;
 };
 
 //**********************************************************//
@@ -218,7 +220,7 @@ public:
     bool loadExtGState( const std::string& gstateName, const PdfeResources& resources );
 
 public:
-    // Text graphics state.
+    // Text graphics state references.
     /** Get a reference to the text graphics state. Can be used
      * to modify the text graphics state object.
      */
@@ -229,11 +231,14 @@ public:
      */
     void clearTextState();
 
+    // Clipping rectangle references.
+    /// Reference the clipping rectangle.
+    PdfeClippingRect& clippingRect()                {   return m_clippingRect;  }
+    const PdfeClippingRect& clippingRect() const    {   return m_clippingRect;  }
+
     // Getters...
     /// Get transformation matrix.
     const PdfeMatrix& transMat() const      {   return m_transMat;      }
-    /// Get clipping path.
-    const PdfePath& clippingPath() const    {   return m_clippingPath;  }
     /// Get line's width.
     double lineWidth() const    {   return m_lineWidth;     }
     /// Get line's cap style.
@@ -249,8 +254,6 @@ public:
     // and setters.
     /// Set transformation matrix.
     void setTransMat( const PdfeMatrix& rhs )       {   m_transMat = rhs;       }
-    /// Set clipping path.
-    void setClippingPath( const PdfePath& rhs )     {   m_clippingPath = rhs;   }
     /// Set line's width.
     void setLineWidth( double rhs ) {   m_lineWidth = rhs;  }
     /// Set line's cap style.
@@ -269,8 +272,8 @@ private:
 
     /// Transformation matrix (op: cm).
     PdfeMatrix  m_transMat;
-    /// Clipping path.
-    PdfePath  m_clippingPath;
+    /// Clipping rectangle.
+    PdfeClippingRect  m_clippingRect;
     /// Color space.
     // TODO.
     /// Color.

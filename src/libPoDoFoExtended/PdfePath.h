@@ -118,6 +118,13 @@ public:
     PdfeSubPath& setRectangle( const PoDoFo::PdfRect& rect );
 
 public:
+    /** Get subpath bounding box, i.e. the smallest rectangle which
+     * includes every point of the subpath. Infinite if the subpath is empty.
+     * \return Subpath bounding box.
+     */
+    PoDoFo::PdfRect bbox() const;
+
+public:
     // Subpath getters...
     /// Subpath node ID.
     pdfe_nodesubid nodeSubID() const    {   return m_nodeSubID;     }
@@ -216,7 +223,7 @@ public:
      * \return Pointer to the last node of path's definition.
      */
     PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
-                                    PdfeGElementSave::Enum savePolicy ) const;
+                                    PdfeGElementSave::Enum savePolicy = PdfeGElementSave::PushBack ) const;
 
 public:
     /** Append an entire path.
@@ -289,6 +296,11 @@ public:
      */
     QPainterPath toQPainterPath( bool closeSubpaths = true,
                                  PdfeFillingRule::Enum fillingRule = PdfeFillingRule::Winding ) const;
+    /** Get path bounding box, i.e. the rectangle that includes
+     * every subpaths' points.
+     * \return Path bounding box. Infinite if the path is empty.
+     */
+    PoDoFo::PdfRect bbox() const;
 
 public:
     // Clipping path operator.

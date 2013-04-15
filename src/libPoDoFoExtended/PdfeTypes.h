@@ -483,7 +483,6 @@ private:
  */
 namespace PdfeRect
 {
-
 /** Intersection between two PoDoFo::PdfRect objects.
  * \param rect1 First rectangle.
  * \param rect2 Second rectangle.
@@ -529,6 +528,17 @@ std::string toString( const PoDoFo::PdfRect& rect );
  * \return Corresponding QRectF object.
  */
 QRectF toQRectF( const PoDoFo::PdfRect& rect );
+
+/** Return a PoDoFo::PdfRect whose size is
+ * infinite (relatively to double...).
+ */
+inline PoDoFo::PdfRect infinite(){
+    // Please note the awful hack to obtain infinite upper-right coordinates!
+    return PoDoFo::PdfRect( -std::numeric_limits<double>::max() / 2.,
+                            -std::numeric_limits<double>::max() / 2.,
+                            std::numeric_limits<double>::max(),
+                            std::numeric_limits<double>::max() );
+}
 
 }
 

@@ -26,10 +26,8 @@
 #include "PRGeometry/PRGPage.h"
 #include "PRGeometry/PRGTextPage.h"
 
-#include "PdfeFontType1.h"
-#include "PdfeData.h"
-
 #include <podofo/podofo.h>
+#include <PoDoFoExtended.h>
 
 #include <QtCore>
 #include <QApplication>

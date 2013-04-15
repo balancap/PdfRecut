@@ -201,6 +201,25 @@ PdfeSubPath& PdfeSubPath::setRectangle( const PdfRect& rect )
     return *this;
 }
 
+PdfRect PdfeSubPath::bbox() const
+{
+    if( this->isEmpty() ) {
+        return PdfeRect::infinite();
+    }
+    double left( std::numeric_limits<double>::max() );
+    double right( -std::numeric_limits<double>::max() );
+    double bottom( std::numeric_limits<double>::max() );
+    double top( -std::numeric_limits<double>::max() );
+    for( size_t i = 0 ; i < m_points.size() ; ++i ) {
+        left = std::min( left, m_points[i].coordinates(0) );
+        right = std::max( right, m_points[i].coordinates(0) );
+        bottom = std::min( bottom, m_points[i].coordinates(1) );
+        top = std::max( top, m_points[i].coordinates(1) );
+    }
+    return PdfRect( left, bottom,
+                    std::max( right-left, 0.0 ), std::max( top-bottom, 0.0 ) );
+}
+
 void PdfeSubPath::setCoordinates( size_t idx, const PdfeVector& coords )
 {
     m_points.at( idx ).coordinates = coords;
@@ -505,6 +524,8 @@ PdfeContentsStream::Node* PdfePath::save( PdfeContentsStream::Node* pnode,
                                           PdfeGElementSave::Enum savePolicy ) const
 {
     // TODO: implement...
+
+    PODOFO_RAISE_ERROR( ePdfError_NotImplemented )
     return pnode;
 }
 
@@ -604,6 +625,14 @@ QPainterPath PdfePath::toQPainterPath( bool closeSubpaths, PdfeFillingRule::Enum
         qPath.setFillRule( Qt::WindingFill );
     }
     return qPath;
+}
+PdfRect PdfePath::bbox() const
+{
+    PdfRect bbox( PdfeRect::infinite() );
+    for( size_t i = 0 ; i < m_subpaths.size() ; ++i ) {
+        bbox = PdfeRect::intersection( bbox, m_subpaths[i].bbox() );
+    }
+    return bbox;
 }
 
 bool PdfePath::isClippingPath() const

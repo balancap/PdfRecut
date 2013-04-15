@@ -60,9 +60,10 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
     // Initialize graphics state and resources.
     streamState.gStates.push_back( initialGState );
     tmpRect = canvas->GetPageSize();
-    PdfePath clippingPath = streamState.gStates.back().clippingPath();
+    /*PdfePath clippingPath = streamState.gStates.back().clippingPath();
     clippingPath.appendRectangle( tmpRect );
     streamState.gStates.back().setClippingPath( clippingPath );
+*/
 
     streamState.canvas = canvas;
     streamState.resources = initialResources;
@@ -395,9 +396,10 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 // Commands in this category: W, W*.
 
                 // Append the current path to the clipping path.
-                PdfePath clippingPath( gState.clippingPath() );
+                /*PdfePath clippingPath( gState.clippingPath() );
                 clippingPath.appendPath( currentPath );
                 gState.setClippingPath( clippingPath );
+                */
 
                 // Set the clipping path operator of the current path.
                 currentPath.setClippingPathOp( gOperator.str() );
@@ -468,10 +470,10 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                     pathBBox.appendLine( PdfeVector( bbox[0].GetReal(), bbox[3].GetReal() ) );
                     pathBBox.closeSubpath();
 
-                    PdfePath clippingPath( streamState.gStates.back().clippingPath() );
+                    /*PdfePath clippingPath( streamState.gStates.back().clippingPath() );
                     clippingPath.appendPath( pathBBox );
                     streamState.gStates.back().setClippingPath( clippingPath );
-
+*/
                     // Analayse Form.
                     this->fFormBegin( streamState, &xObject );
                     this->analyseContents( &xObject,
