@@ -29,12 +29,14 @@ PdfeGElement::PdfeGElement( const PdfeGElement& rhs ) :
 }
 PdfeGElement& PdfeGElement::operator=( const PdfeGElement& rhs )
 {
-    m_nodeID = rhs.m_nodeID;
-    if( rhs.m_pGState ) {
-        m_pGState = new PdfeGraphicsState( *rhs.m_pGState );
-    }
-    else {
-        m_pGState = NULL;
+    if( this != &rhs ) {
+        m_nodeID = rhs.m_nodeID;
+        if( rhs.m_pGState ) {
+            m_pGState = new PdfeGraphicsState( *rhs.m_pGState );
+        }
+        else {
+            m_pGState = NULL;
+        }
     }
     return *this;
 }
@@ -71,6 +73,12 @@ void PdfeGElement::clearGState()
 {
     delete m_pGState;
     m_pGState = NULL;
+}
+void PdfeGElement::clearTextGState()
+{
+    if( m_pGState ) {
+        m_pGState->clearTextState();
+    }
 }
 
 }

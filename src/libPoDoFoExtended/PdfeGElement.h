@@ -22,10 +22,17 @@ class PdfeGraphicsState;
 
 
 namespace PdfeGElementSave {
-/// Type of saving policy used for PdfeGElement object.
+/** Type of saving policy used for PdfeGElement object.
+ * Note that saving into a contents stream should always ensure
+ * that the inserted element has the expected node id. This implies
+ * previously inserted elements can be moved, and therefore obtain
+ * a different node id.
+ * In short: element saving does not ensure node id consistency,
+ * except for the current element.
+ */
 enum Enum {
     Replace = 0,    /// Replace existing content.
-    PushBack,       /// Push the element after existing ones.
+    PushBack,       /// Push the element after existing ones (default).
     PushFront       /// Push the element in front of existing ones.
 };
 }
@@ -76,6 +83,8 @@ public:
     void setGState( const PdfeGraphicsState& gstate );
     /// Clear the graphics state of the element.
     void clearGState();
+    /// Clear the text state of the element.
+    void clearTextGState();
 
 private:
     /// Node ID corresponding to this element.

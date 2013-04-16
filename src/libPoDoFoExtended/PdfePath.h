@@ -210,6 +210,14 @@ public:
     void init();
 
 public:
+    // PdfeGElement interface (updated to PdfePath needs).
+    /** Set the graphics state of the element.
+     * Automatically remove the text state component, which is
+     * useless for a path.
+     */
+    void setGState( const PdfeGraphicsState& gstate );
+
+public:
     // Path loading and saving from stream.
     /** Load a path from a node in a contents stream. The node ID is
      * saved back, but the graphics state is set unchanged.

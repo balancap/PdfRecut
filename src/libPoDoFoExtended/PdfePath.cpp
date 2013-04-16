@@ -456,6 +456,12 @@ void PdfePath::init()
     this->updateSubpathsID();
 }
 
+void PdfePath::setGState( const PdfeGraphicsState& gstate )
+{
+    this->PdfeGElement::setGState( gstate );
+    this->clearTextGState();
+}
+
 PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
 {
     // Set node ID.
