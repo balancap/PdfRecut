@@ -284,6 +284,15 @@ PoDoFo::PdfRect rescale( const PoDoFo::PdfRect& rect, double coef )
                             rect.GetWidth() * coef,
                             rect.GetHeight() * coef );
 }
+PoDoFo::PdfRect translate( const PoDoFo::PdfRect& rect,
+                           const PdfeVector& trans )
+{
+    return PoDoFo::PdfRect( rect.GetLeft() + trans(0),
+                            rect.GetBottom() + trans(1),
+                            rect.GetWidth(),
+                            rect.GetBottom() );
+}
+
 
 bool contains( const PoDoFo::PdfRect& zone, const PoDoFo::PdfRect& rect )
 {

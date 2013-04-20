@@ -496,11 +496,17 @@ PoDoFo::PdfRect intersection( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRec
  */
 PoDoFo::PdfRect reunion( const PoDoFo::PdfRect& rect1, const PoDoFo::PdfRect& rect2 );
 /** Rescale a rectangle.
- * \param rect PdfRect.
+ * \param rect PdfRect (kept unmodified).
  * \param coef Scale coefficient.
  * \return PdfRect rescaled.
  */
 PoDoFo::PdfRect rescale( const PoDoFo::PdfRect& rect, double coef );
+/** Translate a rectangle's coordinates.
+ * \param rect PdfRect (kept unmodified).
+ * \param trans Translation vector.
+ * \return PdfRect translated.
+ */
+PoDoFo::PdfRect translate( const PoDoFo::PdfRect& rect, const PdfeVector& trans );
 
 /** Does a zone rectangle contains a given rectangle?
  * \param zone Rectangular zone.
