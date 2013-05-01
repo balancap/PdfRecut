@@ -188,6 +188,13 @@ public:
     /** Destructor.
      */
     ~PdfeTextElement();
+    /** (Deep) copy constructor.
+     */
+    PdfeTextElement( const PdfeTextElement& rhs );
+    /** Assignment operator.
+     */
+    PdfeTextElement operator=( const PdfeTextElement& rhs );
+
     /** Initialize the PDF element with a graphics state
      * and PDF font object (the pair should be consistent!).
      * @param gstate Graphics state.
@@ -200,14 +207,14 @@ public:
     // Text element loading and saving from stream.
     /** Load a text element from a node in a contents stream. The node ID is
      * saved back, but the graphics state and the font are set unchanged.
-     * \param pnode Pointer to the text showing node.
-     * \return pnode value (a text element is one node long).
+     * @param pnode Pointer to the text showing node.
+     * @return pnode value (a text element is one node long).
      */
     PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
     /** Save back the path into a contents stream.
-     * \param pnode Pointer of the node where to insert the text element.
-     * \param savePolicy Save policy of the element (replace/push back/push front).
-     * \return pnode value (a text element is one node long).
+     * @param pnode Pointer of the node where to insert the text element.
+     * @param savePolicy Save policy of the element (replace/push back/push front).
+     * @return pnode value (a text element is one node long).
      */
     PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
                                     PdfeGElementSave::Enum savePolicy = PdfeGElementSave::PushBack ) const;
@@ -223,6 +230,8 @@ public:
 private:
     /// Font object used by the text element.
     PoDoFoExtended::PdfeFont*  m_pFont;
+    /// Words which form the text element.
+    std::vector<PdfeTextWord>  m_words;
 
 
 };

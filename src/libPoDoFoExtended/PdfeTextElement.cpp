@@ -174,6 +174,26 @@ PdfeTextElement::~PdfeTextElement()
 {
     // Guess what, I am so perfect that I don't need to be destroy!
 }
+PdfeTextElement::PdfeTextElement( const PdfeTextElement& rhs ) :
+    PdfeGElement( rhs ),
+    m_pFont( rhs.m_pFont ),
+    m_words( rhs.m_words )
+{
+    // Reset parent pointers.
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        m_words[i].setTextElement( this );
+    }
+}
+PdfeTextElement PdfeTextElement::operator=( const PdfeTextElement& rhs )
+{
+    this->PdfeGElement::operator=( rhs );
+    m_pFont = rhs.m_pFont;
+    m_words = rhs.m_words;
+    for( size_t i = 0 ; i < m_words.size() ; ++i ) {
+        m_words[i].setTextElement( this );
+    }
+    return *this;
+}
 void PdfeTextElement::init( const PdfeGraphicsState& gstate, PdfeFont* pfont )
 {
     this->PdfeGElement::init();
@@ -183,6 +203,7 @@ void PdfeTextElement::init( const PdfeGraphicsState& gstate, PdfeFont* pfont )
     }
     this->setGState( gstate );
     m_pFont = pfont;
+    m_words.clear();
 }
 
 PdfeContentsStream::Node* PdfeTextElement::load( PdfeContentsStream::Node* pnode )
