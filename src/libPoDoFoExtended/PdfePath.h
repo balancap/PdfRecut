@@ -206,8 +206,9 @@ public:
      */
     PdfePath();
     /** Initialize to an empty path.
+     * \param initGElement Also initialize the parent GElement.
      */
-    void init();
+    void init( bool initGElement = true );
 
 public:
     // PdfeGElement interface (updated to PdfePath needs).
@@ -219,12 +220,13 @@ public:
 
 public:
     // Path loading and saving from stream.
-    /** Load a path from a node in a contents stream. The node ID is
-     * saved back, but the graphics state is set unchanged.
+    /** Load a path from a node in a contents stream. The node ID and the
+     * graphics state are also updated.
      * \param pnode Pointer to the node at which begins the path.
      * \return Pointer to the last node of path's definition.
      */
-    PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
+    PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode,
+                                    const PdfeGraphicsState& gstate );
     /** Save back the path into a contents stream.
      * \param pnode Pointer of the node where to insert the path definition.
      * \param savePolicy Save policy of the element (replace/push back/push front).

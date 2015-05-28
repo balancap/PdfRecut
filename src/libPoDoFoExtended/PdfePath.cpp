@@ -445,9 +445,11 @@ PdfePath::PdfePath() :
     m_paintingOp( PdfeGOperator::n )
 {
 }
-void PdfePath::init()
+void PdfePath::init( bool initGElement )
 {
-    this->PdfeGElement::init();
+    if( initGElement ) {
+        this->PdfeGElement::init();
+    }
     // Clear subpaths and add an empty one.
     m_subpaths.clear();
     m_subpaths.push_back( PdfeSubPath() );
@@ -462,13 +464,19 @@ void PdfePath::setGState( const PdfeGraphicsState& gstate )
     this->clearTextGState();
 }
 
-PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode )
+PdfeContentsStream::Node* PdfePath::load( PdfeContentsStream::Node* pnode ,
+                                          const PdfeGraphicsState& gstate )
 {
-    // Set node ID.
+    if( pnode->category() != PdfeGCategory::PathConstruction ) {
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType,
+                                 "<PdfePath> Can not load path from node. Invalid type (not a path construction node)." );
+    }
+    this->init( false );
+    // Set node ID and graphics state.
     this->setNodeID( pnode->id() );
+    this->setGState( gstate );
 
     PdfeContentsStream::Node* pNodePrev = pnode;
-    this->init();
     // Path construction nodes.
     while( pnode->category() == PdfeGCategory::PathConstruction ) {
         if( pnode->type() == PdfeGOperator::m ) {
@@ -552,6 +560,7 @@ PdfePath& PdfePath::appendSubpath( const PdfeSubPath& subpath )
 PdfePath& PdfePath::eraseSubpath( size_t idx )
 {
     m_subpaths.erase( m_subpaths.begin() + idx );
+    this->updateSubpathsID();
     return *this;
 }
 PdfePath& PdfePath::clearSubpaths()
@@ -668,9 +677,9 @@ void PdfePath::setPaintingOp( const PdfeGraphicOperator& gop )
     if( gop.category() == PdfeGCategory::PathPainting ) {
         m_paintingOp = gop;
     }
-    else {
+    /*else {
         m_paintingOp.set( PdfeGOperator::n );
-    }
+    }*/
 }
 
 PdfeSubPath& PdfePath::createSubpath()

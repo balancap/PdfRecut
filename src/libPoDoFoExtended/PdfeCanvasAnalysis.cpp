@@ -389,7 +389,7 @@ void PdfeCanvasAnalysis::analyseContents( PoDoFo::PdfCanvas* canvas,
                 this->fPathPainting( streamState, currentPath );
 
                 // Clear the current path.
-                currentPath.init();
+                currentPath.init( true );
             }
             else if( gOperator.category() == PdfeGCategory::ClippingPath )
             {

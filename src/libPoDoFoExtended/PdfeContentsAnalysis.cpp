@@ -105,7 +105,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             // Commands in this category: m, l, c, v, y, h, re.
 
             // Load current path.
-            pnode = currentPath.load( pnode );
+            pnode = currentPath.load( pnode, gstate );
             // Call category function.
             this->fPathConstruction( streamState, currentPath );
         }
@@ -120,7 +120,7 @@ void PdfeContentsAnalysis::analyseContents( const PdfeContentsStream& stream )
             // Update graphics state clipping rectangle.
             gstate.clippingRect().append( currentPath );
             // Clear the current path.
-            currentPath.init();
+            currentPath.init( true );
         }
         else if( pnode->category() == PdfeGCategory::ClippingPath ) {
             // Commands in this category: W, W*.

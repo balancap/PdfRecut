@@ -107,7 +107,7 @@ PdfeGraphicsState::PdfeGraphicsState( const PdfeGraphicsState& rhs ):
         m_pTextState = NULL;
     }
 }
-PdfeGraphicsState &PdfeGraphicsState::operator=( const PdfeGraphicsState& rhs )
+PdfeGraphicsState& PdfeGraphicsState::operator=( const PdfeGraphicsState& rhs )
 {
     if( &rhs != this ) {
         // Copy members...

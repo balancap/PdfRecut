@@ -177,7 +177,8 @@ PdfeTextElement::~PdfeTextElement()
 PdfeTextElement::PdfeTextElement( const PdfeTextElement& rhs ) :
     PdfeGElement( rhs ),
     m_pFont( rhs.m_pFont ),
-    m_words( rhs.m_words )
+    m_words( rhs.m_words ),
+    m_textShowingOp( rhs.m_textShowingOp )
 {
     // Reset parent pointers.
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
@@ -192,6 +193,7 @@ PdfeTextElement PdfeTextElement::operator=( const PdfeTextElement& rhs )
     for( size_t i = 0 ; i < m_words.size() ; ++i ) {
         m_words[i].setTextElement( this );
     }
+    m_textShowingOp = rhs.m_textShowingOp;
     return *this;
 }
 void PdfeTextElement::init( const PdfeGraphicsState& gstate, PdfeFont* pfont )
@@ -204,16 +206,67 @@ void PdfeTextElement::init( const PdfeGraphicsState& gstate, PdfeFont* pfont )
     this->setGState( gstate );
     m_pFont = pfont;
     m_words.clear();
+    m_textShowingOp.set( PdfeGOperator::Tj );
 }
 
-PdfeContentsStream::Node* PdfeTextElement::load( PdfeContentsStream::Node* pnode )
+PdfeContentsStream::Node* PdfeTextElement::load( PdfeContentsStream::Node* pnode,
+                                                 const PdfeGraphicsState& gstate )
 {
+    if( pnode->category() != PdfeGCategory::TextShowing ) {
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType,
+                                 "<PdfePath> Can not load text element from node. Invalid type (not a text showing node)." );
+    }
+    // Set node ID and showing op.
+    this->setNodeID( pnode->id() );
+    m_textShowingOp = pnode->goperator();
+
+
+
     return pnode;
 }
 PdfeContentsStream::Node* PdfeTextElement::save( PdfeContentsStream::Node* pnode,
                                                  PdfeGElementSave::Enum savePolicy ) const
 {
     return pnode;
+}
+
+PdfeTextElement& PdfeTextElement::appendWord( const PdfeTextWord& word )
+{
+    m_words.push_back( word );
+    this->updateWords();
+    return *this;
+}
+PdfeTextElement& PdfeTextElement::insertWord( size_t idx, const PdfeTextWord& word )
+{
+    m_words.insert( m_words.begin()+idx, word );
+    this->updateWords();
+    return *this;
+}
+PdfeTextElement& PdfeTextElement::eraseWord( size_t idx )
+{
+    m_words.erase( m_words.begin()+idx );
+    this->updateWords();
+    return *this;
+}
+
+const PdfeGraphicOperator& PdfeTextElement::showingOp() const
+{
+    return m_textShowingOp;
+}
+void PdfeTextElement::setShowingOp( const PdfeGraphicOperator& gop )
+{
+    if( gop.category() == PdfeGCategory::TextShowing ) {
+        m_textShowingOp = gop;
+    }
+}
+
+void PdfeTextElement::updateWords()
+{
+    // Reset words index and parent text element.
+    for( size_t i = 0  ; i < m_words.size() ; ++i ) {
+        m_words[i].setNodeSubID( i );
+        m_words[i].setTextElement( this );
+    }
 }
 
 }

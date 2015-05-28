@@ -210,7 +210,13 @@ public:
      * @param pnode Pointer to the text showing node.
      * @return pnode value (a text element is one node long).
      */
-    PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode );
+    /** Load a path from a node in a contents stream. The node ID and the
+     * graphics state are also updated.
+     * \param pnode Pointer to the node at which begins the path.
+     * \return Pointer to the last node of path's definition.
+     */
+    PdfeContentsStream::Node* load( PdfeContentsStream::Node* pnode,
+                                    const PdfeGraphicsState& gstate );
     /** Save back the path into a contents stream.
      * @param pnode Pointer of the node where to insert the text element.
      * @param savePolicy Save policy of the element (replace/push back/push front).
@@ -219,21 +225,49 @@ public:
     PdfeContentsStream::Node* save( PdfeContentsStream::Node* pnode,
                                     PdfeGElementSave::Enum savePolicy = PdfeGElementSave::PushBack ) const;
 
+public:
+    // Words management...
+    /** Append a word into the text element.
+     * \param word Word to copy into the element.
+     */
+    PdfeTextElement& appendWord( const PdfeTextWord& word );
+    /** Insert a word into the text element.
+     * \param idx Index where to insert the word.
+     * \param word Word to insert.
+     */
+    PdfeTextElement& insertWord( size_t idx, const PdfeTextWord& word );
+    /** Erase a word in the text element.
+     * \param idx Index of the word to erase.
+     */
+    PdfeTextElement& eraseWord( size_t idx );
+
 
 public:
     // Simple getters...
     /// Get the font object attached to the text element.
     PoDoFoExtended::PdfeFont* font() const      {   return m_pFont;     }
 
+    /// Number of words in the text element.
+    size_t nbWords() const  {   return m_words.size();  }
+    /// Get the word a given index.
+    const PdfeTextWord& word( size_t idx ) const    {   return m_words.at( idx );   }
 
+    /// Get text showing operator ("Tj" by default).
+    const PdfeGraphicOperator& showingOp() const;
+    /// Set path painting operator. Left unchanged if the argument is not a text showing op.
+    void setShowingOp( const PdfeGraphicOperator& gop );
+
+private:
+    /// Update words when changements occured.
+    void updateWords();
 
 private:
     /// Font object used by the text element.
     PoDoFoExtended::PdfeFont*  m_pFont;
     /// Words which form the text element.
     std::vector<PdfeTextWord>  m_words;
-
-
+    /// Text showing operator associated to the element.
+    PdfeGraphicOperator  m_textShowingOp;
 };
 
 }
